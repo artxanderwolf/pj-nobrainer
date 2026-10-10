@@ -30,6 +30,8 @@ declare global {
 @Injectable({ providedIn: 'root' })
 export class LegacyRuntimeService {
   private tickHandle: number | null = null;
+  private hiddenSnapshot: SaveSnapshot | null = null;
+  private visibilityHandlerRegistered = false;
 
   constructor(private readonly saveStorage: SaveStorageService) {}
 
@@ -53,6 +55,8 @@ export class LegacyRuntimeService {
         this.showOfflineSummary(before, after);
       }
     }
+
+    this.registerVisibilityHandler();
   }
 
   startTick(): void {
@@ -75,6 +79,36 @@ export class LegacyRuntimeService {
 
     window.clearInterval(this.tickHandle);
     this.tickHandle = null;
+  }
+
+  private registerVisibilityHandler(): void {
+    if (this.visibilityHandlerRegistered) return;
+    this.visibilityHandlerRegistered = true;
+
+    document.addEventListener('visibilitychange', () => {
+      const runtime = this.getRuntime();
+
+      if (document.hidden) {
+        // Save at the moment the game leaves the foreground. This gives the
+        // return summary a stable baseline even if the browser keeps ticking.
+        runtime.save(false);
+        this.hiddenSnapshot = this.readSnapshot();
+        return;
+      }
+
+      const before = this.hiddenSnapshot;
+      this.hiddenSnapshot = null;
+      if (!before || !this.shouldShowOfflineSummary(before)) return;
+
+      // Run one immediate catch-up tick before comparing. This covers both
+      // throttled/suspended tabs and browsers that continued running timers.
+      runtime.tick();
+      runtime.save(false);
+      const after = this.readSnapshot();
+      if (after) {
+        this.showOfflineSummary(before, after);
+      }
+    });
   }
 
   private readSnapshot(): SaveSnapshot | null {
