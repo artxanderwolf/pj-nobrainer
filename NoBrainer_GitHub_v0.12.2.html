@@ -1,0 +1,2160 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Projekt NoBrainer – Prototype v0.12.2</title>
+  <style>
+    :root{
+      --bg:#121417; --panel:#1b1f24; --panel2:#232931; --line:#343c46;
+      --text:#edf1f5; --muted:#9aa6b2; --accent:#d6a85f; --good:#6dcf8b;
+      --bad:#e36c6c; --warn:#e8c46a;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,Arial,sans-serif;background:var(--bg);color:var(--text)}
+    button{font:inherit}
+    .app{min-height:100vh;display:grid;grid-template-columns:220px 1fr}
+    aside{border-right:1px solid var(--line);background:#0f1114;padding:22px 14px}
+    .brand{font-weight:800;letter-spacing:.06em;margin:0 8px 22px}
+    .brand small{display:block;color:var(--muted);font-weight:500;letter-spacing:0;margin-top:5px}
+    nav button{width:100%;text-align:left;padding:11px 12px;margin:3px 0;border:0;border-radius:8px;background:transparent;color:var(--muted);cursor:pointer}
+    nav button.active,nav button:hover{background:var(--panel2);color:var(--text)}
+    main{padding:22px;max-width:1200px;width:100%;margin:auto}
+    .topbar{display:flex;justify-content:space-between;gap:16px;align-items:center;margin-bottom:20px}
+    .resources{display:flex;gap:10px;flex-wrap:wrap}
+    .pill{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:8px 12px;color:var(--muted)}
+    .pill b{color:var(--text)}
+    .page{display:none}.page.active{display:block}
+    h1{font-size:26px;margin:0 0 6px} h2{font-size:18px;margin:0 0 12px}
+    .sub{color:var(--muted);margin-bottom:20px}
+    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
+    .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+    .span-4{grid-column:span 4}.span-5{grid-column:span 5}.span-6{grid-column:span 6}.span-7{grid-column:span 7}.span-8{grid-column:span 8}.span-12{grid-column:span 12}
+    .statrow{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+    .stat{background:var(--panel2);border-radius:8px;padding:10px}
+    .stat span{display:block;color:var(--muted);font-size:12px}.stat b{font-size:17px}
+    .bar{height:8px;background:#303740;border-radius:999px;overflow:hidden;margin-top:5px}
+    .bar>i{display:block;height:100%;background:currentColor}
+    .hp{color:var(--good)} .energy{color:var(--warn)}
+    .btn{border:1px solid var(--line);background:var(--panel2);color:var(--text);padding:10px 14px;border-radius:8px;cursor:pointer}
+    .btn.primary{background:var(--accent);color:#17120b;border-color:transparent;font-weight:800}
+    .btn:disabled{opacity:.45;cursor:not-allowed}
+    .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+    .tag{display:inline-block;font-size:11px;font-weight:800;padding:4px 7px;border-radius:5px;background:#343b45;color:#cbd2d9}
+    .tag.temp{background:#4a4024;color:#f0d987}
+    .tag.fixed{background:#234130;color:#91deb0}
+    .log{max-height:300px;overflow:auto;background:#111418;border:1px solid var(--line);border-radius:8px;padding:10px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px}
+    .log div{padding:6px 2px;border-bottom:1px solid #242a31}.log div:last-child{border:0}
+    .good{color:var(--good)}.bad{color:var(--bad)}.muted{color:var(--muted)}
+    table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left}th{color:var(--muted);font-size:12px}
+    .empty{padding:34px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:10px}
+    .notice{background:#2a261a;border:1px solid #554922;color:#e9d795;border-radius:8px;padding:12px;margin-bottom:14px}
+
+    .table-wrap{width:100%;overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+    .table-wrap table{min-width:1050px}
+    .forge-slot-wrap{width:100%;border:1px solid var(--line);border-radius:10px;overflow:visible}
+    .forge-slot-wrap table{width:100%;min-width:0;table-layout:fixed}
+    .forge-slot-wrap th:first-child,.forge-slot-wrap td:first-child{width:34%}
+    .forge-slot-wrap th:last-child,.forge-slot-wrap td:last-child{width:66%}
+    .forge-slot-wrap .forge-select{width:100%;min-width:0;max-width:100%}
+    .formula{background:#111418;border:1px solid var(--line);border-radius:8px;padding:12px;margin:8px 0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+    .index-note{font-size:13px;color:var(--muted);line-height:1.55}
+    .rarity{white-space:nowrap}
+    .preview-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+    .small{font-size:12px}
+
+
+    .hand-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+    .hand-card{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px}
+    .hand-card strong{display:block;margin:5px 0}
+    .equip-actions{display:flex;gap:6px;flex-wrap:wrap}
+    .btn.smallbtn{padding:6px 9px;font-size:12px}
+
+
+    .market-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .sell-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+    .sell-row:last-child{border-bottom:0}
+    .sell-meta{font-size:12px;color:var(--muted)}
+    .market-progress{margin-top:10px}
+
+    .save-controls{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+    .save-status{font-size:11px;color:var(--muted);min-width:110px;text-align:right}
+    .dungeon-progress{margin-top:12px}
+    .loot-grid{display:flex;gap:8px;flex-wrap:wrap}
+    .loot-chip{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+    .loot-chip b{margin-left:5px}
+    .status-line{font-size:13px;color:var(--muted);margin-top:10px;line-height:1.45}
+    .btn.danger{border-color:#6e3333;color:#f0a1a1}
+
+
+    .field-label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+    .text-input,.number-input,.equip-select{
+      width:100%;box-sizing:border-box;background:#101318;color:var(--text);
+      border:1px solid var(--line);border-radius:8px;padding:9px 10px;font:inherit
+    }
+    .market-qty{display:flex;align-items:center;gap:6px;min-width:190px;justify-content:flex-end}
+    .market-qty .number-input{width:76px;text-align:center}
+    .roster-equip{margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .version-entry{padding:12px 0;border-bottom:1px solid var(--line)}
+    .version-entry:last-child{border-bottom:0}
+    .version-entry h3{margin:0 0 6px;font-size:15px}
+    .version-entry ul{margin:6px 0 0 18px;padding:0;color:var(--muted);line-height:1.55}
+    .team-compact{display:grid;grid-template-columns:minmax(120px,1fr) 1fr 1fr;gap:8px;align-items:center}
+    .team-compact .stat{min-width:0}
+    .weapon-card-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.weapon-card{border:1px solid var(--line);background:var(--panel2);border-radius:9px;padding:8px;min-width:0}
+    .weapon-card-head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}.weapon-card-title{font-weight:800;font-size:15px;line-height:1.2;overflow-wrap:anywhere}
+    .weapon-card-sub,.weapon-parts,.weapon-picker-title{font-size:12px;color:var(--muted)}.weapon-parts{margin-top:6px;line-height:1.35;overflow-wrap:anywhere}
+    .weapon-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin-top:7px}.weapon-stat{border:1px solid var(--line);border-radius:6px;padding:4px 3px;min-width:0}
+    .weapon-stat span{display:block;color:var(--muted);font-size:10px;font-weight:700;line-height:1.1}.weapon-stat b{display:block;margin-top:1px;font-size:13px;line-height:1.15;overflow-wrap:anywhere}
+    .weapon-diff.good{color:#8fd694}.weapon-diff.bad{color:#ef9a9a}.weapon-diff.same{color:var(--muted)}.weapon-card-actions{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
+    .hand-section{border:1px solid var(--line);border-radius:10px;padding:12px;margin-top:12px}.hand-section-head{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+    .weapon-picker{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+    .roster-character{border:1px solid var(--line);border-radius:12px;padding:14px;background:#171b20;margin-top:12px}
+    .roster-character:first-child{margin-top:0}
+    .team-slot-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    .team-slot{border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--panel2);min-width:0}
+    .team-slot-head{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+    .team-slot-picker{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+    .team-candidate{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+    .team-candidate:last-child{border-bottom:0}
+    .tavern-offer{border:1px solid var(--line);border-radius:10px;padding:14px;background:var(--panel2)}
+
+    @media(max-width:600px){
+      body{font-size:14px}
+      .app{display:block}
+      aside{position:sticky;top:0;z-index:20;padding:8px;background:#101318}
+      .brand{display:flex;justify-content:space-between;align-items:center}
+      nav{gap:5px;padding-bottom:2px;scrollbar-width:thin}
+      nav button{min-height:42px;padding:8px 11px}
+      main{padding:10px}
+      .topbar{gap:10px;margin-bottom:12px}
+      .topbar h1{font-size:20px}
+      .resources{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+      .resources .pill{min-width:0;text-align:center}
+      .save-controls{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr}
+      .save-status{grid-column:1/-1;min-width:0;text-align:center}
+      .card{padding:12px;border-radius:9px}
+      .grid{gap:10px}
+      .statrow{grid-template-columns:1fr 1fr}
+      .stat{padding:9px}
+      .actions{display:grid;grid-template-columns:1fr;gap:8px}
+      .actions .btn{width:100%;min-height:44px}
+      .btn{min-height:40px}
+      .sell-row{align-items:flex-start;flex-direction:column}
+      .market-qty{width:100%;justify-content:stretch;display:grid;grid-template-columns:44px 1fr 44px auto}
+      .market-qty .number-input{width:100%;min-height:42px}
+      .market-qty .btn{min-height:42px}
+      .roster-equip{grid-template-columns:1fr}
+      .team-compact{grid-template-columns:1fr}
+      .team-slot-grid{grid-template-columns:1fr}
+      .team-compact>strong{font-size:16px}
+      .table-wrap{overflow:visible}
+      table{min-width:0}
+      #inventoryRows{font-size:13px}
+      .mobile-stack{border:0;overflow:visible}
+      .mobile-stack table,.mobile-stack thead,.mobile-stack tbody,.mobile-stack tr,.mobile-stack th,.mobile-stack td{display:block;width:100%;box-sizing:border-box;min-width:0}
+      .mobile-stack thead{display:none}
+      .mobile-stack tr{border:1px solid var(--line);border-radius:9px;margin-bottom:10px;overflow:hidden}
+      .mobile-stack td{display:grid;grid-template-columns:minmax(105px,42%) minmax(0,1fr);gap:10px;border:0;border-bottom:1px solid var(--line);padding:9px 10px;overflow-wrap:anywhere}
+      .mobile-stack td:last-child{border-bottom:0}
+      .mobile-stack td::before{content:attr(data-label);font-size:11px;color:var(--muted);font-weight:700}
+      .mobile-stack .btn{width:100%}
+      .weapon-card-list{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .weapon-stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+      .weapon-card-actions{display:grid;grid-template-columns:1fr}
+      .weapon-card-actions .btn,.hand-section-head .btn{width:100%}
+      .weapon-card{padding:6px}
+      .weapon-stat{padding:3px 2px}
+      #marketWeapons .sell-row,#marketMaterials .sell-row{padding:12px 0}
+      .formula{font-size:12px;overflow-wrap:anywhere}
+      select.btn,.forge-select{min-height:42px;max-width:100%}
+      .forge-slot-wrap{overflow:visible}
+      .forge-slot-wrap table{min-width:0;table-layout:fixed}
+      .forge-slot-wrap th,.forge-slot-wrap td{padding:8px 6px}
+      .forge-slot-wrap th:first-child,.forge-slot-wrap td:first-child{width:36%}
+      .forge-slot-wrap th:last-child,.forge-slot-wrap td:last-child{width:64%}
+      .forge-slot-wrap .forge-select{width:100%;min-width:0}
+    }
+
+    @media(max-width:800px){
+      .app{grid-template-columns:1fr}aside{border-right:0;border-bottom:1px solid var(--line);padding:10px}
+      nav{display:flex;overflow:auto}.brand{margin-bottom:8px}nav button{white-space:nowrap;width:auto}
+      main{padding:14px}.span-4,.span-5,.span-6,.span-7,.span-8,.span-12{grid-column:span 12}.topbar{align-items:flex-start;flex-direction:column}.preview-grid{grid-template-columns:1fr}.hand-grid{grid-template-columns:1fr}.market-grid{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <div class="brand">NO BRAINER <small>HTML Prototype v0.12.2</small></div>
+    <nav id="nav">
+      <button data-page="base" class="active">Stützpunkt</button>
+      <button data-page="dungeon">Dungeon</button>
+      <button data-page="tavern">Taverne</button>
+      <button data-page="roster">Kader</button>
+      <button data-page="storage">Lager</button>
+      <button data-page="forge">Schmiede</button>
+      <button data-page="market">Markt</button>
+      <button data-page="index">Index</button>
+    </nav>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div>
+        <h1 id="pageTitle">Stützpunkt</h1>
+        <div class="sub">System-Prototyp auf Basis des GDD v0.1.1</div>
+      </div>
+      <div class="resources">
+        <div class="pill">Geld <b id="gold">0 Nickel</b></div>
+        <div class="pill">Materialien <b id="matCount">0</b></div>
+        <div class="save-controls">
+          <button class="btn smallbtn" onclick="saveGame(true)">Speichern</button>
+          <button class="btn smallbtn danger" onclick="resetSave()">Spielstand zurücksetzen</button>
+          <span id="saveStatus" class="save-status">Noch nicht gespeichert</span>
+        </div>
+      </div>
+    </div>
+
+    <section class="page active" id="base">
+      <div class="grid">
+        <div class="card span-4"><h2>Inn</h2><p class="muted">Kaderkapazität</p><div id="innUpgradeCard"></div></div>
+        <div class="card span-4"><h2>Taverne</h2><p class="muted">Rekrutierung neuer Charaktere.</p><div id="baseTavernSummary"></div><div class="actions"><button class="btn primary" onclick="go('tavern')">Zur Taverne</button></div></div>
+        <div class="card span-4"><h2>Händler</h2><p class="muted">Zufällige Angebote gegen Gold.</p><div class="empty">Rotationslogik noch offen</div></div>
+        <div class="card span-7">
+          <h2>Aktueller Kernkreislauf</h2>
+          <p>Team auswählen → Autodungeon → Beute einsammeln → Schmieden / Verkaufen → Geld → Ausbau.</p>
+          <div class="actions"><button class="btn primary" onclick="go('dungeon')">Zum Dungeon</button></div>
+        </div>
+        <div class="card span-5">
+          <h2>Prototyp-Status</h2>
+          <p><span class="tag fixed">FEST</span> statischer Kampf, 1–4 Charaktere, Materialdrops</p>
+          <p><span class="tag temp">VORLÄUFIG</span> Testwerte für Dungeon-Kampf und Balance</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="tavern">
+      <div class="grid">
+        <div class="card span-7">
+          <h2>Taverne <span class="tag fixed">AKTIV</span></h2>
+          <p class="muted">Vier feste Klassen stehen zur Auswahl: Rekrut, Kämpfer, Bogner und Gelehrter.</p>
+          <div id="tavernOffer"></div>
+        </div>
+        <div class="card span-5">
+          <h2>Rekrutierung & Inn</h2>
+          <div id="tavernCapacity"></div>
+          <p class="status-line">Neue Charaktere starten mit vollen HP und voller Energie, aber ohne Waffe. Alle Klassen dürfen aktuell alle vorhandenen Waffen verwenden.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="dungeon">
+      <div class="grid">
+        <div class="card span-5">
+          <h2>Dungeon 1 <span class="tag temp">TESTBALANCE</span></h2>
+          <p class="muted">Endlose Dungeon-Suche mit zufälligen Begegnungen und globaler Angriffs-Zeitleiste.</p>
+          <div class="statrow">
+            <div class="stat"><span>Gegnerbasis</span><b id="enemyHp">6 Basis-SCH</b></div>
+            <div class="stat"><span>Trefferchance</span><b id="enemyArmor">50 % Basis-TRF</b></div>
+            <div class="stat"><span>Geschwindigkeit</span><b id="enemyDamage">0,80 Basis-GES</b></div>
+            <div class="stat"><span>Energiekosten / Welle</span><b id="energyCost">4 gesamt</b></div>
+            <div class="stat"><span>Wellen</span><b id="runDuration">0 besiegt</b></div>
+          </div>
+          <div id="dungeonRunCard" class="empty" style="margin-top:14px">Automatik angehalten.</div>
+          <div class="actions">
+            <button id="autoDungeonBtn" class="btn primary" onclick="toggleDungeonAuto()">Automatik starten</button>
+            <button id="collectLootBtn" class="btn" onclick="collectDungeonLoot()">Einsammeln</button>
+          </div>
+          <p class="status-line">Die Gruppe durchsucht den Dungeon im Sekundentakt. Pro Suchschritt besteht eine Begegnungschance von 10 %. Energie wird erst bezahlt, wenn tatsächlich Gegner gefunden wurden. Jede vollständig besiegte Welle gibt genau einen Materialwurf pro Gegner.</p>
+          <p class="status-line"><strong>Hinweis:</strong> Nach einem Sieg wird die Beute 1 Sekunde lang eingesammelt; danach beginnt die Suche erneut. Bei einer Niederlage startet das Team mit vollen HP wieder im Suchmodus.</p>
+        </div>
+        <div class="card span-7">
+          <h2>Dungeon-Team</h2>
+          <p class="muted">Bis zu vier Charaktere zuweisen. Derselbe Charakter kann nicht mehrfach eingesetzt werden.</p>
+          <div id="teamCard"></div>
+        </div>
+        <div class="card span-5">
+          <h2>Gesammelte Dungeon-Beute</h2>
+          <p class="muted">Diese Materialien sind noch nicht im Lager und können erst nach „Einsammeln“ geschmiedet oder verkauft werden.</p>
+          <div id="dungeonLoot"></div>
+          <div id="dungeonLootEmpty" class="empty">Noch keine Beute gesammelt.</div>
+        </div>
+        <div class="card span-7">
+          <h2>Expeditionsprotokoll</h2>
+          <div class="log" id="combatLog"><div class="muted">Automatik noch nicht gestartet.</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="roster">
+      <div class="card">
+        <h2>Kader</h2>
+        <p class="muted">Alle angeworbenen Charaktere und ihre persönliche Ausrüstung.</p>
+        <div id="rosterCard"></div>
+      </div>
+    </section>
+
+    <section class="page" id="storage">
+      <div class="grid">
+        <div class="card span-12">
+          <h2>Materiallager</h2>
+          <table>
+            <thead><tr><th>Material</th><th>Kategorie</th><th>Menge</th><th>Wert / Stück</th></tr></thead>
+            <tbody id="inventoryRows"></tbody>
+          </table>
+          <div id="inventoryEmpty" class="empty">Noch keine Materialien gesammelt.</div>
+        </div>
+
+        <div class="card span-12"><h2>Waffenlager</h2><p class="muted">Kompakte Waffenkarten. Kürzel werden im Index erklärt.</p><div id="weaponInventory" class="weapon-card-list"></div><div id="weaponInventoryEmpty" class="empty">Noch keine Waffen vorhanden.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="forge">
+      <div class="grid">
+        <div class="card span-7">
+          <h2>Schmiede <span class="tag fixed">AKTIV</span></h2>
+          <p class="muted">Eine vollständige Waffe wird aus sechs Slots hergestellt. Es werden nur Materialien angezeigt, die aktuell im Lager vorhanden sind.</p>
+
+          <div style="margin:14px 0">
+            <label class="field-label" for="forgeWeaponName">Waffenname</label>
+            <input id="forgeWeaponName" class="text-input" type="text" maxlength="40" placeholder="Leer = Standardname des Waffentyps">
+          </div>
+
+          <div class="statrow">
+            <div class="stat"><span>Waffenform</span>
+              <select id="weaponType" class="btn" style="width:100%;margin-top:6px" onchange="renderForgePreview()">
+                <option value="dagger">Dolch</option>
+                <option value="sword">Einhänder</option>
+              </select>
+            </div>
+            <div class="stat"><span>Herstellungszeit</span><b id="forgeTimePreview">–</b></div>
+            <div class="stat"><span>Waffenwert</span><b id="forgeValuePreview">–</b></div>
+          </div>
+
+          <div style="margin-top:16px" class="forge-slot-wrap">
+            <table>
+              <thead><tr><th>Slot</th><th>Material</th></tr></thead>
+              <tbody>
+                <tr><td>Waffentyp</td><td><select id="slotWeaponType" class="btn forge-select" data-categories="Holz,Metall" onchange="renderForgePreview()"></select></td></tr>
+                <tr><td>Schneide</td><td><select id="slotBlade" class="btn forge-select" data-categories="Metall" onchange="renderForgePreview()"></select></td></tr>
+                <tr><td>Rückseite</td><td><select id="slotBack" class="btn forge-select" data-categories="Metall" onchange="renderForgePreview()"></select></td></tr>
+                <tr><td>Griffform</td><td><select id="slotGripShape" class="btn forge-select" data-categories="Holz" onchange="renderForgePreview()"></select></td></tr>
+                <tr><td>Griffmaterial</td><td><select id="slotGripMaterial" class="btn forge-select" data-categories="Leder" onchange="renderForgePreview()"></select></td></tr>
+                <tr><td>Verstärkungsmaterial</td><td><select id="slotReinforcementMaterial" class="btn forge-select" data-categories="Holz,Metall,Leder" onchange="renderForgePreview()"></select></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="preview-grid">
+            <div class="stat"><span>Schaden / Treffer</span><b id="forgeDamagePreview">–</b><span id="forgeDamageBaseInfo" class="small muted"></span></div>
+            <div class="stat"><span>Angriffsgeschw.</span><b id="forgeSpeedPreview">–</b><span id="forgeSpeedBaseInfo" class="small muted"></span></div>
+            <div class="stat"><span>Trefferchance</span><b id="forgeHitPreview">–</b></div>
+            <div class="stat"><span>Erwarteter Rohschaden</span><b id="forgeRawPreview">–</b></div>
+            <div class="stat"><span>Durchschlag</span><b id="forgePenPreview">–</b></div>
+            <div class="stat"><span>Seltenheitsfaktor</span><b id="forgeRarityPreview">–</b></div>
+          </div>
+          <p id="forgeReinforcementPreview" class="status-line">Verstärkungseffekt: –</p>
+
+          <div class="actions">
+            <button id="forgeStartBtn" class="btn primary" onclick="startForgeJob()">Waffe herstellen</button>
+            <button class="btn" onclick="go('index')">Werte & Formeln öffnen</button>
+          </div>
+        </div>
+
+        <div class="card span-5">
+          <h2>Produktion & Ausbau</h2>
+          <div id="forgeUpgradeCard"></div>
+          <h3 style="margin-top:18px">Herstellungsplätze</h3>
+          <div id="forgeJobCard" class="empty">Kein aktiver Schmiedeauftrag.</div>
+          <h3 style="margin-top:18px">Warteschlange</h3>
+          <div id="forgeQueueCard" class="empty">Warteschlange leer.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="market">
+      <div class="grid">
+        <div class="card span-12">
+          <h2>Verkaufsplätze & Ausbau</h2>
+          <p class="muted">Mehr Verkaufsplätze erhöhen den parallelen Durchsatz. Warteschlangenplätze erhöhen die Automatisierung.</p>
+          <div id="marketUpgradeCard"></div>
+          <h3 style="margin-top:18px">Aktive Verkäufe</h3><div id="marketJobCard" class="empty">Kein aktiver Verkauf.</div>
+          <h3 style="margin-top:18px">Warteschlange</h3><div id="marketQueueCard" class="empty">Warteschlange leer.</div>
+        </div>
+        <div class="card span-6">
+          <h2>Materialien verkaufen</h2>
+          <div id="marketMaterials"></div>
+          <div id="marketMaterialsEmpty" class="empty">Keine Materialien im Lager.</div>
+        </div>
+        <div class="card span-6">
+          <h2>Waffen verkaufen</h2>
+          <div id="marketWeapons"></div>
+          <div id="marketWeaponsEmpty" class="empty">Keine verkaufbaren Waffen im Lager.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="index">
+      <div class="grid">
+        <div class="card span-12">
+          <h2>Materialindex – Dungeon 1</h2>
+          <p class="index-note">Alle aktuell erreichbaren Materialien und ihre Waffenwerte. „–“ bedeutet, dass das Material für diesen Wert keine Funktion besitzt.</p>
+          <div class="table-wrap mobile-stack">
+            <table>
+              <thead>
+                <tr>
+                  <th>Materialtyp</th><th>Material</th><th>Seltenheit</th><th>Basisschaden</th><th>Basisgeschw.</th>
+                  <th>Schaden (M)</th><th>Durchschlag</th><th>Ang.-geschw.</th><th>Trefferchance</th><th>Verstärkungseffekt</th><th>Dungeon 1: Chance in Kategorie</th>
+                </tr>
+              </thead>
+              <tbody id="materialIndexRows"></tbody>
+            </table>
+          </div>
+          <p class="index-note">Dungeon 1 verwendet jetzt eine eigene Loot-Tabelle: Erfolg → 1–3 Drops → Materialkategorie → Material innerhalb der Kategorie. Holz, Metall und Leder werden aktuell jeweils mit 1/3 Wahrscheinlichkeit gewählt. Die angezeigte Materialchance gilt nur innerhalb der gewählten Kategorie und nur für Dungeon 1.</p>
+          <div class="formula">Dungeon 1: Erfolg → 1–3 Drops → Kategorie (Holz / Metall / Leder je 33,33 %) → Materialchance innerhalb der Kategorie</div>
+          <p class="index-note">Die besseren Materialien wurden gegenüber der bisherigen Verteilung deutlich reduziert. Die Dropchancen sind ab jetzt Eigenschaften des jeweiligen Dungeons und keine globalen Materialwerte.</p>
+        </div>
+
+        <div class="card span-12">
+          <h2>Waffenslots & Funktion</h2>
+          <div class="table-wrap mobile-stack">
+            <table>
+              <thead><tr><th>Slot</th><th>Materialtyp</th><th>Beeinflusst</th><th>Bedeutung</th></tr></thead>
+              <tbody>
+                <tr><td>1. Waffentyp</td><td>Metall oder Holz</td><td>Basisschaden + Basisgeschwindigkeit</td><td>Absolute Grundwerte der Waffe.</td></tr>
+                <tr><td>2. Schneide</td><td>Metall</td><td>Schaden</td><td>Multiplikator auf den Basisschaden.</td></tr>
+                <tr><td>3. Rückseite</td><td>Metall</td><td>Durchschlag</td><td>Ignorierter Anteil der gegnerischen Rüstung.</td></tr>
+                <tr><td>4. Griffform</td><td>Holz</td><td>Angriffsgeschwindigkeit</td><td>Multiplikator auf die Basisgeschwindigkeit.</td></tr>
+                <tr><td>5. Griffmaterial</td><td>Leder</td><td>Trefferwahrscheinlichkeit</td><td>Prozentwert.</td></tr>
+                <tr><td>6. Verstärkungsmaterial</td><td>Alle Materialien</td><td>Spezialeffekt</td><td>Kann GES, TRF oder DS positiv oder negativ verändern. Nicht jedes Material besitzt einen Effekt.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card span-12">
+          <h2>Klassen</h2>
+          <p class="index-note">Vier feste Klassen sind rekrutierbar. Der Rekrut bleibt der neutrale Balance-Nullpunkt; Kämpfer, Bogner und Gelehrter bilden Nahkampf, Fernkampf und Magie ab. Entfernung ist ein versteckter Zielgewichtungswert und wird nicht im Kader angezeigt.</p>
+          <div class="mobile-stack"><table><thead><tr><th>Klasse</th><th>HP</th><th>EN</th><th>RÜS</th><th>AUS</th><th>STÄ</th><th>PRÄ</th><th>EN-Reg.</th></tr></thead><tbody><tr><td>Rekrut</td><td>30</td><td>100</td><td>2</td><td>10 %</td><td>1,00</td><td>1,00</td><td>5/min</td></tr><tr><td>Kämpfer</td><td>35</td><td>100</td><td>3</td><td>8 %</td><td>1,10</td><td>0,95</td><td>5/min</td></tr><tr><td>Bogner</td><td>26</td><td>100</td><td>1</td><td>15 %</td><td>0,95</td><td>1,15</td><td>5/min</td></tr><tr><td>Gelehrter</td><td>22</td><td>100</td><td>0</td><td>5 %</td><td>1,15</td><td>1,10</td><td>5/min</td></tr></tbody></table></div>
+          <p class="index-note">Versteckte Entfernung: Kämpfer 1 · Rekrut 2 · Bogner 3 · Gelehrter 4. Zielgewicht = 1 / Entfernung.</p>
+          <h3>Basisklasse: Rekrut</h3>
+          <p class="index-note">Der Rekrut ist der feste Balance-Nullpunkt für das Klassensystem.</p>
+          <div class="table-wrap mobile-stack">
+            <table>
+              <thead><tr><th>Wert</th><th>Rekrut</th><th>Funktion</th></tr></thead>
+              <tbody>
+                <tr><td>Lebenspunkte</td><td>30</td><td>Maximale Lebenspunkte.</td></tr>
+                <tr><td>Energie</td><td>100</td><td>Maximale Energie.</td></tr>
+                <tr><td>Rüstung</td><td>2</td><td>Reduziert eingehenden Schaden.</td></tr>
+                <tr><td>Ausweichchance</td><td>10 %</td><td>Reduziert den erwarteten eingehenden Schaden.</td></tr>
+                <tr><td>Stärke</td><td>1,00</td><td>Multiplikator auf den Schaden pro Treffer der Waffe.</td></tr>
+                <tr><td>Präzision</td><td>1,00</td><td>Multiplikator auf die Trefferchance der Waffe.</td></tr>
+                <tr><td>Energie-Regeneration</td><td>5 / Min.</td><td>Regeneriert nur, wenn kein Dungeonlauf aktiv ist.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card span-7">
+          <h2>Aktuelle Schadensberechnungen</h2>
+          <table style="margin-bottom:12px">
+            <thead><tr><th>Waffentyp</th><th>Schadensfaktor</th><th>Geschwindigkeitsfaktor</th></tr></thead>
+            <tbody>
+              <tr><td>Dolch</td><td>× 0,6</td><td>× 1,4</td></tr>
+              <tr><td>Einhänder</td><td>× 1,0</td><td>× 1,0</td></tr>
+            </tbody>
+          </table>
+          <div class="formula">Waffen-Basisschaden = Material-Basisschaden × Waffentyp-Schadensfaktor</div>
+          <div class="formula">Waffen-Basisgeschwindigkeit = Material-Basisgeschwindigkeit × Waffentyp-Geschwindigkeitsfaktor</div>
+          <div class="formula">Schaden pro Treffer = Waffen-Basisschaden × Schneiden-Multiplikator</div>
+          <div class="formula">Angriffsgeschwindigkeit = Basisgeschwindigkeit × Griffform-Multiplikator × Verstärkungs-GES-Faktor</div>
+          <div class="formula">Trefferwahrscheinlichkeit = Griffmaterial-TRF + Verstärkungs-TRF in Prozentpunkten</div>
+          <div class="formula">Durchschlag = Rückseiten-DS + Verstärkungs-DS in Prozentpunkten</div>
+          <div class="formula">Waffen-Rohschaden = Schaden pro Treffer × Angriffsgeschwindigkeit × Trefferwahrscheinlichkeit</div>
+          <div class="formula">Charakter-Schaden pro Treffer = Waffen-Schaden pro Treffer × Stärke</div>
+          <div class="formula">Charakter-Trefferchance = Waffen-Trefferchance × Präzision</div>
+          <div class="formula">Charakter-Rohschaden pro Waffe = Charakter-Schaden pro Treffer × Angriffsgeschwindigkeit × Charakter-Trefferchance</div>
+          <div class="formula">Effektive Rüstung = Gegner-Rüstung × (1 − Durchschlag)</div>
+          <div class="formula">Schadensreduktion = Effektive Rüstung ÷ (Effektive Rüstung + 100)</div>
+          <div class="formula">Schaden nach Rüstung = Charakter-Rohschaden × (1 − Schadensreduktion)</div>
+          <p class="index-note">Trefferwahrscheinlichkeit und Durchschlag werden intern als Dezimalwert gerechnet: 75 % = 0,75 und 20 % = 0,20.</p>
+        </div>
+
+        <div class="card span-5">
+          <h2>Beispielrechnung</h2>
+          <table>
+            <tbody>
+              <tr><th>Material-Basisschaden (Kupfer)</th><td>10</td></tr>
+              <tr><th>Waffenform Einhänder</th><td>× 1,0 → 10</td></tr>
+              <tr><th>Kupfer-Schneide</th><td>× 1,2 → 12</td></tr>
+              <tr><th>Material-Basisgeschwindigkeit</th><td>1,0</td></tr>
+              <tr><th>Waffenform Einhänder</th><td>× 1,0 → 1,0</td></tr>
+              <tr><th>Fichten-Griffform</th><td>× 1,2 → 1,2</td></tr>
+              <tr><th>Fuchs-Leder</th><td>75 % → 0,75</td></tr>
+              <tr><th>Kupfer-Verstärkung</th><td>+10 Prozentpunkte Durchschlag</td></tr>
+              <tr><th>Erwarteter Rohschaden</th><td>12 × 1,2 × 0,75 = 10,80</td></tr>
+              <tr><th>Kupfer-Rückseite + Verstärkung</th><td>20 % + 10 % = 30 % Durchschlag</td></tr>
+              <tr><th>100 Rüstung</th><td>→ 70 effektive Rüstung</td></tr>
+              <tr><th>Rüstungsreduktion</th><td>70 / 170 = 41,18 %</td></tr>
+              <tr><th>Schaden nach Rüstung</th><td>≈ 6,35</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card span-12">
+          <h2>Seltenheit, Waffenwert & Herstellungsdauer</h2>
+          <p class="index-note">Die Waffenseltenheit richtet sich jetzt immer nach dem schwächsten der sechs verwendeten Materialien. Eine Waffe erreicht S2 also nur, wenn alle sechs Materialien mindestens S2 besitzen.</p>
+          <div class="formula">Waffen-Seltenheitsfaktor = niedrigste Materialseltenheit aller 6 Slots</div>
+          <div class="formula">Waffenwert = 100 Nickel × Waffen-Seltenheitsfaktor</div>
+          <div class="formula">Herstellungszeit = 30 s × Waffenform-Faktor × Waffen-Seltenheitsfaktor</div>
+          <p class="index-note">Beispiele: mindestens ein S1-Material → Faktor 1 · sechs Materialien mit mindestens S2 → Faktor 2. Waffenform-Faktor: Dolch = 0,5 · Einhänder = 1,0.</p>
+          <div class="formula">Rekrut: Energie-Regeneration = 5 Energie pro Minute, maximal bis 100 Energie; nur außerhalb eines aktiven Dungeonlaufs</div>
+          <div class="formula">Materialwert pro Stück = 10 Nickel × Material-Verkaufsfaktor</div>
+          <div class="formula">Material-Verkaufserlös = Materialwert pro Stück × Verkaufsmenge</div>
+          <div class="formula">Material-Verkaufszeit = 30 s × Material-Verkaufsfaktor × Verkaufsmenge</div>
+          <p class="index-note">Der Material-Verkaufsfaktor bleibt vorerst auf der bisherigen Kurve: S1 = ×1,0 · S2 = ×1,1 · S3 = ×1,2 · S4 = ×1,4 · S5 = ×1,8 · S6 = ×2,6.</p>
+          <div class="formula">Waffen-Verkaufserlös = berechneter Waffenwert</div>
+          <div class="formula">Waffen-Verkaufszeit = 30 s × Seltenheitsfaktor der Waffe</div>
+          <div class="formula">Dungeonlauf = 30 s · Energiekosten je Charakter = aufrunden(4 ÷ Anzahl aktiver Charaktere)</div>
+          <div class="formula">Dungeon-Skalierung: Gegner-HP = 8 × aktive Charaktere · Gegnerschaden = 12 × aktive Charaktere · Gegner-Rüstung bleibt 20</div>
+          <div class="formula">Eingehender Schaden je Charakter = max(0, zugewiesener Rohschaden × (1 − Ausweichen) − Rüstung)</div>
+          <div class="formula">Kann ein Charakter seinen Schadensanteil nicht vollständig aufnehmen, wird der überschüssige Rohschaden gleichmäßig auf die verbleibenden Überlebenden verteilt.</div>
+          <div class="formula">Offensive bei zwei Waffen = Schaden nach Rüstung linke Hand + Schaden nach Rüstung rechte Hand</div>
+          <div class="formula">Überlebensanteil = min(1, verbleibende HP ÷ eingehender Schaden)</div>
+          <div class="formula">Tatsächlicher Offensivbeitrag = theoretischer Offensivbeitrag × Überlebensanteil</div>
+          <div class="formula">Dungeon-Erfolg = Summe der tatsächlichen Offensivbeiträge ≥ Gegner-HP</div>
+          <div class="formula">Währung: 100 Nickel = 1 Bronze · 100 Bronze = 1 Silber · 100 Silber = 1 Gold</div>
+          <p class="index-note">Dungeon-Beute wird zunächst im Dungeon gesammelt und gelangt erst über „Einsammeln“ ins Lager. Ein abgebrochener Verkauf gibt die reservierten Gegenstände vollständig zurück und zahlt kein Geld aus.</p>
+        </div>
+
+        <div class="card span-12"><h2>Kürzel-Legende</h2><p class="index-note">Im Spiel werden Kürzel verwendet; der Index bleibt ausgeschrieben.</p><div class="table-wrap mobile-stack"><table><thead><tr><th>Kürzel</th><th>Ausgeschrieben</th></tr></thead><tbody>
+<tr><td>SCH</td><td>Schaden pro Treffer</td></tr><tr><td>GES</td><td>Angriffsgeschwindigkeit</td></tr><tr><td>TRF</td><td>Trefferchance</td></tr><tr><td>DS</td><td>Durchschlag</td></tr><tr><td>ROH</td><td>Erwarteter Rohschaden</td></tr><tr><td>RÜS</td><td>Rüstung</td></tr><tr><td>AUS</td><td>Ausweichchance</td></tr><tr><td>HP</td><td>Lebenspunkte</td></tr><tr><td>EN</td><td>Energie</td></tr><tr><td>STÄ</td><td>Stärke</td></tr><tr><td>PRÄ</td><td>Präzision</td></tr><tr><td>WERT</td><td>Verkaufs-/Waffenwert</td></tr>
+</tbody></table></div></div><div class="card span-12">
+          <h2>Taverne & Dungeon-Team</h2>
+          <p class="index-note">Die erste Tavernenversion verwendet ausschließlich feste Rekruten ohne Wertevarianz. Neue Rekruten besitzen keine Startwaffe.</p>
+          <div class="formula">Rekrutierungskosten = 200 Nickel × 1,75^(bereits zusätzlich angeworbene Rekruten)</div>
+          <div class="formula">Dungeon-Team = maximal 4 unterschiedliche Charaktere; Doppelzuweisung ist nicht erlaubt.</div>
+          <p class="index-note">Beim manuellen Start einer neuen Expedition beginnen die ausgewählten Charaktere mit vollen HP. Nach einem erfolgreichen Lauf machen nur Überlebende weiter. Nach einem Fehlschlag startet die nächste automatische Wiederholung wieder mit dem vollständig zurückgesetzten ursprünglich ausgewählten Team.</p>
+        </div>
+        <div class="card span-12">
+          <h2>Gebäude-Upgrades</h2>
+          <div class="formula">Upgrade-Kosten = Basiskosten × Wachstumsfaktor^(bereits gekaufte Upgrades)</div>
+          <div class="table-wrap mobile-stack"><table><thead><tr><th>Upgrade</th><th>Start</th><th>Basiskosten</th><th>Wachstum</th><th>Maximum</th></tr></thead><tbody>
+          <tr><td>Inn – Kaderplätze</td><td>2</td><td>5 Bronze</td><td>×2,0</td><td>10</td></tr>
+          <tr><td>Schmiede – Herstellungsplätze</td><td>1</td><td>10 Bronze</td><td>×3,0</td><td>5</td></tr>
+          <tr><td>Schmiede – Warteschlange</td><td>1</td><td>2 Bronze</td><td>×1,75</td><td>10</td></tr>
+          <tr><td>Markt – Verkaufsplätze</td><td>1</td><td>10 Bronze</td><td>×3,0</td><td>5</td></tr>
+          <tr><td>Markt – Warteschlange</td><td>1</td><td>2 Bronze</td><td>×1,75</td><td>10</td></tr>
+          </tbody></table></div>
+          <p class="muted small">Warteschlangenaufträge reservieren Materialien beziehungsweise Waren sofort. Freie aktive Plätze ziehen automatisch den ältesten Auftrag nach.</p>
+        </div>
+        <div class="card span-12">
+          <h2>Versionshinweise</h2>
+          <p class="index-note">Dieser Bereich wird ab v0.6 bei jeder neuen HTML-Version mit den relevanten Änderungen ergänzt.</p>
+
+          <div class="version-entry"><h3>v0.12.2</h3><ul><li>Dungeon-1-Gegner-HP von ×1,5 auf ×2,0 erhöht.</li><li>EN-Regeneration während der gesamten aktiven Dungeon-Automatik deaktiviert – auch während Suche und Beuteeinsammeln. Energie regeneriert erst wieder, wenn die Dungeon-Automatik angehalten ist.</li></ul>
+          <div class="version-entry"><h3>v0.12.1</h3><ul><li>Dungeon-Suche eingeführt: alle 1 Sekunde besteht eine Begegnungschance von 10 %.</li><li>Energie wird erst beim tatsächlichen Start einer gefundenen Gegnerwelle bezahlt.</li><li>Dungeon-1-Gegner erhalten ×1,5 HP; die übrigen Gegnerbasiswerte bleiben unverändert.</li><li>Nach vollständigem Wellensieg dauert das Einsammeln der Beute 1 Sekunde; erst danach werden die Materialwürfe gutgeschrieben und die Suche beginnt erneut.</li><li>Nach Niederlage startet das Team mit vollen HP wieder im Suchmodus. Kein Pechschutz für Begegnungen.</li></ul>
+          </div>
+          <div class="version-entry"><h3>v0.12</h3><ul><li>Vier rekrutierbare Klassen umgesetzt: Rekrut, Kämpfer, Bogner und Gelehrter mit den festgelegten Basiswerten.</li><li>Dungeon vollständig auf endlose Echtzeit-Wellen mit globaler Angriffs-Zeitleiste umgestellt.</li><li>Jede Waffe besitzt einen eigenen Angriffspunkt; unbewaffnete Charaktere verwenden den schwachen Faustangriff SCH 1 / GES 1,0 / TRF 50 % / DS 0 %.</li><li>Entfernungsbasierte Zielwahl, echte Treffer- und Ausweichwürfe, teamgrößenabhängige Gegnerzahl sowie ein Materialwurf pro Gegner bei vollständigem Wellensieg umgesetzt.</li><li>Dungeon 1 nutzt Gegnerbasis SCH 6 / GES 0,80 / TRF 50 % / DS 0 % und Klassenverteilung 55/20/15/10.</li><li>Besiegte Wellen werden dauerhaft gezählt und im Dungeon angezeigt.</li></ul>
+<h3>v0.11.3</h3><ul>
+<li>Trefferchance der Leder neu gestaffelt: Lederfetzen 50 %, Hasen-Leder 55 %, Fuchs-Leder 60 %.</li>
+<li>Die Verstärkungseffekte bleiben unverändert: Hasen-Leder +5 Prozentpunkte TRF, Fuchs-Leder +10 Prozentpunkte TRF.</li>
+<li>Damit liegt die aktuell maximale Waffen-Trefferchance bei 70 % statt 85 %.</li>
+</ul></div>
+          <div class="version-entry"><h3>v0.11.2</h3><ul>
+<li>Schmiede-UI repariert: Nach Abschluss eines Herstellungsauftrags wird der Herstellungsbutton sofort neu bewertet und bei freier Kapazität direkt wieder freigegeben. Ein Verlassen und erneutes Öffnen der Schmiede ist nicht mehr nötig.</li>
+<li>Die Aktualisierung erfolgt nur bei einem tatsächlich abgeschlossenen Auftrag, damit die Material-Dropdowns während der Auswahl nicht durch den 250-ms-Spiel-Takt ständig neu aufgebaut werden.</li>
+<li>Die gleiche veraltete Kapazitätsanzeige im Markt wurde vorsorglich mit behoben; Verkaufsbuttons und Geldanzeige aktualisieren sich nach einem abgeschlossenen Verkauf sofort.</li>
+</ul></div>
+          <div class="version-entry"><h3>v0.11.1</h3><ul>
+<li>In allen Waffenkarten wird unter Name, Waffentyp und Seltenheit jetzt zusätzlich der Effekt des Verstärkungsmaterials angezeigt, sofern ein Zusatzeffekt vorhanden ist.</li>
+<li>Dadurch ist direkt sichtbar, ob eine Waffe z. B. +10 % GES, +10 Prozentpunkte DS oder +10 Prozentpunkte TRF mitbringt.</li>
+</ul></div>
+          <div class="version-entry"><h3>v0.11</h3><ul>
+<li>Hauptmaterial durch Verstärkungsmaterial ersetzt; alle vorhandenen Materialien sind in diesem Slot zulässig.</li>
+<li>Verstärkungseffekte ergänzt: Morsche Fichte −5 Prozentpunkte DS, Tanne +10 % GES, Kupfer +10 Prozentpunkte DS, Aluminium +10 % GES, Hasen-Leder +5 Prozentpunkte TRF und Fuchs-Leder +10 Prozentpunkte TRF. Fichte, Zinn und Lederfetzen besitzen aktuell keinen Verstärkungseffekt.</li>
+<li>Basisgeschwindigkeiten angepasst: Morsche Fichte 1,1 · Fichte 0,9 · Zinn 0,8.</li>
+<li>Alter Hauptmaterial-Schadensmultiplikator vollständig aus der Waffenberechnung entfernt.</li>
+<li>Waffen-Seltenheitsfaktor wird durch die niedrigste Seltenheit aller sechs Materialien bestimmt: S1 = ×1, S2 = ×2 usw.</li>
+<li>Bestehende gefertigte Waffen und Schmiedeaufträge werden beim Laden auf die neuen Slot-, Kampf- und Seltenheitsregeln migriert.</li>
+<li>Start-Einhänder wird automatisch aus der schwächsten aktuell möglichen Einhänder-Kombination erzeugt.</li>
+<li>Speicherformat auf Version 6 erweitert.</li>
+</ul></div>
+          <div class="version-entry"><h3>v0.10.1</h3><ul>
+<li>Dungeon-Automatik bei komplettem Teamtod geändert: Sie bleibt aktiv; das ursprüngliche Team startet den nächsten Versuch mit vollen HP. Energie wird nicht aufgefüllt.</li>
+<li>Material-/Bauteilzeile WT, SN, RS, GF, GM und HM aus allen Waffenkarten entfernt. Die Bauteildaten bleiben intern gespeichert.</li>
+<li>Nicht mehr verwendete Bauteil-Kürzel aus der Index-Kürzelliste entfernt.</li>
+</ul></div>
+          <div class="version-entry"><h3>v0.10</h3><ul>
+<li>Taverne aktiviert: Es kann ausschließlich der feste Rekrut ohne Varianz angeworben werden; Startpreis 2 Bronze, danach Kostenwachstum ×1,75.</li>
+<li>Kader auf mehrere Charaktere umgestellt. Neue Rekruten starten mit vollen HP/EN und ohne Waffe.</li>
+<li>Dungeon besitzt vier frei belegbare Teamplätze; Charaktere können nicht doppelt zugewiesen werden und auch der Start-Rekrut ist entfernbar.</li>
+<li>Energiekosten je Charakter werden mit aufrunden(4 ÷ Teamgröße) berechnet: 4 / 2 / 2 / 1 EN bei 1 / 2 / 3 / 4 Charakteren.</li>
+<li>Dungeon-HP und Gegnerschaden skalieren linear mit der aktiven Teamgröße; Gegner-Rüstung bleibt unverändert.</li>
+<li>Mehrcharakter-Schadensverteilung mit Weitergabe nicht absorbierten Schadens sowie Überlebensanteil für die Offensive ergänzt.</li>
+<li>Start-Einhänder auf SCH 7,7 · GES 1,0 · TRF 50 % · DS 10 % · ROH 3,85 reduziert.</li>
+<li>Speicherformat auf Version 5 erweitert; bestehende Ein-Charakter-Spielstände werden migriert.</li>
+</ul></div>
+          <div class="version-entry"><h3>v0.9</h3><ul><li>Gebäude-Upgrades für Inn, Schmiede und Markt ergänzt.</li><li>Schmiede: parallele Herstellungsplätze plus automatische Warteschlange.</li><li>Markt: parallele Verkaufsplätze plus automatische Warteschlange.</li><li>Inn startet mit 2 Kaderplätzen; jeder Ausbau gibt +1 Platz.</li><li>Exponentielle Upgrade-Kosten und Prototyp-Maxima ergänzt.</li></ul></div>
+          <div class="version-entry"><h3>v0.8.2</h3><ul>
+<li>Energie-Regeneration korrigiert: Sie läuft nur noch, wenn kein Dungeonlauf aktiv ist.</li>
+<li>Während eines Dungeonlaufs wird keine Regeneration angesammelt und später nachträglich gutgeschrieben.</li>
+<li>Index und Rekrutenbeschreibung wurden an diese Regel angepasst.</li>
+</ul></div>
+          <div class="version-entry"><h3>v0.8.1</h3><ul>
+<li>Reparatur der Timer-Logik: Die beim Klassen-Umbau versehentlich entfernte Hilfsfunktion <code>getMaterialsForCategories()</code> wurde wiederhergestellt.</li>
+<li>Der erste vollständige Render kann damit wieder ohne ReferenceError durchlaufen; Schmiede, Dungeon, Markt und Energie aktualisieren wieder regulär.</li>
+<li>Zusätzliche Absicherung: Der zentrale 250-ms-Spiel-Takt wird jetzt vor dem ersten vollständigen UI-Render registriert, damit ein zukünftiger Darstellungsfehler die gesamte Zeitlogik nicht erneut deaktiviert.</li>
+</ul></div>
+          <div class="version-entry"><h3>v0.8</h3><ul>
+<li>Die bisherige neutrale Testfigur wurde formal zur Basisklasse <strong>Rekrut</strong>.</li>
+<li>Feste Rekrutenwerte definiert: 30 HP, 100 EN, 2 Rüstung, 10 % Ausweichen, Stärke 1,00, Präzision 1,00 und 5 EN/Min. Regeneration.</li>
+<li>Stärke und Präzision fließen jetzt tatsächlich in die Waffenberechnung des Charakters ein. Der Rekrut bleibt mit 1,00 / 1,00 der neutrale Balance-Nullpunkt.</li>
+<li>Bestehende Spielstände mit der alten neutralen Testfigur werden automatisch auf die Rekrutenklasse migriert.</li>
+<li>Kader und Index wurden um Klasse, Stärke, Präzision und die neuen Charakter-Waffenformeln ergänzt.</li>
+</ul></div>
+          <div class="version-entry"><h3>v0.7.4</h3><ul>
+<li>Schriftgrößen der Waffenkarten wieder auf den Stand vor v0.7.3 zurückgesetzt.</li>
+<li>Die kompakte 2-Spalten-Aufteilung mit zwei Waffen nebeneinander sowie das 3 × 2 Werte-Raster bleiben unverändert erhalten.</li>
+</ul></div>
+          <div class="version-entry"><h3>v0.7.3</h3><ul>
+<li>Waffenlisten im Lager und in der Waffenauswahl werden jetzt zweispaltig dargestellt: zwei Waffen nebeneinander.</li>
+<li>Die sechs Waffenwerte bleiben pro Karte als 3 × 2 Raster erhalten: SCH / GES / TRF sowie DS / ROH / WERT.</li>
+<li>Waffenkarten, Materialzeilen und Wertefelder wurden deutlich kompakter gestaltet, damit zwei vollständige Karten auch auf kleinen Handybildschirmen übersichtlich bleiben.</li>
+</ul></div>
+          <div class="version-entry"><h3>v0.7.2</h3><ul>
+<li>Reparatur der zentralen Timer-Aktualisierung: die beim Waffeninventar-Umbau versehentlich entfernte Hilfsfunktion <code>displayVal()</code> wurde wiederhergestellt.</li>
+<li>Dadurch kann der initiale Gesamt-Render wieder vollständig durchlaufen und der 250-ms-Aktualisierungstakt für Dungeon, Schmiede, Markt und Energie wird wieder registriert.</li>
+<li>Erklärt und behebt den beobachteten Zustand, dass beim Laden einmal Aktionen ausgeführt wurden, danach aber alle Timer stehen blieben.</li>
+</ul></div>
+          <div class="version-entry"><h3>v0.7.1</h3><ul>
+<li>Reparatur der Dungeon-Automatik: Abgelaufene Läufe werden zuverlässig abgeschlossen.</li>
+<li>Bei weiterhin aktiver Automatik und ausreichender Energie wird der nächste Lauf unmittelbar gestartet.</li>
+<li>Zusätzliche Absicherung gegen einen dauerhaft bei 0 s verbleibend hängenden Dungeonlauf.</li>
+</ul></div>
+          <div class="version-entry"><h3>v0.7</h3><ul><li>Waffenlager auf vertikale Waffenkarten umgestellt.</li><li>Kürzel-Legende im Index ergänzt.</li><li>Kader-Waffenwechsel mit aufklappbarer Kartenauswahl und direktem Wertevergleich neu gestaltet.</li><li>AUSGERÜSTET / ANDERE HAND sowie Hand leeren ergänzt.</li></ul></div>
+          <div class="version-entry">
+            <h3>v0.6.3</h3>
+            <ul>
+              <li>Die drei gezeigten mobilen Darstellungsfehler in Lager und Index wurden behoben. Breite Tabellen werden auf schmalen Displays jetzt als lesbare Karten dargestellt.</li>
+              <li>Dungeon-Automatik beendet sich bei Energiemangel vollständig und muss nach der Regeneration manuell neu gestartet werden.</li>
+            </ul>
+          </div>
+          <div class="version-entry">
+            <h3>v0.6.2</h3>
+            <ul>
+              <li>Marktzeiten werden jetzt in Stunden, Minuten und Sekunden angezeigt.</li>
+              <li>Kader-Waffenauswahl repariert: geöffnete Auswahlfelder werden nicht mehr durch das automatische UI-Refresh sofort geschlossen.</li>
+            </ul>
+          </div>
+          <div class="version-entry">
+            <h3>v0.6.1</h3>
+            <ul>
+              <li>Horizontale Scrollbar in der Schmiede entfernt; die Materialauswahl passt sich jetzt vollständig an die verfügbare Breite an.</li>
+            </ul>
+          </div>
+          <div class="version-entry">
+            <h3>v0.6</h3>
+            <ul>
+              <li>Aktives Team im Dungeon auf Charaktername, HP und Energie reduziert.</li>
+              <li>Waffen können jetzt zusätzlich direkt im Kader für linke und rechte Hand ausgerüstet werden.</li>
+              <li>Materialverkauf unterstützt frei wählbare Stückzahlen; Zeit und Erlös skalieren linear mit der Menge.</li>
+              <li>Eigener Waffenname kann vor Beginn des Schmiedeauftrags vergeben werden.</li>
+              <li>Index um die aktuell implementierten Berechnungsregeln ergänzt.</li>
+              <li>Hochformat-/Handy-Layout für schmale Displays erweitert.</li>
+            </ul>
+          </div>
+          <div class="version-entry">
+            <h3>v0.5</h3>
+            <ul>
+              <li>30-Sekunden-Autodungeon, 4 Energie Gesamtkosten pro Lauf und 5 Energie Regeneration pro Minute.</li>
+              <li>Separater Dungeon-Beutevorrat mit „Einsammeln“.</li>
+              <li>Dungeon-spezifisches Kategorie-Lootsystem und persistenter Browser-Spielstand.</li>
+              <li>Verkaufsansicht vereinfacht und Materialwert im Lager ergänzt.</li>
+            </ul>
+          </div>
+          <div class="version-entry">
+            <h3>v0.4.1</h3>
+            <ul><li>Waffenform-Multiplikatoren ergänzt: Dolch ×0,6 Schaden / ×1,4 Geschwindigkeit; Einhänder ×1,0 / ×1,0.</li></ul>
+          </div>
+          <div class="version-entry">
+            <h3>v0.4</h3>
+            <ul><li>Erstes Verkaufssystem für Waffen und Materialien sowie automatische Währungsanzeige.</li></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+const CONFIG = {
+  dungeon: {
+    id:1,
+    energyCost:4,
+    enemyBase:{damage:6,speed:0.8,hitChance:0.50,penetration:0},
+    enemyMultipliers:{hp:2.0,armor:1,dodge:1,damage:1,speed:1,hitChance:1,penetration:1},
+    encounterChance:0.10,
+    searchStepMs:1000,
+    lootCollectMs:1000,
+    enemyClassWeights:{recruit:55,fighter:20,archer:15,scholar:10},
+    enemyCountWeights:{
+      1:[70,20,8,2],
+      2:[20,60,15,5],
+      3:[10,20,60,10],
+      4:[5,10,20,65]
+    }
+  },
+  energyRegenPerMinute:5,
+  market:{baseSeconds:30,materialBaseNickel:10},
+  tavern:{recruitBaseNickel:200,recruitGrowth:1.75},
+  upgrades:{
+    inn:{baseCostNickel:500,growth:2.0,startCapacity:2,maxCapacity:10},
+    forgeSlots:{baseCostNickel:1000,growth:3.0,start:1,max:5},
+    forgeQueue:{baseCostNickel:200,growth:1.75,start:1,max:10},
+    marketSlots:{baseCostNickel:1000,growth:3.0,start:1,max:5},
+    marketQueue:{baseCostNickel:200,growth:1.75,start:1,max:10}
+  },
+  forge: {
+    baseSeconds:30,
+    weaponTypes:{
+      dagger:{
+        name:"Dolch",
+        timeFactor:0.5,
+        damageFactor:0.6,
+        speedFactor:1.4
+      },
+      sword:{
+        name:"Einhänder",
+        timeFactor:1.0,
+        damageFactor:1.0,
+        speedFactor:1.0
+      }
+    }
+  }
+};
+
+const CHARACTER_CLASSES={
+  recruit:{id:"recruit",name:"Rekrut",maxHp:30,maxEnergy:100,dodge:0.10,armor:2,strengthFactor:1.00,precision:1.00,energyRegenPerMinute:5,distance:2,role:"Basis"},
+  fighter:{id:"fighter",name:"Kämpfer",maxHp:35,maxEnergy:100,dodge:0.08,armor:3,strengthFactor:1.10,precision:0.95,energyRegenPerMinute:5,distance:1,role:"Nahkampf"},
+  archer:{id:"archer",name:"Bogner",maxHp:26,maxEnergy:100,dodge:0.15,armor:1,strengthFactor:0.95,precision:1.15,energyRegenPerMinute:5,distance:3,role:"Fernkampf"},
+  scholar:{id:"scholar",name:"Gelehrter",maxHp:22,maxEnergy:100,dodge:0.05,armor:0,strengthFactor:1.15,precision:1.10,energyRegenPerMinute:5,distance:4,role:"Magie"}
+};
+
+function getCharacterClass(c){
+  return CHARACTER_CLASSES[c?.classId] || CHARACTER_CLASSES.recruit;
+}
+
+const MATERIAL_SALE_RARITY_BONUS={1:0,2:0.1,3:0.2,4:0.4,5:0.8,6:1.6};
+
+const MATERIALS={
+  "Morsche Fichte":{
+    category:"Holz",rarity:1,
+    baseDamage:7,baseSpeed:1.1,
+    blade:null,penetration:null,gripSpeed:1.0,hitChance:null,
+    reinforcement:{penetrationAdd:-0.05}
+  },
+  "Fichte":{
+    category:"Holz",rarity:1,
+    baseDamage:8,baseSpeed:0.9,
+    blade:null,penetration:null,gripSpeed:1.2,hitChance:null,
+    reinforcement:null
+  },
+  "Tanne":{
+    category:"Holz",rarity:2,
+    baseDamage:13,baseSpeed:1.2,
+    blade:null,penetration:null,gripSpeed:1.4,hitChance:null,
+    reinforcement:{speedFactor:1.10}
+  },
+
+  "Zinn":{
+    category:"Metall",rarity:1,
+    baseDamage:9,baseSpeed:0.8,
+    blade:1.0,penetration:0.10,gripSpeed:null,hitChance:null,
+    reinforcement:null
+  },
+  "Kupfer":{
+    category:"Metall",rarity:1,
+    baseDamage:10,baseSpeed:1.0,
+    blade:1.2,penetration:0.20,gripSpeed:null,hitChance:null,
+    reinforcement:{penetrationAdd:0.10}
+  },
+  "Aluminium":{
+    category:"Metall",rarity:2,
+    baseDamage:15,baseSpeed:1.2,
+    blade:1.4,penetration:0.30,gripSpeed:null,hitChance:null,
+    reinforcement:{speedFactor:1.10}
+  },
+
+  "Hasen-Leder":{
+    category:"Leder",rarity:2,
+    baseDamage:null,baseSpeed:null,
+    blade:null,penetration:null,gripSpeed:null,hitChance:0.55,
+    reinforcement:{hitChanceAdd:0.05}
+  },
+  "Fuchs-Leder":{
+    category:"Leder",rarity:2,
+    baseDamage:null,baseSpeed:null,
+    blade:null,penetration:null,gripSpeed:null,hitChance:0.60,
+    reinforcement:{hitChanceAdd:0.10}
+  },
+  "Lederfetzen":{
+    category:"Leder",rarity:1,
+    baseDamage:null,baseSpeed:null,
+    blade:null,penetration:null,gripSpeed:null,hitChance:0.50,
+    reinforcement:null
+  }
+};
+
+function findWeakestStarterSlots(){
+  const namesFor=categories=>Object.entries(MATERIALS)
+    .filter(([,m])=>categories.includes(m.category))
+    .map(([name])=>name);
+
+  const weaponBases=namesFor(["Holz","Metall"]);
+  const metals=namesFor(["Metall"]);
+  const woods=namesFor(["Holz"]);
+  const leathers=namesFor(["Leder"]);
+  const all=Object.keys(MATERIALS);
+
+  let weakest=null;
+
+  for(const weaponBase of weaponBases)
+  for(const blade of metals)
+  for(const back of metals)
+  for(const grip of woods)
+  for(const leather of leathers)
+  for(const reinforcement of all){
+    const slots=[
+      {slot:"Waffentyp",material:weaponBase},
+      {slot:"Schneide",material:blade},
+      {slot:"Rückseite",material:back},
+      {slot:"Griffform",material:grip},
+      {slot:"Griffmaterial",material:leather},
+      {slot:"Verstärkungsmaterial",material:reinforcement}
+    ];
+    const stats=calculateWeaponStats(slots,"sword");
+    const score=[stats.expectedRaw,stats.penetration,stats.damagePerHit,stats.attackSpeed,stats.hitChance];
+
+    if(!weakest){
+      weakest={slots,stats,score};
+      continue;
+    }
+
+    let better=false;
+    for(let i=0;i<score.length;i++){
+      if(Math.abs(score[i]-weakest.score[i])<1e-9)continue;
+      better=score[i]<weakest.score[i];
+      break;
+    }
+    if(better)weakest={slots,stats,score};
+  }
+  return weakest;
+}
+
+const WEAKEST_STARTER=findWeakestStarterSlots();
+const STARTER_WEAPON={
+  id:0,
+  name:"Provisorischer Start-Einhänder",
+  weaponType:"starter",
+  slots:WEAKEST_STARTER.slots.map(x=>({...x})),
+  stats:{...WEAKEST_STARTER.stats},
+  valueNickel:0,
+  craftedSeconds:0,
+  starter:true
+};
+
+function cloneStarterWeapon(){
+  return JSON.parse(JSON.stringify(STARTER_WEAPON));
+}
+
+function createCharacter(id,name,classId="recruit",withStarter=false){
+  const cls=CHARACTER_CLASSES[classId]||CHARACTER_CLASSES.recruit;
+  return {id,name,classId:cls.id,maxHp:cls.maxHp,hp:cls.maxHp,maxEnergy:cls.maxEnergy,energy:cls.maxEnergy,dodge:cls.dodge,armor:cls.armor,strengthFactor:cls.strengthFactor,precision:cls.precision,alive:true,equipment:{leftHand:null,rightHand:withStarter?0:null}};
+}
+function createRecruit(id,name,withStarter=false){return createCharacter(id,name,"recruit",withStarter);}
+
+function createDefaultState(){
+  return {
+    gold:0,
+    expeditionActive:false,
+    dungeonAuto:false,
+    dungeonRun:null,
+    dungeonSearch:null,
+    dungeonLootCollect:null,
+    dungeonLoot:{},
+    dungeonTeamSlots:[1,null,null,null],
+    dungeonCycleOriginalIds:[],
+    dungeonCycleActiveIds:[],
+    dungeonWavesDefeated:0,
+    forgeJob:null,
+    forgeJobs:[],
+    forgeQueue:[],
+    marketJob:null,
+    marketJobs:[],
+    marketQueue:[],
+    upgrades:{
+      innCapacity:CONFIG.upgrades.inn.startCapacity,
+      forgeSlots:CONFIG.upgrades.forgeSlots.start,
+      forgeQueue:CONFIG.upgrades.forgeQueue.start,
+      marketSlots:CONFIG.upgrades.marketSlots.start,
+      marketQueue:CONFIG.upgrades.marketQueue.start
+    },
+    weaponInventory:[cloneStarterWeapon()],
+    nextWeaponId:1,
+    nextCharacterId:2,
+    lastEnergyUpdate:Date.now(),
+    characters:[createRecruit(1,"Rekrut 01",true)],
+    inventory:{}
+  };
+}
+
+let state=createDefaultState();
+
+// Dropchancen gehören ab jetzt zum jeweiligen Dungeon, nicht zum Material.
+// Variante B: zuerst Kategorie, danach Material innerhalb dieser Kategorie.
+const DUNGEON_LOOT_TABLES={
+  1:{
+    categories:[
+      {name:"Holz",weight:1,items:[
+        {name:"Morsche Fichte",chance:81},
+        {name:"Fichte",chance:11},
+        {name:"Tanne",chance:8}
+      ]},
+      {name:"Metall",weight:1,items:[
+        {name:"Zinn",chance:81},
+        {name:"Kupfer",chance:11},
+        {name:"Aluminium",chance:8}
+      ]},
+      {name:"Leder",weight:1,items:[
+        {name:"Lederfetzen",chance:80},
+        {name:"Hasen-Leder",chance:12},
+        {name:"Fuchs-Leder",chance:8}
+      ]}
+    ]
+  }
+};
+
+const titles = {
+  base:"Stützpunkt", dungeon:"Dungeon", tavern:"Taverne", roster:"Kader",
+  storage:"Lager", forge:"Schmiede", market:"Markt", index:"Index"
+};
+
+const SAVE_KEY="nobrainer_save_v1";
+const SAVE_VERSION=8;
+let saveTimer=null;
+let saveUnavailable=false;
+let lastAutoSaveAt=0;
+
+function setSaveStatus(text){
+  const el=document.getElementById("saveStatus");
+  if(el)el.textContent=text;
+}
+
+function normalizeCharacter(rawChar,fallbackId=1){
+  const base=createRecruit(Number(rawChar?.id)||fallbackId,rawChar?.name||`Rekrut ${String(fallbackId).padStart(2,"0")}`,false);
+  const c={...base,...(rawChar||{}),equipment:{...base.equipment,...(rawChar?.equipment||{})}};
+  const cls=getCharacterClass(c);
+  if(!c.classId || c.classId==="neutral")c.classId=cls.id;
+  c.maxHp=cls.maxHp;
+  const hpNum=Number(c.hp);
+  c.hp=Math.max(0,Math.min(Number.isFinite(hpNum)?hpNum:cls.maxHp,cls.maxHp));
+  c.maxEnergy=cls.maxEnergy;
+  const energyNum=Number(c.energy);
+  c.energy=Math.max(0,Math.min(Number.isFinite(energyNum)?energyNum:cls.maxEnergy,cls.maxEnergy));
+  c.dodge=cls.dodge;c.armor=cls.armor;c.strengthFactor=cls.strengthFactor;c.precision=cls.precision;
+  c.alive=c.hp>0;
+  return c;
+}
+
+function migrateWeaponToCurrentRules(w){
+  if(!w || w.starter || w.id===0)return cloneStarterWeapon();
+  const slots=normalizeWeaponSlots(w.slots);
+  if(slots.length!==6)return {...w,slots};
+  const stats=calculateWeaponStats(slots,w.weaponType);
+  const factor=rarityFactor(slots);
+  const type=CONFIG.forge.weaponTypes[w.weaponType]||CONFIG.forge.weaponTypes.sword;
+  return {
+    ...w,
+    slots,
+    stats,
+    valueNickel:Math.round(100*factor),
+    craftedSeconds:Math.round(CONFIG.forge.baseSeconds*(type.timeFactor??1)*factor)
+  };
+}
+
+function migrateForgeJobToCurrentRules(j){
+  if(!j)return j;
+  const slots=normalizeWeaponSlots(j.slots);
+  if(slots.length!==6)return {...j,slots};
+  const stats=calculateWeaponStats(slots,j.weaponType);
+  const factor=rarityFactor(slots);
+  const type=CONFIG.forge.weaponTypes[j.weaponType]||CONFIG.forge.weaponTypes.sword;
+  const totalSeconds=Math.round(CONFIG.forge.baseSeconds*(type.timeFactor??1)*factor);
+  const migrated={...j,slots,stats,valueNickel:Math.round(100*factor),totalSeconds};
+  if(Number.isFinite(Number(j.startedAt)))migrated.finishesAt=Number(j.startedAt)+totalSeconds*1000;
+  return migrated;
+}
+
+function normalizeLoadedState(raw){
+  const d=createDefaultState();
+  if(!raw || typeof raw!=="object")return d;
+
+  const sourceCharacters=Array.isArray(raw.characters) && raw.characters.length
+    ? raw.characters
+    : (raw.character ? [raw.character] : d.characters);
+  const characters=sourceCharacters.map((c,i)=>normalizeCharacter(c,i+1));
+  const ids=new Set();
+  characters.forEach((c,i)=>{
+    if(ids.has(c.id))c.id=i+1;
+    ids.add(c.id);
+    if(!c.name)c.name=`Rekrut ${String(i+1).padStart(2,"0")}`;
+  });
+
+  const merged={
+    ...d,
+    ...raw,
+    characters,
+    inventory:(raw.inventory && typeof raw.inventory==="object")?raw.inventory:{},
+    dungeonLoot:(raw.dungeonLoot && typeof raw.dungeonLoot==="object")?raw.dungeonLoot:{},
+    weaponInventory:Array.isArray(raw.weaponInventory)?raw.weaponInventory:[cloneStarterWeapon()]
+  };
+  delete merged.character;
+
+  // Die Startwaffe wird in v0.10 bewusst auf das Niveau der schlechtesten
+  // herstellbaren Einhänder-Kombination gesetzt – auch in bestehenden Saves.
+  merged.weaponInventory=merged.weaponInventory.filter(Boolean).map(w=>migrateWeaponToCurrentRules(w));
+  const starterIndex=merged.weaponInventory.findIndex(w=>w && w.id===0);
+  if(starterIndex>=0)merged.weaponInventory[starterIndex]=cloneStarterWeapon();
+  else merged.weaponInventory.push(cloneStarterWeapon());
+
+  const maxWeaponId=merged.weaponInventory.reduce((m,w)=>Math.max(m,Number(w?.id)||0),0);
+  merged.nextWeaponId=Math.max(Number(merged.nextWeaponId)||1,maxWeaponId+1);
+  const maxCharacterId=merged.characters.reduce((m,c)=>Math.max(m,Number(c?.id)||0),0);
+  merged.nextCharacterId=Math.max(Number(merged.nextCharacterId)||2,maxCharacterId+1);
+
+  merged.upgrades={...d.upgrades,...(raw.upgrades||{})};
+  // Ein alter Spielstand mit einem Charakter benötigt mindestens dessen Platz.
+  merged.upgrades.innCapacity=Math.max(merged.upgrades.innCapacity,merged.characters.length);
+  merged.forgeJobs=(Array.isArray(raw.forgeJobs)?raw.forgeJobs:[]).map(migrateForgeJobToCurrentRules);
+  merged.forgeQueue=(Array.isArray(raw.forgeQueue)?raw.forgeQueue:[]).map(migrateForgeJobToCurrentRules);
+  merged.marketJobs=Array.isArray(raw.marketJobs)?raw.marketJobs:[];
+  merged.marketQueue=Array.isArray(raw.marketQueue)?raw.marketQueue:[];
+  if(raw.forgeJob && merged.forgeJobs.length===0)merged.forgeJobs.push(migrateForgeJobToCurrentRules(raw.forgeJob));
+  if(raw.marketJob && merged.marketJobs.length===0)merged.marketJobs.push(raw.marketJob);
+  merged.forgeJob=null;merged.marketJob=null;
+  merged.lastEnergyUpdate=Number(merged.lastEnergyUpdate)||Date.now();
+
+  const validIds=new Set(merged.characters.map(c=>c.id));
+  const slots=Array.isArray(raw.dungeonTeamSlots)?raw.dungeonTeamSlots.slice(0,4):[merged.characters[0]?.id||null,null,null,null];
+  while(slots.length<4)slots.push(null);
+  const used=new Set();
+  merged.dungeonTeamSlots=slots.map(id=>{
+    const n=Number(id);
+    if(!validIds.has(n)||used.has(n))return null;
+    used.add(n);return n;
+  });
+  if(!merged.dungeonTeamSlots.some(Boolean) && merged.characters[0])merged.dungeonTeamSlots[0]=merged.characters[0].id;
+
+  merged.dungeonCycleOriginalIds=Array.isArray(raw.dungeonCycleOriginalIds)?raw.dungeonCycleOriginalIds.filter(id=>validIds.has(Number(id))).map(Number):[];
+  merged.dungeonCycleActiveIds=Array.isArray(raw.dungeonCycleActiveIds)?raw.dungeonCycleActiveIds.filter(id=>validIds.has(Number(id))).map(Number):[];
+
+  // v0.12 ersetzt die alte 30-Sekunden-Gesamtberechnung durch eine Echtzeit-Zeitleiste.
+  // Laufende alte Wellen werden deshalb beim Laden sauber beendet; Team und Inventar bleiben erhalten.
+  merged.dungeonRun=null;
+  merged.dungeonSearch=null;
+  merged.dungeonLootCollect=null;
+  merged.dungeonAuto=false;
+  merged.dungeonCycleOriginalIds=[];
+  merged.dungeonCycleActiveIds=[];
+  merged.dungeonWavesDefeated=Math.max(0,Number(raw.dungeonWavesDefeated)||0);
+
+  return merged;
+}
+
+function loadGame(){
+  try{
+    const raw=localStorage.getItem(SAVE_KEY);
+    if(!raw){setSaveStatus("Neuer Spielstand");return false;}
+    const parsed=JSON.parse(raw);
+    state=normalizeLoadedState(parsed.state||parsed);
+    const when=parsed.savedAt?new Date(parsed.savedAt):null;
+    setSaveStatus(when?`Geladen · ${when.toLocaleTimeString("de-DE")}`:"Spielstand geladen");
+    return true;
+  }catch(err){
+    console.warn("Spielstand konnte nicht geladen werden:",err);
+    saveUnavailable=true;
+    setSaveStatus("Lokaler Save nicht verfügbar");
+    return false;
+  }
+}
+
+function saveGame(manual=false){
+  if(saveUnavailable)return false;
+  try{
+    const savedAt=Date.now();
+    localStorage.setItem(SAVE_KEY,JSON.stringify({saveVersion:SAVE_VERSION,savedAt,state}));
+    lastAutoSaveAt=savedAt;
+    setSaveStatus(`${manual?"Manuell gespeichert":"Gespeichert"} · ${new Date(savedAt).toLocaleTimeString("de-DE")}`);
+    return true;
+  }catch(err){
+    console.warn("Spielstand konnte nicht gespeichert werden:",err);
+    saveUnavailable=true;
+    setSaveStatus("Lokaler Save nicht verfügbar");
+    return false;
+  }
+}
+
+function queueSave(){
+  if(saveUnavailable)return;
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(()=>saveGame(false),250);
+}
+
+function resetSave(){
+  if(!confirm("Spielstand wirklich vollständig zurücksetzen? Materialien, Waffen, Geld und laufende Aufträge gehen verloren."))return;
+  try{localStorage.removeItem(SAVE_KEY);}catch(err){}
+  state=createDefaultState();
+  setSaveStatus("Spielstand zurückgesetzt");
+  addLog("Spielstand wurde zurückgesetzt.","muted");
+  render();
+  queueSave();
+}
+
+function prepareMobileTableLabels(){
+  document.querySelectorAll(".mobile-stack table").forEach(table=>{
+    const headers=[...table.querySelectorAll("thead th")].map(x=>x.textContent.trim());
+    table.querySelectorAll("tbody tr").forEach(tr=>{
+      [...tr.children].forEach((cell,i)=>{ if(headers[i])cell.dataset.label=headers[i]; });
+    });
+  });
+}
+
+function go(page){
+  document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));
+  document.querySelectorAll("#nav button").forEach(x=>x.classList.remove("active"));
+  document.getElementById(page).classList.add("active");
+  document.querySelector(`#nav button[data-page="${page}"]`).classList.add("active");
+  document.getElementById("pageTitle").textContent = titles[page];
+  render();
+}
+
+document.getElementById("nav").addEventListener("click", e=>{
+  if(e.target.dataset.page) go(e.target.dataset.page);
+});
+
+function getWeaponById(id){
+  if(id===null||id===undefined)return null;
+  return state.weaponInventory.find(w=>w.id===id)||null;
+}
+
+function weaponDamageAfterArmor(weapon, enemyArmor=CONFIG.dungeon.enemyArmor, character=null){
+  if(!weapon)return {
+    raw:0, penetration:0, effectiveArmor:enemyArmor,
+    reduction:enemyArmor/(enemyArmor+100), afterArmor:0,
+    damagePerHit:0, attackSpeed:0, hitChance:0
+  };
+
+  const strength=character?.strengthFactor ?? 1;
+  const precision=character?.precision ?? 1;
+  const damagePerHit=(weapon.stats?.damagePerHit||0)*strength;
+  const attackSpeed=weapon.stats?.attackSpeed||0;
+  const hitChance=(weapon.stats?.hitChance||0)*precision;
+  const raw=damagePerHit*attackSpeed*hitChance;
+  const penetration=weapon.stats?.penetration||0;
+  const effectiveArmor=enemyArmor*(1-penetration);
+  const reduction=effectiveArmor/(effectiveArmor+100);
+  const afterArmor=raw*(1-reduction);
+  return {raw,penetration,effectiveArmor,reduction,afterArmor,damagePerHit,attackSpeed,hitChance};
+}
+
+function getCharacterById(id){
+  return state.characters.find(c=>c.id===Number(id))||null;
+}
+
+function getEquippedWeaponData(c=state.characters[0]){
+  if(!c)return [];
+  return [
+    {hand:"leftHand",label:"Linke Hand",weapon:getWeaponById(c.equipment.leftHand)},
+    {hand:"rightHand",label:"Rechte Hand",weapon:getWeaponById(c.equipment.rightHand)}
+  ];
+}
+
+function getCharacterAttackPoints(c){
+  const weapons=getEquippedWeaponData(c).filter(x=>x.weapon);
+  if(weapons.length)return weapons.map(x=>({kind:"weapon",hand:x.hand,label:x.label,weapon:x.weapon,speed:Math.max(0.01,x.weapon.stats?.attackSpeed||0)}));
+  return [{kind:"fist",hand:"fist",label:"Faust",weapon:null,speed:1.0}];
+}
+
+function effectiveOffense(c){
+  const points=getCharacterAttackPoints(c);
+  return points.reduce((sum,p)=>{
+    if(p.kind==="fist")return sum+(1*c.strengthFactor)*1.0*(0.50*c.precision);
+    return sum+weaponDamageAfterArmor(p.weapon,0,c).raw;
+  },0);
+}
+
+function updateEnergy(){
+  const now=Date.now();
+  const elapsedMinutes=(now-state.lastEnergyUpdate)/60000;
+  state.lastEnergyUpdate=now;
+  if(!state.dungeonAuto && !state.dungeonRun && !state.dungeonLootCollect && elapsedMinutes>0){
+    state.characters.forEach(c=>{
+      if(c.energy<c.maxEnergy)c.energy=Math.min(c.maxEnergy,c.energy+elapsedMinutes*getCharacterClass(c).energyRegenPerMinute);
+    });
+  }
+}
+
+function getSelectedDungeonIds(){return (state.dungeonTeamSlots||[]).filter(id=>getCharacterById(id));}
+function getSelectedDungeonCharacters(){return getSelectedDungeonIds().map(getCharacterById).filter(Boolean);}
+function getDungeonParticipants(){
+  const ids=(state.dungeonCycleActiveIds&&state.dungeonCycleActiveIds.length)?state.dungeonCycleActiveIds:getSelectedDungeonIds();
+  return ids.map(getCharacterById).filter(Boolean);
+}
+function getAliveDungeonParticipants(){return getDungeonParticipants().filter(c=>c.alive&&c.hp>0);}
+function characterHasWeapon(c){return getEquippedWeaponData(c).some(x=>x.weapon);}
+function getEnergyCostPerCharacter(count){return count>0?Math.ceil(CONFIG.dungeon.energyCost/count):0;}
+function getDungeonScale(count){return Math.max(0,count);}
+
+function getDungeonStartCheck(){
+  const participants=getAliveDungeonParticipants();
+  if(!participants.length)return {ok:false,reason:"Kein Charakter im aktiven Dungeon-Team verfügbar.",participants:[],share:0,totalCost:0};
+  const share=getEnergyCostPerCharacter(participants.length);
+  const low=participants.find(c=>c.energy+1e-9<share);
+  if(low)return {ok:false,reason:`Warte auf Energie: ${share} EN pro Charakter benötigt (${low.name} hat ${low.energy.toFixed(1)}).`,participants,share,totalCost:share*participants.length};
+  return {ok:true,reason:"Bereit",participants,share,totalCost:share*participants.length};
+}
+
+function beginDungeonExpeditionCycle(){
+  const ids=getSelectedDungeonIds();
+  state.dungeonCycleOriginalIds=[...ids];state.dungeonCycleActiveIds=[...ids];
+  ids.map(getCharacterById).filter(Boolean).forEach(c=>{c.hp=c.maxHp;c.alive=true;});
+  state.expeditionActive=ids.length>0;
+}
+function resetCycleAfterFailure(){
+  const ids=(state.dungeonCycleOriginalIds||[]).filter(id=>getCharacterById(id));
+  ids.map(getCharacterById).forEach(c=>{c.hp=c.maxHp;c.alive=true;});
+  state.dungeonCycleActiveIds=[...ids];
+  addLog("Welle verloren: Das ursprünglich ausgewählte Team startet mit vollen HP wieder im Suchmodus.","bad");
+}
+function rollEnemyCount(teamSize){
+  const weights=CONFIG.dungeon.enemyCountWeights[Math.max(1,Math.min(4,teamSize))]||[25,25,25,25];
+  return weightedPick(weights.map((weight,i)=>({count:i+1,weight})),"weight").count;
+}
+function rollEnemyClass(){
+  return weightedPick(Object.entries(CONFIG.dungeon.enemyClassWeights).map(([classId,weight])=>({classId,weight})),"weight").classId;
+}
+function createDungeonEnemy(index){
+  const classId=rollEnemyClass(),cls=CHARACTER_CLASSES[classId],m=CONFIG.dungeon.enemyMultipliers,b=CONFIG.dungeon.enemyBase;
+  return {id:`e${index}`,name:`${cls.name} ${index}`,classId,maxHp:cls.maxHp*m.hp,hp:cls.maxHp*m.hp,armor:cls.armor*m.armor,dodge:Math.min(0.95,cls.dodge*m.dodge),strengthFactor:cls.strengthFactor,precision:cls.precision,distance:cls.distance,alive:true,
+    damage:b.damage*m.damage,speed:b.speed*m.speed,hitChance:Math.min(1,b.hitChance*m.hitChance),penetration:Math.max(0,Math.min(1,b.penetration*m.penetration))};
+}
+function weightedTarget(targets){
+  const alive=targets.filter(x=>x.alive&&x.hp>0);if(!alive.length)return null;
+  return weightedPick(alive.map(x=>({target:x,weight:1/Math.max(0.01,(x.distance??getCharacterClass(x).distance??2))})),"weight").target;
+}
+function applyAttackDamage(target,damage,penetration){
+  const effectiveArmor=Math.max(0,(target.armor||0)*(1-Math.max(0,Math.min(1,penetration||0))));
+  const dealt=Math.max(0,damage-effectiveArmor);
+  target.hp=Math.max(0,target.hp-dealt);target.alive=target.hp>0;
+  return dealt;
+}
+function playerAttack(point,run,now){
+  const c=getCharacterById(point.ownerId);if(!c||!c.alive)return;
+  const target=weightedTarget(run.enemies);if(!target)return;
+  let damage,speed,hitChance,penetration,label;
+  if(point.kind==="fist"){
+    damage=1*c.strengthFactor;speed=1;hitChance=Math.min(1,0.50*c.precision);penetration=0;label="Faust";
+  }else{
+    const w=getWeaponById(point.weaponId);if(!w)return;
+    damage=(w.stats?.damagePerHit||0)*c.strengthFactor;speed=Math.max(0.01,w.stats?.attackSpeed||0);hitChance=Math.min(1,(w.stats?.hitChance||0)*c.precision);penetration=w.stats?.penetration||0;label=w.name;
+  }
+  if(Math.random()>=hitChance){addLog(`${c.name} · ${label}: verfehlt ${target.name}.`,"muted");return;}
+  if(Math.random()<target.dodge){addLog(`${target.name} weicht ${c.name} · ${label} aus.`,"muted");return;}
+  const dealt=applyAttackDamage(target,damage,penetration);
+  addLog(`${c.name} · ${label} trifft ${target.name} für ${dealt.toFixed(2)} Schaden${target.alive?` (${target.hp.toFixed(1)} HP)`:" – besiegt"}.`,target.alive?"":"good");
+}
+function enemyAttack(point,run,now){
+  const enemy=run.enemies.find(e=>e.id===point.ownerId);if(!enemy||!enemy.alive)return;
+  const target=weightedTarget(run.participantIds.map(getCharacterById).filter(Boolean));if(!target)return;
+  const hitChance=Math.min(1,enemy.hitChance*enemy.precision);
+  if(Math.random()>=hitChance){addLog(`${enemy.name} verfehlt ${target.name}.`,"muted");return;}
+  if(Math.random()<target.dodge){addLog(`${target.name} weicht dem Angriff von ${enemy.name} aus.`,"muted");return;}
+  const dealt=applyAttackDamage(target,enemy.damage*enemy.strengthFactor,enemy.penetration);
+  addLog(`${enemy.name} trifft ${target.name} für ${dealt.toFixed(2)} Schaden${target.alive?` (${target.hp.toFixed(1)} HP)`:" – gefallen"}.`,target.alive?"":"bad");
+}
+function beginDungeonSearch(){
+  if(!state.dungeonAuto||state.dungeonRun||state.dungeonLootCollect)return false;
+  const participants=getAliveDungeonParticipants();
+  if(!participants.length)return false;
+  const now=Date.now();
+  state.expeditionActive=true;
+  state.dungeonSearch={nextCheckAt:now+CONFIG.dungeon.searchStepMs};
+  return true;
+}
+function startDungeonRun(){
+  if(state.dungeonRun||state.dungeonLootCollect)return false;
+  state.dungeonSearch=null;
+  updateEnergy();const check=getDungeonStartCheck();
+  if(!check.ok){
+    if(state.dungeonAuto&&check.reason.includes("Energie")){state.dungeonAuto=false;addLog("Dungeon-Automatik beendet: Nicht genügend Energie für die gefundene Gegnerwelle. Nach der Regeneration muss sie manuell neu gestartet werden.","muted");queueSave();}
+    return false;
+  }
+  check.participants.forEach(c=>{c.energy=Math.max(0,c.energy-check.share);});
+  const now=Date.now(),enemyCount=rollEnemyCount(check.participants.length),enemies=Array.from({length:enemyCount},(_,i)=>createDungeonEnemy(i+1));
+  const attackPoints=[];
+  check.participants.forEach(c=>getCharacterAttackPoints(c).forEach((p,i)=>attackPoints.push({side:"player",ownerId:c.id,kind:p.kind,weaponId:p.weapon?.id??null,label:p.label,nextAt:now+1000/Math.max(0.01,p.speed)})));
+  enemies.forEach(e=>attackPoints.push({side:"enemy",ownerId:e.id,kind:"enemy",nextAt:now+1000/Math.max(0.01,e.speed)}));
+  state.expeditionActive=true;
+  state.dungeonRun={dungeonId:CONFIG.dungeon.id,startedAt:now,participantIds:check.participants.map(c=>c.id),energyShare:check.share,totalEnergyCost:check.totalCost,enemies,attackPoints};
+  addLog(`Gegner gefunden: ${enemyCount} Gegner · ${check.participants.length} Charakter${check.participants.length===1?"":"e"} · ${check.share} EN je Charakter.`,"muted");queueSave();return true;
+}
+function toggleDungeonAuto(){
+  if(state.dungeonAuto){state.dungeonAuto=false;state.dungeonSearch=null;addLog(state.dungeonRun?"Dungeon-Automatik angehalten. Die aktuelle Welle wird noch beendet.":state.dungeonLootCollect?"Dungeon-Automatik angehalten. Die aktuelle Beute wird noch eingesammelt.":"Dungeon-Automatik angehalten.","muted");}
+  else{if(!getSelectedDungeonIds().length){alert("Bitte zuerst mindestens einen Charakter einem Dungeonplatz zuweisen.");render();return;}beginDungeonExpeditionCycle();state.dungeonAuto=true;addLog("Dungeon-Automatik gestartet. Das ausgewählte Team beginnt mit der Suche.","good");beginDungeonSearch();}
+  render();
+}
+function finishDungeonWave(success){
+  const run=state.dungeonRun;if(!run)return;state.dungeonRun=null;
+  if(success){
+    const drops=[];for(let i=0;i<run.enemies.length;i++)drops.push(...rollDrops(run.dungeonId,1));
+    state.dungeonWavesDefeated=(state.dungeonWavesDefeated||0)+1;
+    state.dungeonCycleActiveIds=run.participantIds.map(getCharacterById).filter(c=>c&&c.alive).map(c=>c.id);
+    state.dungeonLootCollect={readyAt:Date.now()+CONFIG.dungeon.lootCollectMs,drops,enemyCount:run.enemies.length};
+    addLog(`WELLE BESIEGT – Beute wird eingesammelt (${run.enemies.length} Materialwurf${run.enemies.length===1?"":"würfe"}).`,"good");
+  }else{
+    resetCycleAfterFailure();
+    if(state.dungeonAuto)beginDungeonSearch();
+  }
+  queueSave();
+}
+function completeDungeonLootCollect(){
+  const collect=state.dungeonLootCollect;if(!collect)return;
+  collect.drops.forEach(d=>{state.dungeonLoot[d.name]??={category:d.category,qty:0};state.dungeonLoot[d.name].qty++;});
+  addLog(`BEUTE EINGESAMMELT – ${collect.drops.map(d=>d.name).join(", ")}.`,"good");
+  state.dungeonLootCollect=null;
+  queueSave();
+  if(state.dungeonAuto)beginDungeonSearch();
+}
+function updateDungeonAutomation(){
+  const now=Date.now();
+  if(state.dungeonLootCollect){
+    if(now>=state.dungeonLootCollect.readyAt)completeDungeonLootCollect();
+    return;
+  }
+  const run=state.dungeonRun;
+  if(run){
+    let guard=0;
+    while(guard++<100){
+      const alivePlayers=run.participantIds.map(getCharacterById).filter(c=>c&&c.alive&&c.hp>0),aliveEnemies=run.enemies.filter(e=>e.alive&&e.hp>0);
+      if(!aliveEnemies.length){finishDungeonWave(true);return;}
+      if(!alivePlayers.length){finishDungeonWave(false);return;}
+      const due=run.attackPoints.filter(p=>p.nextAt<=now).sort((a,b)=>a.nextAt-b.nextAt)[0];if(!due)break;
+      if(due.side==="player")playerAttack(due,run,now);else enemyAttack(due,run,now);
+      let speed=1;
+      if(due.side==="player"){
+        const c=getCharacterById(due.ownerId);if(c){if(due.kind==="fist")speed=1;else speed=Math.max(0.01,getWeaponById(due.weaponId)?.stats?.attackSpeed||1);}
+      }else speed=Math.max(0.01,run.enemies.find(e=>e.id===due.ownerId)?.speed||1);
+      due.nextAt+=1000/speed;
+    }
+    return;
+  }
+  if(!state.dungeonAuto)return;
+  if(!state.dungeonSearch){beginDungeonSearch();return;}
+  if(now>=state.dungeonSearch.nextCheckAt){
+    if(Math.random()<CONFIG.dungeon.encounterChance){startDungeonRun();}
+    else state.dungeonSearch.nextCheckAt+=CONFIG.dungeon.searchStepMs;
+  }
+}
+function collectDungeonLoot(){
+  const entries=Object.entries(state.dungeonLoot||{}).filter(([name,x])=>x.qty>0);
+  if(!entries.length)return;
+  let total=0;
+  entries.forEach(([name,x])=>{
+    state.inventory[name]??={category:x.category||MATERIALS[name]?.category||"Unbekannt",qty:0};
+    state.inventory[name].qty+=x.qty;
+    total+=x.qty;
+  });
+  state.dungeonLoot={};
+  addLog(`${total} Material${total===1?"":"ien"} aus der Dungeon-Beute ins Lager eingesammelt.`,"good");
+  render();
+}
+
+function rollDrops(dungeonId=CONFIG.dungeon.id,amount=1){
+  const table=DUNGEON_LOOT_TABLES[dungeonId];
+  if(!table)return [];
+  amount=Math.max(0,Math.floor(Number(amount)||0));
+  const result=[];
+  for(let i=0;i<amount;i++){
+    const category=weightedPick(table.categories,"weight");
+    const item=weightedPick(category.items,"chance");
+    result.push({name:item.name,category:category.name});
+  }
+  return result;
+}
+
+function weightedPick(pool,key="weight"){
+  const total=pool.reduce((s,x)=>s+(Number(x[key])||0),0);
+  let r=Math.random()*total;
+  for(const item of pool){
+    r-=Number(item[key])||0;
+    if(r<=0)return item;
+  }
+  return pool[pool.length-1];
+}
+
+function getDungeonMaterialChance(dungeonId,name){
+  const table=DUNGEON_LOOT_TABLES[dungeonId];
+  if(!table)return null;
+  for(const category of table.categories){
+    const item=category.items.find(x=>x.name===name);
+    if(item)return item.chance;
+  }
+  return null;
+}
+
+function randInt(min,max){
+  return Math.floor(Math.random()*(max-min+1))+min;
+}
+
+function addLog(text, cls=""){
+  const log = document.getElementById("combatLog");
+  if(log.children.length===1 && log.firstElementChild.classList.contains("muted") && log.firstElementChild.textContent.includes("Noch kein"))
+    log.innerHTML="";
+  const row=document.createElement("div");
+  row.className=cls;
+  row.textContent=text;
+  log.prepend(row);
+}
+
+let openWeaponPickerHand=null;
+let openDungeonTeamPickerSlot=null;
+function rarityLabelForWeapon(w){if(w.starter)return "START";return `S${rarityFactor(w.slots||[])}`;}
+function formatDiff(v,b,p=false){if(b==null)return "";const d=v-b;if(Math.abs(d)<.0005)return ` <span class="weapon-diff same">(±0${p?" %":""})</span>`;return ` <span class="weapon-diff ${d>0?"good":"bad"}">(${d>0?"+":"−"}${p?Math.round(Math.abs(d)*100)+" %":Math.abs(d).toFixed(2)})</span>`;}
+function weaponCardHtml(w,o={}){const s=w.stats||{},c=o.compare?.stats||null,type=CONFIG.forge.weaponTypes[w.weaponType]?.name||(w.starter?"Einhänder":"Waffe"),val=w.valueNickel!=null?formatCurrencyNickel(w.valueNickel):(w.starter?"Nicht verkäuflich":"–");return `<div class="weapon-card"><div class="weapon-card-head"><div><div class="weapon-card-title">${w.name} #${w.id}</div><div class="weapon-card-sub">${type} · ${rarityLabelForWeapon(w)}${(() => { const txt = reinforcementEffectText(s.reinforcementMaterial); return txt && txt !== "Kein Zusatzeffekt" ? ` · ${txt}` : ""; })()}</div></div>${o.status?`<span class="tag fixed">${o.status}</span>`:""}</div><div class="weapon-stats"><div class="weapon-stat"><span>SCH</span><b>${(s.damagePerHit||0).toFixed(2)}${formatDiff(s.damagePerHit||0,c?.damagePerHit)}</b></div><div class="weapon-stat"><span>GES</span><b>${(s.attackSpeed||0).toFixed(2)}${formatDiff(s.attackSpeed||0,c?.attackSpeed)}</b></div><div class="weapon-stat"><span>TRF</span><b>${Math.round((s.hitChance||0)*100)} %${formatDiff(s.hitChance||0,c?.hitChance,true)}</b></div><div class="weapon-stat"><span>DS</span><b>${Math.round((s.penetration||0)*100)} %${formatDiff(s.penetration||0,c?.penetration,true)}</b></div><div class="weapon-stat"><span>ROH</span><b>${(s.expectedRaw||0).toFixed(2)}${formatDiff(s.expectedRaw||0,c?.expectedRaw)}</b></div><div class="weapon-stat"><span>WERT</span><b>${val}</b></div></div>${o.actions||""}</div>`;}
+
+function weaponPickerKey(characterId,hand){return `${characterId}:${hand}`;}
+function toggleWeaponPicker(characterId,hand){const key=weaponPickerKey(characterId,hand);openWeaponPickerHand=openWeaponPickerHand===key?null:key;renderCharacter("rosterCard");}
+function equipFromWeaponPicker(characterId,hand,id){if(id==null)unequipHand(characterId,hand);else equipWeapon(Number(id),hand,characterId);openWeaponPickerHand=null;renderCharacter("rosterCard");}
+function weaponPickerHtml(c,hand){
+  const key=weaponPickerKey(c.id,hand);if(openWeaponPickerHand!==key)return "";
+  const curId=c.equipment[hand],other=hand==="leftHand"?"rightHand":"leftHand",otherId=c.equipment[other],cur=curId!=null?getWeaponById(curId):null;
+  const cards=state.weaponInventory.map(w=>{
+    const loc=getWeaponEquipLocation(w.id);let st="",dis=false;
+    if(w.id===curId){st="AUSGERÜSTET";dis=true;}
+    else if(w.id===otherId){st="ANDERE HAND";dis=true;}
+    else if(loc){const owner=getCharacterById(loc.characterId);st=`BELEGT: ${owner?.name||"Charakter"}`;dis=true;}
+    const ac=`<div class="weapon-card-actions"><button class="btn ${dis?"":"primary"}" ${dis?"disabled":""} onclick="equipFromWeaponPicker(${c.id},'${hand}',${w.id})">${dis?st:"Ausrüsten"}</button></div>`;
+    return weaponCardHtml(w,{compare:cur,status:st,actions:ac});
+  }).join("");
+  return `<div class="weapon-picker"><div class="weapon-picker-title">Klammerwerte = Änderung zur aktuell ausgerüsteten Waffe.</div><div class="weapon-card-actions"><button class="btn" onclick="equipFromWeaponPicker(${c.id},'${hand}',null)">Hand leeren</button></div><div class="weapon-card-list">${cards}</div></div>`;
+}
+
+function renderCharacterCard(c){
+  const cls=getCharacterClass(c);
+  const hands=[["leftHand","Linke Hand"],["rightHand","Rechte Hand"]].map(([hand,label])=>{
+    const w=getWeaponById(c.equipment[hand]);const key=weaponPickerKey(c.id,hand);
+    return `<div class="hand-section"><div class="hand-section-head"><strong>${label}</strong><button class="btn smallbtn" onclick="toggleWeaponPicker(${c.id},'${hand}')">${openWeaponPickerHand===key?"Auswahl schließen":"Waffe wechseln"}</button></div><div style="margin-top:10px">${w?weaponCardHtml(w,{status:"AUSGERÜSTET"}):'<div class="empty">Hand ist leer.</div>'}</div>${weaponPickerHtml(c,hand)}</div>`;
+  }).join("");
+  return `<div class="roster-character"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><strong>${c.name}</strong><span class="tag fixed">Klasse: ${cls.name}</span></div>
+    <div class="statrow"><div class="stat"><span>HP</span><b>${c.hp.toFixed(1)} / ${c.maxHp}</b></div><div class="stat"><span>EN</span><b>${c.energy.toFixed(1)} / ${c.maxEnergy}</b></div><div class="stat"><span>RÜS</span><b>${c.armor}</b></div><div class="stat"><span>AUS</span><b>${Math.round(c.dodge*100)} %</b></div><div class="stat"><span>STÄ</span><b>${c.strengthFactor.toFixed(2)}</b></div><div class="stat"><span>PRÄ</span><b>${c.precision.toFixed(2)}</b></div><div class="stat"><span>EN-Reg.</span><b>${cls.energyRegenPerMinute}/Min.</b></div><div class="stat"><span>Offensive gg. Dungeon 1</span><b>${effectiveOffense(c).toFixed(2)}</b></div></div>${hands}</div>`;
+}
+
+function toggleDungeonTeamPicker(slot){
+  if(state.dungeonRun||state.dungeonAuto)return;
+  openDungeonTeamPickerSlot=openDungeonTeamPickerSlot===slot?null:slot;renderCharacter("teamCard");
+}
+function assignDungeonCharacter(slot,characterId){
+  if(state.dungeonRun||state.dungeonAuto)return;
+  const id=Number(characterId);if(!getCharacterById(id))return;
+  if(state.dungeonTeamSlots.some((x,i)=>i!==slot&&x===id))return;
+  state.dungeonTeamSlots[slot]=id;openDungeonTeamPickerSlot=null;
+  state.dungeonCycleOriginalIds=[];state.dungeonCycleActiveIds=[];render();
+}
+function removeDungeonCharacter(slot){
+  if(state.dungeonRun||state.dungeonAuto)return;
+  state.dungeonTeamSlots[slot]=null;openDungeonTeamPickerSlot=null;
+  state.dungeonCycleOriginalIds=[];state.dungeonCycleActiveIds=[];render();
+}
+function dungeonTeamPickerHtml(slot){
+  if(openDungeonTeamPickerSlot!==slot)return "";
+  const used=new Set(state.dungeonTeamSlots.filter((id,i)=>i!==slot&&id));
+  const options=state.characters.filter(c=>!used.has(c.id));
+  if(!options.length)return `<div class="team-slot-picker muted small">Keine weiteren Charaktere verfügbar.</div>`;
+  return `<div class="team-slot-picker">${options.map(c=>`<div class="team-candidate"><div><strong>${c.name}</strong><div class="sell-meta">${getCharacterClass(c).name} · HP ${c.hp.toFixed(1)} · EN ${c.energy.toFixed(1)}</div></div><button class="btn smallbtn primary" onclick="assignDungeonCharacter(${slot},${c.id})">Zuweisen</button></div>`).join("")}</div>`;
+}
+function renderDungeonTeam(root){
+  const locked=!!state.dungeonRun||state.dungeonAuto;
+  root.innerHTML=`<div class="team-slot-grid">${[0,1,2,3].map(slot=>{
+    const id=state.dungeonTeamSlots[slot],c=getCharacterById(id);
+    if(!c)return `<div class="team-slot"><div class="team-slot-head"><strong>Platz ${slot+1}</strong></div><div class="empty">Nicht belegt</div><div class="actions"><button class="btn primary" ${locked?"disabled":""} onclick="toggleDungeonTeamPicker(${slot})">+ Charakter hinzufügen</button></div>${dungeonTeamPickerHtml(slot)}</div>`;
+    const active=state.dungeonCycleActiveIds?.includes(c.id),cycle=state.dungeonAuto||state.dungeonRun||state.dungeonCycleOriginalIds?.length;
+    return `<div class="team-slot"><div class="team-slot-head"><strong>Platz ${slot+1}: ${c.name}</strong>${cycle&&!active?'<span class="tag temp">GEFALLEN</span>':""}</div><div class="statrow"><div class="stat"><span>HP</span><b>${c.hp.toFixed(1)} / ${c.maxHp}</b></div><div class="stat"><span>EN</span><b>${c.energy.toFixed(1)} / ${c.maxEnergy}</b></div></div><div class="actions"><button class="btn" ${locked?"disabled":""} onclick="removeDungeonCharacter(${slot})">Entfernen</button><button class="btn" ${locked?"disabled":""} onclick="toggleDungeonTeamPicker(${slot})">Wechseln</button></div>${dungeonTeamPickerHtml(slot)}</div>`;
+  }).join("")}</div>${locked?'<p class="status-line">Teamzuweisung ist während einer laufenden Automatik gesperrt.</p>':""}`;
+}
+function renderCharacter(target){
+  const root=document.getElementById(target);if(!root)return;
+  if(target==="teamCard"){renderDungeonTeam(root);return;}
+  root.innerHTML=state.characters.map(renderCharacterCard).join("");
+}
+
+function getMaterialsForCategories(categories){
+  return Object.entries(MATERIALS)
+    .filter(([name,m])=>categories.includes(m.category))
+    .sort((a,b)=>a[1].rarity-b[1].rarity || a[1].category.localeCompare(b[1].category) || a[0].localeCompare(b[0]));
+}
+
+function populateForgeSelects(){
+  const selects=[...document.querySelectorAll(".forge-select")];
+
+  // Aktuelle Auswahl aller Slots sichern, bevor Optionen neu aufgebaut werden.
+  const selections={};
+  selects.forEach(sel=>selections[sel.id]=sel.value||"");
+
+  selects.forEach(sel=>{
+    const categories=(sel.dataset.categories||"")
+      .split(",").map(x=>x.trim()).filter(Boolean);
+
+    const previous=selections[sel.id]||"";
+
+    // Belegung durch ALLE ANDEREN Slots zählen.
+    const reservedByOthers={};
+    selects.forEach(other=>{
+      if(other.id===sel.id)return;
+      const mat=selections[other.id];
+      if(mat) reservedByOthers[mat]=(reservedByOthers[mat]||0)+1;
+    });
+
+    sel.innerHTML="";
+
+    // Niemals automatisch ein Material auswählen.
+    const placeholder=document.createElement("option");
+    placeholder.value="";
+    placeholder.textContent="Material auswählen";
+    placeholder.selected=!previous;
+    sel.appendChild(placeholder);
+
+    const available=getMaterialsForCategories(categories).filter(([name,m])=>{
+      const stock=state.inventory[name]?.qty||0;
+      const reserved=reservedByOthers[name]||0;
+
+      // Dieser Slot darf das Material nur anbieten, wenn nach den
+      // Belegungen der anderen Slots noch mindestens 1 Stück übrig ist.
+      return stock-reserved>0;
+    });
+
+    available.forEach(([name,m])=>{
+      const stock=state.inventory[name]?.qty||0;
+      const reserved=reservedByOthers[name]||0;
+      const remaining=stock-reserved;
+
+      const o=document.createElement("option");
+      o.value=name;
+      o.textContent=`${name} · S${m.rarity} · verfügbar ${remaining}${sel.id==="slotReinforcementMaterial"?` · ${reinforcementEffectText(name)}`:""}`;
+      sel.appendChild(o);
+    });
+
+    // Vorherige Auswahl nur behalten, wenn sie weiterhin zulässig ist.
+    if(previous && [...sel.options].some(o=>o.value===previous)){
+      sel.value=previous;
+    }else{
+      sel.value="";
+    }
+  });
+}
+
+function getForgeSelection(){
+  return {
+    weaponType:document.getElementById("weaponType")?.value||"dagger",
+    slots:[
+      {slot:"Waffentyp",material:document.getElementById("slotWeaponType")?.value},
+      {slot:"Schneide",material:document.getElementById("slotBlade")?.value},
+      {slot:"Rückseite",material:document.getElementById("slotBack")?.value},
+      {slot:"Griffform",material:document.getElementById("slotGripShape")?.value},
+      {slot:"Griffmaterial",material:document.getElementById("slotGripMaterial")?.value},
+      {slot:"Verstärkungsmaterial",material:document.getElementById("slotReinforcementMaterial")?.value}
+    ]
+  };
+}
+
+function normalizeWeaponSlots(slots){
+  if(!Array.isArray(slots))return [];
+  return slots.map(x=>({
+    ...x,
+    slot:x?.slot==="Hauptmaterial"?"Verstärkungsmaterial":x?.slot
+  }));
+}
+
+function rarityFactor(slots){
+  const rarities=normalizeWeaponSlots(slots)
+    .map(x=>MATERIALS[x.material]?.rarity)
+    .filter(x=>Number.isFinite(x));
+  return rarities.length?Math.min(...rarities):1;
+}
+
+function reinforcementEffectText(materialName){
+  const e=MATERIALS[materialName]?.reinforcement;
+  if(!e)return "Kein Zusatzeffekt";
+  const parts=[];
+  if(e.speedFactor && Math.abs(e.speedFactor-1)>1e-9){
+    parts.push(`${e.speedFactor>1?"+":"−"}${Math.round(Math.abs(e.speedFactor-1)*100)} % GES`);
+  }
+  if(e.hitChanceAdd){
+    parts.push(`${e.hitChanceAdd>0?"+":"−"}${Math.round(Math.abs(e.hitChanceAdd)*100)} Prozentpunkte TRF`);
+  }
+  if(e.penetrationAdd){
+    parts.push(`${e.penetrationAdd>0?"+":"−"}${Math.round(Math.abs(e.penetrationAdd)*100)} Prozentpunkte DS`);
+  }
+  return parts.length?parts.join(" · "):"Kein Zusatzeffekt";
+}
+
+function requirements(slots){
+  const r={};
+  slots.forEach(x=>{ if(x.material) r[x.material]=(r[x.material]||0)+1; });
+  return r;
+}
+
+function hasMaterials(r){
+  return Object.entries(r).every(([n,q])=>(state.inventory[n]?.qty||0)>=q);
+}
+
+function formatCurrencyNickel(v){
+  let n=Math.max(0,Math.round(v)), g=Math.floor(n/1000000);
+  n%=1000000;
+  let s=Math.floor(n/10000);
+  n%=10000;
+  let b=Math.floor(n/100);
+  n%=100;
+  const p=[];
+  if(g)p.push(`${g} Gold`);
+  if(s)p.push(`${s} Silber`);
+  if(b)p.push(`${b} Bronze`);
+  if(n||!p.length)p.push(`${n} Nickel`);
+  return p.join(" ");
+}
+
+function formatHighestCurrency(v){
+  const n=Math.max(0,Math.round(v));
+  if(n>=1000000) return `${(n/1000000).toLocaleString("de-DE",{maximumFractionDigits:2})} Gold`;
+  if(n>=10000) return `${(n/10000).toLocaleString("de-DE",{maximumFractionDigits:2})} Silber`;
+  if(n>=100) return `${(n/100).toLocaleString("de-DE",{maximumFractionDigits:2})} Bronze`;
+  return `${n} Nickel`;
+}
+
+function formatDuration(seconds){
+  const total=Math.max(0,Math.ceil(Number(seconds)||0));
+  const hours=Math.floor(total/3600);
+  const minutes=Math.floor((total%3600)/60);
+  const secs=total%60;
+  const parts=[];
+  if(hours>0)parts.push(`${hours} Std.`);
+  if(minutes>0 || hours>0)parts.push(`${minutes} Min.`);
+  parts.push(`${secs} Sek.`);
+  return parts.join(" ");
+}
+
+function calculateWeaponStats(slots,weaponType){
+  const normalized=normalizeWeaponSlots(slots);
+  const bySlot=Object.fromEntries(normalized.map(x=>[x.slot,MATERIALS[x.material]]));
+  const materialBySlot=Object.fromEntries(normalized.map(x=>[x.slot,x.material]));
+  const base=bySlot["Waffentyp"]||{};
+  const blade=bySlot["Schneide"]||{};
+  const back=bySlot["Rückseite"]||{};
+  const grip=bySlot["Griffform"]||{};
+  const leather=bySlot["Griffmaterial"]||{};
+  const reinforcement=bySlot["Verstärkungsmaterial"]||{};
+  const reinforce=reinforcement.reinforcement||{};
+
+  const type=CONFIG.forge.weaponTypes[weaponType]||CONFIG.forge.weaponTypes.sword;
+
+  const materialBaseDamage=base.baseDamage ?? 0;
+  const materialBaseSpeed=base.baseSpeed ?? 0;
+  const baseDamage=materialBaseDamage*(type.damageFactor ?? 1);
+  const baseSpeed=materialBaseSpeed*(type.speedFactor ?? 1);
+
+  const bladeMultiplier=blade.blade ?? 1;
+  const gripMultiplier=grip.gripSpeed ?? 1;
+  const reinforcementSpeedFactor=reinforce.speedFactor ?? 1;
+  const reinforcementHitChanceAdd=reinforce.hitChanceAdd ?? 0;
+  const reinforcementPenetrationAdd=reinforce.penetrationAdd ?? 0;
+
+  const damagePerHit=baseDamage*bladeMultiplier;
+  const attackSpeed=baseSpeed*gripMultiplier*reinforcementSpeedFactor;
+  const hitChance=Math.max(0,Math.min(1,(leather.hitChance ?? 0)+reinforcementHitChanceAdd));
+  const penetration=Math.max(0,Math.min(1,(back.penetration ?? 0)+reinforcementPenetrationAdd));
+  const expectedRaw=damagePerHit*attackSpeed*hitChance;
+
+  return {
+    materialBaseDamage,
+    materialBaseSpeed,
+    typeDamageFactor:type.damageFactor ?? 1,
+    typeSpeedFactor:type.speedFactor ?? 1,
+    baseDamage,
+    baseSpeed,
+    bladeMultiplier,
+    gripMultiplier,
+    reinforcementMaterial:materialBySlot["Verstärkungsmaterial"]||null,
+    reinforcementSpeedFactor,
+    reinforcementHitChanceAdd,
+    reinforcementPenetrationAdd,
+    hitChance,
+    penetration,
+    damagePerHit,
+    attackSpeed,
+    expectedRaw
+  };
+}
+
+function forgePreview(){
+  const x=getForgeSelection(),
+        t=CONFIG.forge.weaponTypes[x.weaponType];
+
+  const complete=x.slots.every(s=>s.material);
+  if(!complete){
+    return {
+      ...x,
+      type:t,
+      factor:1,
+      valueNickel:100,
+      seconds:Math.round(CONFIG.forge.baseSeconds*t.timeFactor),
+      stats:{baseDamage:0,baseSpeed:0,bladeMultiplier:1,gripMultiplier:1,reinforcementSpeedFactor:1,reinforcementHitChanceAdd:0,reinforcementPenetrationAdd:0,hitChance:0,penetration:0,damagePerHit:0,attackSpeed:0,expectedRaw:0}
+    };
+  }
+
+  const f=rarityFactor(x.slots),
+        stats=calculateWeaponStats(x.slots,x.weaponType);
+
+  return {
+    ...x,
+    type:t,
+    factor:f,
+    valueNickel:Math.round(100*f),
+    seconds:Math.round(CONFIG.forge.baseSeconds*t.timeFactor*f),
+    stats
+  };
+}
+
+function renderForgePreview(){
+  if(!document.getElementById("forgeStartBtn"))return;
+  populateForgeSelects();
+
+  const p=forgePreview();
+  const s=p.stats;
+  const allSelected=p.slots.every(x=>x.material);
+  const r=requirements(p.slots);
+
+  document.getElementById("forgeTimePreview").textContent=allSelected?`${p.seconds} s`:"–";
+  document.getElementById("forgeValuePreview").textContent=allSelected?formatCurrencyNickel(p.valueNickel):"–";
+  document.getElementById("forgeDamagePreview").textContent=allSelected?s.damagePerHit.toFixed(2):"–";
+  const damageInfo=document.getElementById("forgeDamageBaseInfo");
+  if(damageInfo) damageInfo.textContent=allSelected?`Materialbasis ${s.materialBaseDamage.toFixed(2)} × Waffenform ${s.typeDamageFactor.toFixed(1)}`:"";
+  document.getElementById("forgeSpeedPreview").textContent=allSelected?s.attackSpeed.toFixed(2):"–";
+  const speedInfo=document.getElementById("forgeSpeedBaseInfo");
+  if(speedInfo) speedInfo.textContent=allSelected?`Materialbasis ${s.materialBaseSpeed.toFixed(2)} × Waffenform ${s.typeSpeedFactor.toFixed(1)}`:"";
+  document.getElementById("forgeHitPreview").textContent=allSelected?`${Math.round(s.hitChance*100)} %`:"–";
+  document.getElementById("forgeRawPreview").textContent=allSelected?s.expectedRaw.toFixed(2):"–";
+  document.getElementById("forgePenPreview").textContent=allSelected?`${Math.round(s.penetration*100)} %`:"–";
+  document.getElementById("forgeRarityPreview").textContent=allSelected?`× ${p.factor}`:"–";
+  const reinforcementPreview=document.getElementById("forgeReinforcementPreview");
+  if(reinforcementPreview){
+    const mat=p.slots.find(x=>x.slot==="Verstärkungsmaterial")?.material;
+    reinforcementPreview.textContent=allSelected?`Verstärkungseffekt: ${reinforcementEffectText(mat)}`:"Verstärkungseffekt: –";
+  }
+
+  document.getElementById("forgeStartBtn").disabled=(state.forgeJobs.length+state.forgeQueue.length>=state.upgrades.forgeSlots+state.upgrades.forgeQueue)||!allSelected||!hasMaterials(r);
+}
+
+function recruitCost(){
+  const additional=Math.max(0,state.characters.length-1);
+  return Math.round(CONFIG.tavern.recruitBaseNickel*Math.pow(CONFIG.tavern.recruitGrowth,additional));
+}
+function recruitCharacter(classId="recruit"){
+  if(state.characters.length>=state.upgrades.innCapacity){alert("Das Inn ist voll. Bitte zuerst einen weiteren Kaderplatz ausbauen.");return;}
+  const cls=CHARACTER_CLASSES[classId];if(!cls)return;
+  const cost=recruitCost();if(state.gold<cost){alert(`Nicht genügend Geld. Benötigt: ${formatCurrencyNickel(cost)}.`);return;}
+  state.gold-=cost;const id=state.nextCharacterId++;
+  const number=state.characters.filter(c=>c.classId===classId).length+1;
+  const c=createCharacter(id,`${cls.name} ${String(number).padStart(2,"0")}`,classId,false);state.characters.push(c);
+  addLog(`${c.name} wurde für ${formatCurrencyNickel(cost)} angeworben.`,"good");render();
+}
+function renderTavern(){
+  const offer=document.getElementById("tavernOffer"),cap=document.getElementById("tavernCapacity"),summary=document.getElementById("baseTavernSummary");
+  const cost=recruitCost(),full=state.characters.length>=state.upgrades.innCapacity,canPay=state.gold>=cost;
+  if(summary)summary.innerHTML=`<div class="statrow"><div class="stat"><span>Kader</span><b>${state.characters.length} / ${state.upgrades.innCapacity}</b></div><div class="stat"><span>Nächste Anwerbung</span><b>${formatCurrencyNickel(cost)}</b></div></div>`;
+  if(offer)offer.innerHTML=Object.values(CHARACTER_CLASSES).map(cls=>`<div class="tavern-offer"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><strong>${cls.name}</strong><span class="tag fixed">${cls.role.toUpperCase()}</span></div><div class="statrow"><div class="stat"><span>HP</span><b>${cls.maxHp}</b></div><div class="stat"><span>EN</span><b>${cls.maxEnergy}</b></div><div class="stat"><span>RÜS</span><b>${cls.armor}</b></div><div class="stat"><span>AUS</span><b>${Math.round(cls.dodge*100)} %</b></div><div class="stat"><span>STÄ</span><b>${cls.strengthFactor.toFixed(2)}</b></div><div class="stat"><span>PRÄ</span><b>${cls.precision.toFixed(2)}</b></div></div><div class="actions"><button class="btn primary" onclick="recruitCharacter('${cls.id}')" ${full||!canPay?"disabled":""}>${cls.name} anwerben · ${formatCurrencyNickel(cost)}</button></div></div>`).join("")+`${full?'<p class="status-line">Inn voll – zuerst einen weiteren Kaderplatz kaufen.</p>':(!canPay?'<p class="status-line">Nicht genügend Geld für die Rekrutierung.</p>':"")}`;
+  if(cap)cap.innerHTML=`<div class="statrow"><div class="stat"><span>Belegt</span><b>${state.characters.length}</b></div><div class="stat"><span>Kapazität</span><b>${state.upgrades.innCapacity}</b></div><div class="stat"><span>Nächste Kosten</span><b>${formatCurrencyNickel(cost)}</b></div></div><div class="actions"><button class="btn" onclick="go('base')">Inn-Ausbau öffnen</button></div>`;
+}
+function upgradeCost(kind,current){
+  const cfg=CONFIG.upgrades[kind],start=cfg.startCapacity??cfg.start;
+  return Math.round(cfg.baseCostNickel*Math.pow(cfg.growth,Math.max(0,current-start)));
+}
+function buyUpgrade(kind){
+  const map={
+    inn:["innCapacity","inn","Kaderplatz"],forgeSlots:["forgeSlots","forgeSlots","Herstellungsplatz"],
+    forgeQueue:["forgeQueue","forgeQueue","Schmiede-Warteschlangenplatz"],marketSlots:["marketSlots","marketSlots","Verkaufsplatz"],
+    marketQueue:["marketQueue","marketQueue","Markt-Warteschlangenplatz"]
+  },x=map[kind]; if(!x)return;
+  const [stateKey,cfgKey,label]=x,cfg=CONFIG.upgrades[cfgKey],current=state.upgrades[stateKey],max=cfg.maxCapacity??cfg.max;
+  if(current>=max)return;
+  const cost=upgradeCost(cfgKey,current);
+  if(state.gold<cost){alert(`Nicht genügend Geld. Benötigt: ${formatCurrencyNickel(cost)}.`);return;}
+  state.gold-=cost;state.upgrades[stateKey]++;
+  addLog(`${label} gekauft: jetzt ${state.upgrades[stateKey]} Plätze.`,"good");render();
+}
+function upgradeButton(kind,stateKey,cfgKey,label){
+  const current=state.upgrades[stateKey],cfg=CONFIG.upgrades[cfgKey],max=cfg.maxCapacity??cfg.max;
+  if(current>=max)return `<button class="btn" disabled>${label}: Maximum erreicht</button>`;
+  const cost=upgradeCost(cfgKey,current);
+  return `<button class="btn primary" onclick="buyUpgrade('${kind}')" ${state.gold<cost?"disabled":""}>+1 ${label} · ${formatCurrencyNickel(cost)}</button>`;
+}
+function renderUpgradeCards(){
+  const inn=document.getElementById("innUpgradeCard");
+  if(inn)inn.innerHTML=`<div class="statrow"><div class="stat"><span>Belegt / Kapazität</span><b>${state.characters.length} / ${state.upgrades.innCapacity}</b></div></div><div class="actions">${upgradeButton("inn","innCapacity","inn","Kaderplatz")}</div><p class="muted small">+1 Platz je Upgrade · Maximum ${CONFIG.upgrades.inn.maxCapacity}</p>`;
+  const f=document.getElementById("forgeUpgradeCard");
+  if(f)f.innerHTML=`<div class="statrow"><div class="stat"><span>Herstellungsplätze</span><b>${state.forgeJobs.length} / ${state.upgrades.forgeSlots}</b></div><div class="stat"><span>Warteschlange</span><b>${state.forgeQueue.length} / ${state.upgrades.forgeQueue}</b></div></div><div class="actions">${upgradeButton("forgeSlots","forgeSlots","forgeSlots","Herstellungsplatz")}${upgradeButton("forgeQueue","forgeQueue","forgeQueue","Warteschlangenplatz")}</div>`;
+  const m=document.getElementById("marketUpgradeCard");
+  if(m)m.innerHTML=`<div class="statrow"><div class="stat"><span>Verkaufsplätze</span><b>${state.marketJobs.length} / ${state.upgrades.marketSlots}</b></div><div class="stat"><span>Warteschlange</span><b>${state.marketQueue.length} / ${state.upgrades.marketQueue}</b></div></div><div class="actions">${upgradeButton("marketSlots","marketSlots","marketSlots","Verkaufsplatz")}${upgradeButton("marketQueue","marketQueue","marketQueue","Warteschlangenplatz")}</div>`;
+}
+function startForgeQueuedJob(job){const now=Date.now();job.startedAt=now;job.finishesAt=now+job.totalSeconds*1000;state.forgeJobs.push(job);}
+function fillForgeSlots(){while(state.forgeJobs.length<state.upgrades.forgeSlots&&state.forgeQueue.length)startForgeQueuedJob(state.forgeQueue.shift());}
+
+function startForgeJob(){
+  if(state.forgeJobs.length+state.forgeQueue.length>=state.upgrades.forgeSlots+state.upgrades.forgeQueue){alert("Alle Herstellungs- und Warteschlangenplätze sind belegt.");return;}
+  const p=forgePreview();if(!p.slots.every(x=>x.material)){alert("Bitte für alle sechs Slots ein Material auswählen.");return;}
+  const r=requirements(p.slots),invalid=Object.entries(r).find(([name,qty])=>(state.inventory[name]?.qty||0)<qty);
+  if(invalid){const [name,qty]=invalid;alert(`Nicht genügend ${name} vorhanden. Benötigt: ${qty}, Lager: ${state.inventory[name]?.qty||0}.`);return;}
+  Object.entries(r).forEach(([n,q])=>{state.inventory[n].qty-=q;if(state.inventory[n].qty<=0)delete state.inventory[n];});
+  const finalName=(document.getElementById("forgeWeaponName")?.value||"").trim()||p.type.name;
+  const job={weaponType:p.weaponType,weaponName:finalName,slots:p.slots.map(x=>({...x})),stats:{...p.stats},valueNickel:p.valueNickel,totalSeconds:p.seconds};
+  if(state.forgeJobs.length<state.upgrades.forgeSlots){startForgeQueuedJob(job);addLog(`Schmiedeauftrag gestartet: ${finalName}.`,"good");}
+  else{state.forgeQueue.push(job);addLog(`Schmiedeauftrag eingereiht: ${finalName}.`,"good");}
+  const ni=document.getElementById("forgeWeaponName");if(ni)ni.value="";render();
+}
+function finishForgeJob(j){
+  const t=CONFIG.forge.weaponTypes[j.weaponType];
+  state.weaponInventory.unshift({id:state.nextWeaponId++,name:j.weaponName||t.name,weaponType:j.weaponType,slots:j.slots,stats:j.stats,valueNickel:j.valueNickel,craftedSeconds:j.totalSeconds});
+  addLog(`Schmiede fertig: ${j.weaponName||t.name} wurde dem Waffeninventar hinzugefügt.`,"good");
+}
+function updateForgeJob(){
+  const now=Date.now(),done=state.forgeJobs.filter(j=>now>=j.finishesAt);
+  done.forEach(finishForgeJob);
+  if(done.length)state.forgeJobs=state.forgeJobs.filter(j=>now<j.finishesAt);
+  fillForgeSlots();
+  return done.length>0;
+}
+function renderForgeJob(){
+  const box=document.getElementById("forgeJobCard"),q=document.getElementById("forgeQueueCard");
+  if(box){box.className=state.forgeJobs.length?"":"empty";box.innerHTML=state.forgeJobs.length?state.forgeJobs.map((j,i)=>{const rem=Math.ceil(Math.max(0,j.finishesAt-Date.now())/1000),pct=Math.max(0,Math.min(100,100*(j.totalSeconds-rem)/j.totalSeconds));return `<div class="sell-row"><div style="width:100%"><strong>Platz ${i+1}: ${j.weaponName}</strong><p class="muted">${formatDuration(rem)} verbleibend</p><div class="bar energy"><i style="width:${pct}%"></i></div><p>ROH <b>${j.stats.expectedRaw.toFixed(2)}</b> · Wert <b>${formatCurrencyNickel(j.valueNickel)}</b></p></div></div>`}).join(""):"Kein aktiver Schmiedeauftrag.";}
+  if(q){q.className=state.forgeQueue.length?"":"empty";q.innerHTML=state.forgeQueue.length?state.forgeQueue.map((j,i)=>`<div class="sell-row"><div><strong>${i+1}. ${j.weaponName}</strong><div class="sell-meta">${formatDuration(j.totalSeconds)} Herstellungszeit</div></div></div>`).join(""):"Warteschlange leer.";}
+  renderUpgradeCards();
+}
+
+function getWeaponEquipLocation(weaponId){
+  for(const c of state.characters){
+    if(c.equipment.leftHand===weaponId)return {characterId:c.id,hand:"leftHand"};
+    if(c.equipment.rightHand===weaponId)return {characterId:c.id,hand:"rightHand"};
+  }
+  return null;
+}
+function getEquippedHandForWeapon(weaponId){return getWeaponEquipLocation(weaponId);}
+function equipWeapon(weaponId,hand,characterId){
+  const c=getCharacterById(characterId);if(!c||!["leftHand","rightHand"].includes(hand))return;
+  const existing=getWeaponEquipLocation(weaponId);
+  if(existing&&existing.characterId!==c.id){alert("Diese konkrete Waffe ist bereits bei einem anderen Charakter ausgerüstet.");return;}
+  const other=hand==="leftHand"?"rightHand":"leftHand";
+  if(c.equipment[other]===weaponId)c.equipment[other]=null;
+  c.equipment[hand]=weaponId;render();
+}
+function unequipHand(characterId,hand){
+  const c=getCharacterById(characterId);if(!c||!["leftHand","rightHand"].includes(hand))return;
+  c.equipment[hand]=null;render();
+}
+function equipWeaponFromInventory(weaponId,selectId){
+  const sel=document.getElementById(selectId);if(!sel||!sel.value)return;
+  const [characterId,hand]=sel.value.split(":");equipWeapon(Number(weaponId),hand,Number(characterId));
+}
+function renderWeaponInventory(){
+  const box=document.getElementById("weaponInventory"),empty=document.getElementById("weaponInventoryEmpty");if(!box||!empty)return;
+  const ws=[...state.weaponInventory].sort((a,b)=>a.id-b.id);box.innerHTML="";empty.style.display=ws.length?"none":"block";
+  ws.forEach((w,index)=>{
+    const loc=getWeaponEquipLocation(w.id);let status="",actions="";
+    if(loc){
+      const c=getCharacterById(loc.characterId);status=`${c?.name||"Charakter"} · ${loc.hand==="leftHand"?"LINKE":"RECHTE"} HAND`;
+      actions=`<div class="weapon-card-actions"><button class="btn" onclick="unequipHand(${loc.characterId},'${loc.hand}')">Ablegen</button></div>`;
+    }else{
+      const selectId=`lagerEquip_${index}`;
+      const opts=state.characters.flatMap(c=>[[c,"leftHand","Linke Hand"],[c,"rightHand","Rechte Hand"]]).filter(([c,h])=>c.equipment[h]==null).map(([c,h,l])=>`<option value="${c.id}:${h}">${c.name} · ${l}</option>`).join("");
+      actions=opts?`<div class="weapon-card-actions" style="display:grid;grid-template-columns:1fr auto"><select id="${selectId}" class="equip-select">${opts}</select><button class="btn primary" onclick="equipWeaponFromInventory(${w.id},'${selectId}')">Ausrüsten</button></div>`:`<div class="weapon-card-actions"><button class="btn" disabled>Keine freie Hand</button></div>`;
+    }
+    const d=document.createElement("div");d.innerHTML=weaponCardHtml(w,{status,actions});box.appendChild(d.firstElementChild);
+  });
+}
+
+function displayVal(v,kind="number"){
+  if(v===null||v===undefined)return "–";
+  if(kind==="percent")return `${Math.round(v*100)} %`;
+  return Number(v).toLocaleString("de-DE",{maximumFractionDigits:2});
+}
+
+function renderMaterialIndex(){
+  const body=document.getElementById("materialIndexRows");
+  if(!body)return;
+  body.innerHTML="";
+  Object.entries(MATERIALS).forEach(([name,m])=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`
+      <td>${m.category}</td>
+      <td><strong>${name}</strong></td>
+      <td class="rarity">S${m.rarity}</td>
+      <td>${displayVal(m.baseDamage)}</td>
+      <td>${displayVal(m.baseSpeed)}</td>
+      <td>${displayVal(m.blade)}</td>
+      <td>${displayVal(m.penetration,"percent")}</td>
+      <td>${displayVal(m.gripSpeed)}</td>
+      <td>${displayVal(m.hitChance,"percent")}</td>
+      <td>${reinforcementEffectText(name)}</td>
+      <td>${displayVal(getDungeonMaterialChance(1,name))} %</td>`;
+    body.appendChild(tr);
+  });
+}
+
+
+function rarityFactorFromRarity(rarity){
+  return 1+(MATERIAL_SALE_RARITY_BONUS[rarity]||0);
+}
+
+function materialSellData(name){
+  const m=MATERIALS[name];
+  if(!m)return null;
+  const factor=rarityFactorFromRarity(m.rarity);
+  return {
+    type:"material", name, rarity:m.rarity, factor,
+    valueNickel:Math.round(CONFIG.market.materialBaseNickel*factor),
+    seconds:Math.round(CONFIG.market.baseSeconds*factor)
+  };
+}
+
+function weaponSellData(weapon){
+  if(!weapon)return null;
+  const factor=rarityFactor(weapon.slots||[]);
+  return {
+    type:"weapon", weaponId:weapon.id, name:weapon.name, factor,
+    valueNickel:weapon.valueNickel,
+    seconds:Math.round(CONFIG.market.baseSeconds*factor)
+  };
+}
+
+function startMarketQueuedJob(job){const now=Date.now();job.startedAt=now;job.finishesAt=now+job.seconds*1000;state.marketJobs.push(job);}
+function fillMarketSlots(){while(state.marketJobs.length<state.upgrades.marketSlots&&state.marketQueue.length)startMarketQueuedJob(state.marketQueue.shift());}
+function enqueueMarketJob(job){
+  if(state.marketJobs.length+state.marketQueue.length>=state.upgrades.marketSlots+state.upgrades.marketQueue){alert("Alle Verkaufs- und Warteschlangenplätze sind belegt.");return false;}
+  if(state.marketJobs.length<state.upgrades.marketSlots)startMarketQueuedJob(job);else state.marketQueue.push(job);return true;
+}
+function startMaterialSale(name,quantity=1){
+  const stock=state.inventory[name]?.qty||0,qty=Math.max(1,Math.min(stock,Math.floor(Number(quantity)||1)));if(stock<=0)return;
+  const u=materialSellData(name),job={...u,quantity:qty,valueNickel:u.valueNickel*qty,seconds:u.seconds*qty,unitValueNickel:u.valueNickel,unitSeconds:u.seconds};
+  if(!enqueueMarketJob(job))return;state.inventory[name].qty-=qty;if(state.inventory[name].qty<=0)delete state.inventory[name];
+  addLog(`Verkauf eingestellt: ${qty}× ${name} für ${formatCurrencyNickel(job.valueNickel)}.`,"good");render();
+}
+function startWeaponSale(weaponId){
+  const w=state.weaponInventory.find(x=>x.id===weaponId);if(!w)return;if(w.starter){alert("Die Startwaffe kann nicht verkauft werden.");return;}if(getEquippedHandForWeapon(weaponId)){alert("Ausgerüstete Waffen können nicht verkauft werden.");return;}
+  const d=weaponSellData(w),job={...d,weaponSnapshot:w};if(!enqueueMarketJob(job))return;state.weaponInventory=state.weaponInventory.filter(x=>x.id!==weaponId);addLog(`Verkauf eingestellt: ${w.name}.`,"good");render();
+}
+function returnMarketJob(j){if(j.type==="material"){state.inventory[j.name]??={category:MATERIALS[j.name].category,qty:0};state.inventory[j.name].qty+=(j.quantity||1);}else if(j.weaponSnapshot)state.weaponInventory.unshift(j.weaponSnapshot);}
+function cancelMarketSale(kind,index){const a=kind==="queue"?state.marketQueue:state.marketJobs,j=a[index];if(!j)return;returnMarketJob(j);a.splice(index,1);if(kind!=="queue")fillMarketSlots();addLog(`Verkauf abgebrochen: ${j.name} wurde zurückgegeben.`,"muted");render();}
+function updateMarketJob(){
+  const now=Date.now(),done=state.marketJobs.filter(j=>now>=j.finishesAt);
+  done.forEach(j=>{state.gold+=j.valueNickel;addLog(`Verkauf abgeschlossen: ${j.name} → ${formatCurrencyNickel(j.valueNickel)}.`,"good");});
+  if(done.length)state.marketJobs=state.marketJobs.filter(j=>now<j.finishesAt);
+  fillMarketSlots();
+  return done.length>0;
+}
+function renderMarketJob(){
+  const b=document.getElementById("marketJobCard"),q=document.getElementById("marketQueueCard");
+  if(b){b.className=state.marketJobs.length?"":"empty";b.innerHTML=state.marketJobs.length?state.marketJobs.map((j,i)=>{const rem=Math.ceil(Math.max(0,j.finishesAt-Date.now())/1000),pct=Math.max(0,Math.min(100,100*((j.seconds||1)-rem)/(j.seconds||1)));return `<div class="sell-row"><div style="width:100%"><strong>Platz ${i+1}: ${j.type==="material"&&(j.quantity||1)>1?`${j.quantity}× `:""}${j.name}</strong><div class="bar energy"><i style="width:${pct}%"></i></div><p>${formatDuration(rem)} · Ertrag <b>${formatCurrencyNickel(j.valueNickel)}</b></p></div><button class="btn smallbtn" onclick="cancelMarketSale('active',${i})">Abbrechen</button></div>`}).join(""):"Kein aktiver Verkauf.";}
+  if(q){q.className=state.marketQueue.length?"":"empty";q.innerHTML=state.marketQueue.length?state.marketQueue.map((j,i)=>`<div class="sell-row"><div><strong>${i+1}. ${j.type==="material"&&(j.quantity||1)>1?`${j.quantity}× `:""}${j.name}</strong><div class="sell-meta">${formatDuration(j.seconds)} · ${formatCurrencyNickel(j.valueNickel)}</div></div><button class="btn smallbtn" onclick="cancelMarketSale('queue',${i})">Entfernen</button></div>`).join(""):"Warteschlange leer.";}
+  renderUpgradeCards();
+}
+
+function setMarketQty(inputId,delta,max){
+  const input=document.getElementById(inputId);
+  if(!input)return;
+  const current=Math.floor(Number(input.value)||1);
+  input.value=Math.max(1,Math.min(max,current+delta));
+  updateMarketMaterialPreview(inputId);
+}
+
+function updateMarketMaterialPreview(inputId){
+  const input=document.getElementById(inputId);
+  if(!input)return;
+  const name=input.dataset.material;
+  const max=Number(input.max)||1;
+  const qty=Math.max(1,Math.min(max,Math.floor(Number(input.value)||1)));
+  input.value=qty;
+
+  const d=materialSellData(name);
+  const preview=document.getElementById(inputId+"Preview");
+  if(preview){
+    preview.textContent=`${formatCurrencyNickel(d.valueNickel*qty)} · ${formatDuration(d.seconds*qty)}`;
+  }
+}
+
+function renderMarketMaterials(){
+  const box=document.getElementById("marketMaterials");
+  const empty=document.getElementById("marketMaterialsEmpty");
+  if(!box||!empty)return;
+
+  const entries=Object.entries(state.inventory)
+    .filter(([name,x])=>x.qty>0)
+    .sort((a,b)=>a[0].localeCompare(b[0]));
+
+  box.innerHTML="";
+  empty.style.display=entries.length?"none":"block";
+
+  entries.forEach(([name,x],index)=>{
+    const d=materialSellData(name);
+    const inputId=`marketQty_${index}`;
+    const row=document.createElement("div");
+    row.className="sell-row";
+    row.title=`Pro Stück: ${formatCurrencyNickel(d.valueNickel)} · ${formatDuration(d.seconds)}`;
+
+    row.innerHTML=`
+      <div>
+        <strong>${name}</strong>
+        <div class="sell-meta">Bestand ${x.qty}</div>
+        <div class="sell-meta" id="${inputId}Preview">${formatCurrencyNickel(d.valueNickel)} · ${formatDuration(d.seconds)}</div>
+      </div>
+      <div class="market-qty">
+        <button class="btn smallbtn" type="button">−</button>
+        <input id="${inputId}" class="number-input" type="number" min="1" max="${x.qty}" value="1" data-material="${name}">
+        <button class="btn smallbtn" type="button">+</button>
+        <button class="btn smallbtn primary" type="button" ${(state.marketJobs.length+state.marketQueue.length>=state.upgrades.marketSlots+state.upgrades.marketQueue)?"disabled":""}>Verkaufen</button>
+      </div>`;
+
+    const buttons=row.querySelectorAll("button");
+    const input=row.querySelector("input");
+    buttons[0].addEventListener("click",()=>setMarketQty(inputId,-1,x.qty));
+    buttons[1].addEventListener("click",()=>setMarketQty(inputId,1,x.qty));
+    buttons[2].addEventListener("click",()=>startMaterialSale(name,input.value));
+    input.addEventListener("input",()=>updateMarketMaterialPreview(inputId));
+
+    box.appendChild(row);
+  });
+}
+
+function renderMarketWeapons(){
+  const box=document.getElementById("marketWeapons");
+  const empty=document.getElementById("marketWeaponsEmpty");
+  if(!box||!empty)return;
+  const weapons=state.weaponInventory.filter(w=>!w.starter && !getEquippedHandForWeapon(w.id));
+  box.innerHTML="";
+  empty.style.display=weapons.length?"none":"block";
+  weapons.forEach(w=>{
+    const d=weaponSellData(w);
+    const row=document.createElement("div");
+    row.className="sell-row";
+    row.title=`Verkaufswert: ${formatCurrencyNickel(d.valueNickel)} · Verkaufsdauer: ${d.seconds}s`;
+    row.innerHTML=`<div><strong>${w.name} #${w.id}</strong></div><button class="btn smallbtn" ${(state.marketJobs.length+state.marketQueue.length>=state.upgrades.marketSlots+state.upgrades.marketQueue)?"disabled":""}>Verkaufen</button>`;
+    row.querySelector("button").addEventListener("click",()=>startWeaponSale(w.id));
+    box.appendChild(row);
+  });
+}
+function renderDungeonStatus(){
+  const box=document.getElementById("dungeonRunCard"),autoBtn=document.getElementById("autoDungeonBtn"),collectBtn=document.getElementById("collectLootBtn");if(!box||!autoBtn||!collectBtn)return;
+  autoBtn.textContent=state.dungeonAuto?"Automatik anhalten":"Automatik starten";autoBtn.disabled=!state.dungeonAuto&&!getSelectedDungeonIds().length;
+  const lootTotal=Object.values(state.dungeonLoot||{}).reduce((s,x)=>s+(x.qty||0),0);collectBtn.disabled=lootTotal<=0;collectBtn.textContent=lootTotal>0?`Einsammeln (${lootTotal})`:"Einsammeln";
+  if(state.dungeonRun){
+    const j=state.dungeonRun,alive=j.enemies.filter(e=>e.alive&&e.hp>0);
+    box.className="";box.innerHTML=`<strong>Welle aktiv</strong><p>${alive.length} / ${j.enemies.length} Gegner leben</p><p class="muted small">${j.participantIds.length} Charakter${j.participantIds.length===1?"":"e"} · ${j.energyShare} EN je Charakter · ${state.dungeonAuto?"Automatik aktiv":"Automatik angehalten – diese Welle wird noch beendet"}</p><div class="statrow">${j.enemies.map(e=>`<div class="stat"><span>${e.name}</span><b>${e.hp.toFixed(1)} / ${e.maxHp} HP</b></div>`).join("")}</div>`;return;
+  }
+  if(state.dungeonLootCollect){box.className="empty";box.innerHTML=`<strong>Beute wird eingesammelt …</strong><br><span class="small">${state.dungeonLootCollect.enemyCount} Materialwurf${state.dungeonLootCollect.enemyCount===1?"":"würfe"}</span>`;return;}
+  box.className="empty";if(state.dungeonAuto){box.innerHTML=`<strong>Dungeon wird durchsucht …</strong><br><span class="small">10 % Begegnungschance pro Sekunde · Energie erst bei Kampfbeginn</span>`;}else box.innerHTML=getSelectedDungeonIds().length?"Automatik angehalten.":"Kein Charakter zugewiesen.";
+}
+function renderDungeonLoot(){
+  const box=document.getElementById("dungeonLoot");
+  const empty=document.getElementById("dungeonLootEmpty");
+  if(!box||!empty)return;
+  const entries=Object.entries(state.dungeonLoot||{}).filter(([name,x])=>x.qty>0).sort((a,b)=>a[0].localeCompare(b[0]));
+  box.innerHTML="";
+  empty.style.display=entries.length?"none":"block";
+  if(!entries.length)return;
+  const grid=document.createElement("div");
+  grid.className="loot-grid";
+  entries.forEach(([name,x])=>{
+    const chip=document.createElement("div");
+    chip.className="loot-chip";
+    chip.innerHTML=`${name}<b>×${x.qty}</b>`;
+    grid.appendChild(chip);
+  });
+  box.appendChild(grid);
+}
+
+function render(){
+  updateEnergy();
+  document.getElementById("gold").textContent=formatHighestCurrency(state.gold);
+  const total=Object.values(state.inventory).reduce((s,x)=>s+x.qty,0);document.getElementById("matCount").textContent=total;
+
+  const displayedCount=state.dungeonRun?.participantIds?.length||getSelectedDungeonIds().length;
+  document.getElementById("enemyHp").textContent=`${CONFIG.dungeon.enemyBase.damage} Basis-SCH`;
+  document.getElementById("enemyArmor").textContent=`${Math.round(CONFIG.dungeon.enemyBase.hitChance*100)} % Basis-TRF`;
+  document.getElementById("enemyDamage").textContent=`${CONFIG.dungeon.enemyBase.speed.toFixed(2)} Basis-GES`;
+  const share=getEnergyCostPerCharacter(displayedCount);
+  document.getElementById("energyCost").textContent=displayedCount?`${share} je Char. (${share*displayedCount} gesamt)`:"–";
+  document.getElementById("runDuration").textContent=`${state.dungeonWavesDefeated||0} besiegt`;
+
+  renderCharacter("teamCard");renderCharacter("rosterCard");renderTavern();
+
+  const tbody=document.getElementById("inventoryRows");tbody.innerHTML="";
+  const entries=Object.entries(state.inventory);document.getElementById("inventoryEmpty").style.display=entries.length?"none":"block";
+  entries.sort((a,b)=>a[0].localeCompare(b[0])).forEach(([name,x])=>{const d=materialSellData(name),tr=document.createElement("tr");tr.innerHTML=`<td title="Verkaufswert: ${formatCurrencyNickel(d.valueNickel)}">${name}</td><td>${x.category}</td><td>${x.qty}</td><td>${formatCurrencyNickel(d.valueNickel)}</td>`;tbody.appendChild(tr);});
+
+  renderDungeonStatus();renderDungeonLoot();renderForgePreview();renderForgeJob();renderWeaponInventory();renderMaterialIndex();renderMarketJob();renderMarketMaterials();renderMarketWeapons();renderUpgradeCards();prepareMobileTableLabels();queueSave();
+}
+
+function gameTick(){
+  updateEnergy();
+  const forgeCompleted=updateForgeJob();
+  const marketCompleted=updateMarketJob();
+  updateDungeonAutomation();
+
+  renderForgeJob();
+  renderMarketJob();
+  renderDungeonStatus();
+  renderDungeonLoot();
+  renderCharacter("teamCard");
+
+  // Kapazitätsabhängige Bedienelemente sofort freigeben, sobald ein Auftrag endet.
+  // Dadurch muss die Seite nicht mehr verlassen und erneut geöffnet werden.
+  if(forgeCompleted){
+    renderForgePreview();
+    renderWeaponInventory();
+  }
+  if(marketCompleted){
+    renderMarketMaterials();
+    renderMarketWeapons();
+    const goldEl=document.getElementById("gold");
+    if(goldEl)goldEl.textContent=formatHighestCurrency(state.gold);
+  }
+
+  const rosterRoot=document.getElementById("rosterCard");
+  const rosterIsBeingUsed=rosterRoot&&rosterRoot.contains(document.activeElement);
+  if(!rosterIsBeingUsed&&!openWeaponPickerHand)renderCharacter("rosterCard");
+  if(!saveUnavailable&&Date.now()-lastAutoSaveAt>=10000)saveGame(false);
+}
+
+loadGame();
+updateEnergy();
+updateForgeJob();
+updateMarketJob();
+updateDungeonAutomation();
+
+// Timer zuerst registrieren: Ein Fehler im anschließenden UI-Render darf
+// die Zeitlogik nicht mehr komplett deaktivieren.
+setInterval(gameTick,250);
+render();
+</script>
+</body>
+</html>
