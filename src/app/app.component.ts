@@ -2,6 +2,7 @@ import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild } from '@ang
 import { LegacyRuntimeService } from './core/legacy-runtime.service';
 import { LegacySourceAdapterService } from './core/legacy-source-adapter.service';
 
+const APP_VERSION = '0.12.3';
 const LEGACY_PROTOTYPE_PATH = 'legacy/NoBrainer_GitHub_v0.12.2.html';
 const LEGACY_STYLE_ID = 'nobrainer-legacy-style';
 const LEGACY_SCRIPT_ID = 'nobrainer-legacy-script';
@@ -24,10 +25,6 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     try {
       await this.mountLegacyPrototype();
       this.legacyRuntime.prepare();
-
-      // Wie im stabilen HTML-Prototyp wird der zentrale Tick vor dem ersten
-      // Voll-Render registriert. So bleibt die Zeitlogik auch bei einem
-      // Renderfehler aktiv.
       this.legacyRuntime.startTick();
 
       try {
@@ -50,9 +47,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     const prototypeUrl = new URL(LEGACY_PROTOTYPE_PATH, document.baseURI);
     const response = await fetch(prototypeUrl);
 
-    if (!response.ok) {
-      throw new Error(`Legacy-Prototyp nicht erreichbar (${response.status}).`);
-    }
+    if (!response.ok) throw new Error(`Legacy-Prototyp nicht erreichbar (${response.status}).`);
 
     const source = await response.text();
     const parsed = new DOMParser().parseFromString(source, 'text/html');
@@ -64,10 +59,29 @@ export class AppComponent implements AfterViewInit, OnDestroy {
       throw new Error('Legacy-Prototyp hat nicht die erwartete v0.12.2-Struktur.');
     }
 
-    const adaptedScript = this.legacySourceAdapter.adapt(legacyScript.textContent ?? '');
+    let adaptedScript = this.legacySourceAdapter.adapt(legacyScript.textContent ?? '');
+    adaptedScript = this.applyDungeonEnergyPolicy(adaptedScript);
     this.installLegacyStyle(legacyStyle.textContent ?? '');
     this.legacyHost.nativeElement.innerHTML = app.outerHTML;
+    this.applyVersionMarker();
     this.installLegacyScript(adaptedScript);
+  }
+
+  private applyDungeonEnergyPolicy(source: string): string {
+    const oldBlock = `function beginDungeonSearch(at=Date.now()){\n  if(!state.dungeonAuto||state.dungeonRun||state.dungeonLootCollect)return false;\n  const participants=getAliveDungeonParticipants();\n  if(!participants.length)return false;\n  state.expeditionActive=true;\n  state.dungeonSearch={nextCheckAt:at+CONFIG.dungeon.searchStepMs};\n  return true;\n}`;
+    const newBlock = `function beginDungeonSearch(at=Date.now()){\n  if(!state.dungeonAuto||state.dungeonRun||state.dungeonLootCollect)return false;\n  const check=getDungeonStartCheck();\n  if(!check.ok){\n    if(check.reason.includes("Energie")){\n      state.dungeonAuto=false;\n      state.dungeonSearch=null;\n      state.lastEnergyUpdate=at;\n      addLog("Dungeon-Automatik beendet: Nicht genügend Energie für eine weitere Gegnerwelle. Nach der Regeneration muss sie manuell neu gestartet werden.","muted");\n      queueSave();\n    }\n    return false;\n  }\n  state.expeditionActive=true;\n  state.dungeonSearch={nextCheckAt:at+CONFIG.dungeon.searchStepMs};\n  return true;\n}`;
+
+    const first = source.indexOf(oldBlock);
+    if (first < 0 || source.indexOf(oldBlock, first + oldBlock.length) >= 0) {
+      throw new Error('Legacy-Kompatibilität fehlgeschlagen: Dungeon-Energieprüfung konnte nicht eindeutig angepasst werden.');
+    }
+    return source.slice(0, first) + newBlock + source.slice(first + oldBlock.length);
+  }
+
+  private applyVersionMarker(): void {
+    document.title = `Projekt NoBrainer – Prototype v${APP_VERSION}`;
+    const versionLabel = this.legacyHost.nativeElement.querySelector<HTMLElement>('.brand small');
+    if (versionLabel) versionLabel.textContent = `Prototype v${APP_VERSION}`;
   }
 
   private installLegacyStyle(css: string): void {
@@ -79,13 +93,10 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   }
 
   private installLegacyScript(source: string): void {
-    if (document.getElementById(LEGACY_SCRIPT_ID)) {
-      return;
-    }
-
+    if (document.getElementById(LEGACY_SCRIPT_ID)) return;
     const script = document.createElement('script');
     script.id = LEGACY_SCRIPT_ID;
-    script.textContent = `${source}\n//# sourceURL=NoBrainer_GitHub_v0.12.2.legacy.js`;
+    script.textContent = `${source}\n//# sourceURL=NoBrainer_GitHub_v${APP_VERSION}.legacy.js`;
     document.body.appendChild(script);
   }
 }
