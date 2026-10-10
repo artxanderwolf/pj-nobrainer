@@ -47,23 +47,16 @@ export class LegacyRuntimeService {
     runtime.prepare();
 
     if (before && this.shouldShowOfflineSummary(before)) {
-      // Persist the fully caught-up state so the comparison includes every
-      // autonomous system that was advanced during runtime preparation.
       runtime.save(false);
       const after = this.readSnapshot();
-      if (after) {
-        this.showOfflineSummary(before, after);
-      }
+      if (after) this.showOfflineSummary(before, after);
     }
 
     this.registerVisibilityHandler();
   }
 
   startTick(): void {
-    if (this.tickHandle !== null) {
-      return;
-    }
-
+    if (this.tickHandle !== null) return;
     const runtime = this.getRuntime();
     this.tickHandle = window.setInterval(() => runtime.tick(), 250);
   }
@@ -73,10 +66,7 @@ export class LegacyRuntimeService {
   }
 
   stopTick(): void {
-    if (this.tickHandle === null) {
-      return;
-    }
-
+    if (this.tickHandle === null) return;
     window.clearInterval(this.tickHandle);
     this.tickHandle = null;
   }
@@ -87,10 +77,7 @@ export class LegacyRuntimeService {
 
     document.addEventListener('visibilitychange', () => {
       const runtime = this.getRuntime();
-
       if (document.hidden) {
-        // Save at the moment the game leaves the foreground. This gives the
-        // return summary a stable baseline even if the browser keeps ticking.
         runtime.save(false);
         this.hiddenSnapshot = this.readSnapshot();
         return;
@@ -100,14 +87,10 @@ export class LegacyRuntimeService {
       this.hiddenSnapshot = null;
       if (!before || !this.shouldShowOfflineSummary(before)) return;
 
-      // Run one immediate catch-up tick before comparing. This covers both
-      // throttled/suspended tabs and browsers that continued running timers.
       runtime.tick();
       runtime.save(false);
       const after = this.readSnapshot();
-      if (after) {
-        this.showOfflineSummary(before, after);
-      }
+      if (after) this.showOfflineSummary(before, after);
     });
   }
 
@@ -119,10 +102,7 @@ export class LegacyRuntimeService {
       const parsed = JSON.parse(raw);
       const state = parsed?.state ?? parsed;
       const savedAt = Number(parsed?.savedAt);
-      return {
-        state,
-        savedAt: Number.isFinite(savedAt) ? savedAt : null
-      };
+      return { state, savedAt: Number.isFinite(savedAt) ? savedAt : null };
     } catch {
       return null;
     }
@@ -136,15 +116,9 @@ export class LegacyRuntimeService {
     const energyCanRegenerate = !state.dungeonAuto && characters.some((c: any) => Number(c.energy) < Number(c.maxEnergy));
 
     return Boolean(
-      state.dungeonAuto ||
-      state.dungeonRun ||
-      state.dungeonSearch ||
-      state.dungeonLootCollect ||
-      state.forgeJobs?.length ||
-      state.forgeQueue?.length ||
-      state.marketJobs?.length ||
-      state.marketQueue?.length ||
-      energyCanRegenerate
+      state.dungeonAuto || state.dungeonRun || state.dungeonSearch || state.dungeonLootCollect ||
+      state.forgeJobs?.length || state.forgeQueue?.length ||
+      state.marketJobs?.length || state.marketQueue?.length || energyCanRegenerate
     );
   }
 
@@ -156,8 +130,10 @@ export class LegacyRuntimeService {
     const afterState = after.state ?? {};
     const lines: string[] = [`Abwesend: ${this.formatDuration(elapsedMs)}`];
 
+    // dungeonWavesDefeated is incremented only for a won wave. The delta therefore
+    // represents successful loot-producing waves during exactly this absence.
     const waves = Math.max(0, Number(afterState.dungeonWavesDefeated || 0) - Number(beforeState.dungeonWavesDefeated || 0));
-    if (waves > 0) lines.push(`Dungeon: ${waves} Welle${waves === 1 ? '' : 'n'} besiegt`);
+    if (waves > 0) lines.push(`Dungeon: ${waves} Welle${waves === 1 ? '' : 'n'} erfolgreich abgeschlossen`);
 
     const lootChanges = this.quantityChanges(beforeState.dungeonLoot, afterState.dungeonLoot);
     if (lootChanges.length) lines.push(`Dungeon-Beute: ${lootChanges.join(', ')}`);
@@ -170,17 +146,25 @@ export class LegacyRuntimeService {
     const goldGain = Number(afterState.gold || 0) - Number(beforeState.gold || 0);
     if (goldGain > 0) lines.push(`Markt: +${this.formatCurrencyNickel(goldGain)}`);
 
-    const energyGain = this.totalCharacterDelta(beforeState.characters, afterState.characters, 'energy');
-    if (energyGain > 0.05) lines.push(`Energie regeneriert: +${this.formatNumber(energyGain)}`);
-
-    const hpGain = this.totalCharacterDelta(beforeState.characters, afterState.characters, 'hp');
-    if (hpGain > 0.05) lines.push(`HP regeneriert: +${this.formatNumber(hpGain)}`);
-
-    if (lines.length === 1) {
-      lines.push('Keine abgeschlossenen automatischen Vorgänge.');
+    if (this.energyFullyRegeneratedDuringAbsence(beforeState.characters, afterState.characters)) {
+      lines.push('Energie vollständig regeneriert');
     }
 
+    if (lines.length === 1) lines.push('Keine abgeschlossenen automatischen Vorgänge.');
     window.alert(`Offline-Fortschritt\n\n${lines.join('\n')}`);
+  }
+
+  private energyFullyRegeneratedDuringAbsence(before: any, after: any): boolean {
+    const beforeById = new Map((Array.isArray(before) ? before : []).map((c: any) => [Number(c.id), c]));
+    return (Array.isArray(after) ? after : []).some((c: any) => {
+      const previous: any = beforeById.get(Number(c.id));
+      if (!previous) return false;
+      const beforeEnergy = Number(previous.energy || 0);
+      const beforeMax = Number(previous.maxEnergy || 0);
+      const afterEnergy = Number(c.energy || 0);
+      const afterMax = Number(c.maxEnergy || 0);
+      return beforeEnergy + 0.05 < beforeMax && afterMax > 0 && afterEnergy + 0.05 >= afterMax;
+    });
   }
 
   private quantityChanges(before: any, after: any): string[] {
@@ -193,14 +177,6 @@ export class LegacyRuntimeService {
       if (delta > 0) changes.push(`${name} +${this.formatNumber(delta)}`);
     }
     return changes;
-  }
-
-  private totalCharacterDelta(before: any, after: any, field: 'energy' | 'hp'): number {
-    const beforeById = new Map((Array.isArray(before) ? before : []).map((c: any) => [Number(c.id), Number(c[field] || 0)]));
-    return (Array.isArray(after) ? after : []).reduce((sum: number, c: any) => {
-      const previous = beforeById.get(Number(c.id));
-      return previous === undefined ? sum : sum + Math.max(0, Number(c[field] || 0) - previous);
-    }, 0);
   }
 
   private formatDuration(ms: number): string {
@@ -232,9 +208,7 @@ export class LegacyRuntimeService {
 
   private getRuntime(): NoBrainerLegacyRuntime {
     const runtime = window.NoBrainerLegacyRuntime;
-    if (!runtime) {
-      throw new Error('NoBrainer-Legacy-Runtime wurde nicht registriert.');
-    }
+    if (!runtime) throw new Error('NoBrainer-Legacy-Runtime wurde nicht registriert.');
     return runtime;
   }
 }
