@@ -56,6 +56,7 @@ const RUNTIME_BRIDGE = `function prepareGameRuntime(){
   updateForgeJob();
   updateMarketJob();
   updateDungeonAutomation();
+  updateEnergy();
 }
 
 window.NoBrainerLegacyRuntime={
@@ -182,7 +183,7 @@ function startDungeonRun(at=Date.now()){
   state.dungeonSearch=null;
   const check=getDungeonStartCheck();
   if(!check.ok){
-    if(state.dungeonAuto&&check.reason.includes("Energie")){state.dungeonAuto=false;addLog("Dungeon-Automatik beendet: Nicht genügend Energie für die gefundene Gegnerwelle. Nach der Regeneration muss sie manuell neu gestartet werden.","muted");queueSave();}
+    if(state.dungeonAuto&&check.reason.includes("Energie")){state.dungeonAuto=false;state.lastEnergyUpdate=at;addLog("Dungeon-Automatik beendet: Nicht genügend Energie für die gefundene Gegnerwelle. Nach der Regeneration muss sie manuell neu gestartet werden.","muted");queueSave();}
     return false;
   }
   check.participants.forEach(c=>{c.energy=Math.max(0,c.energy-check.share);});
