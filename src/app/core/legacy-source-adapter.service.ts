@@ -1,9 +1,11 @@
 import { Injectable } from '@angular/core';
 import { GAME_CORE_BRIDGE, GameCoreBridge } from '../game/game-core';
+import { SAVE_CODEC_BRIDGE, SaveCodecBridge } from '../game/save-codec';
 
 declare global {
   interface Window {
     NoBrainerGameCore?: GameCoreBridge;
+    NoBrainerSaveCodec?: SaveCodecBridge;
   }
 }
 
@@ -13,7 +15,12 @@ let saveTimer=null;
 let saveUnavailable=false;
 let lastAutoSaveAt=0;`;
 
-const SAVE_DECLARATIONS_WITH_ADAPTER = `${SAVE_DECLARATIONS}
+const SAVE_DECLARATIONS_WITH_ADAPTER = `const SAVE_KEY="nobrainer_save_v1";
+if(!window.NoBrainerSaveCodec)throw new Error("NoBrainer-Save-Codec wurde nicht registriert.");
+const SAVE_VERSION=window.NoBrainerSaveCodec.SAVE_VERSION;
+let saveTimer=null;
+let saveUnavailable=false;
+let lastAutoSaveAt=0;
 let saveStorage={
   read:()=>localStorage.getItem(SAVE_KEY),
   write:value=>localStorage.setItem(SAVE_KEY,value),
@@ -24,6 +31,13 @@ function configureSaveStorage(adapter){
   if(!adapter || typeof adapter.read!=="function" || typeof adapter.write!=="function" || typeof adapter.remove!=="function")throw new Error("Ungültiger Save-Storage-Adapter.");
   saveStorage=adapter;
 }`;
+
+const LOAD_PARSE_BLOCK = `const parsed=JSON.parse(raw);
+    state=normalizeLoadedState(parsed.state||parsed);
+    const when=parsed.savedAt?new Date(parsed.savedAt):null;`;
+const LOAD_PARSE_WITH_CODEC = `const parsed=window.NoBrainerSaveCodec.decodeSave(raw);
+    state=normalizeLoadedState(parsed.state);
+    const when=parsed.savedAt?new Date(parsed.savedAt):null;`;
 
 const STARTUP_BLOCK = `loadGame();
 updateEnergy();
@@ -55,7 +69,6 @@ window.NoBrainerLegacyRuntime={
 
 const SEARCH_MISS_BLOCK = `if(Math.random()<CONFIG.dungeon.encounterChance){startDungeonRun();}
     else state.dungeonSearch.nextCheckAt+=CONFIG.dungeon.searchStepMs;`;
-
 const SEARCH_MISS_WITH_HP_REGEN = `if(Math.random()<CONFIG.dungeon.encounterChance){startDungeonRun();}
     else{
       getAliveDungeonParticipants().forEach(c=>{c.hp=Math.min(c.maxHp,c.hp+1);});
@@ -67,40 +80,33 @@ const CONFIG=window.NoBrainerGameCore.CONFIG;
 const CHARACTER_CLASSES=window.NoBrainerGameCore.CHARACTER_CLASSES;
 
 `;
-
 const MATERIAL_DATA_BRIDGE = `const MATERIAL_SALE_RARITY_BONUS=window.NoBrainerGameCore.MATERIAL_SALE_RARITY_BONUS;
 const MATERIALS=window.NoBrainerGameCore.MATERIALS;
 
 `;
-
 const LOOT_DATA_BRIDGE = `const DUNGEON_LOOT_TABLES=window.NoBrainerGameCore.DUNGEON_LOOT_TABLES;
 
 `;
-
 const WEAPON_DAMAGE_BRIDGE = `function weaponDamageAfterArmor(weapon,enemyArmor=CONFIG.dungeon.enemyArmor,character=null){
   return window.NoBrainerGameCore.weaponDamageAfterArmor(weapon,enemyArmor,character);
 }
 
 `;
-
 const NORMALIZE_SLOTS_BRIDGE = `function normalizeWeaponSlots(slots){
   return window.NoBrainerGameCore.normalizeWeaponSlots(slots);
 }
 
 `;
-
 const RARITY_FACTOR_BRIDGE = `function rarityFactor(slots){
   return window.NoBrainerGameCore.rarityFactor(slots);
 }
 
 `;
-
 const REINFORCEMENT_TEXT_BRIDGE = `function reinforcementEffectText(materialName){
   return window.NoBrainerGameCore.reinforcementEffectText(materialName);
 }
 
 `;
-
 const WEAPON_STATS_BRIDGE = `function calculateWeaponStats(slots,weaponType){
   return window.NoBrainerGameCore.calculateWeaponStats(slots,weaponType);
 }
@@ -111,6 +117,7 @@ const WEAPON_STATS_BRIDGE = `function calculateWeaponStats(slots,weaponType){
 export class LegacySourceAdapterService {
   adapt(source: string): string {
     window.NoBrainerGameCore = GAME_CORE_BRIDGE;
+    window.NoBrainerSaveCodec = SAVE_CODEC_BRIDGE;
     let adapted = this.replaceRangeOnce(source, 'const CONFIG = {', 'function getCharacterClass(c){', CORE_DATA_BRIDGE, 'Konfiguration und Klassen');
     adapted = this.replaceRangeOnce(adapted, 'const MATERIAL_SALE_RARITY_BONUS=', 'function findWeakestStarterSlots(){', MATERIAL_DATA_BRIDGE, 'Materialdaten');
     adapted = this.replaceRangeOnce(adapted, 'const DUNGEON_LOOT_TABLES={', 'const titles = {', LOOT_DATA_BRIDGE, 'Dungeon-Lootdaten');
@@ -119,15 +126,10 @@ export class LegacySourceAdapterService {
     adapted = this.replaceRangeOnce(adapted, 'function rarityFactor(', 'function reinforcementEffectText(', RARITY_FACTOR_BRIDGE, 'Seltenheitsberechnung');
     adapted = this.replaceRangeOnce(adapted, 'function reinforcementEffectText(', 'function requirements(', REINFORCEMENT_TEXT_BRIDGE, 'Verstärkungstext');
     adapted = this.replaceRangeOnce(adapted, 'function calculateWeaponStats(', 'function forgePreview(', WEAPON_STATS_BRIDGE, 'Waffenwertberechnung');
-
     adapted = this.replaceOnce(adapted, SAVE_DECLARATIONS, SAVE_DECLARATIONS_WITH_ADAPTER, 'Save-Deklarationen');
     adapted = this.replaceOnce(adapted, 'const raw=localStorage.getItem(SAVE_KEY);', 'const raw=saveStorage.read();', 'Save-Laden');
-    adapted = this.replaceOnce(
-      adapted,
-      'localStorage.setItem(SAVE_KEY,JSON.stringify({saveVersion:SAVE_VERSION,savedAt,state}));',
-      'saveStorage.write(JSON.stringify({saveVersion:SAVE_VERSION,savedAt,state}));',
-      'Save-Schreiben'
-    );
+    adapted = this.replaceOnce(adapted, LOAD_PARSE_BLOCK, LOAD_PARSE_WITH_CODEC, 'Save-Decodierung');
+    adapted = this.replaceOnce(adapted, 'localStorage.setItem(SAVE_KEY,JSON.stringify({saveVersion:SAVE_VERSION,savedAt,state}));', 'saveStorage.write(window.NoBrainerSaveCodec.encodeSave(state,savedAt));', 'Save-Schreiben');
     adapted = this.replaceOnce(adapted, 'try{localStorage.removeItem(SAVE_KEY);}catch(err){}', 'try{saveStorage.remove();}catch(err){}', 'Save-Zurücksetzen');
     adapted = this.replaceOnce(adapted, SEARCH_MISS_BLOCK, SEARCH_MISS_WITH_HP_REGEN, 'HP-Regeneration bei erfolgloser Dungeonsuche');
     adapted = this.replaceOnce(adapted, STARTUP_BLOCK, RUNTIME_BRIDGE, 'Runtime-Startblock');
@@ -136,28 +138,17 @@ export class LegacySourceAdapterService {
 
   private replaceRangeOnce(source: string, startMarker: string, endMarker: string, replacement: string, label: string): string {
     const start = source.indexOf(startMarker);
-    if (start < 0) {
-      throw new Error(`Legacy-Kompatibilität fehlgeschlagen: Startanker für ${label} wurde nicht gefunden.`);
-    }
-    if (source.indexOf(startMarker, start + startMarker.length) >= 0) {
-      throw new Error(`Legacy-Kompatibilität fehlgeschlagen: Startanker für ${label} ist nicht eindeutig.`);
-    }
-
+    if (start < 0) throw new Error(`Legacy-Kompatibilität fehlgeschlagen: Startanker für ${label} wurde nicht gefunden.`);
+    if (source.indexOf(startMarker, start + startMarker.length) >= 0) throw new Error(`Legacy-Kompatibilität fehlgeschlagen: Startanker für ${label} ist nicht eindeutig.`);
     const end = source.indexOf(endMarker, start + startMarker.length);
-    if (end < 0) {
-      throw new Error(`Legacy-Kompatibilität fehlgeschlagen: Endanker für ${label} wurde nicht gefunden.`);
-    }
+    if (end < 0) throw new Error(`Legacy-Kompatibilität fehlgeschlagen: Endanker für ${label} wurde nicht gefunden.`);
     return source.slice(0, start) + replacement + source.slice(end);
   }
 
   private replaceOnce(source: string, search: string, replacement: string, label: string): string {
     const first = source.indexOf(search);
-    if (first < 0) {
-      throw new Error(`Legacy-Kompatibilität fehlgeschlagen: ${label} wurde nicht gefunden.`);
-    }
-    if (source.indexOf(search, first + search.length) >= 0) {
-      throw new Error(`Legacy-Kompatibilität fehlgeschlagen: ${label} ist nicht eindeutig.`);
-    }
+    if (first < 0) throw new Error(`Legacy-Kompatibilität fehlgeschlagen: ${label} wurde nicht gefunden.`);
+    if (source.indexOf(search, first + search.length) >= 0) throw new Error(`Legacy-Kompatibilität fehlgeschlagen: ${label} ist nicht eindeutig.`);
     return source.slice(0, first) + replacement + source.slice(first + search.length);
   }
 }
