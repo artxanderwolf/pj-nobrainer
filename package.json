@@ -6,7 +6,8 @@
     "start": "ng serve",
     "check:legacy": "node scripts/check-legacy.mjs",
     "check:core": "node --no-warnings --experimental-strip-types scripts/check-game-core.mjs",
-    "check": "npm run check:legacy && npm run check:core",
+    "check:save": "node --no-warnings --experimental-strip-types scripts/check-save-codec.mjs",
+    "check": "npm run check:legacy && npm run check:core && npm run check:save",
     "build": "npm run check && ng build",
     "build:pages": "npm run check && ng build --configuration production"
   },
