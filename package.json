@@ -5,8 +5,10 @@
   "scripts": {
     "start": "ng serve",
     "check:legacy": "node scripts/check-legacy.mjs",
-    "build": "npm run check:legacy && ng build",
-    "build:pages": "npm run check:legacy && ng build --configuration production"
+    "check:core": "node --no-warnings --experimental-strip-types scripts/check-game-core.mjs",
+    "check": "npm run check:legacy && npm run check:core",
+    "build": "npm run check && ng build",
+    "build:pages": "npm run check && ng build --configuration production"
   },
   "dependencies": {
     "@angular/common": "^21.2.0",
