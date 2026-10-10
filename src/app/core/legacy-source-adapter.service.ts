@@ -53,6 +53,15 @@ window.NoBrainerLegacyRuntime={
   resetSave
 };`;
 
+const SEARCH_MISS_BLOCK = `if(Math.random()<CONFIG.dungeon.encounterChance){startDungeonRun();}
+    else state.dungeonSearch.nextCheckAt+=CONFIG.dungeon.searchStepMs;`;
+
+const SEARCH_MISS_WITH_HP_REGEN = `if(Math.random()<CONFIG.dungeon.encounterChance){startDungeonRun();}
+    else{
+      getAliveDungeonParticipants().forEach(c=>{c.hp=Math.min(c.maxHp,c.hp+1);});
+      state.dungeonSearch.nextCheckAt+=CONFIG.dungeon.searchStepMs;
+    }`;
+
 const CORE_DATA_BRIDGE = `if(!window.NoBrainerGameCore)throw new Error("NoBrainer-Game-Core wurde nicht registriert.");
 const CONFIG=window.NoBrainerGameCore.CONFIG;
 const CHARACTER_CLASSES=window.NoBrainerGameCore.CHARACTER_CLASSES;
@@ -120,6 +129,7 @@ export class LegacySourceAdapterService {
       'Save-Schreiben'
     );
     adapted = this.replaceOnce(adapted, 'try{localStorage.removeItem(SAVE_KEY);}catch(err){}', 'try{saveStorage.remove();}catch(err){}', 'Save-Zurücksetzen');
+    adapted = this.replaceOnce(adapted, SEARCH_MISS_BLOCK, SEARCH_MISS_WITH_HP_REGEN, 'HP-Regeneration bei erfolgloser Dungeonsuche');
     adapted = this.replaceOnce(adapted, STARTUP_BLOCK, RUNTIME_BRIDGE, 'Runtime-Startblock');
     return adapted;
   }
