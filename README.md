@@ -4,10 +4,19 @@ NoBrainer ist ein systemgetriebener Dungeon-, Crafting- und Management-Prototyp.
 
 ## Aktueller Stand
 
-- Stabiler Referenzstand: `NoBrainer_GitHub_v0.12.2.html`
+- Stabiler Referenzstand: `NoBrainer_GitHub_v0.12.2.html` auf `main`
 - Angular-Migration: Branch `migration/angular`
-- Angular 21 (LTS), standalone und zoneless
-- Der erste Migrationsschritt bindet den unveränderten HTML-Prototyp über eine kleine Kompatibilitätsschicht ein. Dadurch bleiben Gameplay, Save-Key und Timerlogik zunächst unverändert, während Web-Build und spätere Capacitor-Integration auf einer Angular-Basis vorbereitet werden.
+- Angular 21, standalone
+- Der unveränderte HTML-Prototyp bleibt während der Migration die Referenz für Gameplay, Save-Daten und Regressionstests.
+
+## Aktueller Migrationsschritt
+
+Die Angular-Hülle übernimmt jetzt zwei zentrale Infrastrukturaufgaben, ohne die Spielmechanik umzuschreiben:
+
+1. Der 250-ms-Game-Tick wird von Angular gestartet und beim Abbau der App wieder beendet.
+2. Die LocalStorage-Zugriffe des Legacy-Saves laufen über einen Angular-Service. Save-Key und Save-Format bleiben unverändert.
+
+Der Legacy-Code behält vorerst die eigentliche Zustandsstruktur, Save-Migrationen und Gameplay-Funktionen. Eine explizite Kompatibilitätsschicht adaptiert ausschließlich den bekannten v0.12.2-Quelltext und bricht mit einer klaren Fehlermeldung ab, falls die erwarteten Anker nicht mehr vorhanden sind. Dadurch werden Abweichungen nicht stillschweigend akzeptiert.
 
 ## Lokal starten
 
@@ -24,6 +33,10 @@ npm run build
 
 Der Produktions-Build verwendet `/pj-nobrainer/` als Base-Href für GitHub Pages.
 
+## Prüfungen
+
+`npm run build` führt vor dem Angular-Build automatisch einen Legacy-Check aus. Dabei werden JavaScript-Syntax, zentrale Hilfsfunktionen, Energie-Regenerationsschutz und die Kompatibilitätsanpassung geprüft.
+
 ## Migrationsstrategie
 
-Die Legacy-Datei bleibt während des Umbaus die funktionierende Referenz. Logik und UI werden anschließend schrittweise aus der Kompatibilitätsschicht in Angular-Dienste und -Komponenten überführt. Erst nach erfolgreichem Test werden diese Schritte nach `main` übernommen.
+Logik und UI werden schrittweise aus der Kompatibilitätsschicht in Angular-Dienste und -Komponenten überführt. `main` bleibt bis zur erfolgreichen Prüfung der jeweiligen Migrationsstufe der stabile Rückfallstand.

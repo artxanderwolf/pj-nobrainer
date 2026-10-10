@@ -4,8 +4,9 @@
   "private": true,
   "scripts": {
     "start": "ng serve",
-    "build": "ng build",
-    "build:pages": "ng build --configuration production"
+    "check:legacy": "node scripts/check-legacy.mjs",
+    "build": "npm run check:legacy && ng build",
+    "build:pages": "npm run check:legacy && ng build --configuration production"
   },
   "dependencies": {
     "@angular/common": "^21.2.0",
