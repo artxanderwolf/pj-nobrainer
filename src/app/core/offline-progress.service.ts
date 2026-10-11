@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { formatCurrencyNickel } from '../game/economy-core';
 
 export interface SaveSnapshot {
   savedAt: number | null;
@@ -53,7 +54,7 @@ export class OfflineProgressService {
     if (forged > 0) lines.push(`Schmiede: ${forged} Waffe${forged === 1 ? '' : 'n'} fertiggestellt`);
 
     const goldGain = Number(afterState.gold || 0) - Number(beforeState.gold || 0);
-    if (goldGain > 0) lines.push(`Markt: +${this.formatCurrencyNickel(goldGain)}`);
+    if (goldGain > 0) lines.push(`Markt: +${formatCurrencyNickel(goldGain)}`);
 
     if (this.energyFullyRegeneratedDuringAbsence(beforeState.characters, afterState.characters)) {
       lines.push('Energie vollständig regeneriert');
@@ -96,19 +97,6 @@ export class OfflineProgressService {
     if (hours > 0) return `${hours} Std. ${minutes} Min.`;
     if (minutes > 0) return `${minutes} Min. ${seconds} Sek.`;
     return `${seconds} Sek.`;
-  }
-
-  private formatCurrencyNickel(value: number): string {
-    let remaining = Math.max(0, Math.round(value));
-    const gold = Math.floor(remaining / 1_000_000); remaining %= 1_000_000;
-    const silver = Math.floor(remaining / 10_000); remaining %= 10_000;
-    const bronze = Math.floor(remaining / 100); remaining %= 100;
-    const parts: string[] = [];
-    if (gold) parts.push(`${gold} Gold`);
-    if (silver) parts.push(`${silver} Silber`);
-    if (bronze) parts.push(`${bronze} Bronze`);
-    if (remaining || !parts.length) parts.push(`${remaining} Nickel`);
-    return parts.join(' ');
   }
 
   private formatNumber(value: number): string {
