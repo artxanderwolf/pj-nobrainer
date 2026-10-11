@@ -51,10 +51,28 @@ export class LegacyDungeonPolicyService {
 }`;
 
     const oldRender = 'document.getElementById("runDuration").textContent=`${state.dungeonWavesDefeated||0} besiegt`;';
-    const newRender = 'const dungeonSessionStart=Number.isFinite(Number(state.dungeonSessionStartWaves))?Number(state.dungeonSessionStartWaves):Number(state.dungeonWavesDefeated||0);document.getElementById("runDuration").textContent=`${Math.max(0,Number(state.dungeonWavesDefeated||0)-dungeonSessionStart)} besiegt`;';
+    const newRender = 'renderDungeonSessionWaveCounter();';
+    const gameTickAnchor = `function gameTick(){
+  updateEnergy();`;
+    const gameTickWithCounter = `function renderDungeonSessionWaveCounter(){
+  const counter=document.getElementById("runDuration");
+  if(!counter)return;
+  const dungeonSessionStart=Number.isFinite(Number(state.dungeonSessionStartWaves))?Number(state.dungeonSessionStartWaves):Number(state.dungeonWavesDefeated||0);
+  counter.textContent=\`${'${Math.max(0,Number(state.dungeonWavesDefeated||0)-dungeonSessionStart)}'} besiegt\`;
+}
+
+function gameTick(){
+  updateEnergy();`;
+    const tickDungeonStatus = `  renderDungeonStatus();
+  renderDungeonLoot();`;
+    const tickDungeonStatusWithCounter = `  renderDungeonStatus();
+  renderDungeonSessionWaveCounter();
+  renderDungeonLoot();`;
 
     let adapted = this.replaceOnce(source, oldToggle, newToggle, 'manueller Dungeon-Start');
     adapted = this.replaceOnce(adapted, oldRender, newRender, 'Dungeon-Wellenanzeige');
+    adapted = this.replaceOnce(adapted, gameTickAnchor, gameTickWithCounter, 'Dungeon-Wellenanzeige im Runtime-Tick');
+    adapted = this.replaceOnce(adapted, tickDungeonStatus, tickDungeonStatusWithCounter, 'Dungeon-Wellenaktualisierung im Runtime-Tick');
     return adapted;
   }
 
