@@ -3,11 +3,12 @@ import { LegacyDungeonDomainAdapterService } from './core/legacy-dungeon-domain-
 import { LegacyDungeonPresentationAdapterService } from './core/legacy-dungeon-presentation-adapter.service';
 import { LegacyEconomyAdapterService } from './core/legacy-economy-adapter.service';
 import { LegacyEnergyAdapterService } from './core/legacy-energy-adapter.service';
+import { LegacyForgeAdapterService } from './core/legacy-forge-adapter.service';
 import { LegacyRuntimeService } from './core/legacy-runtime.service';
 import { LegacySourceAdapterService } from './core/legacy-source-adapter.service';
 import { adaptLegacyWeaponMarkup, adaptLegacyWeaponScript } from './game/weapon-naming';
 
-const APP_VERSION = '0.12.18';
+const APP_VERSION = '0.12.19';
 const LEGACY_PROTOTYPE_PATH = 'legacy/NoBrainer_GitHub_v0.12.2.html';
 const LEGACY_STYLE_ID = 'nobrainer-legacy-style';
 const LEGACY_SCRIPT_ID = 'nobrainer-legacy-script';
@@ -21,6 +22,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     private readonly legacySourceAdapter: LegacySourceAdapterService,
     private readonly legacyDungeonDomainAdapter: LegacyDungeonDomainAdapterService,
     private readonly legacyDungeonPresentationAdapter: LegacyDungeonPresentationAdapterService,
+    private readonly legacyForgeAdapter: LegacyForgeAdapterService,
     private readonly legacyEconomyAdapter: LegacyEconomyAdapterService,
     private readonly legacyEnergyAdapter: LegacyEnergyAdapterService
   ) {}
@@ -54,6 +56,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     adaptedScript = this.legacyDungeonDomainAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyDungeonPresentationAdapter.adapt(adaptedScript);
     adaptedScript = adaptLegacyWeaponScript(adaptedScript);
+    adaptedScript = this.legacyForgeAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyEconomyAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyEnergyAdapter.adapt(adaptedScript);
     const adaptedMarkup = adaptLegacyWeaponMarkup(app.outerHTML);
