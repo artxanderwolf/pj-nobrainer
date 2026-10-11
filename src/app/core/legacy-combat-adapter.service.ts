@@ -38,13 +38,15 @@ const PLAYER_ATTACK_BRIDGE = `  const resolution=window.NoBrainerCombatCore.reso
   if(resolution.outcome==="dodge"){addLog(\`${'${target.name}'} weicht ${'${c.name}'} · ${'${label}'} aus.\`,"muted");return;}
   const dealt=resolution.dealt;`;
 
-const ENEMY_ATTACK_RESOLUTION = `  if(Math.random()>=hitChance){addLog(\`${'${enemy.name}'} verfehlt ${'${target.name}'}.\`,"muted");return;}
-  if(Math.random()<target.dodge){addLog(\`${'${target.name}'} weicht dem Angriff von ${'${enemy.name}'} aus.\`,"muted");return;}
+// LegacySourceAdapterService ersetzt enemyAttack bereits für Offline-Catch-up und den expliziten G-Gegnernamen.
+// Deshalb muss dieser Adapter bewusst gegen die danach tatsächlich vorliegende Runtime-Form arbeiten.
+const ENEMY_ATTACK_RESOLUTION = `  if(Math.random()>=hitChance){dungeonCombatLog(\`${'${enemyName}'} verfehlt ${'${target.name}'}.\`,"muted");return;}
+  if(Math.random()<target.dodge){dungeonCombatLog(\`${'${target.name}'} weicht dem Angriff von ${'${enemyName}'} aus.\`,"muted");return;}
   const dealt=applyAttackDamage(target,enemy.damage*enemy.strengthFactor,enemy.penetration);`;
 
 const ENEMY_ATTACK_BRIDGE = `  const resolution=window.NoBrainerCombatCore.resolveAttack(target,enemy.damage*enemy.strengthFactor,hitChance,enemy.penetration,Math.random(),Math.random());
-  if(resolution.outcome==="miss"){addLog(\`${'${enemy.name}'} verfehlt ${'${target.name}'}.\`,"muted");return;}
-  if(resolution.outcome==="dodge"){addLog(\`${'${target.name}'} weicht dem Angriff von ${'${enemy.name}'} aus.\`,"muted");return;}
+  if(resolution.outcome==="miss"){dungeonCombatLog(\`${'${enemyName}'} verfehlt ${'${target.name}'}.\`,"muted");return;}
+  if(resolution.outcome==="dodge"){dungeonCombatLog(\`${'${target.name}'} weicht dem Angriff von ${'${enemyName}'} aus.\`,"muted");return;}
   const dealt=resolution.dealt;`;
 
 @Injectable({ providedIn: 'root' })
@@ -54,7 +56,7 @@ export class LegacyCombatAdapterService {
     let adapted = this.replaceOnce(source, WEIGHTED_TARGET_BLOCK, WEIGHTED_TARGET_BRIDGE, 'Dungeon-Zielgewichtung');
     adapted = this.replaceOnce(adapted, APPLY_DAMAGE_BLOCK, APPLY_DAMAGE_BRIDGE, 'Dungeon-Schadensberechnung');
     adapted = this.replaceOnce(adapted, PLAYER_ATTACK_RESOLUTION, PLAYER_ATTACK_BRIDGE, 'Spieler-Trefferauflösung');
-    adapted = this.replaceOnce(adapted, ENEMY_ATTACK_RESOLUTION, ENEMY_ATTACK_BRIDGE, 'Gegner-Trefferauflösung');
+    adapted = this.replaceOnce(adapted, ENEMY_ATTACK_RESOLUTION, ENEMY_ATTACK_BRIDGE, 'Gegner-Trefferauflösung nach Dungeon-Runtime-Anpassung');
     return adapted;
   }
 
