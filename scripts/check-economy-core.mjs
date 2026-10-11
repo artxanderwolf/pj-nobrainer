@@ -1,0 +1,63 @@
+import assert from 'node:assert/strict';
+import {
+  calculateRecruitCost,
+  calculateUpgradeCost,
+  formatCurrencyNickel,
+  formatHighestCurrency,
+  materialSellData,
+  rarityFactorFromRarity,
+  weaponSellData
+} from '../src/app/game/economy-core.ts';
+
+assert.equal(formatCurrencyNickel(0), '0 Nickel');
+assert.equal(formatCurrencyNickel(100), '1 Bronze');
+assert.equal(formatCurrencyNickel(1_010_101), '1 Gold 1 Silber 1 Bronze 1 Nickel');
+assert.equal(formatHighestCurrency(250), '2,5 Bronze');
+assert.equal(formatHighestCurrency(1_250_000), '1,25 Gold');
+
+assert.equal(calculateRecruitCost(1), 200, 'Erste zusätzliche Rekrutierung muss 2 Bronze kosten.');
+assert.equal(calculateRecruitCost(2), 350, 'Zweite zusätzliche Rekrutierung muss mit Faktor 1,75 skalieren.');
+assert.equal(calculateRecruitCost(3), 613, 'Rekrutierungskosten müssen auf Nickel gerundet werden.');
+
+assert.equal(calculateUpgradeCost('inn', 2), 500, 'Erster Inn-Ausbau muss 5 Bronze kosten.');
+assert.equal(calculateUpgradeCost('inn', 3), 1000, 'Inn-Ausbau muss sich pro Kauf verdoppeln.');
+assert.equal(calculateUpgradeCost('forgeQueue', 1), 200, 'Erster Schmiede-Warteschlangenplatz muss 2 Bronze kosten.');
+
+assert.equal(rarityFactorFromRarity(1), 1);
+assert.equal(rarityFactorFromRarity(2), 1.1);
+assert.deepEqual(materialSellData('Zinn'), {
+  type: 'material',
+  name: 'Zinn',
+  rarity: 1,
+  factor: 1,
+  valueNickel: 10,
+  seconds: 30
+});
+assert.deepEqual(materialSellData('Aluminium'), {
+  type: 'material',
+  name: 'Aluminium',
+  rarity: 2,
+  factor: 1.1,
+  valueNickel: 11,
+  seconds: 33
+});
+assert.equal(materialSellData('Unbekannt'), null);
+
+assert.deepEqual(
+  weaponSellData({
+    id: 42,
+    name: 'Testwaffe',
+    valueNickel: 200,
+    slots: [{ slot: 'baseMaterial', material: 'Aluminium' }]
+  }),
+  {
+    type: 'weapon',
+    weaponId: 42,
+    name: 'Testwaffe',
+    factor: 2,
+    valueNickel: 200,
+    seconds: 60
+  }
+);
+
+console.log('Economy-Core: Währung, Rekrutierung, Ausbauten und Verkaufsdaten sind konsistent.');
