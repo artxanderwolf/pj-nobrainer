@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { applyAttackDamage, buildWeightedTargets, resolveAttack, targetWeight } from '../src/app/game/combat-core.ts';
+import { applyAttackDamage, buildWeightedTargets, enforceGlobalActionCooldown, resolveAttack, targetWeight } from '../src/app/game/combat-core.ts';
 
 assert.equal(targetWeight(1), 1);
 assert.equal(targetWeight(2), 0.5);
@@ -51,4 +51,11 @@ assert.equal(hit.hp, 12);
 const clampedChance = { hp: 20, alive: true, armor: 0, dodge: 0 };
 assert.equal(resolveAttack(clampedChance, 5, 2, 0, 0.99, 0.99).outcome, 'hit');
 
-console.log('Combat-Core: Zielgewichtung, Treffer, Ausweichen, Rüstung, Durchschlag und HP-Status sind konsistent.');
+const actionPoints = [{ nextAt: 1500 }, { nextAt: 2200 }, { nextAt: 4000 }];
+enforceGlobalActionCooldown(actionPoints, 2000);
+assert.deepEqual(actionPoints.map(point => point.nextAt), [3000, 3000, 4000]);
+
+enforceGlobalActionCooldown(actionPoints, 4000);
+assert.deepEqual(actionPoints.map(point => point.nextAt), [5000, 5000, 5000]);
+
+console.log('Combat-Core: Zielgewichtung, Treffer, Ausweichen, Rüstung, Durchschlag, HP-Status und globales 1-Sekunden-Aktionsintervall sind konsistent.');
