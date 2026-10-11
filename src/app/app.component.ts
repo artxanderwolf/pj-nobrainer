@@ -7,7 +7,7 @@ import { LegacyRuntimeService } from './core/legacy-runtime.service';
 import { LegacySourceAdapterService } from './core/legacy-source-adapter.service';
 import { adaptLegacyWeaponMarkup, adaptLegacyWeaponScript } from './game/weapon-naming';
 
-const APP_VERSION = '0.12.12';
+const APP_VERSION = '0.12.13';
 const LEGACY_PROTOTYPE_PATH = 'legacy/NoBrainer_GitHub_v0.12.2.html';
 const LEGACY_STYLE_ID = 'nobrainer-legacy-style';
 const LEGACY_SCRIPT_ID = 'nobrainer-legacy-script';
