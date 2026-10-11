@@ -49,6 +49,13 @@ const ENEMY_ATTACK_BRIDGE = `  const resolution=window.NoBrainerCombatCore.resol
   if(resolution.outcome==="dodge"){dungeonCombatLog(\`${'${target.name}'} weicht dem Angriff von ${'${enemyName}'} aus.\`,"muted");return;}
   const dealt=resolution.dealt;`;
 
+const ATTACK_RESCHEDULE_BLOCK = `        due.nextAt+=1000/speed;
+        continue;`;
+
+const ATTACK_RESCHEDULE_WITH_GLOBAL_COOLDOWN = `        due.nextAt+=1000/speed;
+        window.NoBrainerCombatCore.enforceGlobalActionCooldown(run.attackPoints,at,1000);
+        continue;`;
+
 @Injectable({ providedIn: 'root' })
 export class LegacyCombatAdapterService {
   adapt(source: string): string {
@@ -57,6 +64,7 @@ export class LegacyCombatAdapterService {
     adapted = this.replaceOnce(adapted, APPLY_DAMAGE_BLOCK, APPLY_DAMAGE_BRIDGE, 'Dungeon-Schadensberechnung');
     adapted = this.replaceOnce(adapted, PLAYER_ATTACK_RESOLUTION, PLAYER_ATTACK_BRIDGE, 'Spieler-Trefferauflösung');
     adapted = this.replaceOnce(adapted, ENEMY_ATTACK_RESOLUTION, ENEMY_ATTACK_BRIDGE, 'Gegner-Trefferauflösung nach Dungeon-Runtime-Anpassung');
+    adapted = this.replaceOnce(adapted, ATTACK_RESCHEDULE_BLOCK, ATTACK_RESCHEDULE_WITH_GLOBAL_COOLDOWN, 'Globales Kampfaktionsintervall');
     return adapted;
   }
 
