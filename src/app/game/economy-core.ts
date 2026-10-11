@@ -40,7 +40,7 @@ type UpgradeConfig = {
 };
 
 export function formatCurrencyNickel(value: number): string {
-  let remaining = Math.max(0, Math.round(Number(value) || 0));
+  let remaining = Math.max(0, Math.round(value));
   const gold = Math.floor(remaining / 1_000_000);
   remaining %= 1_000_000;
   const silver = Math.floor(remaining / 10_000);
@@ -57,7 +57,7 @@ export function formatCurrencyNickel(value: number): string {
 }
 
 export function formatHighestCurrency(value: number): string {
-  const nickel = Math.max(0, Math.round(Number(value) || 0));
+  const nickel = Math.max(0, Math.round(value));
   if (nickel >= 1_000_000) {
     return `${(nickel / 1_000_000).toLocaleString('de-DE', { maximumFractionDigits: 2 })} Gold`;
   }
@@ -71,20 +71,19 @@ export function formatHighestCurrency(value: number): string {
 }
 
 export function calculateRecruitCost(characterCount: number): number {
-  const additional = Math.max(0, Math.floor(Number(characterCount) || 0) - 1);
+  const additional = Math.max(0, characterCount - 1);
   return Math.round(CONFIG.tavern.recruitBaseNickel * Math.pow(CONFIG.tavern.recruitGrowth, additional));
 }
 
 export function calculateUpgradeCost(kind: UpgradeKey, current: number): number {
   const config = CONFIG.upgrades[kind] as UpgradeConfig;
-  const start = config.startCapacity ?? config.start ?? 0;
-  return Math.round(
-    config.baseCostNickel * Math.pow(config.growth, Math.max(0, Number(current) - start))
-  );
+  const start = config.startCapacity ?? config.start;
+  if (start === undefined) throw new Error(`Unbekannter Ausbau-Startwert: ${kind}`);
+  return Math.round(config.baseCostNickel * Math.pow(config.growth, Math.max(0, current - start)));
 }
 
 export function rarityFactorFromRarity(rarity: number): number {
-  return 1 + (MATERIAL_SALE_RARITY_BONUS[Number(rarity)] || 0);
+  return 1 + (MATERIAL_SALE_RARITY_BONUS[rarity] || 0);
 }
 
 export function materialSellData(name: string): MaterialSellData | null {
