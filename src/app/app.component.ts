@@ -2,8 +2,9 @@ import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild } from '@ang
 import { LegacyDungeonPolicyService } from './core/legacy-dungeon-policy.service';
 import { LegacyRuntimeService } from './core/legacy-runtime.service';
 import { LegacySourceAdapterService } from './core/legacy-source-adapter.service';
+import { adaptLegacyWeaponMarkup, adaptLegacyWeaponScript } from './game/weapon-naming';
 
-const APP_VERSION = '0.12.5';
+const APP_VERSION = '0.12.6';
 const LEGACY_PROTOTYPE_PATH = 'legacy/NoBrainer_GitHub_v0.12.2.html';
 const LEGACY_STYLE_ID = 'nobrainer-legacy-style';
 const LEGACY_SCRIPT_ID = 'nobrainer-legacy-script';
@@ -63,8 +64,10 @@ export class AppComponent implements AfterViewInit, OnDestroy {
 
     let adaptedScript = this.legacySourceAdapter.adapt(legacyScript.textContent ?? '');
     adaptedScript = this.legacyDungeonPolicy.adapt(adaptedScript);
+    adaptedScript = adaptLegacyWeaponScript(adaptedScript);
+    const adaptedMarkup = adaptLegacyWeaponMarkup(app.outerHTML);
     this.installLegacyStyle(legacyStyle.textContent ?? '');
-    this.legacyHost.nativeElement.innerHTML = app.outerHTML;
+    this.legacyHost.nativeElement.innerHTML = adaptedMarkup;
     this.applyVersionMarker();
     this.installLegacyScript(adaptedScript);
   }

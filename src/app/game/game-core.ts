@@ -1,5 +1,6 @@
 export type CharacterClassId = 'recruit' | 'fighter' | 'archer' | 'scholar';
 export type MaterialCategory = 'Holz' | 'Metall' | 'Leder';
+export type WeaponSlotId = 'baseMaterial' | 'blade' | 'back' | 'gripShape' | 'gripMaterial' | 'reinforcementMaterial';
 
 export interface CharacterClassDefinition {
   id: CharacterClassId;
@@ -33,7 +34,7 @@ export interface MaterialDefinition {
   reinforcement: ReinforcementEffect | null;
 }
 
-export interface WeaponTypeDefinition {
+export interface WeaponFormDefinition {
   name: string;
   timeFactor: number;
   damageFactor: number;
@@ -41,7 +42,7 @@ export interface WeaponTypeDefinition {
 }
 
 export interface WeaponSlot {
-  slot?: string;
+  slot?: WeaponSlotId | string;
   material?: string | null;
   [key: string]: unknown;
 }
@@ -49,8 +50,8 @@ export interface WeaponSlot {
 export interface WeaponStats {
   materialBaseDamage: number;
   materialBaseSpeed: number;
-  typeDamageFactor: number;
-  typeSpeedFactor: number;
+  formDamageFactor: number;
+  formSpeedFactor: number;
   baseDamage: number;
   baseSpeed: number;
   bladeMultiplier: number;
@@ -115,10 +116,10 @@ export const CONFIG = {
   },
   forge: {
     baseSeconds: 30,
-    weaponTypes: {
+    weaponForms: {
       dagger: { name: 'Dolch', timeFactor: 0.5, damageFactor: 0.6, speedFactor: 1.4 },
       sword: { name: 'Einhänder', timeFactor: 1.0, damageFactor: 1.0, speedFactor: 1.0 }
-    } as Record<string, WeaponTypeDefinition>
+    } as Record<string, WeaponFormDefinition>
   }
 };
 
@@ -217,13 +218,23 @@ export const DUNGEON_LOOT_TABLES = {
   }
 };
 
+const LEGACY_WEAPON_SLOT_IDS: Record<string, WeaponSlotId> = {
+  Waffentyp: 'baseMaterial',
+  Schneide: 'blade',
+  Rückseite: 'back',
+  Griffform: 'gripShape',
+  Griffmaterial: 'gripMaterial',
+  Verstärkungsmaterial: 'reinforcementMaterial',
+  Hauptmaterial: 'reinforcementMaterial'
+};
+
 export function normalizeWeaponSlots(slots: readonly WeaponSlot[] | null | undefined): WeaponSlot[] {
   if (!Array.isArray(slots)) {
     return [];
   }
   return slots.map((entry) => ({
     ...entry,
-    slot: entry?.slot === 'Hauptmaterial' ? 'Verstärkungsmaterial' : entry?.slot
+    slot: LEGACY_WEAPON_SLOT_IDS[String(entry?.slot ?? '')] ?? entry?.slot
   }));
 }
 
@@ -253,44 +264,44 @@ export function reinforcementEffectText(materialName: string | null | undefined)
   return parts.length ? parts.join(' · ') : 'Kein Zusatzeffekt';
 }
 
-export function calculateWeaponStats(slots: readonly WeaponSlot[] | null | undefined, weaponType: string): WeaponStats {
+export function calculateWeaponStats(slots: readonly WeaponSlot[] | null | undefined, weaponForm: string): WeaponStats {
   const normalized = normalizeWeaponSlots(slots);
   const bySlot = Object.fromEntries(normalized.map((entry) => [entry.slot, MATERIALS[entry.material ?? '']]));
   const materialBySlot = Object.fromEntries(normalized.map((entry) => [entry.slot, entry.material]));
-  const base = bySlot['Waffentyp'] ?? {};
-  const blade = bySlot['Schneide'] ?? {};
-  const back = bySlot['Rückseite'] ?? {};
-  const grip = bySlot['Griffform'] ?? {};
-  const leather = bySlot['Griffmaterial'] ?? {};
-  const reinforcement = bySlot['Verstärkungsmaterial'] ?? {};
-  const reinforce = reinforcement.reinforcement ?? {};
-  const type = CONFIG.forge.weaponTypes[weaponType] ?? CONFIG.forge.weaponTypes['sword'];
+  const baseMaterial = bySlot['baseMaterial'] ?? {};
+  const blade = bySlot['blade'] ?? {};
+  const back = bySlot['back'] ?? {};
+  const gripShape = bySlot['gripShape'] ?? {};
+  const gripMaterial = bySlot['gripMaterial'] ?? {};
+  const reinforcementMaterial = bySlot['reinforcementMaterial'] ?? {};
+  const reinforcementEffect = reinforcementMaterial.reinforcement ?? {};
+  const form = CONFIG.forge.weaponForms[weaponForm] ?? CONFIG.forge.weaponForms['sword'];
 
-  const materialBaseDamage = base.baseDamage ?? 0;
-  const materialBaseSpeed = base.baseSpeed ?? 0;
-  const baseDamage = materialBaseDamage * (type.damageFactor ?? 1);
-  const baseSpeed = materialBaseSpeed * (type.speedFactor ?? 1);
+  const materialBaseDamage = baseMaterial.baseDamage ?? 0;
+  const materialBaseSpeed = baseMaterial.baseSpeed ?? 0;
+  const baseDamage = materialBaseDamage * (form.damageFactor ?? 1);
+  const baseSpeed = materialBaseSpeed * (form.speedFactor ?? 1);
   const bladeMultiplier = blade.blade ?? 1;
-  const gripMultiplier = grip.gripSpeed ?? 1;
-  const reinforcementSpeedFactor = reinforce.speedFactor ?? 1;
-  const reinforcementHitChanceAdd = reinforce.hitChanceAdd ?? 0;
-  const reinforcementPenetrationAdd = reinforce.penetrationAdd ?? 0;
+  const gripMultiplier = gripShape.gripSpeed ?? 1;
+  const reinforcementSpeedFactor = reinforcementEffect.speedFactor ?? 1;
+  const reinforcementHitChanceAdd = reinforcementEffect.hitChanceAdd ?? 0;
+  const reinforcementPenetrationAdd = reinforcementEffect.penetrationAdd ?? 0;
   const damagePerHit = baseDamage * bladeMultiplier;
   const attackSpeed = baseSpeed * gripMultiplier * reinforcementSpeedFactor;
-  const hitChance = Math.max(0, Math.min(1, (leather.hitChance ?? 0) + reinforcementHitChanceAdd));
+  const hitChance = Math.max(0, Math.min(1, (gripMaterial.hitChance ?? 0) + reinforcementHitChanceAdd));
   const penetration = Math.max(0, Math.min(1, (back.penetration ?? 0) + reinforcementPenetrationAdd));
   const expectedRaw = damagePerHit * attackSpeed * hitChance;
 
   return {
     materialBaseDamage,
     materialBaseSpeed,
-    typeDamageFactor: type.damageFactor ?? 1,
-    typeSpeedFactor: type.speedFactor ?? 1,
+    formDamageFactor: form.damageFactor ?? 1,
+    formSpeedFactor: form.speedFactor ?? 1,
     baseDamage,
     baseSpeed,
     bladeMultiplier,
     gripMultiplier,
-    reinforcementMaterial: typeof materialBySlot['Verstärkungsmaterial'] === 'string' ? materialBySlot['Verstärkungsmaterial'] : null,
+    reinforcementMaterial: typeof materialBySlot['reinforcementMaterial'] === 'string' ? materialBySlot['reinforcementMaterial'] : null,
     reinforcementSpeedFactor,
     reinforcementHitChanceAdd,
     reinforcementPenetrationAdd,

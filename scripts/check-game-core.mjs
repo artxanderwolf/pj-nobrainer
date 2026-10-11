@@ -39,7 +39,7 @@ const legacyCoreSource = [
   sliceRange('function rarityFactor(', 'function reinforcementEffectText(', 'Seltenheitsberechnung'),
   sliceRange('function reinforcementEffectText(', 'function requirements(', 'Verstärkungstext'),
   sliceRange('function calculateWeaponStats(', 'function forgePreview(', 'Waffenwertberechnung'),
-  `globalThis.__legacyCore={CONFIG,CHARACTER_CLASSES,MATERIAL_SALE_RARITY_BONUS,MATERIALS,DUNGEON_LOOT_TABLES,normalizeWeaponSlots,rarityFactor,reinforcementEffectText,calculateWeaponStats,weaponDamageAfterArmor};`
+  'globalThis.__legacyCore={CONFIG,CHARACTER_CLASSES,MATERIAL_SALE_RARITY_BONUS,MATERIALS,DUNGEON_LOOT_TABLES,normalizeWeaponSlots,rarityFactor,reinforcementEffectText,calculateWeaponStats,weaponDamageAfterArmor};'
 ].join('\n');
 
 const context = createContext({ console });
@@ -47,59 +47,143 @@ new Script(legacyCoreSource, { filename: 'NoBrainer_v0.12.2.game-core.js' }).run
 const legacy = context.__legacyCore;
 
 function jsonEqual(actual, expected, label) {
-  assert.equal(JSON.stringify(actual), JSON.stringify(expected), `${label} weicht von v0.12.2 ab.`);
+  assert.equal(JSON.stringify(actual), JSON.stringify(expected), `${label} weicht semantisch von v0.12.2 ab.`);
 }
 
-jsonEqual(CONFIG, legacy.CONFIG, 'CONFIG');
+const legacyCompatibleConfig = {
+  ...CONFIG,
+  forge: {
+    baseSeconds: CONFIG.forge.baseSeconds,
+    weaponTypes: CONFIG.forge.weaponForms
+  }
+};
+jsonEqual(legacyCompatibleConfig, legacy.CONFIG, 'CONFIG');
 jsonEqual(CHARACTER_CLASSES, legacy.CHARACTER_CLASSES, 'CHARACTER_CLASSES');
 jsonEqual(MATERIAL_SALE_RARITY_BONUS, legacy.MATERIAL_SALE_RARITY_BONUS, 'MATERIAL_SALE_RARITY_BONUS');
 jsonEqual(MATERIALS, legacy.MATERIALS, 'MATERIALS');
 jsonEqual(DUNGEON_LOOT_TABLES, legacy.DUNGEON_LOOT_TABLES, 'DUNGEON_LOOT_TABLES');
 
-const weakestStarterSlots = [
-  { slot: 'Waffentyp', material: 'Fichte' },
-  { slot: 'Schneide', material: 'Zinn' },
-  { slot: 'Rückseite', material: 'Zinn' },
-  { slot: 'Griffform', material: 'Morsche Fichte' },
-  { slot: 'Griffmaterial', material: 'Lederfetzen' },
-  { slot: 'Verstärkungsmaterial', material: 'Morsche Fichte' }
-];
+const LEGACY_SLOT_NAMES = {
+  baseMaterial: 'Waffentyp',
+  blade: 'Schneide',
+  back: 'Rückseite',
+  gripShape: 'Griffform',
+  gripMaterial: 'Griffmaterial',
+  reinforcementMaterial: 'Verstärkungsmaterial'
+};
 
-const reinforcementSlots = [
-  { slot: 'Waffentyp', material: 'Aluminium' },
-  { slot: 'Schneide', material: 'Aluminium' },
-  { slot: 'Rückseite', material: 'Kupfer' },
-  { slot: 'Griffform', material: 'Tanne' },
-  { slot: 'Griffmaterial', material: 'Fuchs-Leder' },
-  { slot: 'Verstärkungsmaterial', material: 'Fuchs-Leder' }
-];
-
-for (const [slots, weaponType] of [
-  [weakestStarterSlots, 'sword'],
-  [weakestStarterSlots, 'dagger'],
-  [reinforcementSlots, 'sword'],
-  [reinforcementSlots, 'dagger']
-]) {
-  jsonEqual(
-    calculateWeaponStats(slots, weaponType),
-    legacy.calculateWeaponStats(slots, weaponType),
-    `calculateWeaponStats(${weaponType})`
-  );
+function toLegacySlots(slots) {
+  return slots.map((entry) => ({ ...entry, slot: LEGACY_SLOT_NAMES[entry.slot] }));
 }
 
-jsonEqual(normalizeWeaponSlots([{ slot: 'Hauptmaterial', material: 'Kupfer' }]), legacy.normalizeWeaponSlots([{ slot: 'Hauptmaterial', material: 'Kupfer' }]), 'normalizeWeaponSlots');
-assert.equal(rarityFactor(reinforcementSlots), legacy.rarityFactor(reinforcementSlots), 'rarityFactor weicht von v0.12.2 ab.');
+function statsAsLegacy(stats) {
+  return {
+    materialBaseDamage: stats.materialBaseDamage,
+    materialBaseSpeed: stats.materialBaseSpeed,
+    typeDamageFactor: stats.formDamageFactor,
+    typeSpeedFactor: stats.formSpeedFactor,
+    baseDamage: stats.baseDamage,
+    baseSpeed: stats.baseSpeed,
+    bladeMultiplier: stats.bladeMultiplier,
+    gripMultiplier: stats.gripMultiplier,
+    reinforcementMaterial: stats.reinforcementMaterial,
+    reinforcementSpeedFactor: stats.reinforcementSpeedFactor,
+    reinforcementHitChanceAdd: stats.reinforcementHitChanceAdd,
+    reinforcementPenetrationAdd: stats.reinforcementPenetrationAdd,
+    hitChance: stats.hitChance,
+    penetration: stats.penetration,
+    damagePerHit: stats.damagePerHit,
+    attackSpeed: stats.attackSpeed,
+    expectedRaw: stats.expectedRaw
+  };
+}
+
+const namesFor = (...categories) => Object.entries(MATERIALS)
+  .filter(([, material]) => categories.includes(material.category))
+  .map(([name]) => name);
+const baseMaterials = namesFor('Holz', 'Metall');
+const bladeMaterials = namesFor('Metall');
+const backMaterials = bladeMaterials;
+const gripShapeMaterials = namesFor('Holz');
+const gripMaterials = namesFor('Leder');
+const reinforcementMaterials = Object.keys(MATERIALS);
+const weaponForms = Object.keys(CONFIG.forge.weaponForms);
+
+let comparedWeapons = 0;
+for (const baseMaterial of baseMaterials) {
+  for (const blade of bladeMaterials) {
+    for (const back of backMaterials) {
+      for (const gripShape of gripShapeMaterials) {
+        for (const gripMaterial of gripMaterials) {
+          for (const reinforcementMaterial of reinforcementMaterials) {
+            const slots = [
+              { slot: 'baseMaterial', material: baseMaterial },
+              { slot: 'blade', material: blade },
+              { slot: 'back', material: back },
+              { slot: 'gripShape', material: gripShape },
+              { slot: 'gripMaterial', material: gripMaterial },
+              { slot: 'reinforcementMaterial', material: reinforcementMaterial }
+            ];
+            const legacySlots = toLegacySlots(slots);
+            for (const weaponForm of weaponForms) {
+              jsonEqual(
+                statsAsLegacy(calculateWeaponStats(slots, weaponForm)),
+                legacy.calculateWeaponStats(legacySlots, weaponForm),
+                `calculateWeaponStats(${weaponForm}, ${slots.map((entry) => entry.material).join('/')})`
+              );
+              comparedWeapons++;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+const weakestStarterSlots = [
+  { slot: 'baseMaterial', material: 'Fichte' },
+  { slot: 'blade', material: 'Zinn' },
+  { slot: 'back', material: 'Zinn' },
+  { slot: 'gripShape', material: 'Morsche Fichte' },
+  { slot: 'gripMaterial', material: 'Lederfetzen' },
+  { slot: 'reinforcementMaterial', material: 'Morsche Fichte' }
+];
+const reinforcementSlots = [
+  { slot: 'baseMaterial', material: 'Aluminium' },
+  { slot: 'blade', material: 'Aluminium' },
+  { slot: 'back', material: 'Kupfer' },
+  { slot: 'gripShape', material: 'Tanne' },
+  { slot: 'gripMaterial', material: 'Fuchs-Leder' },
+  { slot: 'reinforcementMaterial', material: 'Fuchs-Leder' }
+];
+
+jsonEqual(
+  normalizeWeaponSlots(toLegacySlots(reinforcementSlots)),
+  reinforcementSlots,
+  'Legacy-Slot-Normalisierung'
+);
+assert.equal(
+  normalizeWeaponSlots([{ slot: 'Hauptmaterial', material: 'Kupfer' }])[0]?.slot,
+  'reinforcementMaterial',
+  'Sehr alte Hauptmaterial-Saves müssen weiterhin auf reinforcementMaterial migriert werden.'
+);
+assert.equal(
+  rarityFactor(reinforcementSlots),
+  legacy.rarityFactor(toLegacySlots(reinforcementSlots)),
+  'rarityFactor weicht von v0.12.2 ab.'
+);
 
 for (const materialName of Object.keys(MATERIALS)) {
   assert.equal(reinforcementEffectText(materialName), legacy.reinforcementEffectText(materialName), `Verstärkungstext für ${materialName} weicht ab.`);
 }
 
 const testWeapon = { stats: calculateWeaponStats(reinforcementSlots, 'sword') };
+const legacyTestWeapon = { stats: legacy.calculateWeaponStats(toLegacySlots(reinforcementSlots), 'sword') };
 for (const armor of [0, 3, 10, 50]) {
   for (const character of [null, { strengthFactor: 1.1, precision: 0.95 }, { strengthFactor: 1.15, precision: 1.1 }]) {
     jsonEqual(
       weaponDamageAfterArmor(testWeapon, armor, character),
-      legacy.weaponDamageAfterArmor(testWeapon, armor, character),
+      legacy.weaponDamageAfterArmor(legacyTestWeapon, armor, character),
       `weaponDamageAfterArmor(armor=${armor})`
     );
   }
@@ -112,4 +196,5 @@ assert.equal(
   'Dolch-ROH muss bei gleichen Materialien 84 % des Einhänders bleiben.'
 );
 
-console.log('Game-Core-Daten und reine Berechnungen entsprechen v0.12.2.');
+assert.equal(comparedWeapons, 8748, 'Alle 8.748 gültigen Waffenvarianten müssen geprüft werden.');
+console.log(`Game-Core-Benennung migriert; ${comparedWeapons} Waffenvarianten bleiben rechnerisch identisch zu v0.12.2.`);
