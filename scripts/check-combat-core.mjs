@@ -51,11 +51,18 @@ assert.equal(hit.hp, 12);
 const clampedChance = { hp: 20, alive: true, armor: 0, dodge: 0 };
 assert.equal(resolveAttack(clampedChance, 5, 2, 0, 0.99, 0.99).outcome, 'hit');
 
-const actionPoints = [{ nextAt: 1500 }, { nextAt: 2200 }, { nextAt: 4000 }];
-enforceGlobalActionCooldown(actionPoints, 2000);
-assert.deepEqual(actionPoints.map(point => point.nextAt), [3000, 3000, 4000]);
+const actionPoints = [{ id: 'player', nextAt: 1800 }, { id: 'enemy', nextAt: 2250 }, { id: 'later', nextAt: 4000 }];
+enforceGlobalActionCooldown(actionPoints, 1000);
+assert.deepEqual(actionPoints.map(point => point.nextAt), [2000, 2450, 4200]);
+assert.deepEqual([...actionPoints].sort((a, b) => a.nextAt - b.nextAt).map(point => point.id), ['player', 'enemy', 'later']);
 
-enforceGlobalActionCooldown(actionPoints, 4000);
-assert.deepEqual(actionPoints.map(point => point.nextAt), [5000, 5000, 5000]);
+const noShiftNeeded = [{ nextAt: 5000 }, { nextAt: 5600 }];
+enforceGlobalActionCooldown(noShiftNeeded, 3000);
+assert.deepEqual(noShiftNeeded.map(point => point.nextAt), [5000, 5600]);
 
-console.log('Combat-Core: Zielgewichtung, Treffer, Ausweichen, Rüstung, Durchschlag, HP-Status und globales 1-Sekunden-Aktionsintervall sind konsistent.');
+const fairness = [{ id: 'player', nextAt: 1900 }, { id: 'enemy', nextAt: 1250 }];
+enforceGlobalActionCooldown(fairness, 900);
+assert.deepEqual(fairness.map(point => point.nextAt), [2550, 1900]);
+assert.equal([...fairness].sort((a, b) => a.nextAt - b.nextAt)[0].id, 'enemy');
+
+console.log('Combat-Core: Trefferlogik und globales 1-Sekunden-Intervall bewahren die Reihenfolge fälliger Kampfaktionen.');
