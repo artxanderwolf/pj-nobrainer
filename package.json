@@ -1,14 +1,15 @@
 {
   "name": "pj-nobrainer",
-  "version": "0.12.8",
+  "version": "0.12.9",
   "private": true,
   "scripts": {
     "start": "ng serve",
     "check:legacy": "node scripts/check-legacy.mjs",
     "check:core": "node --no-warnings --experimental-strip-types scripts/check-game-core.mjs",
+    "check:economy": "node --no-warnings --experimental-strip-types scripts/check-economy-core.mjs",
     "check:naming": "node --no-warnings --experimental-strip-types scripts/check-weapon-naming.mjs",
     "check:save": "node --no-warnings --experimental-strip-types scripts/check-save-codec.mjs",
-    "check": "npm run check:legacy && npm run check:core && npm run check:naming && npm run check:save",
+    "check": "npm run check:legacy && npm run check:core && npm run check:economy && npm run check:naming && npm run check:save",
     "build": "npm run check && ng build",
     "build:pages": "npm run check && ng build --configuration production"
   },
