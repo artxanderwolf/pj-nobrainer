@@ -57,8 +57,7 @@ export class LegacyRuntimeService {
 
   startTick(): void {
     if (this.tickHandle !== null) return;
-    const runtime = this.getRuntime();
-    this.tickHandle = window.setInterval(() => runtime.tick(), 250);
+    this.scheduleNextTick();
   }
 
   renderInitial(): void {
@@ -67,8 +66,15 @@ export class LegacyRuntimeService {
 
   stopTick(): void {
     if (this.tickHandle === null) return;
-    window.clearInterval(this.tickHandle);
+    window.clearTimeout(this.tickHandle);
     this.tickHandle = null;
+  }
+
+  private scheduleNextTick(): void {
+    this.tickHandle = window.setTimeout(() => {
+      this.getRuntime().tick();
+      if (this.tickHandle !== null) this.scheduleNextTick();
+    }, 250);
   }
 
   private registerVisibilityHandler(): void {
@@ -130,8 +136,6 @@ export class LegacyRuntimeService {
     const afterState = after.state ?? {};
     const lines: string[] = [`Abwesend: ${this.formatDuration(elapsedMs)}`];
 
-    // dungeonWavesDefeated is incremented only for a won wave. The delta therefore
-    // represents successful loot-producing waves during exactly this absence.
     const waves = Math.max(0, Number(afterState.dungeonWavesDefeated || 0) - Number(beforeState.dungeonWavesDefeated || 0));
     if (waves > 0) lines.push(`Dungeon: ${waves} Welle${waves === 1 ? '' : 'n'} erfolgreich abgeschlossen`);
 
