@@ -3,7 +3,7 @@ import { LegacyDungeonPolicyService } from './core/legacy-dungeon-policy.service
 import { LegacyRuntimeService } from './core/legacy-runtime.service';
 import { LegacySourceAdapterService } from './core/legacy-source-adapter.service';
 
-const APP_VERSION = '0.12.4';
+const APP_VERSION = '0.12.5';
 const LEGACY_PROTOTYPE_PATH = 'legacy/NoBrainer_GitHub_v0.12.2.html';
 const LEGACY_STYLE_ID = 'nobrainer-legacy-style';
 const LEGACY_SCRIPT_ID = 'nobrainer-legacy-script';
