@@ -40,7 +40,7 @@ export function reserveForgeMaterials(inventory: ForgeInventory, requirements: R
 }
 
 export function createForgeJob(weaponForm: string, weaponName: string, slots: readonly WeaponSlot[]): ForgeJob {
-  const form = CONFIG.forge.weaponForms[weaponForm] ?? CONFIG.forge.weaponForms.sword;
+  const form = CONFIG.forge.weaponForms[weaponForm] ?? CONFIG.forge.weaponForms['sword'];
   const factor = rarityFactor(slots);
   return {
     weaponForm,
