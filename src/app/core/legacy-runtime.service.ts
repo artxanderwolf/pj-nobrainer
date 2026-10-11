@@ -42,12 +42,12 @@ export class LegacyRuntimeService {
       remove: () => this.saveStorage.remove()
     });
 
-    const before = this.readSnapshot();
+    const before = this.saveStorage.readSnapshot();
     runtime.prepare();
 
     if (before && this.offlineProgress.shouldShowSummary(before)) {
       runtime.save(false);
-      const after = this.readSnapshot();
+      const after = this.saveStorage.readSnapshot();
       if (after) this.offlineProgress.showSummary(before, after);
     }
 
@@ -84,7 +84,7 @@ export class LegacyRuntimeService {
       const runtime = this.getRuntime();
       if (document.hidden) {
         runtime.save(false);
-        this.hiddenSnapshot = this.readSnapshot();
+        this.hiddenSnapshot = this.saveStorage.readSnapshot();
         return;
       }
 
@@ -94,23 +94,9 @@ export class LegacyRuntimeService {
 
       runtime.tick();
       runtime.save(false);
-      const after = this.readSnapshot();
+      const after = this.saveStorage.readSnapshot();
       if (after) this.offlineProgress.showSummary(before, after);
     });
-  }
-
-  private readSnapshot(): SaveSnapshot | null {
-    const raw = this.saveStorage.read();
-    if (!raw) return null;
-
-    try {
-      const parsed = JSON.parse(raw);
-      const state = parsed?.state ?? parsed;
-      const savedAt = Number(parsed?.savedAt);
-      return { state, savedAt: Number.isFinite(savedAt) ? savedAt : null };
-    } catch {
-      return null;
-    }
   }
 
   private getRuntime(): NoBrainerLegacyRuntime {
