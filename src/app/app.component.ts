@@ -1,8 +1,9 @@
 import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
+import { LegacyDungeonPolicyService } from './core/legacy-dungeon-policy.service';
 import { LegacyRuntimeService } from './core/legacy-runtime.service';
 import { LegacySourceAdapterService } from './core/legacy-source-adapter.service';
 
-const APP_VERSION = '0.12.3';
+const APP_VERSION = '0.12.4';
 const LEGACY_PROTOTYPE_PATH = 'legacy/NoBrainer_GitHub_v0.12.2.html';
 const LEGACY_STYLE_ID = 'nobrainer-legacy-style';
 const LEGACY_SCRIPT_ID = 'nobrainer-legacy-script';
@@ -18,7 +19,8 @@ export class AppComponent implements AfterViewInit, OnDestroy {
 
   constructor(
     private readonly legacyRuntime: LegacyRuntimeService,
-    private readonly legacySourceAdapter: LegacySourceAdapterService
+    private readonly legacySourceAdapter: LegacySourceAdapterService,
+    private readonly legacyDungeonPolicy: LegacyDungeonPolicyService
   ) {}
 
   async ngAfterViewInit(): Promise<void> {
@@ -60,22 +62,11 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     }
 
     let adaptedScript = this.legacySourceAdapter.adapt(legacyScript.textContent ?? '');
-    adaptedScript = this.applyDungeonEnergyPolicy(adaptedScript);
+    adaptedScript = this.legacyDungeonPolicy.adapt(adaptedScript);
     this.installLegacyStyle(legacyStyle.textContent ?? '');
     this.legacyHost.nativeElement.innerHTML = app.outerHTML;
     this.applyVersionMarker();
     this.installLegacyScript(adaptedScript);
-  }
-
-  private applyDungeonEnergyPolicy(source: string): string {
-    const oldBlock = `function beginDungeonSearch(at=Date.now()){\n  if(!state.dungeonAuto||state.dungeonRun||state.dungeonLootCollect)return false;\n  const participants=getAliveDungeonParticipants();\n  if(!participants.length)return false;\n  state.expeditionActive=true;\n  state.dungeonSearch={nextCheckAt:at+CONFIG.dungeon.searchStepMs};\n  return true;\n}`;
-    const newBlock = `function beginDungeonSearch(at=Date.now()){\n  if(!state.dungeonAuto||state.dungeonRun||state.dungeonLootCollect)return false;\n  const check=getDungeonStartCheck();\n  if(!check.ok){\n    if(check.reason.includes("Energie")){\n      state.dungeonAuto=false;\n      state.dungeonSearch=null;\n      state.lastEnergyUpdate=at;\n      addLog("Dungeon-Automatik beendet: Nicht genügend Energie für eine weitere Gegnerwelle. Nach der Regeneration muss sie manuell neu gestartet werden.","muted");\n      queueSave();\n    }\n    return false;\n  }\n  state.expeditionActive=true;\n  state.dungeonSearch={nextCheckAt:at+CONFIG.dungeon.searchStepMs};\n  return true;\n}`;
-
-    const first = source.indexOf(oldBlock);
-    if (first < 0 || source.indexOf(oldBlock, first + oldBlock.length) >= 0) {
-      throw new Error('Legacy-Kompatibilität fehlgeschlagen: Dungeon-Energieprüfung konnte nicht eindeutig angepasst werden.');
-    }
-    return source.slice(0, first) + newBlock + source.slice(first + oldBlock.length);
   }
 
   private applyVersionMarker(): void {
