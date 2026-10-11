@@ -2,8 +2,8 @@ import {
   CONFIG,
   MATERIALS,
   MATERIAL_SALE_RARITY_BONUS,
-  WeaponSlot,
-  rarityFactor
+  rarityFactor,
+  type WeaponSlot
 } from './game-core';
 
 export interface MaterialSellData {
