@@ -1,13 +1,14 @@
 import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
 import { LegacyCombatAdapterService } from './core/legacy-combat-adapter.service';
 import { LegacyDungeonPolicyService } from './core/legacy-dungeon-policy.service';
+import { LegacyDungeonSearchAdapterService } from './core/legacy-dungeon-search-adapter.service';
 import { LegacyEconomyAdapterService } from './core/legacy-economy-adapter.service';
 import { LegacyEnergyAdapterService } from './core/legacy-energy-adapter.service';
 import { LegacyRuntimeService } from './core/legacy-runtime.service';
 import { LegacySourceAdapterService } from './core/legacy-source-adapter.service';
 import { adaptLegacyWeaponMarkup, adaptLegacyWeaponScript } from './game/weapon-naming';
 
-const APP_VERSION = '0.12.14';
+const APP_VERSION = '0.12.15';
 const LEGACY_PROTOTYPE_PATH = 'legacy/NoBrainer_GitHub_v0.12.2.html';
 const LEGACY_STYLE_ID = 'nobrainer-legacy-style';
 const LEGACY_SCRIPT_ID = 'nobrainer-legacy-script';
@@ -25,6 +26,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     private readonly legacyRuntime: LegacyRuntimeService,
     private readonly legacySourceAdapter: LegacySourceAdapterService,
     private readonly legacyDungeonPolicy: LegacyDungeonPolicyService,
+    private readonly legacyDungeonSearchAdapter: LegacyDungeonSearchAdapterService,
     private readonly legacyEconomyAdapter: LegacyEconomyAdapterService,
     private readonly legacyEnergyAdapter: LegacyEnergyAdapterService,
     private readonly legacyCombatAdapter: LegacyCombatAdapterService
@@ -70,6 +72,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
 
     let adaptedScript = this.legacySourceAdapter.adapt(legacyScript.textContent ?? '');
     adaptedScript = this.legacyDungeonPolicy.adapt(adaptedScript);
+    adaptedScript = this.legacyDungeonSearchAdapter.adapt(adaptedScript);
     adaptedScript = adaptLegacyWeaponScript(adaptedScript);
     adaptedScript = this.legacyEconomyAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyEnergyAdapter.adapt(adaptedScript);
