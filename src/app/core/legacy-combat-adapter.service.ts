@@ -29,12 +29,32 @@ const APPLY_DAMAGE_BRIDGE = `function applyAttackDamage(target,damage,penetratio
   return window.NoBrainerCombatCore.applyAttackDamage(target,damage,penetration);
 }`;
 
+const PLAYER_ATTACK_RESOLUTION = `  if(Math.random()>=hitChance){addLog(\`${'${c.name}'} · ${'${label}'}: verfehlt ${'${target.name}'}.\`,"muted");return;}
+  if(Math.random()<target.dodge){addLog(\`${'${target.name}'} weicht ${'${c.name}'} · ${'${label}'} aus.\`,"muted");return;}
+  const dealt=applyAttackDamage(target,damage,penetration);`;
+
+const PLAYER_ATTACK_BRIDGE = `  const resolution=window.NoBrainerCombatCore.resolveAttack(target,damage,hitChance,penetration,Math.random(),Math.random());
+  if(resolution.outcome==="miss"){addLog(\`${'${c.name}'} · ${'${label}'}: verfehlt ${'${target.name}'}.\`,"muted");return;}
+  if(resolution.outcome==="dodge"){addLog(\`${'${target.name}'} weicht ${'${c.name}'} · ${'${label}'} aus.\`,"muted");return;}
+  const dealt=resolution.dealt;`;
+
+const ENEMY_ATTACK_RESOLUTION = `  if(Math.random()>=hitChance){addLog(\`${'${enemy.name}'} verfehlt ${'${target.name}'}.\`,"muted");return;}
+  if(Math.random()<target.dodge){addLog(\`${'${target.name}'} weicht dem Angriff von ${'${enemy.name}'} aus.\`,"muted");return;}
+  const dealt=applyAttackDamage(target,enemy.damage*enemy.strengthFactor,enemy.penetration);`;
+
+const ENEMY_ATTACK_BRIDGE = `  const resolution=window.NoBrainerCombatCore.resolveAttack(target,enemy.damage*enemy.strengthFactor,hitChance,enemy.penetration,Math.random(),Math.random());
+  if(resolution.outcome==="miss"){addLog(\`${'${enemy.name}'} verfehlt ${'${target.name}'}.\`,"muted");return;}
+  if(resolution.outcome==="dodge"){addLog(\`${'${target.name}'} weicht dem Angriff von ${'${enemy.name}'} aus.\`,"muted");return;}
+  const dealt=resolution.dealt;`;
+
 @Injectable({ providedIn: 'root' })
 export class LegacyCombatAdapterService {
   adapt(source: string): string {
     window.NoBrainerCombatCore = COMBAT_CORE_BRIDGE;
     let adapted = this.replaceOnce(source, WEIGHTED_TARGET_BLOCK, WEIGHTED_TARGET_BRIDGE, 'Dungeon-Zielgewichtung');
     adapted = this.replaceOnce(adapted, APPLY_DAMAGE_BLOCK, APPLY_DAMAGE_BRIDGE, 'Dungeon-Schadensberechnung');
+    adapted = this.replaceOnce(adapted, PLAYER_ATTACK_RESOLUTION, PLAYER_ATTACK_BRIDGE, 'Spieler-Trefferauflösung');
+    adapted = this.replaceOnce(adapted, ENEMY_ATTACK_RESOLUTION, ENEMY_ATTACK_BRIDGE, 'Gegner-Trefferauflösung');
     return adapted;
   }
 
