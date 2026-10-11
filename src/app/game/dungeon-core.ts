@@ -1,6 +1,6 @@
-import { CHARACTER_CLASSES, CONFIG, type CharacterClassId } from './game-core';
-import { enforceGlobalActionCooldown, type CombatActionPointLike } from './combat-core';
-import { healParticipantsAfterSearchMiss, resolveDungeonSearch, type SearchParticipantLike } from './dungeon-search-core';
+import { CHARACTER_CLASSES, CONFIG, type CharacterClassId } from './game-core.ts';
+import { enforceGlobalActionCooldown, type CombatActionPointLike } from './combat-core.ts';
+import { healParticipantsAfterSearchMiss, resolveDungeonSearch, type SearchParticipantLike } from './dungeon-search-core.ts';
 
 export interface DungeonCharacterLike extends SearchParticipantLike {
   id: number;
