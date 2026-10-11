@@ -3,12 +3,18 @@ export interface CombatTargetLike {
   alive: boolean;
   armor?: number | null;
   distance?: number | null;
+  dodge?: number | null;
 }
 
 export interface WeightedTargetEntry<TTarget extends CombatTargetLike> {
   target: TTarget;
   weight: number;
 }
+
+export type AttackResolution =
+  | { outcome: 'miss' }
+  | { outcome: 'dodge' }
+  | { outcome: 'hit'; dealt: number };
 
 export function targetWeight(distance: number | null | undefined, fallbackDistance = 2): number {
   const resolved = Number.isFinite(Number(distance)) ? Number(distance) : fallbackDistance;
@@ -40,9 +46,27 @@ export function applyAttackDamage<TTarget extends CombatTargetLike>(
   return dealt;
 }
 
+export function resolveAttack<TTarget extends CombatTargetLike>(
+  target: TTarget,
+  damage: number,
+  hitChance: number,
+  penetration: number,
+  hitRoll: number,
+  dodgeRoll: number
+): AttackResolution {
+  const clampedHitChance = Math.max(0, Math.min(1, Number(hitChance) || 0));
+  if (hitRoll >= clampedHitChance) return { outcome: 'miss' };
+
+  const clampedDodge = Math.max(0, Math.min(1, Number(target.dodge) || 0));
+  if (dodgeRoll < clampedDodge) return { outcome: 'dodge' };
+
+  return { outcome: 'hit', dealt: applyAttackDamage(target, damage, penetration) };
+}
+
 export const COMBAT_CORE_BRIDGE = {
   buildWeightedTargets,
-  applyAttackDamage
+  applyAttackDamage,
+  resolveAttack
 };
 
 export type CombatCoreBridge = typeof COMBAT_CORE_BRIDGE;
