@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { ECONOMY_CORE_BRIDGE, EconomyCoreBridge } from '../game/economy-core';
+import { ECONOMY_CORE_BRIDGE, type EconomyCoreBridge } from '../game/economy-core';
 
 declare global {
   interface Window {
