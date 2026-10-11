@@ -6,6 +6,10 @@ export interface CombatTargetLike {
   dodge?: number | null;
 }
 
+export interface CombatActionPointLike {
+  nextAt: number;
+}
+
 export interface WeightedTargetEntry<TTarget extends CombatTargetLike> {
   target: TTarget;
   weight: number;
@@ -63,10 +67,22 @@ export function resolveAttack<TTarget extends CombatTargetLike>(
   return { outcome: 'hit', dealt: applyAttackDamage(target, damage, penetration) };
 }
 
+export function enforceGlobalActionCooldown<TPoint extends CombatActionPointLike>(
+  points: readonly TPoint[],
+  actionAt: number,
+  minimumIntervalMs = 1000
+): void {
+  const earliestNextAction = actionAt + Math.max(0, minimumIntervalMs);
+  points.forEach(point => {
+    point.nextAt = Math.max(Number(point.nextAt) || 0, earliestNextAction);
+  });
+}
+
 export const COMBAT_CORE_BRIDGE = {
   buildWeightedTargets,
   applyAttackDamage,
-  resolveAttack
+  resolveAttack,
+  enforceGlobalActionCooldown
 };
 
 export type CombatCoreBridge = typeof COMBAT_CORE_BRIDGE;
