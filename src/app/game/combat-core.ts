@@ -72,9 +72,21 @@ export function enforceGlobalActionCooldown<TPoint extends CombatActionPointLike
   actionAt: number,
   minimumIntervalMs = 1000
 ): void {
+  if (!points.length) return;
+
   const earliestNextAction = actionAt + Math.max(0, minimumIntervalMs);
+  const scheduledTimes = points
+    .map(point => Number(point.nextAt))
+    .filter(Number.isFinite);
+  if (!scheduledTimes.length) return;
+
+  const currentEarliest = Math.min(...scheduledTimes);
+  const shift = Math.max(0, earliestNextAction - currentEarliest);
+  if (shift <= 0) return;
+
   points.forEach(point => {
-    point.nextAt = Math.max(Number(point.nextAt) || 0, earliestNextAction);
+    const nextAt = Number(point.nextAt);
+    if (Number.isFinite(nextAt)) point.nextAt = nextAt + shift;
   });
 }
 
