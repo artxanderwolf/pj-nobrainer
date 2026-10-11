@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { applyAttackDamage, buildWeightedTargets, targetWeight } from '../src/app/game/combat-core.ts';
+import { applyAttackDamage, buildWeightedTargets, resolveAttack, targetWeight } from '../src/app/game/combat-core.ts';
 
 assert.equal(targetWeight(1), 1);
 assert.equal(targetWeight(2), 0.5);
@@ -36,4 +36,19 @@ const blocked = { hp: 10, alive: true, armor: 20 };
 assert.equal(applyAttackDamage(blocked, 5, 0), 0);
 assert.equal(blocked.hp, 10);
 
-console.log('Combat-Core: Zielgewichtung, Rüstung, Durchschlag und HP-Status sind konsistent.');
+const missed = { hp: 20, alive: true, armor: 0, dodge: 0.25 };
+assert.deepEqual(resolveAttack(missed, 10, 0.5, 0, 0.5, 0.9), { outcome: 'miss' });
+assert.equal(missed.hp, 20);
+
+const dodged = { hp: 20, alive: true, armor: 0, dodge: 0.25 };
+assert.deepEqual(resolveAttack(dodged, 10, 0.5, 0, 0.49, 0.24), { outcome: 'dodge' });
+assert.equal(dodged.hp, 20);
+
+const hit = { hp: 20, alive: true, armor: 2, dodge: 0.25 };
+assert.deepEqual(resolveAttack(hit, 10, 0.5, 0, 0.49, 0.25), { outcome: 'hit', dealt: 8 });
+assert.equal(hit.hp, 12);
+
+const clampedChance = { hp: 20, alive: true, armor: 0, dodge: 0 };
+assert.equal(resolveAttack(clampedChance, 5, 2, 0, 0.99, 0.99).outcome, 'hit');
+
+console.log('Combat-Core: Zielgewichtung, Treffer, Ausweichen, Rüstung, Durchschlag und HP-Status sind konsistent.');
