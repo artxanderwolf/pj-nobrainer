@@ -10,8 +10,10 @@ const tempPath = path.join(tempDir, 'progression-core.node-check.ts');
 const source = fs.readFileSync(sourcePath, 'utf8')
   .replace("from './game-core';", "from './game-core.ts';")
   .replace("from './economy-core';", "from './economy-core.ts';");
+const economySource = fs.readFileSync(path.resolve('src/app/game/economy-core.ts'), 'utf8')
+  .replace("from './game-core';", "from './game-core.ts';");
 fs.copyFileSync(path.resolve('src/app/game/game-core.ts'), path.join(tempDir, 'game-core.ts'));
-fs.copyFileSync(path.resolve('src/app/game/economy-core.ts'), path.join(tempDir, 'economy-core.ts'));
+fs.writeFileSync(path.join(tempDir, 'economy-core.ts'), economySource);
 fs.writeFileSync(tempPath, source);
 
 try {
