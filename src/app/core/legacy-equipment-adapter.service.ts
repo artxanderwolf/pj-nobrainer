@@ -46,7 +46,7 @@ const LEGACY_INVENTORY_PRESENTATION = `const loc=getWeaponEquipLocation(w.id);le
       actions=\`<div class="weapon-card-actions"><button class="btn" onclick="unequipHand(\${loc.characterId},'\${loc.hand}')">Ablegen</button></div>\`;
     }else{
       const selectId=\`lagerEquip_\${index}\`;
-      const opts=window.NoBrainerEquipmentCore.getFreeWeaponEquipTargets(state.characters).map(t=>{const c=getCharacterById(t.characterId);return \`<option value="\${t.characterId}:\${t.hand}">\${c?.name||"Charakter"} · \${t.label}</option>\`;}).join("");
+      const opts=state.characters.flatMap(c=>[[c,"leftHand","Linke Hand"],[c,"rightHand","Rechte Hand"]]).filter(([c,h])=>c.equipment[h]==null).map(([c,h,l])=>\`<option value="\${c.id}:\${h}">\${c.name} · \${l}</option>\`).join("");
       actions=opts?\`<div class="weapon-card-actions" style="display:grid;grid-template-columns:1fr auto"><select id="\${selectId}" class="equip-select">\${opts}</select><button class="btn primary" onclick="equipWeaponFromInventory(\${w.id},'\${selectId}')">Ausrüsten</button></div>\`:\`<div class="weapon-card-actions"><button class="btn" disabled>Keine freie Hand</button></div>\`;
     }`;
 
