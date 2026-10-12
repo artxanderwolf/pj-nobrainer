@@ -59,6 +59,13 @@ const ADAPTED_INVENTORY_PRESENTATION = `const presentation=window.NoBrainerEquip
       actions=opts?\`<div class="weapon-card-actions" style="display:grid;grid-template-columns:1fr auto"><select id="\${selectId}" class="equip-select">\${opts}</select><button class="btn primary" onclick="equipWeaponFromInventory(\${w.id},'\${selectId}')">Ausrüsten</button></div>\`:\`<div class="weapon-card-actions"><button class="btn" disabled>Keine freie Hand</button></div>\`;
     }`;
 
+const LEGACY_PICKER_PRESENTATION = `const loc=getWeaponEquipLocation(w.id);let st="",dis=false;
+    if(w.id===curId){st="AUSGERÜSTET";dis=true;}
+    else if(w.id===otherId){st="ANDERE HAND";dis=true;}
+    else if(loc){const owner=getCharacterById(loc.characterId);st=\`BELEGT: \${owner?.name||"Charakter"}\`;dis=true;}`;
+
+const ADAPTED_PICKER_PRESENTATION = `const pickerPresentation=window.NoBrainerEquipmentCore.getWeaponPickerPresentation(state.characters,Number(w.id),Number(c.id),hand);const st=pickerPresentation.status,dis=pickerPresentation.disabled;`;
+
 function replaceOnce(source: string, expected: string, replacement: string): string {
   const first = source.indexOf(expected);
   if (first < 0) throw new Error('Legacy-Equipment-Block wurde nicht gefunden.');
@@ -72,6 +79,7 @@ export class LegacyEquipmentAdapterService {
     window.NoBrainerEquipmentCore = EQUIPMENT_CORE_BRIDGE;
     let adapted = replaceOnce(source, LEGACY_EQUIPMENT_BLOCK, ADAPTED_EQUIPMENT_BLOCK);
     adapted = replaceOnce(adapted, LEGACY_INVENTORY_PRESENTATION, ADAPTED_INVENTORY_PRESENTATION);
+    adapted = replaceOnce(adapted, LEGACY_PICKER_PRESENTATION, ADAPTED_PICKER_PRESENTATION);
     return adapted;
   }
 }
