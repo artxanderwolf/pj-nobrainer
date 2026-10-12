@@ -7,6 +7,7 @@ export interface EquipmentSlots {
 
 export interface EquipmentCharacterLike {
   id: number;
+  name?: string;
   equipment: EquipmentSlots;
 }
 
@@ -17,6 +18,12 @@ export interface WeaponEquipLocation {
 
 export interface WeaponEquipTarget extends WeaponEquipLocation {
   label: 'Linke Hand' | 'Rechte Hand';
+}
+
+export interface WeaponInventoryPresentation {
+  location: WeaponEquipLocation | null;
+  status: string;
+  targets: WeaponEquipTarget[];
 }
 
 export type EquipWeaponResult =
@@ -45,6 +52,19 @@ export function getFreeWeaponEquipTargets(characters: EquipmentCharacterLike[]):
     if (character.equipment.rightHand === null) targets.push({ characterId: character.id, hand: 'rightHand', label: 'Rechte Hand' });
   }
   return targets;
+}
+
+export function getWeaponInventoryPresentation(
+  characters: EquipmentCharacterLike[],
+  weaponId: number
+): WeaponInventoryPresentation {
+  const location = getWeaponEquipLocation(characters, weaponId);
+  if (!location) return { location: null, status: '', targets: getFreeWeaponEquipTargets(characters) };
+
+  const character = characters.find((entry) => entry.id === location.characterId);
+  const characterName = character?.name || 'Charakter';
+  const handLabel = location.hand === 'leftHand' ? 'LINKE' : 'RECHTE';
+  return { location, status: `${characterName} · ${handLabel} HAND`, targets: [] };
 }
 
 export function equipWeapon(
@@ -80,6 +100,7 @@ export function unequipHand(
 export const EQUIPMENT_CORE_BRIDGE = {
   getWeaponEquipLocation,
   getFreeWeaponEquipTargets,
+  getWeaponInventoryPresentation,
   equipWeapon,
   unequipHand
 };
