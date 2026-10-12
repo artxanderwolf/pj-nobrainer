@@ -9,11 +9,11 @@ const sourcePath = path.resolve('src/app/game/equipment-core.ts');
 const tempPath = path.join(tempDir, 'equipment-core.ts');
 fs.copyFileSync(sourcePath, tempPath);
 
-const { equipWeapon, getFreeWeaponEquipTargets, getWeaponEquipLocation, unequipHand } = await import(pathToFileURL(tempPath).href);
+const { equipWeapon, getFreeWeaponEquipTargets, getWeaponEquipLocation, getWeaponInventoryPresentation, unequipHand } = await import(pathToFileURL(tempPath).href);
 
 const characters = [
-  { id: 1, equipment: { leftHand: null, rightHand: 0 } },
-  { id: 2, equipment: { leftHand: null, rightHand: null } }
+  { id: 1, name: 'Rekrut 01', equipment: { leftHand: null, rightHand: 0 } },
+  { id: 2, name: 'Rekrut 02', equipment: { leftHand: null, rightHand: null } }
 ];
 
 assert.deepEqual(getWeaponEquipLocation(characters, 0), { characterId: 1, hand: 'rightHand' });
@@ -23,6 +23,20 @@ assert.deepEqual(getFreeWeaponEquipTargets(characters), [
   { characterId: 2, hand: 'leftHand', label: 'Linke Hand' },
   { characterId: 2, hand: 'rightHand', label: 'Rechte Hand' }
 ]);
+assert.deepEqual(getWeaponInventoryPresentation(characters, 0), {
+  location: { characterId: 1, hand: 'rightHand' },
+  status: 'Rekrut 01 · RECHTE HAND',
+  targets: []
+});
+assert.deepEqual(getWeaponInventoryPresentation(characters, 7), {
+  location: null,
+  status: '',
+  targets: [
+    { characterId: 1, hand: 'leftHand', label: 'Linke Hand' },
+    { characterId: 2, hand: 'leftHand', label: 'Linke Hand' },
+    { characterId: 2, hand: 'rightHand', label: 'Rechte Hand' }
+  ]
+});
 
 assert.deepEqual(equipWeapon(characters, 7, 'leftHand', 1), {
   ok: true,
@@ -51,4 +65,4 @@ assert.equal(characters[0].equipment.rightHand, null);
 assert.equal(unequipHand(characters, 99, 'leftHand'), false);
 assert.equal(unequipHand(characters, 1, 'belt'), false);
 
-console.log('Equipment-Core: Belegung, freie Inventarziele, Handwechsel, Mehrfachschutz und Ablegen sind konsistent.');
+console.log('Equipment-Core: Belegung, Inventar-Präsentation, freie Ziele, Handwechsel, Mehrfachschutz und Ablegen sind konsistent.');
