@@ -40,6 +40,9 @@ function unequipHand(characterId,hand){
   render();
 }`;
 
+const LEGACY_INVENTORY_TARGETS = `const opts=state.characters.flatMap(c=>[[c,"leftHand","Linke Hand"],[c,"rightHand","Rechte Hand"]]).filter(([c,h])=>c.equipment[h]==null).map(([c,h,l])=>\`<option value="\${c.id}:\${h}">\${c.name} · \${l}</option>\`).join("");`;
+const ADAPTED_INVENTORY_TARGETS = `const opts=window.NoBrainerEquipmentCore.getFreeWeaponEquipTargets(state.characters).map(t=>{const c=getCharacterById(t.characterId);return \`<option value="\${t.characterId}:\${t.hand}">\${c?.name||"Charakter"} · \${t.label}</option>\`;}).join("");`;
+
 function replaceOnce(source: string, expected: string, replacement: string): string {
   const first = source.indexOf(expected);
   if (first < 0) throw new Error('Legacy-Equipment-Block wurde nicht gefunden.');
@@ -51,6 +54,8 @@ function replaceOnce(source: string, expected: string, replacement: string): str
 export class LegacyEquipmentAdapterService {
   adapt(source: string): string {
     window.NoBrainerEquipmentCore = EQUIPMENT_CORE_BRIDGE;
-    return replaceOnce(source, LEGACY_EQUIPMENT_BLOCK, ADAPTED_EQUIPMENT_BLOCK);
+    let adapted = replaceOnce(source, LEGACY_EQUIPMENT_BLOCK, ADAPTED_EQUIPMENT_BLOCK);
+    adapted = replaceOnce(adapted, LEGACY_INVENTORY_TARGETS, ADAPTED_INVENTORY_TARGETS);
+    return adapted;
   }
 }
