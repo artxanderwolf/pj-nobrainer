@@ -26,6 +26,11 @@ export interface WeaponInventoryPresentation {
   targets: WeaponEquipTarget[];
 }
 
+export interface WeaponPickerPresentation {
+  status: '' | 'AUSGERÜSTET' | 'ANDERE HAND' | string;
+  disabled: boolean;
+}
+
 export type EquipWeaponResult =
   | { ok: true; location: WeaponEquipLocation }
   | { ok: false; reason: 'character-not-found' | 'invalid-hand' | 'weapon-in-use' };
@@ -67,6 +72,27 @@ export function getWeaponInventoryPresentation(
   return { location, status: `${characterName} · ${handLabel} HAND`, targets: [] };
 }
 
+export function getWeaponPickerPresentation(
+  characters: EquipmentCharacterLike[],
+  weaponId: number,
+  characterId: number,
+  hand: EquipmentHand
+): WeaponPickerPresentation {
+  const character = characters.find((entry) => entry.id === characterId);
+  if (!character) return { status: '', disabled: false };
+
+  const otherHand: EquipmentHand = hand === 'leftHand' ? 'rightHand' : 'leftHand';
+  if (character.equipment[hand] === weaponId) return { status: 'AUSGERÜSTET', disabled: true };
+  if (character.equipment[otherHand] === weaponId) return { status: 'ANDERE HAND', disabled: true };
+
+  const location = getWeaponEquipLocation(characters, weaponId);
+  if (location) {
+    const owner = characters.find((entry) => entry.id === location.characterId);
+    return { status: `BELEGT: ${owner?.name || 'Charakter'}`, disabled: true };
+  }
+  return { status: '', disabled: false };
+}
+
 export function equipWeapon(
   characters: EquipmentCharacterLike[],
   weaponId: number,
@@ -101,6 +127,7 @@ export const EQUIPMENT_CORE_BRIDGE = {
   getWeaponEquipLocation,
   getFreeWeaponEquipTargets,
   getWeaponInventoryPresentation,
+  getWeaponPickerPresentation,
   equipWeapon,
   unequipHand
 };
