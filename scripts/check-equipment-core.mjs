@@ -9,7 +9,7 @@ const sourcePath = path.resolve('src/app/game/equipment-core.ts');
 const tempPath = path.join(tempDir, 'equipment-core.ts');
 fs.copyFileSync(sourcePath, tempPath);
 
-const { equipWeapon, getWeaponEquipLocation, unequipHand } = await import(pathToFileURL(tempPath).href);
+const { equipWeapon, getFreeWeaponEquipTargets, getWeaponEquipLocation, unequipHand } = await import(pathToFileURL(tempPath).href);
 
 const characters = [
   { id: 1, equipment: { leftHand: null, rightHand: 0 } },
@@ -18,12 +18,21 @@ const characters = [
 
 assert.deepEqual(getWeaponEquipLocation(characters, 0), { characterId: 1, hand: 'rightHand' });
 assert.equal(getWeaponEquipLocation(characters, 7), null);
+assert.deepEqual(getFreeWeaponEquipTargets(characters), [
+  { characterId: 1, hand: 'leftHand', label: 'Linke Hand' },
+  { characterId: 2, hand: 'leftHand', label: 'Linke Hand' },
+  { characterId: 2, hand: 'rightHand', label: 'Rechte Hand' }
+]);
 
 assert.deepEqual(equipWeapon(characters, 7, 'leftHand', 1), {
   ok: true,
   location: { characterId: 1, hand: 'leftHand' }
 });
 assert.equal(characters[0].equipment.leftHand, 7);
+assert.deepEqual(getFreeWeaponEquipTargets(characters), [
+  { characterId: 2, hand: 'leftHand', label: 'Linke Hand' },
+  { characterId: 2, hand: 'rightHand', label: 'Rechte Hand' }
+]);
 
 assert.equal(equipWeapon(characters, 7, 'rightHand', 1).ok, true);
 assert.equal(characters[0].equipment.leftHand, null);
@@ -42,4 +51,4 @@ assert.equal(characters[0].equipment.rightHand, null);
 assert.equal(unequipHand(characters, 99, 'leftHand'), false);
 assert.equal(unequipHand(characters, 1, 'belt'), false);
 
-console.log('Equipment-Core: Belegung, Handwechsel, Mehrfachschutz und Ablegen sind konsistent.');
+console.log('Equipment-Core: Belegung, freie Inventarziele, Handwechsel, Mehrfachschutz und Ablegen sind konsistent.');
