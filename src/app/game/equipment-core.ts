@@ -15,6 +15,10 @@ export interface WeaponEquipLocation {
   hand: EquipmentHand;
 }
 
+export interface WeaponEquipTarget extends WeaponEquipLocation {
+  label: 'Linke Hand' | 'Rechte Hand';
+}
+
 export type EquipWeaponResult =
   | { ok: true; location: WeaponEquipLocation }
   | { ok: false; reason: 'character-not-found' | 'invalid-hand' | 'weapon-in-use' };
@@ -32,6 +36,15 @@ export function getWeaponEquipLocation(
     if (character.equipment.rightHand === weaponId) return { characterId: character.id, hand: 'rightHand' };
   }
   return null;
+}
+
+export function getFreeWeaponEquipTargets(characters: EquipmentCharacterLike[]): WeaponEquipTarget[] {
+  const targets: WeaponEquipTarget[] = [];
+  for (const character of characters) {
+    if (character.equipment.leftHand === null) targets.push({ characterId: character.id, hand: 'leftHand', label: 'Linke Hand' });
+    if (character.equipment.rightHand === null) targets.push({ characterId: character.id, hand: 'rightHand', label: 'Rechte Hand' });
+  }
+  return targets;
 }
 
 export function equipWeapon(
@@ -66,6 +79,7 @@ export function unequipHand(
 
 export const EQUIPMENT_CORE_BRIDGE = {
   getWeaponEquipLocation,
+  getFreeWeaponEquipTargets,
   equipWeapon,
   unequipHand
 };
