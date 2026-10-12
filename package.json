@@ -1,6 +1,6 @@
 {
   "name": "pj-nobrainer",
-  "version": "0.12.22",
+  "version": "0.12.23",
   "private": true,
   "scripts": {
     "start": "ng serve",
@@ -8,6 +8,7 @@
     "check:core": "node --no-warnings --experimental-strip-types scripts/check-game-core.mjs",
     "check:economy": "node --no-warnings --experimental-strip-types scripts/check-economy-core.mjs",
     "check:character": "node --no-warnings --experimental-strip-types scripts/check-character-core.mjs",
+    "check:equipment": "node --no-warnings --experimental-strip-types scripts/check-equipment-core.mjs",
     "check:progression": "node --no-warnings --experimental-strip-types scripts/check-progression-core.mjs",
     "check:energy": "node --no-warnings --experimental-strip-types scripts/check-energy-core.mjs",
     "check:combat": "node --no-warnings --experimental-strip-types scripts/check-combat-core.mjs",
@@ -17,7 +18,7 @@
     "check:market": "node --no-warnings --experimental-strip-types scripts/check-market-core.mjs",
     "check:naming": "node --no-warnings --experimental-strip-types scripts/check-weapon-naming.mjs",
     "check:save": "node --no-warnings --experimental-strip-types scripts/check-save-codec.mjs",
-    "check": "npm run check:legacy && npm run check:core && npm run check:economy && npm run check:character && npm run check:progression && npm run check:energy && npm run check:combat && npm run check:dungeon-search && npm run check:dungeon && npm run check:forge && npm run check:market && npm run check:naming && npm run check:save",
+    "check": "npm run check:legacy && npm run check:core && npm run check:economy && npm run check:character && npm run check:equipment && npm run check:progression && npm run check:energy && npm run check:combat && npm run check:dungeon-search && npm run check:dungeon && npm run check:forge && npm run check:market && npm run check:naming && npm run check:save",
     "build": "npm run check && ng build",
     "build:pages": "npm run check && ng build --configuration production"
   },
