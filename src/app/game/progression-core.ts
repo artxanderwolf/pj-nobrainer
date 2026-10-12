@@ -1,4 +1,4 @@
-import { CONFIG, CHARACTER_CLASSES } from './game-core';
+import { CONFIG, CHARACTER_CLASSES, type CharacterClassId } from './game-core';
 import { calculateRecruitCost, calculateUpgradeCost } from './economy-core';
 
 export type UpgradeKind = 'inn' | 'forgeSlots' | 'forgeQueue' | 'marketSlots' | 'marketQueue';
@@ -27,9 +27,13 @@ const UPGRADE_MAP = {
   marketQueue: { stateKey: 'marketQueue', configKey: 'marketQueue', label: 'Markt-Warteschlangenplatz' }
 } as const;
 
+function isCharacterClassId(classId: string): classId is CharacterClassId {
+  return Object.prototype.hasOwnProperty.call(CHARACTER_CLASSES, classId);
+}
+
 export function getRecruitOffer(state: ProgressionStateLike, classId = 'recruit') {
+  if (!isCharacterClassId(classId)) return { ok: false as const, reason: 'unknown-class' as const, costNickel: 0, number: 0 };
   const characterClass = CHARACTER_CLASSES[classId];
-  if (!characterClass) return { ok: false as const, reason: 'unknown-class' as const, costNickel: 0, number: 0 };
   const costNickel = calculateRecruitCost(state.characters.length);
   const number = state.characters.filter((character) => character.classId === classId).length + 1;
   if (state.characters.length >= state.upgrades.innCapacity) return { ok: false as const, reason: 'inn-full' as const, costNickel, number, characterClass };
