@@ -30,7 +30,7 @@ const materialIndexBridge = `function renderMaterialIndex(){
     const tr=document.createElement("tr");
     tr.innerHTML="<td>"+presentation.category+"</td>"+
       "<td><strong>"+presentation.name+"</strong></td>"+
-      "<td class=\"rarity\">"+presentation.rarityText+"</td>"+
+      "<td class='rarity'>"+presentation.rarityText+"</td>"+
       "<td>"+presentation.baseDamageText+"</td>"+
       "<td>"+presentation.baseSpeedText+"</td>"+
       "<td>"+presentation.bladeText+"</td>"+
