@@ -10,6 +10,7 @@ import { LegacyForgeAdapterService } from './core/legacy-forge-adapter.service';
 import { LegacyForgePresentationAdapterService } from './core/legacy-forge-presentation-adapter.service';
 import { LegacyMarketAdapterService } from './core/legacy-market-adapter.service';
 import { LegacyMarketPresentationAdapterService } from './core/legacy-market-presentation-adapter.service';
+import { LegacyMaterialPresentationAdapterService } from './core/legacy-material-presentation-adapter.service';
 import { LegacyProgressionAdapterService } from './core/legacy-progression-adapter.service';
 import { LegacyProgressionPresentationAdapterService } from './core/legacy-progression-presentation-adapter.service';
 import { LegacyRuntimeService } from './core/legacy-runtime.service';
@@ -18,7 +19,7 @@ import { LegacyTavernPresentationAdapterService } from './core/legacy-tavern-pre
 import { LegacyWeaponPresentationAdapterService } from './core/legacy-weapon-presentation-adapter.service';
 import { adaptLegacyWeaponMarkup, adaptLegacyWeaponScript } from './game/weapon-naming';
 
-const APP_VERSION = '0.12.38';
+const APP_VERSION = '0.12.39';
 const LEGACY_PROTOTYPE_PATH = 'legacy/NoBrainer_GitHub_v0.12.2.html';
 const LEGACY_STYLE_ID = 'nobrainer-legacy-style';
 const LEGACY_SCRIPT_ID = 'nobrainer-legacy-script';
@@ -41,6 +42,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     private readonly legacyCharacterAdapter: LegacyCharacterAdapterService,
     private readonly legacyEquipmentAdapter: LegacyEquipmentAdapterService,
     private readonly legacyWeaponPresentationAdapter: LegacyWeaponPresentationAdapterService,
+    private readonly legacyMaterialPresentationAdapter: LegacyMaterialPresentationAdapterService,
     private readonly legacyCharacterPresentationAdapter: LegacyCharacterPresentationAdapterService,
     private readonly legacyProgressionAdapter: LegacyProgressionAdapterService,
     private readonly legacyProgressionPresentationAdapter: LegacyProgressionPresentationAdapterService,
@@ -77,6 +79,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     adaptedScript = this.legacyDungeonPresentationAdapter.adapt(adaptedScript);
     adaptedScript = adaptLegacyWeaponScript(adaptedScript);
     adaptedScript = this.legacyWeaponPresentationAdapter.adapt(adaptedScript);
+    adaptedScript = this.legacyMaterialPresentationAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyForgeAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyMarketAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyEconomyAdapter.adapt(adaptedScript);
