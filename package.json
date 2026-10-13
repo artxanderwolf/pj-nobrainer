@@ -1,6 +1,6 @@
 {
   "name": "pj-nobrainer",
-  "version": "0.12.30",
+  "version": "0.12.31",
   "private": true,
   "scripts": {
     "start": "ng serve",
@@ -10,6 +10,8 @@
     "check:character": "node --no-warnings --experimental-strip-types scripts/check-character-core.mjs",
     "check:character-presentation": "node --no-warnings --experimental-strip-types scripts/check-character-presentation-core.mjs",
     "check:character-presentation-adapter": "node scripts/check-character-presentation-adapter.mjs",
+    "check:tavern-presentation": "node --no-warnings --experimental-strip-types scripts/check-tavern-presentation-core.mjs",
+    "check:tavern-presentation-adapter": "node scripts/check-tavern-presentation-adapter.mjs",
     "check:equipment": "node --no-warnings --experimental-strip-types scripts/check-equipment-core.mjs",
     "check:presentation": "node --no-warnings --experimental-strip-types scripts/check-weapon-presentation-core.mjs",
     "check:progression": "node --no-warnings --experimental-strip-types scripts/check-progression-core.mjs",
@@ -21,7 +23,7 @@
     "check:market": "node --no-warnings --experimental-strip-types scripts/check-market-core.mjs",
     "check:naming": "node --no-warnings --experimental-strip-types scripts/check-weapon-naming.mjs",
     "check:save": "node --no-warnings --experimental-strip-types scripts/check-save-codec.mjs",
-    "check": "npm run check:legacy && npm run check:core && npm run check:economy && npm run check:character && npm run check:character-presentation && npm run check:character-presentation-adapter && npm run check:equipment && npm run check:presentation && npm run check:progression && npm run check:energy && npm run check:combat && npm run check:dungeon-search && npm run check:dungeon && npm run check:forge && npm run check:market && npm run check:naming && npm run check:save",
+    "check": "npm run check:legacy && npm run check:core && npm run check:economy && npm run check:character && npm run check:character-presentation && npm run check:character-presentation-adapter && npm run check:tavern-presentation && npm run check:tavern-presentation-adapter && npm run check:equipment && npm run check:presentation && npm run check:progression && npm run check:energy && npm run check:combat && npm run check:dungeon-search && npm run check:dungeon && npm run check:forge && npm run check:market && npm run check:naming && npm run check:save",
     "build": "npm run check && ng build",
     "build:pages": "npm run check && ng build --configuration production"
   },
