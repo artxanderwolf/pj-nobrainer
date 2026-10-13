@@ -163,6 +163,19 @@ export function getNextDueAttack<TPoint extends DungeonAttackPoint>(points: read
   return points.filter(point => point.nextAt <= now).reduce<TPoint | null>((best, point) => !best || point.nextAt < best.nextAt ? point : best, null);
 }
 
+export function filterActiveDungeonAttackPoints<TPoint extends DungeonAttackPoint>(
+  points: readonly TPoint[],
+  activePlayerIds: readonly number[],
+  activeEnemyIds: readonly string[]
+): TPoint[] {
+  const players = new Set(activePlayerIds);
+  const enemies = new Set(activeEnemyIds);
+  return points.filter(point => {
+    if (point.side === 'player') return typeof point.ownerId === 'number' && players.has(point.ownerId);
+    return typeof point.ownerId === 'string' && enemies.has(point.ownerId);
+  });
+}
+
 export function rescheduleDungeonAttack(point: DungeonAttackPoint, speed: number, allPoints: readonly DungeonAttackPoint[]): void {
   point.nextAt += 1000 / Math.max(0.01, Number(speed) || 0);
   enforceGlobalActionCooldown(allPoints, point.nextAt - 1000 / Math.max(0.01, Number(speed) || 0), 1000);
@@ -197,6 +210,7 @@ export const DUNGEON_CORE_BRIDGE = {
   createDungeonAttackPoints,
   createDungeonRun,
   getNextDueAttack,
+  filterActiveDungeonAttackPoints,
   rescheduleDungeonAttack,
   getDungeonPhase,
   isDungeonCatchup,
