@@ -48,7 +48,7 @@ export class LegacyProgressionPresentationAdapterService {
     return this.replaceRangeOnce(
       source,
       'function upgradeButton(kind,stateKey,cfgKey,label){',
-      'function startForgeQueuedJob(job){',
+      'function startForgeQueuedJob(',
       ADAPTED_UPGRADE_CARDS,
       'Ausbaukarten-Präsentation'
     );
