@@ -9,13 +9,14 @@ import { LegacyEquipmentAdapterService } from './core/legacy-equipment-adapter.s
 import { LegacyForgeAdapterService } from './core/legacy-forge-adapter.service';
 import { LegacyMarketAdapterService } from './core/legacy-market-adapter.service';
 import { LegacyProgressionAdapterService } from './core/legacy-progression-adapter.service';
+import { LegacyProgressionPresentationAdapterService } from './core/legacy-progression-presentation-adapter.service';
 import { LegacyRuntimeService } from './core/legacy-runtime.service';
 import { LegacySourceAdapterService } from './core/legacy-source-adapter.service';
 import { LegacyTavernPresentationAdapterService } from './core/legacy-tavern-presentation-adapter.service';
 import { LegacyWeaponPresentationAdapterService } from './core/legacy-weapon-presentation-adapter.service';
 import { adaptLegacyWeaponMarkup, adaptLegacyWeaponScript } from './game/weapon-naming';
 
-const APP_VERSION = '0.12.31';
+const APP_VERSION = '0.12.32';
 const LEGACY_PROTOTYPE_PATH = 'legacy/NoBrainer_GitHub_v0.12.2.html';
 const LEGACY_STYLE_ID = 'nobrainer-legacy-style';
 const LEGACY_SCRIPT_ID = 'nobrainer-legacy-script';
@@ -38,6 +39,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     private readonly legacyWeaponPresentationAdapter: LegacyWeaponPresentationAdapterService,
     private readonly legacyCharacterPresentationAdapter: LegacyCharacterPresentationAdapterService,
     private readonly legacyProgressionAdapter: LegacyProgressionAdapterService,
+    private readonly legacyProgressionPresentationAdapter: LegacyProgressionPresentationAdapterService,
     private readonly legacyEnergyAdapter: LegacyEnergyAdapterService
   ) {}
 
@@ -79,6 +81,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     adaptedScript = this.legacyEquipmentAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyCharacterPresentationAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyProgressionAdapter.adapt(adaptedScript);
+    adaptedScript = this.legacyProgressionPresentationAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyEnergyAdapter.adapt(adaptedScript);
     const adaptedMarkup = adaptLegacyWeaponMarkup(app.outerHTML);
     this.installLegacyStyle(legacyStyle.textContent ?? '');
