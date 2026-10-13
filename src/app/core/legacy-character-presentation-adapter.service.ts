@@ -28,6 +28,34 @@ const ADAPTED_CHARACTER_CARD = `function renderCharacterCard(c){
 
 `;
 
+const ADAPTED_DUNGEON_TEAM_PICKER = `function dungeonTeamPresentationCharacters(){
+  return state.characters.map(c=>({id:c.id,name:c.name,hp:c.hp,maxHp:c.maxHp,energy:c.energy,maxEnergy:c.maxEnergy,className:getCharacterClass(c).name}));
+}
+function dungeonTeamPickerHtml(slot){
+  const presentation=window.NoBrainerCharacterPresentationCore.getDungeonTeamPickerPresentation(state.dungeonTeamSlots,dungeonTeamPresentationCharacters(),Number(slot),openDungeonTeamPickerSlot);
+  if(!presentation.open)return "";
+  if(!presentation.candidates.length)return '<div class="team-slot-picker muted small">'+presentation.emptyText+'</div>';
+  return '<div class="team-slot-picker">'+presentation.candidates.map(candidate=>'<div class="team-candidate"><div><strong>'+candidate.name+'</strong><div class="sell-meta">'+candidate.meta+'</div></div><button class="btn smallbtn primary" onclick="assignDungeonCharacter('+slot+','+candidate.id+')">'+candidate.assignLabel+'</button></div>').join("")+'</div>';
+}
+`;
+
+const ADAPTED_DUNGEON_TEAM = `function renderDungeonTeam(root){
+  const characters=dungeonTeamPresentationCharacters();
+  const locked=!!state.dungeonRun||!!state.dungeonAuto;
+  const cycleActive=!!(state.dungeonAuto||state.dungeonRun||state.dungeonCycleOriginalIds?.length);
+  const presentation=window.NoBrainerCharacterPresentationCore.getDungeonTeamPresentation(state.dungeonTeamSlots,characters,locked,state.dungeonCycleActiveIds||[],cycleActive);
+  const slots=presentation.slots.map(slot=>{
+    const picker=dungeonTeamPickerHtml(slot.slotIndex);
+    if(!slot.occupied){
+      return '<div class="team-slot"><div class="team-slot-head"><strong>'+slot.title+'</strong></div><div class="empty">'+slot.emptyText+'</div><div class="actions"><button class="btn primary" '+(presentation.locked?'disabled':'')+' onclick="toggleDungeonTeamPicker('+slot.slotIndex+')">'+slot.addLabel+'</button></div>'+picker+'</div>';
+    }
+    const fallen=slot.fallen?'<span class="tag temp">'+slot.fallenLabel+'</span>':"";
+    return '<div class="team-slot"><div class="team-slot-head"><strong>'+slot.title+'</strong>'+fallen+'</div><div class="statrow"><div class="stat"><span>HP</span><b>'+slot.hpValue+'</b></div><div class="stat"><span>EN</span><b>'+slot.energyValue+'</b></div></div><div class="actions"><button class="btn" '+(presentation.locked?'disabled':'')+' onclick="removeDungeonCharacter('+slot.slotIndex+')">'+slot.removeLabel+'</button><button class="btn" '+(presentation.locked?'disabled':'')+' onclick="toggleDungeonTeamPicker('+slot.slotIndex+')">'+slot.switchLabel+'</button></div>'+picker+'</div>';
+  }).join("");
+  root.innerHTML='<div class="team-slot-grid">'+slots+'</div>'+(presentation.locked?'<p class="status-line">'+presentation.lockedText+'</p>':"");
+}
+`;
+
 @Injectable({ providedIn: 'root' })
 export class LegacyCharacterPresentationAdapterService {
   adapt(source: string): string {
@@ -39,6 +67,20 @@ export class LegacyCharacterPresentationAdapterService {
       'function toggleDungeonTeamPicker(',
       ADAPTED_CHARACTER_CARD,
       'Kader-/Charakter-Präsentation'
+    );
+    adapted = this.replaceRangeOnce(
+      adapted,
+      'function dungeonTeamPickerHtml(',
+      'function renderDungeonTeam(',
+      ADAPTED_DUNGEON_TEAM_PICKER,
+      'Dungeon-Team-Picker-Präsentation'
+    );
+    adapted = this.replaceRangeOnce(
+      adapted,
+      'function renderDungeonTeam(',
+      'function renderCharacter(',
+      ADAPTED_DUNGEON_TEAM,
+      'Dungeon-Team-Präsentation'
     );
     return adapted;
   }
