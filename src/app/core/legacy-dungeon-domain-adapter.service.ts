@@ -130,6 +130,7 @@ function updateDungeonAutomation(){
         const nextAt=run.attackPoints.reduce((m,p)=>Math.min(m,p.nextAt),Infinity);
         if(!aliveEnemies.length){finishDungeonWave(true,Number.isFinite(nextAt)?Math.min(nextAt,now):now);continue;}
         if(!alivePlayers.length){finishDungeonWave(false,Number.isFinite(nextAt)?Math.min(nextAt,now):now);continue;}
+        run.attackPoints=window.NoBrainerDungeonCore.filterActiveDungeonAttackPoints(run.attackPoints,alivePlayers.map(c=>c.id),aliveEnemies.map(e=>e.id));
         const due=window.NoBrainerDungeonCore.getNextDueAttack(run.attackPoints,now);if(!due)break;
         const at=due.nextAt;if(due.side==="player")playerAttack(due,run,at);else enemyAttack(due,run,at);
         window.NoBrainerDungeonCore.rescheduleDungeonAttack(due,getAttackPointSpeed(due,run),run.attackPoints);continue;
