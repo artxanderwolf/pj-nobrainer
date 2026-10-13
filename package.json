@@ -1,0 +1,52 @@
+{
+  "name": "pj-nobrainer",
+  "version": "0.12.37",
+  "private": true,
+  "scripts": {
+    "start": "ng serve",
+    "check:legacy": "node scripts/check-legacy.mjs",
+    "check:core": "node --no-warnings --experimental-strip-types scripts/check-game-core.mjs",
+    "check:economy": "node --no-warnings --experimental-strip-types scripts/check-economy-core.mjs",
+    "check:character": "node --no-warnings --experimental-strip-types scripts/check-character-core.mjs",
+    "check:character-presentation": "node --no-warnings --experimental-strip-types scripts/check-character-presentation-core.mjs",
+    "check:character-presentation-adapter": "node scripts/check-character-presentation-adapter.mjs",
+    "check:tavern-presentation": "node --no-warnings --experimental-strip-types scripts/check-tavern-presentation-core.mjs",
+    "check:tavern-presentation-adapter": "node scripts/check-tavern-presentation-adapter.mjs",
+    "check:equipment": "node --no-warnings --experimental-strip-types scripts/check-equipment-core.mjs",
+    "check:presentation": "node --no-warnings --experimental-strip-types scripts/check-weapon-presentation-core.mjs",
+    "check:progression": "node --no-warnings --experimental-strip-types scripts/check-progression-core.mjs",
+    "check:progression-presentation": "node --no-warnings --experimental-strip-types scripts/check-progression-presentation-core.mjs",
+    "check:progression-presentation-adapter": "node scripts/check-progression-presentation-adapter.mjs",
+    "check:energy": "node --no-warnings --experimental-strip-types scripts/check-energy-core.mjs",
+    "check:combat": "node --no-warnings --experimental-strip-types scripts/check-combat-core.mjs",
+    "check:dungeon-search": "node --no-warnings --experimental-strip-types scripts/check-dungeon-search-core.mjs",
+    "check:dungeon": "node --no-warnings --experimental-strip-types scripts/check-dungeon-core.mjs",
+    "check:dungeon-presentation": "node --no-warnings --experimental-strip-types scripts/check-dungeon-presentation-core.mjs",
+    "check:dungeon-presentation-adapter": "node scripts/check-dungeon-presentation-adapter.mjs",
+    "check:forge": "node --no-warnings --experimental-strip-types scripts/check-forge-core.mjs",
+    "check:forge-presentation": "node --no-warnings --experimental-strip-types scripts/check-forge-presentation-core.mjs",
+    "check:forge-presentation-adapter": "node scripts/check-forge-presentation-adapter.mjs",
+    "check:market": "node --no-warnings --experimental-strip-types scripts/check-market-core.mjs",
+    "check:market-presentation": "node --no-warnings --experimental-strip-types scripts/check-market-presentation-core.mjs",
+    "check:market-presentation-adapter": "node scripts/check-market-presentation-adapter.mjs",
+    "check:naming": "node --no-warnings --experimental-strip-types scripts/check-weapon-naming.mjs",
+    "check:save": "node --no-warnings --experimental-strip-types scripts/check-save-codec.mjs",
+    "check": "npm run check:legacy && npm run check:core && npm run check:economy && npm run check:character && npm run check:character-presentation && npm run check:character-presentation-adapter && npm run check:tavern-presentation && npm run check:tavern-presentation-adapter && npm run check:equipment && npm run check:presentation && npm run check:progression && npm run check:progression-presentation && npm run check:progression-presentation-adapter && npm run check:energy && npm run check:combat && npm run check:dungeon-search && npm run check:dungeon && npm run check:dungeon-presentation && npm run check:dungeon-presentation-adapter && npm run check:forge && npm run check:forge-presentation && npm run check:forge-presentation-adapter && npm run check:market && npm run check:market-presentation && npm run check:market-presentation-adapter && npm run check:naming && npm run check:save",
+    "build": "npm run check && ng build",
+    "build:pages": "npm run check && ng build --configuration production"
+  },
+  "dependencies": {
+    "@angular/common": "^21.2.0",
+    "@angular/compiler": "^21.2.0",
+    "@angular/core": "^21.2.0",
+    "@angular/platform-browser": "^21.2.0",
+    "rxjs": "~7.8.2",
+    "tslib": "^2.8.1"
+  },
+  "devDependencies": {
+    "@angular/build": "^21.2.0",
+    "@angular/cli": "^21.2.0",
+    "@angular/compiler-cli": "^21.2.0",
+    "typescript": "~5.9.2"
+  }
+}

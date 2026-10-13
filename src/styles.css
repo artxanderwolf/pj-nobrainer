@@ -1,0 +1,11 @@
+html,
+body,
+app-root,
+.legacy-host {
+  min-height: 100%;
+}
+
+html,
+body {
+  margin: 0;
+}
