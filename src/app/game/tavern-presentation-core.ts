@@ -1,5 +1,3 @@
-import { formatCurrencyNickel } from './economy-core';
-
 export interface TavernCharacterClassLike {
   id: string;
   name: string;
@@ -41,22 +39,22 @@ export function getTavernPresentation(
   characterCount: number,
   innCapacity: number,
   gold: number,
-  recruitCost: number
+  recruitCost: number,
+  formattedRecruitCost: string
 ): TavernPresentation {
   const full = characterCount >= innCapacity;
   const canPay = gold >= recruitCost;
-  const formattedCost = formatCurrencyNickel(recruitCost);
   const disabled = full || !canPay;
 
   const summaryStats: TavernStatPresentation[] = [
     { label: 'Kader', value: `${characterCount} / ${innCapacity}` },
-    { label: 'Nächste Anwerbung', value: formattedCost }
+    { label: 'Nächste Anwerbung', value: formattedRecruitCost }
   ];
 
   const capacityStats: TavernStatPresentation[] = [
     { label: 'Belegt', value: String(characterCount) },
     { label: 'Kapazität', value: String(innCapacity) },
-    { label: 'Nächste Kosten', value: formattedCost }
+    { label: 'Nächste Kosten', value: formattedRecruitCost }
   ];
 
   const offers = characterClasses.map((characterClass): TavernOfferPresentation => ({
@@ -71,7 +69,7 @@ export function getTavernPresentation(
       { label: 'STÄ', value: characterClass.strengthFactor.toFixed(2) },
       { label: 'PRÄ', value: characterClass.precision.toFixed(2) }
     ],
-    recruitLabel: `${characterClass.name} anwerben · ${formattedCost}`,
+    recruitLabel: `${characterClass.name} anwerben · ${formattedRecruitCost}`,
     disabled
   }));
 
