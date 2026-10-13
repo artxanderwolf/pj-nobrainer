@@ -28,19 +28,20 @@ const classes = [
   }
 ];
 
-const available = getTavernPresentation(classes, 2, 4, 50_000, 12_345);
+const formattedCost = '1 Silber 23 Bronze 45 Nickel';
+const available = getTavernPresentation(classes, 2, 4, 50_000, 12_345, formattedCost);
 assert.equal(available.full, false);
 assert.equal(available.canPay, true);
 assert.equal(available.statusText, '');
 assert.equal(available.openInnLabel, 'Inn-Ausbau öffnen');
 assert.deepEqual(available.summaryStats, [
   { label: 'Kader', value: '2 / 4' },
-  { label: 'Nächste Anwerbung', value: '1 Silber 23 Bronze 45 Nickel' }
+  { label: 'Nächste Anwerbung', value: formattedCost }
 ]);
 assert.deepEqual(available.capacityStats, [
   { label: 'Belegt', value: '2' },
   { label: 'Kapazität', value: '4' },
-  { label: 'Nächste Kosten', value: '1 Silber 23 Bronze 45 Nickel' }
+  { label: 'Nächste Kosten', value: formattedCost }
 ]);
 assert.deepEqual(available.offers[0], {
   classId: 'fighter',
@@ -54,20 +55,20 @@ assert.deepEqual(available.offers[0], {
     { label: 'STÄ', value: '1.10' },
     { label: 'PRÄ', value: '0.95' }
   ],
-  recruitLabel: 'Kämpfer anwerben · 1 Silber 23 Bronze 45 Nickel',
+  recruitLabel: `Kämpfer anwerben · ${formattedCost}`,
   disabled: false
 });
 assert.equal(available.offers[1].roleTag, 'SUPPORT');
 assert.equal(available.offers[1].stats[3].value, '14 %');
 assert.equal(available.offers.every(entry => !entry.disabled), true);
 
-const full = getTavernPresentation(classes, 4, 4, 0, 12_345);
+const full = getTavernPresentation(classes, 4, 4, 0, 12_345, formattedCost);
 assert.equal(full.full, true);
 assert.equal(full.canPay, false);
 assert.equal(full.statusText, 'Inn voll – zuerst einen weiteren Kaderplatz kaufen.');
 assert.equal(full.offers.every(entry => entry.disabled), true);
 
-const poor = getTavernPresentation(classes, 2, 4, 100, 12_345);
+const poor = getTavernPresentation(classes, 2, 4, 100, 12_345, formattedCost);
 assert.equal(poor.full, false);
 assert.equal(poor.canPay, false);
 assert.equal(poor.statusText, 'Nicht genügend Geld für die Rekrutierung.');
