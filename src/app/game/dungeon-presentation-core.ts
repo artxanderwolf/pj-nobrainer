@@ -78,7 +78,7 @@ export function getDungeonStatusPresentation(input: DungeonStatusPresentationInp
   let card: DungeonStatusCardPresentation;
   if (input.run) {
     const enemies = Array.isArray(input.run.enemies) ? input.run.enemies : [];
-    const aliveCount = enemies.filter(enemy => enemy.alive !== false && Number(enemy.hp) > 0).length;
+    const aliveCount = enemies.filter(enemy => Boolean(enemy.alive) && Number(enemy.hp) > 0).length;
     const participantCount = Array.isArray(input.run.participantIds) ? input.run.participantIds.length : 0;
     card = {
       mode: 'active',
