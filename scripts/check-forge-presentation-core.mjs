@@ -1,5 +1,9 @@
 import assert from 'node:assert/strict';
-import { getForgePreviewPresentation } from '../src/app/game/forge-presentation-core.ts';
+import {
+  getActiveForgeJobPresentation,
+  getForgePreviewPresentation,
+  getQueuedForgeJobPresentation
+} from '../src/app/game/forge-presentation-core.ts';
 
 const stats = {
   damagePerHit: 12.345,
@@ -89,4 +93,51 @@ const noCapacity = getForgePreviewPresentation(
 );
 assert.equal(noCapacity.startDisabled, true);
 
-console.log('Forge-Presentation-Core: Schmiedevorschau, Formatierung und Startfreigabe sind konsistent.');
+const activeJob = getActiveForgeJobPresentation(
+  {
+    weaponName: 'Kupferklinge',
+    totalSeconds: 60,
+    finishesAt: 31_000,
+    valueNickel: 175,
+    stats: { expectedRaw: 8.765 }
+  },
+  0,
+  1_000,
+  (value) => `${value} Nickel`,
+  (seconds) => `${seconds}s`
+);
+assert.deepEqual(activeJob, {
+  title: 'Platz 1: Kupferklinge',
+  remainingText: '30s verbleibend',
+  progressPercent: 50,
+  rawText: '8.77',
+  valueText: '175 Nickel'
+});
+
+const completedJob = getActiveForgeJobPresentation(
+  {
+    weaponName: 'Fertig',
+    totalSeconds: 20,
+    finishesAt: 500,
+    valueNickel: 100,
+    stats: { expectedRaw: 1 }
+  },
+  1,
+  1_000,
+  (value) => `${value} Nickel`,
+  (seconds) => `${seconds}s`
+);
+assert.equal(completedJob.remainingText, '0s verbleibend');
+assert.equal(completedJob.progressPercent, 100);
+
+const queuedJob = getQueuedForgeJobPresentation(
+  { weaponName: 'Eisendolch', totalSeconds: 45, valueNickel: 120 },
+  2,
+  (seconds) => `${seconds}s`
+);
+assert.deepEqual(queuedJob, {
+  title: '3. Eisendolch',
+  metaText: '45s Herstellungszeit'
+});
+
+console.log('Forge-Presentation-Core: Schmiedevorschau sowie aktive und wartende Schmiedeaufträge sind konsistent.');
