@@ -46,17 +46,41 @@ const ADAPTED_FORGE_PREVIEW = `function renderForgePreview(){
 }
 `;
 
+const ADAPTED_FORGE_JOBS = `function renderForgeJob(){
+  const box=document.getElementById("forgeJobCard"),q=document.getElementById("forgeQueueCard"),now=Date.now();
+  if(box){
+    const jobs=state.forgeJobs.map((job,index)=>window.NoBrainerForgePresentationCore.getActiveForgeJobPresentation(job,index,now,formatCurrencyNickel,formatDuration));
+    box.className=jobs.length?"":"empty";
+    box.innerHTML=jobs.length?jobs.map(item=>\`<div class="sell-row"><div style="width:100%"><strong>\${item.title}</strong><p class="muted">\${item.remainingText}</p><div class="bar energy"><i style="width:\${item.progressPercent}%"></i></div><p>ROH <b>\${item.rawText}</b> · Wert <b>\${item.valueText}</b></p></div></div>\`).join(""):"Kein aktiver Schmiedeauftrag.";
+  }
+  if(q){
+    const queue=state.forgeQueue.map((job,index)=>window.NoBrainerForgePresentationCore.getQueuedForgeJobPresentation(job,index,formatDuration));
+    q.className=queue.length?"":"empty";
+    q.innerHTML=queue.length?queue.map(item=>\`<div class="sell-row"><div><strong>\${item.title}</strong><div class="sell-meta">\${item.metaText}</div></div></div>\`).join(""):"Warteschlange leer.";
+  }
+  renderUpgradeCards();
+}
+`;
+
 @Injectable({ providedIn: 'root' })
 export class LegacyForgePresentationAdapterService {
   adapt(source: string): string {
     window.NoBrainerForgePresentationCore = FORGE_PRESENTATION_CORE_BRIDGE;
-    return this.replaceRangeOnce(
+    let adapted = this.replaceRangeOnce(
       source,
       'function renderForgePreview(){',
       'function recruitCost(',
       ADAPTED_FORGE_PREVIEW,
       'Schmiedevorschau-Präsentation'
     );
+    adapted = this.replaceRangeOnce(
+      adapted,
+      'function renderForgeJob(){',
+      'function getWeaponEquipLocation(',
+      ADAPTED_FORGE_JOBS,
+      'Schmiedeauftrag-Präsentation'
+    );
+    return adapted;
   }
 
   private replaceRangeOnce(
