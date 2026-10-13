@@ -7,8 +7,16 @@ const match = html.match(/<script>([\s\S]*?)<\/script>\s*<\/body>/);
 if (!match) throw new Error('Legacy-JavaScript konnte nicht extrahiert werden.');
 
 let source = match[1];
+
+// Der Forge-Adapter läuft vor dem Progression-Presentation-Adapter und erweitert
+// die Signatur von startForgeQueuedJob um einen optionalen Zeitparameter.
+source = source.replace(
+  'function startForgeQueuedJob(job){',
+  'function startForgeQueuedJob(job,at=Date.now()){'
+);
+
 const startMarker = 'function upgradeButton(kind,stateKey,cfgKey,label){';
-const endMarker = 'function startForgeQueuedJob(job){';
+const endMarker = 'function startForgeQueuedJob(';
 const start = source.indexOf(startMarker);
 const end = source.indexOf(endMarker, start + startMarker.length);
 assert.ok(start >= 0 && end > start);
@@ -46,12 +54,12 @@ const replacement = `function renderUpgradeCards(){
 `;
 
 source = source.slice(0, start) + replacement + source.slice(end);
-new vm.Script(source, { filename: 'NoBrainer_GitHub_v0.12.32.progression-presentation.js' });
+new vm.Script(source, { filename: 'NoBrainer_GitHub_v0.12.33.progression-presentation.js' });
 
 assert.ok(source.includes('window.NoBrainerProgressionPresentationCore.getUpgradeCardsPresentation'));
 assert.ok(source.includes('window.NoBrainerProgressionCore.getUpgradeOffer(state,"inn")'));
 assert.equal(source.includes('function upgradeButton(kind,stateKey,cfgKey,label){'), false);
 assert.equal(source.split('function renderUpgradeCards(){').length - 1, 1);
-assert.ok(source.includes('function startForgeQueuedJob(job){'));
+assert.ok(source.includes('function startForgeQueuedJob(job,at=Date.now()){'));
 
-console.log('Progression-Presentation-Adapter: Ausbaukarten-Anker, Progression-Bridge und resultierende JavaScript-Syntax sind konsistent.');
+console.log('Progression-Presentation-Adapter: Ausbaukarten-Anker bleibt nach Forge-Adapter kompatibel und resultierende JavaScript-Syntax ist konsistent.');
