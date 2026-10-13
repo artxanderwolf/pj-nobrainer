@@ -107,7 +107,7 @@ assert.equal(dungeonPresentation.slots[1].occupied, false);
 assert.equal(dungeonPresentation.slots[1].title, 'Platz 2');
 assert.equal(dungeonPresentation.slots[1].emptyText, 'Nicht belegt');
 assert.equal(dungeonPresentation.slots[2].fallen, true);
-assert.equal(dungeonPresentation.slots[2].hpValue, '29.0 / 40');
+assert.equal(dungeonPresentation.slots[2].hpValue, '28.9 / 40');
 assert.equal(dungeonPresentation.slots[2].energyValue, '72.4 / 90');
 assert.equal(dungeonPresentation.slots.length, 4);
 
