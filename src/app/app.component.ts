@@ -7,6 +7,7 @@ import { LegacyEconomyAdapterService } from './core/legacy-economy-adapter.servi
 import { LegacyEnergyAdapterService } from './core/legacy-energy-adapter.service';
 import { LegacyEquipmentAdapterService } from './core/legacy-equipment-adapter.service';
 import { LegacyForgeAdapterService } from './core/legacy-forge-adapter.service';
+import { LegacyForgePresentationAdapterService } from './core/legacy-forge-presentation-adapter.service';
 import { LegacyMarketAdapterService } from './core/legacy-market-adapter.service';
 import { LegacyProgressionAdapterService } from './core/legacy-progression-adapter.service';
 import { LegacyProgressionPresentationAdapterService } from './core/legacy-progression-presentation-adapter.service';
@@ -16,7 +17,7 @@ import { LegacyTavernPresentationAdapterService } from './core/legacy-tavern-pre
 import { LegacyWeaponPresentationAdapterService } from './core/legacy-weapon-presentation-adapter.service';
 import { adaptLegacyWeaponMarkup, adaptLegacyWeaponScript } from './game/weapon-naming';
 
-const APP_VERSION = '0.12.33';
+const APP_VERSION = '0.12.34';
 const LEGACY_PROTOTYPE_PATH = 'legacy/NoBrainer_GitHub_v0.12.2.html';
 const LEGACY_STYLE_ID = 'nobrainer-legacy-style';
 const LEGACY_SCRIPT_ID = 'nobrainer-legacy-script';
@@ -33,6 +34,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     private readonly legacyForgeAdapter: LegacyForgeAdapterService,
     private readonly legacyMarketAdapter: LegacyMarketAdapterService,
     private readonly legacyEconomyAdapter: LegacyEconomyAdapterService,
+    private readonly legacyForgePresentationAdapter: LegacyForgePresentationAdapterService,
     private readonly legacyTavernPresentationAdapter: LegacyTavernPresentationAdapterService,
     private readonly legacyCharacterAdapter: LegacyCharacterAdapterService,
     private readonly legacyEquipmentAdapter: LegacyEquipmentAdapterService,
@@ -76,6 +78,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     adaptedScript = this.legacyForgeAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyMarketAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyEconomyAdapter.adapt(adaptedScript);
+    adaptedScript = this.legacyForgePresentationAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyTavernPresentationAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyCharacterAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyEquipmentAdapter.adapt(adaptedScript);
