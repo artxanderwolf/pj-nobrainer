@@ -21,6 +21,7 @@
     "check:combat": "node --no-warnings --experimental-strip-types scripts/check-combat-core.mjs",
     "check:dungeon-search": "node --no-warnings --experimental-strip-types scripts/check-dungeon-search-core.mjs",
     "check:dungeon": "node --no-warnings --experimental-strip-types scripts/check-dungeon-core.mjs",
+    "check:dungeon-combat-hotfix": "node scripts/check-dungeon-combat-hotfix-adapter.mjs",
     "check:dungeon-presentation": "node --no-warnings --experimental-strip-types scripts/check-dungeon-presentation-core.mjs",
     "check:dungeon-presentation-adapter": "node scripts/check-dungeon-presentation-adapter.mjs",
     "check:forge": "node --no-warnings --experimental-strip-types scripts/check-forge-core.mjs",
@@ -31,7 +32,7 @@
     "check:market-presentation-adapter": "node scripts/check-market-presentation-adapter.mjs",
     "check:naming": "node --no-warnings --experimental-strip-types scripts/check-weapon-naming.mjs",
     "check:save": "node --no-warnings --experimental-strip-types scripts/check-save-codec.mjs",
-    "check": "npm run check:legacy && npm run check:core && npm run check:economy && npm run check:character && npm run check:character-presentation && npm run check:character-presentation-adapter && npm run check:tavern-presentation && npm run check:tavern-presentation-adapter && npm run check:equipment && npm run check:presentation && npm run check:progression && npm run check:progression-presentation && npm run check:progression-presentation-adapter && npm run check:energy && npm run check:combat && npm run check:dungeon-search && npm run check:dungeon && npm run check:dungeon-presentation && npm run check:dungeon-presentation-adapter && npm run check:forge && npm run check:forge-presentation && npm run check:forge-presentation-adapter && npm run check:market && npm run check:market-presentation && npm run check:market-presentation-adapter && npm run check:naming && npm run check:save",
+    "check": "npm run check:legacy && npm run check:core && npm run check:economy && npm run check:character && npm run check:character-presentation && npm run check:character-presentation-adapter && npm run check:tavern-presentation && npm run check:tavern-presentation-adapter && npm run check:equipment && npm run check:presentation && npm run check:progression && npm run check:progression-presentation && npm run check:progression-presentation-adapter && npm run check:energy && npm run check:combat && npm run check:dungeon-search && npm run check:dungeon && npm run check:dungeon-combat-hotfix && npm run check:dungeon-presentation && npm run check:dungeon-presentation-adapter && npm run check:forge && npm run check:forge-presentation && npm run check:forge-presentation-adapter && npm run check:market && npm run check:market-presentation && npm run check:market-presentation-adapter && npm run check:naming && npm run check:save",
     "build": "npm run check && ng build",
     "build:pages": "npm run check && ng build --configuration production"
   },
