@@ -12,7 +12,8 @@ declare global {
 
 const ADAPTED_TAVERN = `function renderTavern(){
   const offer=document.getElementById("tavernOffer"),cap=document.getElementById("tavernCapacity"),summary=document.getElementById("baseTavernSummary");
-  const presentation=window.NoBrainerTavernPresentationCore.getTavernPresentation(Object.values(CHARACTER_CLASSES),state.characters.length,state.upgrades.innCapacity,state.gold,recruitCost());
+  const cost=recruitCost();
+  const presentation=window.NoBrainerTavernPresentationCore.getTavernPresentation(Object.values(CHARACTER_CLASSES),state.characters.length,state.upgrades.innCapacity,state.gold,cost,formatCurrencyNickel(cost));
   const renderStats=stats=>stats.map(stat=>\`<div class="stat"><span>\${stat.label}</span><b>\${stat.value}</b></div>\`).join("");
   if(summary)summary.innerHTML=\`<div class="statrow">\${renderStats(presentation.summaryStats)}</div>\`;
   if(offer)offer.innerHTML=presentation.offers.map(entry=>\`<div class="tavern-offer"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><strong>\${entry.name}</strong><span class="tag fixed">\${entry.roleTag}</span></div><div class="statrow">\${renderStats(entry.stats)}</div><div class="actions"><button class="btn primary" onclick="recruitCharacter('\${entry.classId}')" \${entry.disabled?"disabled":""}>\${entry.recruitLabel}</button></div></div>\`).join("")+(presentation.statusText?\`<p class="status-line">\${presentation.statusText}</p>\`:"");
