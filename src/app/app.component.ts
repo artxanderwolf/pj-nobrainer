@@ -1,5 +1,6 @@
 import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
 import { LegacyCharacterAdapterService } from './core/legacy-character-adapter.service';
+import { LegacyCharacterPresentationAdapterService } from './core/legacy-character-presentation-adapter.service';
 import { LegacyDungeonDomainAdapterService } from './core/legacy-dungeon-domain-adapter.service';
 import { LegacyDungeonPresentationAdapterService } from './core/legacy-dungeon-presentation-adapter.service';
 import { LegacyEconomyAdapterService } from './core/legacy-economy-adapter.service';
@@ -13,7 +14,7 @@ import { LegacySourceAdapterService } from './core/legacy-source-adapter.service
 import { LegacyWeaponPresentationAdapterService } from './core/legacy-weapon-presentation-adapter.service';
 import { adaptLegacyWeaponMarkup, adaptLegacyWeaponScript } from './game/weapon-naming';
 
-const APP_VERSION = '0.12.28';
+const APP_VERSION = '0.12.29';
 const LEGACY_PROTOTYPE_PATH = 'legacy/NoBrainer_GitHub_v0.12.2.html';
 const LEGACY_STYLE_ID = 'nobrainer-legacy-style';
 const LEGACY_SCRIPT_ID = 'nobrainer-legacy-script';
@@ -33,6 +34,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     private readonly legacyCharacterAdapter: LegacyCharacterAdapterService,
     private readonly legacyEquipmentAdapter: LegacyEquipmentAdapterService,
     private readonly legacyWeaponPresentationAdapter: LegacyWeaponPresentationAdapterService,
+    private readonly legacyCharacterPresentationAdapter: LegacyCharacterPresentationAdapterService,
     private readonly legacyProgressionAdapter: LegacyProgressionAdapterService,
     private readonly legacyEnergyAdapter: LegacyEnergyAdapterService
   ) {}
@@ -72,6 +74,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     adaptedScript = this.legacyEconomyAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyCharacterAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyEquipmentAdapter.adapt(adaptedScript);
+    adaptedScript = this.legacyCharacterPresentationAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyProgressionAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyEnergyAdapter.adapt(adaptedScript);
     const adaptedMarkup = adaptLegacyWeaponMarkup(app.outerHTML);
