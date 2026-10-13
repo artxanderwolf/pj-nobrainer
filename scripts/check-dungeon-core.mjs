@@ -14,6 +14,7 @@ try {
     checkDungeonStart,
     createDungeonAttackPoints,
     createDungeonEnemy,
+    filterActiveDungeonAttackPoints,
     getDungeonPhase,
     getNextDueAttack,
     payDungeonEnergy,
@@ -60,6 +61,16 @@ try {
   assert.equal(points[1].nextAt, 3000);
   assert.equal(points[0].nextAt, 3750);
 
+  const staleTimeline = [
+    { side: 'enemy', ownerId: 'e1', kind: 'enemy', nextAt: 1000 },
+    { side: 'enemy', ownerId: 'e2', kind: 'enemy', nextAt: 1100 },
+    { side: 'player', ownerId: 1, kind: 'fist', nextAt: 1200 },
+    { side: 'player', ownerId: 2, kind: 'fist', nextAt: 1300 }
+  ];
+  const activeTimeline = filterActiveDungeonAttackPoints(staleTimeline, [1], ['e2']);
+  assert.deepEqual(activeTimeline.map(point => `${point.side}:${point.ownerId}`), ['enemy:e2', 'player:1']);
+  assert.equal(getNextDueAttack(activeTimeline, 1150)?.ownerId, 'e2', 'Ein lebender Gegner darf nicht von einem bereits besiegten Gegner blockiert werden');
+
   assert.equal(getDungeonPhase({ dungeonAuto: false }), 'idle');
   assert.equal(getDungeonPhase({ dungeonAuto: true }), 'search');
   assert.equal(getDungeonPhase({ dungeonAuto: true, dungeonRun: {} }), 'combat');
@@ -70,7 +81,7 @@ try {
   assert.equal(character.hp, 30);
   assert.equal(character.alive, true);
 
-  console.log('Dungeon-Core: Suche, Energie, Gegner, Timeline, Phasen und Niederlagen-Reset sind konsistent.');
+  console.log('Dungeon-Core: Suche, Energie, Gegner, Timeline, aktive Kampfteilnehmer, Phasen und Niederlagen-Reset sind konsistent.');
 } finally {
   unlinkSync(temporaryUrl);
 }
