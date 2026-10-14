@@ -17,7 +17,7 @@ function toggleDungeonAuto(){
 }
 function renderDungeonSessionWaveCounter(){
   const counter=document.getElementById("runDuration");if(!counter)return;
-  counter.textContent=\`${'${getDungeonCompatibility().getSessionWaveCount()}'} besiegt\`;
+  counter.textContent=String(getDungeonCompatibility().getSessionWaveCount())+" besiegt";
 }
 function collectDungeonLoot(){
   const result=applyDungeonCompatibilityResult(getDungeonCompatibility().collectLoot());
