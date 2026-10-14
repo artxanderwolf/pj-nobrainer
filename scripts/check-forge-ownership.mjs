@@ -40,6 +40,6 @@ const openForgeIndex = appComponent.indexOf('this.gameForge.openLegacyCompatibil
 const openStateIndex = appComponent.indexOf('this.gameState.openBootstrapRegistration();');
 assert.ok(openEnergyIndex >= 0 && openForgeIndex > openEnergyIndex && openStateIndex > openForgeIndex, 'Die Schmiede-Kompatibilitätsbrücke wird nicht vor State- und Runtime-Bootstrap geöffnet.');
 assert.match(appComponent, /ngOnDestroy\(\): void \{[\s\S]*this\.gameForge\.closeLegacyCompatibilityBridge\(\);/, 'Die Schmiede-Kompatibilitätsbrücke wird beim App-Abbau nicht geschlossen.');
-assert.match(appComponent, /const APP_VERSION = '0\.12\.64';/, 'Die App-Version wurde nicht auf v0.12.64 gesetzt.');
+assert.match(appComponent, /const APP_VERSION = '0\.12\.65';/, 'Die App-Version wurde nicht auf v0.12.65 gesetzt.');
 
 console.log('Schmiede-Eigentümerschaft: Auftragserstellung, Materialien, Slots, Queue, Fortschritt und Fertigstellung laufen auf Angular-State im GameForgeService; Legacy-Code enthält nur noch UI-Kompatibilitätswrapper.');
