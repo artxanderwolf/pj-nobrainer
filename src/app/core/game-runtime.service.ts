@@ -1,8 +1,10 @@
 import { Injectable } from '@angular/core';
+import { formatCurrencyNickel } from '../game/economy-core';
 import { OfflineProgressService, SaveSnapshot } from './offline-progress.service';
 import { SaveStorageService } from './save-storage.service';
 import { GameEnergyService } from './game-energy.service';
 import { GameForgeService } from './game-forge.service';
+import { GameMarketService } from './game-market.service';
 
 interface GameSaveStorageAdapter {
   read(): string | null;
@@ -13,7 +15,6 @@ interface GameSaveStorageAdapter {
 export interface GameRuntimeApi {
   configureSaveStorage(adapter: GameSaveStorageAdapter): void;
   prepare(): void;
-  updateMarketJob(): boolean;
   updateDungeonAutomation(): void;
   renderForgeJob(): void;
   renderMarketJob(): void;
@@ -54,7 +55,8 @@ export class GameRuntimeService {
     private readonly saveStorage: SaveStorageService,
     private readonly offlineProgress: OfflineProgressService,
     private readonly gameEnergy: GameEnergyService,
-    private readonly gameForge: GameForgeService
+    private readonly gameForge: GameForgeService,
+    private readonly gameMarket: GameMarketService
   ) {}
 
   openBootstrapRegistration(): void {
@@ -84,7 +86,8 @@ export class GameRuntimeService {
     this.gameEnergy.update();
     const forgeUpdate = this.gameForge.update();
     this.logForgeCompletions(runtime, forgeUpdate.completedNames);
-    runtime.updateMarketJob();
+    const marketUpdate = this.gameMarket.update();
+    this.logMarketCompletions(runtime, marketUpdate.completedSales);
     runtime.updateDungeonAutomation();
     this.gameEnergy.update();
 
@@ -122,7 +125,6 @@ export class GameRuntimeService {
     const required: Array<keyof GameRuntimeApi> = [
       'configureSaveStorage',
       'prepare',
-      'updateMarketJob',
       'updateDungeonAutomation',
       'renderForgeJob',
       'renderMarketJob',
@@ -163,7 +165,9 @@ export class GameRuntimeService {
     const forgeUpdate = this.gameForge.update();
     const forgeCompleted = forgeUpdate.completedCount > 0;
     this.logForgeCompletions(runtime, forgeUpdate.completedNames);
-    const marketCompleted = runtime.updateMarketJob();
+    const marketUpdate = this.gameMarket.update();
+    const marketCompleted = marketUpdate.completedCount > 0;
+    this.logMarketCompletions(runtime, marketUpdate.completedSales);
     runtime.updateDungeonAutomation();
 
     runtime.renderForgeJob();
@@ -190,6 +194,18 @@ export class GameRuntimeService {
   private logForgeCompletions(runtime: GameRuntimeApi, completedNames: readonly string[]): void {
     for (const name of completedNames) {
       runtime.addLog(`Schmiede fertig: ${name} wurde dem Waffeninventar hinzugefügt.`, 'good');
+    }
+  }
+
+  private logMarketCompletions(
+    runtime: GameRuntimeApi,
+    completedSales: readonly { name: string; valueNickel: number }[]
+  ): void {
+    for (const sale of completedSales) {
+      runtime.addLog(
+        `Verkauf abgeschlossen: ${sale.name} → ${formatCurrencyNickel(sale.valueNickel)}.`,
+        'good'
+      );
     }
   }
 

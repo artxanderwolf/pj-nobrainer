@@ -26,12 +26,13 @@ assert.equal(source.indexOf(startMarker, start + startMarker.length), -1);
 assert.equal(source.indexOf(endMarker, end + endMarker.length), -1);
 
 source = source.slice(0, start) + replacement + source.slice(end);
-new vm.Script(source, { filename: 'NoBrainer_GitHub_v0.12.35.market-presentation.js' });
+new vm.Script(source, { filename: 'NoBrainer_GitHub_v0.12.64.market-presentation.js' });
 assert.ok(source.includes('window.NoBrainerMarketPresentationCore.getActiveMarketJobPresentation'));
 assert.ok(source.includes('window.NoBrainerMarketPresentationCore.getQueuedMarketJobPresentation'));
 assert.ok(source.includes('window.NoBrainerMarketPresentationCore.getMarketMaterialPresentation'));
 assert.ok(source.includes('window.NoBrainerMarketPresentationCore.getMarketWeaponPresentation'));
-assert.ok(source.includes('window.NoBrainerMarketCore.hasMarketCapacity'));
+assert.ok(source.includes('window.NoBrainerMarketCompatibility.hasCapacity'));
+assert.ok(!source.includes('window.NoBrainerMarketCore.hasMarketCapacity'));
 assert.equal(source.split('function renderMarketJob(){').length - 1, 1);
 assert.ok(source.includes('function startMarketQueuedJob(job,at=Date.now()){'));
 assert.ok(source.includes('function renderDungeonStatus(){'));
@@ -84,4 +85,4 @@ assert.match(elements.marketJobCard.innerHTML, /80 Nickel/);
 assert.match(elements.marketQueueCard.innerHTML, /1\. Klinge/);
 assert.match(elements.marketQueueCard.innerHTML, /30s · 120 Nickel/);
 
-console.log('Market-Presentation-Adapter: Adapterreihenfolge, Anker, Syntax und Markt-DOM-Brücke sind konsistent.');
+console.log('Market-Presentation-Adapter: Adapterreihenfolge, Anker, Syntax und Markt-DOM-Brücke sind mit Angular-eigener Marktkapazität konsistent.');

@@ -55,7 +55,7 @@ function renderMarketMaterials(){
   const empty=document.getElementById("marketMaterialsEmpty");
   if(!box||!empty)return;
   const entries=Object.entries(state.inventory).filter(([name,x])=>x.qty>0).sort((a,b)=>a[0].localeCompare(b[0]));
-  const hasCapacity=window.NoBrainerMarketCore.hasMarketCapacity(state,state.upgrades.marketSlots,state.upgrades.marketQueue);
+  const hasCapacity=window.NoBrainerMarketCompatibility.hasCapacity();
   box.innerHTML="";
   empty.style.display=entries.length?"none":"block";
   entries.forEach(([name,x],index)=>{
@@ -92,7 +92,7 @@ function renderMarketWeapons(){
   const empty=document.getElementById("marketWeaponsEmpty");
   if(!box||!empty)return;
   const weapons=state.weaponInventory.filter(w=>!w.starter&&!getEquippedHandForWeapon(w.id));
-  const hasCapacity=window.NoBrainerMarketCore.hasMarketCapacity(state,state.upgrades.marketSlots,state.upgrades.marketQueue);
+  const hasCapacity=window.NoBrainerMarketCompatibility.hasCapacity();
   box.innerHTML="";
   empty.style.display=weapons.length?"none":"block";
   weapons.forEach(w=>{
