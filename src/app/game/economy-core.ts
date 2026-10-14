@@ -70,6 +70,18 @@ export function formatHighestCurrency(value: number): string {
   return `${nickel} Nickel`;
 }
 
+export function formatDuration(seconds: number): string {
+  const total = Math.max(0, Math.ceil(Number(seconds) || 0));
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const secs = total % 60;
+  const parts: string[] = [];
+  if (hours > 0) parts.push(`${hours} Std.`);
+  if (minutes > 0 || hours > 0) parts.push(`${minutes} Min.`);
+  parts.push(`${secs} Sek.`);
+  return parts.join(' ');
+}
+
 export function calculateRecruitCost(characterCount: number): number {
   const additional = Math.max(0, characterCount - 1);
   return Math.round(CONFIG.tavern.recruitBaseNickel * Math.pow(CONFIG.tavern.recruitGrowth, additional));
@@ -118,6 +130,7 @@ export function weaponSellData(weapon: WeaponSaleLike | null | undefined): Weapo
 export const ECONOMY_CORE_BRIDGE = {
   formatCurrencyNickel,
   formatHighestCurrency,
+  formatDuration,
   calculateRecruitCost,
   calculateUpgradeCost,
   rarityFactorFromRarity,

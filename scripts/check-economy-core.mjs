@@ -11,6 +11,7 @@ try {
     calculateRecruitCost,
     calculateUpgradeCost,
     formatCurrencyNickel,
+    formatDuration,
     formatHighestCurrency,
     materialSellData,
     rarityFactorFromRarity,
@@ -22,6 +23,10 @@ try {
   assert.equal(formatCurrencyNickel(1_010_101), '1 Gold 1 Silber 1 Bronze 1 Nickel');
   assert.equal(formatHighestCurrency(250), '2,5 Bronze');
   assert.equal(formatHighestCurrency(1_250_000), '1,25 Gold');
+  assert.equal(formatDuration(0), '0 Sek.');
+  assert.equal(formatDuration(61), '1 Min. 1 Sek.');
+  assert.equal(formatDuration(3661), '1 Std. 1 Min. 1 Sek.');
+  assert.equal(formatDuration(1.2), '2 Sek.', 'Dauer muss wie bisher auf volle Sekunden aufrunden.');
 
   assert.equal(calculateRecruitCost(1), 200, 'Erste zusätzliche Rekrutierung muss 2 Bronze kosten.');
   assert.equal(calculateRecruitCost(2), 350, 'Zweite zusätzliche Rekrutierung muss mit Faktor 1,75 skalieren.');
@@ -68,7 +73,7 @@ try {
     }
   );
 
-  console.log('Economy-Core: Währung, Rekrutierung, Ausbauten und Verkaufsdaten sind konsistent.');
+  console.log('Economy-Core: Währung, Zeitformatierung, Rekrutierung, Ausbauten und Verkaufsdaten sind konsistent.');
 } finally {
   unlinkSync(temporaryUrl);
 }

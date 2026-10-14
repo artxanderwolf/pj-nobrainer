@@ -38,6 +38,22 @@ const FORMAT_HIGHEST_BRIDGE = `function formatHighestCurrency(v){
   return window.NoBrainerEconomyCore.formatHighestCurrency(v);
 }`;
 
+const FORMAT_DURATION_BLOCK = `function formatDuration(seconds){
+  const total=Math.max(0,Math.ceil(Number(seconds)||0));
+  const hours=Math.floor(total/3600);
+  const minutes=Math.floor((total%3600)/60);
+  const secs=total%60;
+  const parts=[];
+  if(hours>0)parts.push(\`${'${hours}'} Std.\`);
+  if(minutes>0 || hours>0)parts.push(\`${'${minutes}'} Min.\`);
+  parts.push(\`${'${secs}'} Sek.\`);
+  return parts.join(" ");
+}`;
+
+const FORMAT_DURATION_BRIDGE = `function formatDuration(seconds){
+  return window.NoBrainerEconomyCore.formatDuration(seconds);
+}`;
+
 const RECRUIT_COST_BLOCK = `function recruitCost(){
   const additional=Math.max(0,state.characters.length-1);
   return Math.round(CONFIG.tavern.recruitBaseNickel*Math.pow(CONFIG.tavern.recruitGrowth,additional));
@@ -100,6 +116,7 @@ export class LegacyEconomyAdapterService {
 
     let adapted = this.replaceOnce(source, FORMAT_CURRENCY_BLOCK, FORMAT_CURRENCY_BRIDGE, 'Währungsformatierung');
     adapted = this.replaceOnce(adapted, FORMAT_HIGHEST_BLOCK, FORMAT_HIGHEST_BRIDGE, 'Kurzformat der Währung');
+    adapted = this.replaceOnce(adapted, FORMAT_DURATION_BLOCK, FORMAT_DURATION_BRIDGE, 'Zeitformatierung');
     adapted = this.replaceOnce(adapted, RECRUIT_COST_BLOCK, RECRUIT_COST_BRIDGE, 'Rekrutierungskosten');
     adapted = this.replaceOnce(adapted, UPGRADE_COST_BLOCK, UPGRADE_COST_BRIDGE, 'Ausbaukosten');
     adapted = this.replaceOnce(adapted, RARITY_FACTOR_BLOCK, RARITY_FACTOR_BRIDGE, 'Material-Verkaufsfaktor');
