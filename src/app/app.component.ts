@@ -90,6 +90,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
       this.gameForge.closeLegacyCompatibilityBridge();
       this.gameEnergy.closeLegacyCompatibilityBridge();
       console.error('Die NoBrainer-Runtime konnte nicht geladen werden.', error);
+      this.legacyHost.nativeElement.dataset['runtimeError'] = error instanceof Error ? error.message : String(error);
       this.legacyHost.nativeElement.textContent = 'Die NoBrainer-Runtime konnte nicht geladen werden. Bitte Seite neu laden.';
     }
   }
@@ -132,6 +133,8 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     adaptedScript = this.legacyTavernPresentationAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyCharacterAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyEquipmentAdapter.adapt(adaptedScript);
+    adaptedScript = this.legacyWeaponPresentationAdapter.adapt(adaptedScript);
+    adaptedScript = this.legacyMaterialPresentationAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyCharacterPresentationAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyProgressionAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyProgressionPresentationAdapter.adapt(adaptedScript);
