@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
 import { createServer } from 'node:http';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { extname, join, normalize, resolve } from 'node:path';
 
 const distRoot = resolve('dist/nobrainer/browser');
@@ -143,6 +144,7 @@ async function stopBrowser(child) {
 }
 
 const serverPort = await listenOnFreePort(server);
+const browserProfile = mkdtempSync(join(tmpdir(), 'nobrainer-runtime-smoke-'));
 let child = null;
 let stderr = '';
 
@@ -155,7 +157,9 @@ try {
     '--disable-gpu',
     '--disable-dev-shm-usage',
     '--hide-scrollbars',
+    '--remote-debugging-address=127.0.0.1',
     `--remote-debugging-port=${debugPort}`,
+    `--user-data-dir=${browserProfile}`,
     pageUrl
   ];
 
@@ -199,5 +203,6 @@ try {
   console.log(`Browser-Runtime-Smoke-Test: Prototype v${expectedVersion} startet aus dem finalen Angular-Build ohne Runtime-Fallback.`);
 } finally {
   if (child) await stopBrowser(child);
+  rmSync(browserProfile, { recursive: true, force: true });
   await new Promise(resolveClose => server.close(resolveClose));
 }
