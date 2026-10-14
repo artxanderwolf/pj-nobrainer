@@ -19,8 +19,8 @@
             "inlineStyleLanguage": "css",
             "assets": [
               {
-                "glob": "NoBrainer_GitHub_v0.12.2.html",
-                "input": ".",
+                "glob": "NoBrainer_GitHub_v0.12.2.runtime.js",
+                "input": ".generated",
                 "output": "/legacy/"
               }
             ],
