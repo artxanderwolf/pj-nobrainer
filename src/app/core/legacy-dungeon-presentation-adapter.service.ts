@@ -11,6 +11,7 @@ declare global {
 }
 
 const ADAPTED_DUNGEON_STATUS = `function renderDungeonStatus(){
+  renderDungeonSessionWaveCounter();
   const box=document.getElementById("dungeonRunCard"),autoBtn=document.getElementById("autoDungeonBtn"),collectBtn=document.getElementById("collectLootBtn");if(!box||!autoBtn||!collectBtn)return;
   const presentation=window.NoBrainerDungeonPresentationCore.getDungeonStatusPresentation({
     auto:!!state.dungeonAuto,
@@ -53,12 +54,6 @@ export class LegacyDungeonPresentationAdapterService {
       'document.getElementById("runDuration").textContent=`${state.dungeonWavesDefeated||0} besiegt`;',
       'renderDungeonSessionWaveCounter();',
       'Dungeon-Wellenanzeige'
-    );
-    adapted = this.replaceOnce(
-      adapted,
-      '  renderDungeonStatus();\n  renderDungeonLoot();',
-      '  renderDungeonStatus();\n  renderDungeonSessionWaveCounter();\n  renderDungeonLoot();',
-      'Dungeon-Wellenaktualisierung im Runtime-Tick'
     );
     adapted = this.replaceRangeOnce(
       adapted,
