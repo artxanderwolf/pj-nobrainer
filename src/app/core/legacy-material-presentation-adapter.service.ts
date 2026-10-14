@@ -36,6 +36,25 @@ const MATERIAL_INDEX_BRIDGE = `function renderMaterialIndex(){
   });
 }`;
 
+const MATERIAL_STORAGE_BRIDGE = `function renderMaterialStorage(){
+  const body=document.getElementById("inventoryRows"),empty=document.getElementById("inventoryEmpty");
+  if(!body||!empty)return;
+  const entries=window.NoBrainerMaterialPresentationCore.sortMaterialStorageEntries(Object.entries(state.inventory));
+  body.innerHTML="";
+  empty.style.display=entries.length?"none":"block";
+  entries.forEach(([name,item])=>{
+    const sell=materialSellData(name);
+    if(!sell)throw new Error("Material-Verkaufsdaten fehlen: "+name);
+    const presentation=window.NoBrainerMaterialPresentationCore.getMaterialStorageRowPresentation(name,item,sell.valueNickel,formatCurrencyNickel);
+    const tr=document.createElement("tr");
+    tr.innerHTML="<td title='"+presentation.tooltip+"'>"+presentation.name+"</td>"+
+      "<td>"+presentation.category+"</td>"+
+      "<td>"+presentation.quantityText+"</td>"+
+      "<td>"+presentation.valueText+"</td>";
+    body.appendChild(tr);
+  });
+}`;
+
 @Injectable({ providedIn: 'root' })
 export class LegacyMaterialPresentationAdapterService {
   adapt(source: string): string {
@@ -54,6 +73,20 @@ export class LegacyMaterialPresentationAdapterService {
       'function rarityFactorFromRarity(',
       MATERIAL_INDEX_BRIDGE,
       'Materialindex-Präsentation'
+    );
+    adapted = this.replaceRangeOnce(
+      adapted,
+      '  const tbody=document.getElementById("inventoryRows");tbody.innerHTML="";',
+      '  renderDungeonStatus();',
+      '  renderMaterialStorage();',
+      'Materiallager-Präsentation'
+    );
+    adapted = this.replaceRangeOnce(
+      adapted,
+      'function render(){',
+      '  updateEnergy();',
+      `${MATERIAL_STORAGE_BRIDGE}\n\nfunction render(){`,
+      'Materiallager-Renderfunktion'
     );
     return adapted;
   }
