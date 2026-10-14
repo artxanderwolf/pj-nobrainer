@@ -49,11 +49,13 @@ assert.doesNotMatch(
   /main > section#/,
   'Der App-Component enthält weiterhin einen Legacy-Seiten-Fallback.'
 );
+assert.doesNotMatch(appComponent, /DOMParser/, 'Der App-Component parst weiterhin die Legacy-HTML.');
+assert.doesNotMatch(appComponent, /querySelector<HTMLScriptElement>/, 'Der App-Component liest weiterhin ein Script aus der Legacy-HTML.');
 assert.match(
   appComponent,
-  /querySelector<HTMLScriptElement>\('body > script'\)/,
-  'Das Legacy-Script soll in diesem Schritt weiterhin kontrolliert aus der Referenz geladen werden.'
+  /const LEGACY_RUNTIME_PATH = 'legacy\/NoBrainer_GitHub_v0\.12\.2\.runtime\.js';/,
+  'Der App-Component verweist nicht auf das eigenständige Runtime-Asset.'
 );
-assert.match(appComponent, /const APP_VERSION = '0\.12\.56';/, 'Die App-Version wurde nicht auf v0.12.56 gesetzt.');
+assert.match(appComponent, /const APP_VERSION = '0\.12\.57';/, 'Die App-Version wurde nicht auf v0.12.57 gesetzt.');
 
-console.log('App-Shell-Präsentation: Navigation, Topbar, Ressourcenrahmen und alle Seiten sind Angular-eigen; nur das Legacy-Script bleibt als Runtime-Quelle.');
+console.log('App-Shell-Präsentation: Navigation, Topbar, Ressourcenrahmen und alle Seiten sind Angular-eigen; die Legacy-Runtime kommt als eigenständiges Asset.');

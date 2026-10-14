@@ -26,8 +26,8 @@ import { APP_SHELL_PAGE_IDS, composeAppShell } from './game/app-shell-presentati
 import { composePageMarkup } from './game/page-markup-presentation-core';
 import { adaptLegacyWeaponMarkup, adaptLegacyWeaponScript } from './game/weapon-naming';
 
-const APP_VERSION = '0.12.56';
-const LEGACY_PROTOTYPE_PATH = 'legacy/NoBrainer_GitHub_v0.12.2.html';
+const APP_VERSION = '0.12.57';
+const LEGACY_RUNTIME_PATH = 'legacy/NoBrainer_GitHub_v0.12.2.runtime.js';
 const LEGACY_SCRIPT_ID = 'nobrainer-legacy-script';
 
 @Component({ selector: 'app-root', standalone: true, template: '<div #legacyHost class="legacy-host" aria-live="polite"></div>' })
@@ -62,30 +62,26 @@ export class AppComponent implements AfterViewInit, OnDestroy {
 
   async ngAfterViewInit(): Promise<void> {
     try {
-      await this.mountLegacyPrototype();
+      await this.mountGameRuntime();
       this.legacyRuntime.prepare();
       this.legacyRuntime.startTick();
       try { this.legacyRuntime.renderInitial(); } catch (error: unknown) { console.error('Der erste NoBrainer-Render ist fehlgeschlagen.', error); }
     } catch (error: unknown) {
-      console.error('Der NoBrainer-Prototyp konnte nicht geladen werden.', error);
-      this.legacyHost.nativeElement.textContent = 'Der NoBrainer-Prototyp konnte nicht geladen werden. Bitte Seite neu laden.';
+      console.error('Die NoBrainer-Runtime konnte nicht geladen werden.', error);
+      this.legacyHost.nativeElement.textContent = 'Die NoBrainer-Runtime konnte nicht geladen werden. Bitte Seite neu laden.';
     }
   }
 
   ngOnDestroy(): void { this.legacyRuntime.stopTick(); }
 
-  private async mountLegacyPrototype(): Promise<void> {
-    const prototypeUrl = new URL(LEGACY_PROTOTYPE_PATH, document.baseURI);
-    const response = await fetch(prototypeUrl);
-    if (!response.ok) throw new Error(`Legacy-Prototyp nicht erreichbar (${response.status}).`);
+  private async mountGameRuntime(): Promise<void> {
+    const runtimeUrl = new URL(LEGACY_RUNTIME_PATH, document.baseURI);
+    const response = await fetch(runtimeUrl);
+    if (!response.ok) throw new Error(`Legacy-Runtime nicht erreichbar (${response.status}).`);
     const source = await response.text();
-    const parsed = new DOMParser().parseFromString(source, 'text/html');
-    const legacyScript = parsed.querySelector<HTMLScriptElement>('body > script');
-    if (!legacyScript) throw new Error('Legacy-Prototyp enthält nicht mehr das erwartete v0.12.2-Script.');
-
     const pageMarkup = composePageMarkup(APP_SHELL_PAGE_IDS);
 
-    let adaptedScript = this.legacySourceAdapter.adapt(legacyScript.textContent ?? '');
+    let adaptedScript = this.legacySourceAdapter.adapt(source);
     adaptedScript = this.legacyMobileTablePresentationAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyNavigationPresentationAdapter.adapt(adaptedScript);
     adaptedScript = this.legacySaveStatusPresentationAdapter.adapt(adaptedScript);

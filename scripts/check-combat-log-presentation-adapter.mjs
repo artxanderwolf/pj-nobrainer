@@ -56,7 +56,7 @@ assert.ok(source.includes('renderDungeonStatus();'));
 assert.ok(source.includes('const tbody=document.getElementById("inventoryRows");tbody.innerHTML="";'));
 
 const app = fs.readFileSync('src/app/app.component.ts', 'utf8');
-const sourceAdapterIndex = app.indexOf('let adaptedScript = this.legacySourceAdapter.adapt(legacyScript.textContent ?? \'\');');
+const sourceAdapterIndex = app.indexOf('let adaptedScript = this.legacySourceAdapter.adapt(source);');
 const combatLogAdapterIndex = app.indexOf('adaptedScript = this.legacyCombatLogPresentationAdapter.adapt(adaptedScript);');
 const dungeonDomainAdapterIndex = app.indexOf('adaptedScript = this.legacyDungeonDomainAdapter.adapt(adaptedScript);');
 assert.ok(sourceAdapterIndex >= 0, 'LegacySourceAdapter-Aufruf fehlt.');
