@@ -31,8 +31,8 @@ for (const pageId of APP_SHELL_PAGE_IDS) {
 
 assert.match(
   appComponent,
-  /composePageMarkup\(APP_SHELL_PAGE_IDS, pageId => \{/,
-  'Der App-Component bezieht Seitenmarkup nicht mehr über den kontrollierten Seiten-Composer.'
+  /composePageMarkup\(APP_SHELL_PAGE_IDS\)/,
+  'Der App-Component bezieht die Seiten nicht mehr vollständig aus dem Angular-eigenen Seiten-Composer.'
 );
 assert.match(
   appComponent,
@@ -44,11 +44,16 @@ assert.doesNotMatch(
   /adaptLegacyWeaponMarkup\(app\.outerHTML\)/,
   'Der App-Component übernimmt weiterhin den kompletten Legacy-App-Rahmen.'
 );
+assert.doesNotMatch(
+  appComponent,
+  /main > section#/,
+  'Der App-Component enthält weiterhin einen Legacy-Seiten-Fallback.'
+);
 assert.match(
   appComponent,
   /querySelector<HTMLScriptElement>\('body > script'\)/,
   'Das Legacy-Script soll in diesem Schritt weiterhin kontrolliert aus der Referenz geladen werden.'
 );
-assert.match(appComponent, /const APP_VERSION = '0\.12\.55';/, 'Die App-Version wurde nicht auf v0.12.55 gesetzt.');
+assert.match(appComponent, /const APP_VERSION = '0\.12\.56';/, 'Die App-Version wurde nicht auf v0.12.56 gesetzt.');
 
-console.log('App-Shell-Präsentation: Navigation, Topbar und Ressourcenrahmen bleiben Angular-eigen; Seitenmarkup läuft über den separaten Composer.');
+console.log('App-Shell-Präsentation: Navigation, Topbar, Ressourcenrahmen und alle Seiten sind Angular-eigen; nur das Legacy-Script bleibt als Runtime-Quelle.');
