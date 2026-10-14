@@ -17,13 +17,14 @@ const LEGACY_DUNGEON_PICKER_STATE = 'let openDungeonTeamPickerSlot=null;';
 const ADAPTED_CHARACTER_CARD = `function renderCharacterCard(c){
   const cls=getCharacterClass(c);
   const presentation=window.NoBrainerCharacterPresentationCore.getCharacterCardPresentation(c,cls,effectiveOffense(c),openWeaponPickerHand);
-  const stats=presentation.stats.map(stat=>'<div class="stat"><span>'+stat.label+'</span><b>'+stat.value+'</b></div>').join("");
+  const stats=presentation.stats.map(stat=>\`<div class="stat"><span>\${stat.label}</span><b>\${stat.value}</b></div>\`).join("");
   const hands=presentation.hands.map(handPresentation=>{
     const w=getWeaponById(handPresentation.weaponId);
     const weaponHtml=w?weaponCardHtml(w,{status:handPresentation.equippedStatus}):'<div class="empty">'+handPresentation.emptyText+'</div>';
-    return '<div class="hand-section"><div class="hand-section-head"><strong>'+handPresentation.label+'</strong><button class="btn smallbtn" onclick="toggleWeaponPicker('+c.id+',\''+handPresentation.hand+'\')">'+handPresentation.toggleLabel+'</button></div><div style="margin-top:10px">'+weaponHtml+'</div>'+weaponPickerHtml(c,handPresentation.hand)+'</div>';
+    return \`<div class="hand-section"><div class="hand-section-head"><strong>\${handPresentation.label}</strong><button class="btn smallbtn" onclick="toggleWeaponPicker(\${c.id},'\${handPresentation.hand}')">\${handPresentation.toggleLabel}</button></div><div style="margin-top:10px">\${weaponHtml}</div>\${weaponPickerHtml(c,handPresentation.hand)}</div>\`;
   }).join("");
-  return '<div class="roster-character"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><strong>'+presentation.name+'</strong><span class="tag fixed">'+presentation.classTag+'</span></div><div class="statrow">'+stats+'</div>'+hands+'</div>';
+  return \`<div class="roster-character"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><strong>\${presentation.name}</strong><span class="tag fixed">\${presentation.classTag}</span></div>
+    <div class="statrow">\${stats}</div>\${hands}</div>\`;
 }
 
 `;
