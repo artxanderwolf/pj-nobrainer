@@ -27,8 +27,8 @@ function normalizeMarkup(markup) {
 
 assert.deepEqual(
   [...ANGULAR_OWNED_PAGE_IDS],
-  ['base', 'tavern', 'roster', 'storage', 'forge', 'market', 'dungeon'],
-  'Für v0.12.55 sollen Stützpunkt, Taverne, Kader, Lager, Schmiede, Markt und Dungeon Angular-eigenes Seitenmarkup besitzen.'
+  ['base', 'tavern', 'roster', 'storage', 'forge', 'market', 'dungeon', 'index'],
+  'Für v0.12.56 sollen alle acht sichtbaren Seiten Angular-eigenes Seitenmarkup besitzen.'
 );
 
 for (const pageId of ANGULAR_OWNED_PAGE_IDS) {
@@ -81,27 +81,30 @@ assert.match(dungeonMarkup, /id="dungeonLoot"/, 'Der Dungeon-Beute-Renderanker f
 assert.match(dungeonMarkup, /id="dungeonLootEmpty"/, 'Der Dungeon-Beute-Leerzustand fehlt im Angular-eigenen Dungeon-Markup.');
 assert.match(dungeonMarkup, /id="combatLog"/, 'Das Expeditionsprotokoll fehlt im Angular-eigenen Dungeon-Markup.');
 
-const legacyFallbackCalls = [];
-const composed = composePageMarkup(APP_SHELL_PAGE_IDS, pageId => {
-  legacyFallbackCalls.push(pageId);
-  return extractLegacyPage(pageId);
-});
+const indexMarkup = getAngularOwnedPageMarkup('index') ?? '';
+assert.match(indexMarkup, /id="materialIndexRows"/, 'Der Materialindex-Renderanker fehlt im Angular-eigenen Index-Markup.');
+assert.match(indexMarkup, /<h2>Waffenslots & Funktion<\/h2>/, 'Die Waffenslot-Dokumentation fehlt im Angular-eigenen Index-Markup.');
+assert.match(indexMarkup, /<h2>Klassen<\/h2>/, 'Die Klassendokumentation fehlt im Angular-eigenen Index-Markup.');
+assert.match(indexMarkup, /<h2>Aktuelle Schadensberechnungen<\/h2>/, 'Die Schadensformeln fehlen im Angular-eigenen Index-Markup.');
+assert.match(indexMarkup, /<h2>Gebäude-Upgrades<\/h2>/, 'Die Gebäude-Upgrade-Tabelle fehlt im Angular-eigenen Index-Markup.');
+assert.match(indexMarkup, /<h2>Versionshinweise<\/h2>/, 'Die Versionshinweise fehlen im Angular-eigenen Index-Markup.');
 
-assert.deepEqual(
-  legacyFallbackCalls,
-  ['index'],
-  'Der Markup-Cutover greift auf mehr oder weniger Legacy-Seiten als vorgesehen zurück.'
-);
-
+const composed = composePageMarkup(APP_SHELL_PAGE_IDS);
 for (const pageId of APP_SHELL_PAGE_IDS) {
   const matches = composed.match(new RegExp(`id="${pageId}"`, 'g')) ?? [];
   assert.equal(matches.length, 1, `Seite ${pageId} ist im zusammengesetzten Markup nicht genau einmal vorhanden.`);
 }
 
-assert.equal(getAngularOwnedPageMarkup('index'), null, 'Index soll in v0.12.55 noch nicht Angular-eigen sein.');
-assert.match(appComponent, /composePageMarkup\(APP_SHELL_PAGE_IDS, pageId => \{/, 'Der App-Component verwendet den Seiten-Markup-Composer nicht mit der Shell-Seitenreihenfolge.');
-assert.match(appComponent, /app\.querySelector<HTMLElement>\(`main > section#\$\{pageId\}\.page`\)/, 'Der kontrollierte Legacy-Fallback für die letzte noch nicht migrierte Seite fehlt.');
-assert.match(appComponent, /composeAppShell\(pageMarkup\)/, 'Das zusammengesetzte Seitenmarkup wird nicht mehr in die Angular-Shell eingesetzt.');
-assert.match(appComponent, /const APP_VERSION = '0\.12\.55';/, 'Die App-Version wurde nicht auf v0.12.55 gesetzt.');
+assert.throws(
+  () => composePageMarkup(['unknown-page']),
+  /Unbekannte Angular-Seite: unknown-page/,
+  'Der Seiten-Composer soll unbekannte Seiten nicht stillschweigend akzeptieren.'
+);
+assert.match(appComponent, /composePageMarkup\(APP_SHELL_PAGE_IDS\)/, 'Der App-Component verwendet nicht mehr ausschließlich das Angular-eigene Seitenmarkup.');
+assert.doesNotMatch(appComponent, /main > section#/, 'Der App-Component enthält weiterhin einen Legacy-Seiten-Fallback.');
+assert.doesNotMatch(appComponent, /querySelector<HTMLElement>\('body > \.app'\)/, 'Der Legacy-App-Rahmen wird weiterhin als Markup-Quelle abgefragt.');
+assert.match(appComponent, /querySelector<HTMLScriptElement>\('body > script'\)/, 'Das Legacy-Script soll in diesem Schritt weiterhin kontrolliert aus der Referenz geladen werden.');
+assert.match(appComponent, /composeAppShell\(pageMarkup\)/, 'Das Angular-eigene Seitenmarkup wird nicht mehr in die Angular-Shell eingesetzt.');
+assert.match(appComponent, /const APP_VERSION = '0\.12\.56';/, 'Die App-Version wurde nicht auf v0.12.56 gesetzt.');
 
-console.log('Seiten-Markup: Sieben Seiten einschließlich Dungeon liegen in Angular; nur der Index bleibt kontrollierter Legacy-Fallback.');
+console.log('Seiten-Markup: Alle acht sichtbaren Seiten liegen vollständig in Angular; der Legacy-Seiten-Fallback ist entfernt.');
