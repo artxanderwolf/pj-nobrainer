@@ -1,0 +1,61 @@
+import { Injectable } from '@angular/core';
+import {
+  NAVIGATION_PRESENTATION_CORE_BRIDGE,
+  type NavigationPresentationCoreBridge
+} from '../game/navigation-presentation-core';
+
+declare global {
+  interface Window {
+    NoBrainerNavigationPresentationCore?: NavigationPresentationCoreBridge;
+  }
+}
+
+const LEGACY_TITLES = [
+  'const titles = {',
+  '  base:"Stützpunkt", dungeon:"Dungeon", tavern:"Taverne", roster:"Kader",',
+  '  storage:"Lager", forge:"Schmiede", market:"Markt", index:"Index"',
+  '};'
+].join('\n');
+
+const LEGACY_GO = [
+  'function go(page){',
+  '  document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));',
+  '  document.querySelectorAll("#nav button").forEach(x=>x.classList.remove("active"));',
+  '  document.getElementById(page).classList.add("active");',
+  '  document.querySelector(`#nav button[data-page="${page}"]`).classList.add("active");',
+  '  document.getElementById("pageTitle").textContent = titles[page];',
+  '  render();',
+  '}'
+].join('\n');
+
+const NAVIGATION_GO_BRIDGE = [
+  'function go(page){',
+  '  const presentation=window.NoBrainerNavigationPresentationCore.getNavigationPresentation(page);',
+  '  document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));',
+  '  document.querySelectorAll("#nav button").forEach(x=>x.classList.remove("active"));',
+  '  document.getElementById(presentation.pageId).classList.add("active");',
+  '  document.querySelector(`#nav button[data-page="${presentation.pageId}"]`).classList.add("active");',
+  '  document.getElementById("pageTitle").textContent=presentation.title;',
+  '  render();',
+  '}'
+].join('\n');
+
+@Injectable({ providedIn: 'root' })
+export class LegacyNavigationPresentationAdapterService {
+  adapt(source: string): string {
+    window.NoBrainerNavigationPresentationCore = NAVIGATION_PRESENTATION_CORE_BRIDGE;
+
+    let adapted = this.replaceOnce(source, LEGACY_TITLES, '', 'Legacy-Seitentitel');
+    adapted = this.replaceOnce(adapted, LEGACY_GO, NAVIGATION_GO_BRIDGE, 'Legacy-Navigation');
+    return adapted;
+  }
+
+  private replaceOnce(source: string, search: string, replacement: string, label: string): string {
+    const first = source.indexOf(search);
+    if (first < 0) throw new Error(`Legacy-Kompatibilität fehlgeschlagen: ${label} wurde nicht gefunden.`);
+    if (source.indexOf(search, first + search.length) >= 0) {
+      throw new Error(`Legacy-Kompatibilität fehlgeschlagen: ${label} ist nicht eindeutig.`);
+    }
+    return source.slice(0, first) + replacement + source.slice(first + search.length);
+  }
+}
