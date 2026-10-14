@@ -18,6 +18,7 @@ import { LegacyNavigationPresentationAdapterService } from './core/legacy-naviga
 import { LegacyProgressionAdapterService } from './core/legacy-progression-adapter.service';
 import { LegacyProgressionPresentationAdapterService } from './core/legacy-progression-presentation-adapter.service';
 import { LegacyResourcePresentationAdapterService } from './core/legacy-resource-presentation-adapter.service';
+import { LegacyRuntimeRegistrationAdapterService } from './core/legacy-runtime-registration-adapter.service';
 import { LegacySaveStatusPresentationAdapterService } from './core/legacy-save-status-presentation-adapter.service';
 import { LegacySourceAdapterService } from './core/legacy-source-adapter.service';
 import { LegacyTavernPresentationAdapterService } from './core/legacy-tavern-presentation-adapter.service';
@@ -37,6 +38,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   constructor(
     private readonly gameRuntime: GameRuntimeService,
     private readonly legacySourceAdapter: LegacySourceAdapterService,
+    private readonly legacyRuntimeRegistrationAdapter: LegacyRuntimeRegistrationAdapterService,
     private readonly legacyMobileTablePresentationAdapter: LegacyMobileTablePresentationAdapterService,
     private readonly legacyNavigationPresentationAdapter: LegacyNavigationPresentationAdapterService,
     private readonly legacySaveStatusPresentationAdapter: LegacySaveStatusPresentationAdapterService,
@@ -82,6 +84,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     const pageMarkup = composePageMarkup(APP_SHELL_PAGE_IDS);
 
     let adaptedScript = this.legacySourceAdapter.adapt(source);
+    adaptedScript = this.legacyRuntimeRegistrationAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyMobileTablePresentationAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyNavigationPresentationAdapter.adapt(adaptedScript);
     adaptedScript = this.legacySaveStatusPresentationAdapter.adapt(adaptedScript);
