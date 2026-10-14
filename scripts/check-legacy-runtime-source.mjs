@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import {
   GENERATED_LEGACY_RUNTIME_PATH,
   LEGACY_HTML_REFERENCE_PATH,
@@ -41,5 +41,14 @@ assert.ok(
   'Die alte Legacy-HTML wird weiterhin als Angular-Laufzeitasset ausgeliefert.'
 );
 assert.match(gitignore, /^\/\.generated$/m, 'Das generierte Übergangsverzeichnis ist nicht von Git ausgeschlossen.');
+
+const obsoleteRuntimeAssumptions = readdirSync('scripts')
+  .filter(file => file.endsWith('.mjs') && file !== 'check-legacy-runtime-source.mjs')
+  .filter(file => readFileSync(`scripts/${file}`, 'utf8').includes('legacyScript.textContent'));
+assert.deepEqual(
+  obsoleteRuntimeAssumptions,
+  [],
+  `Veraltete HTML-Script-Annahmen in Regressionstests: ${obsoleteRuntimeAssumptions.join(', ')}`
+);
 
 console.log('Runtime-Source-Cutover: Die alte HTML ist nur noch Build-Referenz; der Browser lädt ausschließlich das eigenständige Legacy-Runtime-Asset.');
