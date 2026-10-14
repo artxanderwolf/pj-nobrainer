@@ -24,9 +24,8 @@ import { LegacyTavernPresentationAdapterService } from './core/legacy-tavern-pre
 import { LegacyWeaponPresentationAdapterService } from './core/legacy-weapon-presentation-adapter.service';
 import { adaptLegacyWeaponMarkup, adaptLegacyWeaponScript } from './game/weapon-naming';
 
-const APP_VERSION = '0.12.49';
+const APP_VERSION = '0.12.50';
 const LEGACY_PROTOTYPE_PATH = 'legacy/NoBrainer_GitHub_v0.12.2.html';
-const LEGACY_STYLE_ID = 'nobrainer-legacy-style';
 const LEGACY_SCRIPT_ID = 'nobrainer-legacy-script';
 
 @Component({ selector: 'app-root', standalone: true, template: '<div #legacyHost class="legacy-host" aria-live="polite"></div>' })
@@ -80,9 +79,8 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     const source = await response.text();
     const parsed = new DOMParser().parseFromString(source, 'text/html');
     const app = parsed.querySelector<HTMLElement>('body > .app');
-    const legacyStyle = parsed.querySelector<HTMLStyleElement>('head > style');
     const legacyScript = parsed.querySelector<HTMLScriptElement>('body > script');
-    if (!app || !legacyStyle || !legacyScript) throw new Error('Legacy-Prototyp hat nicht die erwartete v0.12.2-Struktur.');
+    if (!app || !legacyScript) throw new Error('Legacy-Prototyp hat nicht die erwartete v0.12.2-Struktur.');
 
     let adaptedScript = this.legacySourceAdapter.adapt(legacyScript.textContent ?? '');
     adaptedScript = this.legacyMobileTablePresentationAdapter.adapt(adaptedScript);
@@ -108,7 +106,6 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     adaptedScript = this.legacyProgressionPresentationAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyEnergyAdapter.adapt(adaptedScript);
     const adaptedMarkup = adaptLegacyWeaponMarkup(app.outerHTML);
-    this.installLegacyStyle(legacyStyle.textContent ?? '');
     this.legacyHost.nativeElement.innerHTML = adaptedMarkup;
     this.applyVersionMarker();
     this.installLegacyScript(adaptedScript);
@@ -118,11 +115,6 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     document.title = `Projekt NoBrainer – Prototype v${APP_VERSION}`;
     const versionLabel = this.legacyHost.nativeElement.querySelector<HTMLElement>('.brand small');
     if (versionLabel) versionLabel.textContent = `Prototype v${APP_VERSION}`;
-  }
-
-  private installLegacyStyle(css: string): void {
-    document.getElementById(LEGACY_STYLE_ID)?.remove();
-    const style = document.createElement('style'); style.id = LEGACY_STYLE_ID; style.textContent = css; document.head.appendChild(style);
   }
 
   private installLegacyScript(source: string): void {
