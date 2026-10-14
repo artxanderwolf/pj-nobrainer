@@ -91,6 +91,6 @@ const sourceAdapterIndex = appComponent.indexOf('let adaptedScript = this.legacy
 const tickAdapterIndex = appComponent.indexOf('adaptedScript = this.legacyGameTickAdapter.adapt(adaptedScript);');
 const registrationAdapterIndex = appComponent.indexOf('adaptedScript = this.legacyRuntimeRegistrationAdapter.adapt(adaptedScript);');
 assert.ok(sourceAdapterIndex >= 0 && tickAdapterIndex > sourceAdapterIndex && registrationAdapterIndex > tickAdapterIndex, 'Die Adapterreihenfolge für den gameTick-Cutover ist nicht stabil.');
-assert.match(appComponent, /const APP_VERSION = '0\.12\.60';/, 'Die App-Version wurde nicht auf v0.12.60 gesetzt.');
+assert.match(appComponent, /const APP_VERSION = '0\.12\.61';/, 'Die App-Version wurde nicht auf v0.12.61 gesetzt.');
 
 console.log('gameTick-Eigentümerschaft: Der zentrale 250-ms-Zyklus liegt in Angular; Präsentationsadapter hängen nicht mehr vom entfernten Legacy-gameTick ab.');
