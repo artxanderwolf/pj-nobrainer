@@ -1,4 +1,5 @@
 import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
+import { GameRuntimeService } from './core/game-runtime.service';
 import { LegacyCharacterAdapterService } from './core/legacy-character-adapter.service';
 import { LegacyCharacterPresentationAdapterService } from './core/legacy-character-presentation-adapter.service';
 import { LegacyCombatLogPresentationAdapterService } from './core/legacy-combat-log-presentation-adapter.service';
@@ -17,7 +18,6 @@ import { LegacyNavigationPresentationAdapterService } from './core/legacy-naviga
 import { LegacyProgressionAdapterService } from './core/legacy-progression-adapter.service';
 import { LegacyProgressionPresentationAdapterService } from './core/legacy-progression-presentation-adapter.service';
 import { LegacyResourcePresentationAdapterService } from './core/legacy-resource-presentation-adapter.service';
-import { LegacyRuntimeService } from './core/legacy-runtime.service';
 import { LegacySaveStatusPresentationAdapterService } from './core/legacy-save-status-presentation-adapter.service';
 import { LegacySourceAdapterService } from './core/legacy-source-adapter.service';
 import { LegacyTavernPresentationAdapterService } from './core/legacy-tavern-presentation-adapter.service';
@@ -26,7 +26,7 @@ import { APP_SHELL_PAGE_IDS, composeAppShell } from './game/app-shell-presentati
 import { composePageMarkup } from './game/page-markup-presentation-core';
 import { adaptLegacyWeaponMarkup, adaptLegacyWeaponScript } from './game/weapon-naming';
 
-const APP_VERSION = '0.12.57';
+const APP_VERSION = '0.12.58';
 const LEGACY_RUNTIME_PATH = 'legacy/NoBrainer_GitHub_v0.12.2.runtime.js';
 const LEGACY_SCRIPT_ID = 'nobrainer-legacy-script';
 
@@ -35,7 +35,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   @ViewChild('legacyHost', { static: true }) private legacyHost!: ElementRef<HTMLDivElement>;
 
   constructor(
-    private readonly legacyRuntime: LegacyRuntimeService,
+    private readonly gameRuntime: GameRuntimeService,
     private readonly legacySourceAdapter: LegacySourceAdapterService,
     private readonly legacyMobileTablePresentationAdapter: LegacyMobileTablePresentationAdapterService,
     private readonly legacyNavigationPresentationAdapter: LegacyNavigationPresentationAdapterService,
@@ -63,16 +63,16 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   async ngAfterViewInit(): Promise<void> {
     try {
       await this.mountGameRuntime();
-      this.legacyRuntime.prepare();
-      this.legacyRuntime.startTick();
-      try { this.legacyRuntime.renderInitial(); } catch (error: unknown) { console.error('Der erste NoBrainer-Render ist fehlgeschlagen.', error); }
+      this.gameRuntime.prepare();
+      this.gameRuntime.startTick();
+      try { this.gameRuntime.renderInitial(); } catch (error: unknown) { console.error('Der erste NoBrainer-Render ist fehlgeschlagen.', error); }
     } catch (error: unknown) {
       console.error('Die NoBrainer-Runtime konnte nicht geladen werden.', error);
       this.legacyHost.nativeElement.textContent = 'Die NoBrainer-Runtime konnte nicht geladen werden. Bitte Seite neu laden.';
     }
   }
 
-  ngOnDestroy(): void { this.legacyRuntime.stopTick(); }
+  ngOnDestroy(): void { this.gameRuntime.stopTick(); }
 
   private async mountGameRuntime(): Promise<void> {
     const runtimeUrl = new URL(LEGACY_RUNTIME_PATH, document.baseURI);
@@ -107,7 +107,13 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     const adaptedMarkup = adaptLegacyWeaponMarkup(composeAppShell(pageMarkup));
     this.legacyHost.nativeElement.innerHTML = adaptedMarkup;
     this.applyVersionMarker();
-    this.installLegacyScript(adaptedScript);
+
+    this.gameRuntime.openBootstrapRegistration();
+    try {
+      this.installLegacyScript(adaptedScript);
+    } finally {
+      this.gameRuntime.closeBootstrapRegistration();
+    }
   }
 
   private applyVersionMarker(): void {
