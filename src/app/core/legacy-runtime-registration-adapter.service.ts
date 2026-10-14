@@ -27,7 +27,6 @@ if(!runtimeBootstrap||typeof runtimeBootstrap.register!=="function")throw new Er
 runtimeBootstrap.register({
   configureSaveStorage,
   prepare:prepareGameRuntime,
-  updateMarketJob,
   updateDungeonAutomation,
   renderForgeJob,
   renderMarketJob,
