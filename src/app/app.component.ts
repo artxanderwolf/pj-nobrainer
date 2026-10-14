@@ -137,6 +137,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     adaptedScript = this.legacyProgressionAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyProgressionPresentationAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyEnergyAdapter.adapt(adaptedScript);
+    this.assertLegacyScriptSyntax(adaptedScript);
     const adaptedMarkup = adaptLegacyWeaponMarkup(composeAppShell(pageMarkup));
     this.legacyHost.nativeElement.innerHTML = adaptedMarkup;
     this.applyVersionMarker();
@@ -160,6 +161,15 @@ export class AppComponent implements AfterViewInit, OnDestroy {
       }
     } finally {
       this.gameState.closeBootstrapRegistration();
+    }
+  }
+
+  private assertLegacyScriptSyntax(source: string): void {
+    try {
+      new Function(source);
+    } catch (error: unknown) {
+      const detail = error instanceof Error ? error.message : String(error);
+      throw new Error(`Adaptierte NoBrainer-Runtime enthält ungültiges JavaScript: ${detail}`);
     }
   }
 
