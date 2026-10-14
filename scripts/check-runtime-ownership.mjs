@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 
 const appComponent = readFileSync('src/app/app.component.ts', 'utf8');
 const runtimeService = readFileSync('src/app/core/game-runtime.service.ts', 'utf8');
+const gameTickAdapter = readFileSync('src/app/core/legacy-game-tick-adapter.service.ts', 'utf8');
 const registrationAdapter = readFileSync('src/app/core/legacy-runtime-registration-adapter.service.ts', 'utf8');
 
 assert.equal(
@@ -23,11 +24,16 @@ assert.match(
 );
 
 const sourceAdapterIndex = appComponent.indexOf('let adaptedScript = this.legacySourceAdapter.adapt(source);');
+const gameTickAdapterIndex = appComponent.indexOf('adaptedScript = this.legacyGameTickAdapter.adapt(adaptedScript);');
 const registrationAdapterIndex = appComponent.indexOf('adaptedScript = this.legacyRuntimeRegistrationAdapter.adapt(adaptedScript);');
 assert.ok(sourceAdapterIndex >= 0, 'Der Legacy-Source-Adapter-Aufruf fehlt.');
 assert.ok(
-  registrationAdapterIndex > sourceAdapterIndex,
-  'Die Runtime-Registrierung muss unmittelbar nach dem Legacy-Source-Adapter auf Angular-Eigentümerschaft umgestellt werden.'
+  gameTickAdapterIndex > sourceAdapterIndex,
+  'Der Legacy-gameTick muss nach dem Source-Adapter entfernt werden.'
+);
+assert.ok(
+  registrationAdapterIndex > gameTickAdapterIndex,
+  'Die Runtime-Registrierung muss nach dem gameTick-Cutover auf Angular-Eigentümerschaft umgestellt werden.'
 );
 
 const openBootstrapIndex = appComponent.indexOf('this.gameRuntime.openBootstrapRegistration();');
@@ -36,7 +42,7 @@ const closeBootstrapIndex = appComponent.indexOf('this.gameRuntime.closeBootstra
 assert.ok(openBootstrapIndex >= 0, 'Der temporäre Runtime-Bootstrap wird nicht geöffnet.');
 assert.ok(installScriptIndex > openBootstrapIndex, 'Das Runtime-Script wird vor dem Angular-Bootstrap installiert.');
 assert.ok(closeBootstrapIndex > installScriptIndex, 'Der temporäre Runtime-Bootstrap wird nach der Script-Installation nicht wieder geschlossen.');
-assert.match(appComponent, /const APP_VERSION = '0\.12\.58';/, 'Die App-Version wurde nicht auf v0.12.58 gesetzt.');
+assert.match(appComponent, /const APP_VERSION = '0\.12\.59';/, 'Die App-Version wurde nicht auf v0.12.59 gesetzt.');
 
 assert.match(runtimeService, /private runtime: GameRuntimeApi \| null = null;/, 'Die Runtime-Instanz liegt nicht im Angular-Service.');
 assert.match(runtimeService, /window\.NoBrainerRuntimeBootstrap = \{/, 'Der temporäre Runtime-Bootstrap wird nicht durch Angular bereitgestellt.');
@@ -44,6 +50,11 @@ assert.match(runtimeService, /delete window\.NoBrainerRuntimeBootstrap;/, 'Der t
 assert.match(runtimeService, /this\.runtime = runtime;/, 'Die registrierte Runtime wird nicht im Angular-Service gespeichert.');
 assert.doesNotMatch(runtimeService, /NoBrainerLegacyRuntime/, 'Der Angular-Runtime-Service greift weiterhin auf window.NoBrainerLegacyRuntime zu.');
 
+assert.match(
+  gameTickAdapter,
+  /const LEGACY_GAME_TICK_BLOCK = `function gameTick\(\)\{/,
+  'Der gameTick-Cutover besitzt keinen eindeutigen Legacy-Anker.'
+);
 assert.match(
   registrationAdapter,
   /const runtimeBootstrap=window\.NoBrainerRuntimeBootstrap;/,
@@ -60,4 +71,4 @@ assert.match(
   'Der Adapter besitzt nicht mehr den erwarteten alten Registrierungsanker.'
 );
 
-console.log('Runtime-Eigentümerschaft: Die Runtime-Instanz liegt in Angular; window.NoBrainerLegacyRuntime ist aus der laufenden Architektur entfernt und der globale Bootstrap existiert nur während der Script-Registrierung.');
+console.log('Runtime-Eigentümerschaft: Runtime-Instanz und zentraler Tick-Lebenszyklus liegen in Angular; globale Legacy-Runtime und Legacy-gameTick sind aus dem laufenden Pfad entfernt.');
