@@ -87,6 +87,8 @@ try {
     '--hide-scrollbars',
     '--no-first-run',
     '--no-default-browser-check',
+    '--enable-logging=stderr',
+    '--v=1',
     `--user-data-dir=${browserProfile}`,
     '--virtual-time-budget=3500',
     '--dump-dom',
@@ -111,7 +113,10 @@ try {
 
     const inspect = () => {
       if (/Die NoBrainer-Runtime konnte nicht geladen werden/.test(stdout)) {
-        finish(rejectRun, new Error(`Die gebaute Anwendung fiel beim Browserstart in den Runtime-Fehlerzustand.\n${stderr}`));
+        finish(
+          rejectRun,
+          new Error(`Die gebaute Anwendung fiel beim Browserstart in den Runtime-Fehlerzustand.\n${stderr}\nDOM-Ausgabe: ${stdout.slice(-4000)}`)
+        );
         return;
       }
 
