@@ -1,5 +1,9 @@
 import assert from 'node:assert/strict';
-import { createWeaponPresentationCore, getComparisonPresentation } from '../src/app/game/weapon-presentation-core.ts';
+import {
+  createWeaponPresentationCore,
+  getComparisonPresentation,
+  sortWeaponInventory
+} from '../src/app/game/weapon-presentation-core.ts';
 
 const presentation = createWeaponPresentationCore({
   resolveFormName: (weaponForm, starter) => weaponForm === 'dagger' ? 'Dolch' : starter ? 'Einhänder' : 'Waffe',
@@ -11,6 +15,12 @@ assert.deepEqual(getComparisonPresentation(10, null), null);
 assert.deepEqual(getComparisonPresentation(10, 10), { text: '(±0)', tone: 'same' });
 assert.deepEqual(getComparisonPresentation(0.7, 0.6, true), { text: '(+10 %)', tone: 'good' });
 assert.deepEqual(getComparisonPresentation(8, 10), { text: '(−2.00)', tone: 'bad' });
+
+const unsortedInventory = [{ id: 7 }, { id: 2 }, { id: 11 }];
+const sortedInventory = sortWeaponInventory(unsortedInventory);
+assert.deepEqual(sortedInventory.map(weapon => weapon.id), [2, 7, 11]);
+assert.deepEqual(unsortedInventory.map(weapon => weapon.id), [7, 2, 11]);
+assert.notEqual(sortedInventory, unsortedInventory);
 
 const compare = {
   id: 1,
@@ -75,4 +85,4 @@ assert.deepEqual(starter.stats.at(-1)?.value, { kind: 'text', text: 'Nicht verk�
 const unpriced = presentation.getWeaponCardPresentation({ id: 3, name: 'Unbekannt', stats: {} });
 assert.deepEqual(unpriced.stats.at(-1)?.value, { kind: 'text', text: '–' });
 
-console.log('Weapon-Presentation-Core: Form, Seltenheit, Verstärkung, Werte und Vergleichsdifferenzen sind konsistent.');
+console.log('Weapon-Presentation-Core: Form, Seltenheit, Verstärkung, Werte, Vergleichsdifferenzen und Lagerreihenfolge sind konsistent.');
