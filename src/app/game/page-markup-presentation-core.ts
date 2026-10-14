@@ -1,4 +1,4 @@
-import { INDEX_PAGE_MARKUP } from './index-page-markup';
+import { INDEX_PAGE_MARKUP } from './index-page-markup.ts';
 
 export const ANGULAR_OWNED_PAGE_IDS = ['base', 'tavern', 'roster', 'storage', 'forge', 'market', 'dungeon', 'index'] as const;
 
