@@ -49,6 +49,6 @@ assert.match(
   /querySelector<HTMLScriptElement>\('body > script'\)/,
   'Das Legacy-Script soll in diesem Schritt weiterhin kontrolliert aus der Referenz geladen werden.'
 );
-assert.match(appComponent, /const APP_VERSION = '0\.12\.52';/, 'Die App-Version wurde nicht auf v0.12.52 gesetzt.');
+assert.match(appComponent, /const APP_VERSION = '0\.12\.53';/, 'Die App-Version wurde nicht auf v0.12.53 gesetzt.');
 
 console.log('App-Shell-Präsentation: Navigation, Topbar und Ressourcenrahmen bleiben Angular-eigen; Seitenmarkup läuft über den separaten Composer.');
