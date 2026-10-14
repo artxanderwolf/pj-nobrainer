@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { formatCurrencyNickel } from '../game/economy-core';
 import { OfflineProgressService, SaveSnapshot } from './offline-progress.service';
 import { SaveStorageService } from './save-storage.service';
+import { GameDungeonService, type DungeonActionResult } from './game-dungeon.service';
 import { GameEnergyService } from './game-energy.service';
 import { GameForgeService } from './game-forge.service';
 import { GameMarketService } from './game-market.service';
@@ -15,7 +16,6 @@ interface GameSaveStorageAdapter {
 export interface GameRuntimeApi {
   configureSaveStorage(adapter: GameSaveStorageAdapter): void;
   prepare(): void;
-  updateDungeonAutomation(): void;
   renderForgeJob(): void;
   renderMarketJob(): void;
   renderDungeonStatus(): void;
@@ -56,7 +56,8 @@ export class GameRuntimeService {
     private readonly offlineProgress: OfflineProgressService,
     private readonly gameEnergy: GameEnergyService,
     private readonly gameForge: GameForgeService,
-    private readonly gameMarket: GameMarketService
+    private readonly gameMarket: GameMarketService,
+    private readonly gameDungeon: GameDungeonService
   ) {}
 
   openBootstrapRegistration(): void {
@@ -88,7 +89,8 @@ export class GameRuntimeService {
     this.logForgeCompletions(runtime, forgeUpdate.completedNames);
     const marketUpdate = this.gameMarket.update();
     this.logMarketCompletions(runtime, marketUpdate.completedSales);
-    runtime.updateDungeonAutomation();
+    const dungeonUpdate = this.gameDungeon.update();
+    this.applyDungeonResult(runtime, dungeonUpdate);
     this.gameEnergy.update();
 
     if (before && this.offlineProgress.shouldShowSummary(before)) {
@@ -125,7 +127,6 @@ export class GameRuntimeService {
     const required: Array<keyof GameRuntimeApi> = [
       'configureSaveStorage',
       'prepare',
-      'updateDungeonAutomation',
       'renderForgeJob',
       'renderMarketJob',
       'renderDungeonStatus',
@@ -168,7 +169,8 @@ export class GameRuntimeService {
     const marketUpdate = this.gameMarket.update();
     const marketCompleted = marketUpdate.completedCount > 0;
     this.logMarketCompletions(runtime, marketUpdate.completedSales);
-    runtime.updateDungeonAutomation();
+    const dungeonUpdate = this.gameDungeon.update();
+    this.applyDungeonResult(runtime, dungeonUpdate);
 
     runtime.renderForgeJob();
     runtime.renderMarketJob();
@@ -207,6 +209,13 @@ export class GameRuntimeService {
         'good'
       );
     }
+  }
+
+  private applyDungeonResult(runtime: GameRuntimeApi, result: DungeonActionResult): void {
+    for (const event of result.events) {
+      runtime.addLog(event.text, event.className);
+    }
+    if (result.saveRequested) runtime.save(false);
   }
 
   private registerVisibilityHandler(): void {
