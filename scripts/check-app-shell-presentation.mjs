@@ -31,7 +31,7 @@ for (const pageId of APP_SHELL_PAGE_IDS) {
 
 assert.match(
   appComponent,
-  /composePageMarkup\(pageId => \{/,
+  /composePageMarkup\(APP_SHELL_PAGE_IDS, pageId => \{/,
   'Der App-Component bezieht Seitenmarkup nicht mehr über den kontrollierten Seiten-Composer.'
 );
 assert.match(
