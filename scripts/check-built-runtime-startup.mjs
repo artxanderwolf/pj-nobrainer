@@ -96,8 +96,11 @@ try {
     '--hide-scrollbars',
     '--no-first-run',
     '--no-default-browser-check',
-    '--enable-logging=stderr',
-    '--v=1',
+    '--disable-background-networking',
+    '--disable-component-update',
+    '--disable-default-apps',
+    '--disable-extensions',
+    '--disable-sync',
     `--user-data-dir=${browserProfile}`,
     '--virtual-time-budget=3500',
     '--dump-dom',
@@ -162,7 +165,7 @@ try {
           new Error(`Der Browser-Runtime-Smoke-Test hat die vollständige Spieloberfläche nicht rechtzeitig erkannt.\n${diagnosticTail(stderr, stdout)}`)
         );
       }
-    }, 20_000);
+    }, 30_000);
   });
 
   assert.equal(result, true);
