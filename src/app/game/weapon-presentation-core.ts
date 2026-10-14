@@ -24,6 +24,10 @@ export interface WeaponCardLike {
   valueNickel?: number | null;
 }
 
+export interface WeaponInventorySortableLike {
+  id?: number | string | null;
+}
+
 export interface WeaponPresentationDependencies {
   resolveFormName(weaponForm: string | null | undefined, starter: boolean): string;
   rarityFactor(slots: readonly unknown[] | null | undefined): number;
@@ -60,6 +64,14 @@ export interface WeaponCardPresentation {
 function numeric(value: number | null | undefined): number {
   const normalized = Number(value);
   return Number.isFinite(normalized) ? normalized : 0;
+}
+
+export function sortWeaponInventory<T extends WeaponInventorySortableLike>(weapons: readonly T[]): T[] {
+  return [...weapons].sort((a, b) => {
+    const aId = Number(a.id);
+    const bId = Number(b.id);
+    return (Number.isFinite(aId) ? aId : 0) - (Number.isFinite(bId) ? bId : 0);
+  });
 }
 
 export function getComparisonPresentation(
@@ -162,7 +174,7 @@ export function createWeaponPresentationCore(dependencies: WeaponPresentationDep
     };
   }
 
-  return { getComparisonPresentation, getRarityLabel, getWeaponCardPresentation };
+  return { getComparisonPresentation, getRarityLabel, getWeaponCardPresentation, sortWeaponInventory };
 }
 
 export type WeaponPresentationCoreBridge = ReturnType<typeof createWeaponPresentationCore>;
