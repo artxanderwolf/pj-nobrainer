@@ -1,65 +1,46 @@
 import { Injectable } from '@angular/core';
-import {
-  DUNGEON_PRESENTATION_CORE_BRIDGE,
-  type DungeonPresentationCoreBridge
-} from '../game/dungeon-presentation-core';
 
-declare global {
-  interface Window {
-    NoBrainerDungeonPresentationCore?: DungeonPresentationCoreBridge;
-  }
+const LEGACY_DUNGEON_SUMMARY_BLOCK = `  const displayedCount=state.dungeonRun?.participantIds?.length||getSelectedDungeonIds().length;
+  document.getElementById("enemyHp").textContent=\`${'${CONFIG.dungeon.enemyBase.damage}'} Basis-SCH\`;
+  document.getElementById("enemyArmor").textContent=\`${'${Math.round(CONFIG.dungeon.enemyBase.hitChance*100)}'} % Basis-TRF\`;
+  document.getElementById("enemyDamage").textContent=\`${'${CONFIG.dungeon.enemyBase.speed.toFixed(2)}'} Basis-GES\`;
+  const share=getEnergyCostPerCharacter(displayedCount);
+  document.getElementById("energyCost").textContent=displayedCount?\`${'${share}'} je Char. (${'${share*displayedCount}'} gesamt)\`:"–";
+  document.getElementById("runDuration").textContent=\`${'${state.dungeonWavesDefeated||0}'} besiegt\`;
+
+`;
+
+const DUNGEON_PRESENTATION_ACCESSOR = `function getDungeonPresentationCompatibility(){
+  const bridge=window.NoBrainerDungeonPresentationCompatibility;
+  if(!bridge)throw new Error("NoBrainer-Dungeon-Präsentationsbrücke wurde nicht registriert.");
+  return bridge;
 }
+`;
 
 const ADAPTED_DUNGEON_STATUS = `function renderDungeonStatus(){
-  renderDungeonSessionWaveCounter();
-  const box=document.getElementById("dungeonRunCard"),autoBtn=document.getElementById("autoDungeonBtn"),collectBtn=document.getElementById("collectLootBtn");if(!box||!autoBtn||!collectBtn)return;
-  const presentation=window.NoBrainerDungeonPresentationCore.getDungeonStatusPresentation({
-    auto:!!state.dungeonAuto,
-    selectedCharacterCount:getSelectedDungeonIds().length,
-    run:state.dungeonRun||null,
-    lootCollect:state.dungeonLootCollect||null,
-    lootTotal:Object.values(state.dungeonLoot||{}).reduce((sum,item)=>sum+(item.qty||0),0)
-  });
-  autoBtn.textContent=presentation.autoButtonText;autoBtn.disabled=presentation.autoButtonDisabled;
-  collectBtn.textContent=presentation.collectButtonText;collectBtn.disabled=presentation.collectButtonDisabled;
-  const card=presentation.card;box.className=card.className;
-  if(card.mode==="active"){
-    box.innerHTML='<strong>'+card.title+'</strong><p>'+card.aliveText+'</p><p class="muted small">'+card.metaText+'</p><div class="statrow">'+card.enemies.map(enemy=>'<div class="stat"><span>'+enemy.name+'</span><b>'+enemy.hpText+'</b></div>').join("")+'</div>';return;
-  }
-  if(card.mode==="collecting"||card.mode==="searching"){
-    box.innerHTML='<strong>'+card.title+'</strong><br><span class="small">'+card.detailText+'</span>';return;
-  }
-  box.innerHTML=card.text;
+  getDungeonPresentationCompatibility().renderStatus();
 }
 `;
 
 const ADAPTED_DUNGEON_LOOT = `function renderDungeonLoot(){
-  const box=document.getElementById("dungeonLoot"),empty=document.getElementById("dungeonLootEmpty");if(!box||!empty)return;
-  const presentation=window.NoBrainerDungeonPresentationCore.getDungeonLootPresentation(state.dungeonLoot||{});
-  box.innerHTML="";empty.style.display=presentation.empty?"block":"none";if(presentation.empty)return;
-  const grid=document.createElement("div");grid.className="loot-grid";
-  presentation.entries.forEach(entry=>{
-    const chip=document.createElement("div");chip.className="loot-chip";chip.innerHTML=entry.name+'<b>'+entry.quantityText+'</b>';grid.appendChild(chip);
-  });
-  box.appendChild(grid);
+  getDungeonPresentationCompatibility().renderLoot();
 }
 `;
 
 @Injectable({ providedIn: 'root' })
 export class LegacyDungeonPresentationAdapterService {
   adapt(source: string): string {
-    window.NoBrainerDungeonPresentationCore = DUNGEON_PRESENTATION_CORE_BRIDGE;
     let adapted = this.replaceOnce(
       source,
-      'document.getElementById("runDuration").textContent=`${state.dungeonWavesDefeated||0} besiegt`;',
-      'renderDungeonSessionWaveCounter();',
-      'Dungeon-Wellenanzeige'
+      LEGACY_DUNGEON_SUMMARY_BLOCK,
+      '',
+      'Dungeon-Zusammenfassung im Vollrender'
     );
     adapted = this.replaceRangeOnce(
       adapted,
       'function renderDungeonStatus(){',
       'function renderDungeonLoot(){',
-      ADAPTED_DUNGEON_STATUS + '\n',
+      DUNGEON_PRESENTATION_ACCESSOR + ADAPTED_DUNGEON_STATUS + '\n',
       'Dungeon-Status-Präsentation'
     );
     adapted = this.replaceRangeOnce(
@@ -75,7 +56,9 @@ export class LegacyDungeonPresentationAdapterService {
   private replaceOnce(source: string, search: string, replacement: string, label: string): string {
     const first = source.indexOf(search);
     if (first < 0) throw new Error(`Legacy-Kompatibilität fehlgeschlagen: ${label} wurde nicht gefunden.`);
-    if (source.indexOf(search, first + search.length) >= 0) throw new Error(`Legacy-Kompatibilität fehlgeschlagen: ${label} ist nicht eindeutig.`);
+    if (source.indexOf(search, first + search.length) >= 0) {
+      throw new Error(`Legacy-Kompatibilität fehlgeschlagen: ${label} ist nicht eindeutig.`);
+    }
     return source.slice(0, first) + replacement + source.slice(first + search.length);
   }
 

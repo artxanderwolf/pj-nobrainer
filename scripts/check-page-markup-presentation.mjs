@@ -16,6 +16,20 @@ function extractLegacyPage(pageId) {
   return match[0];
 }
 
+function expectedReferenceMarkup(pageId) {
+  const reference = extractLegacyPage(pageId);
+  if (pageId !== 'dungeon') return reference;
+  return reference
+    .replace(
+      'onclick="toggleDungeonAuto()"',
+      'type="button" data-dungeon-action="toggle-auto"'
+    )
+    .replace(
+      'onclick="collectDungeonLoot()"',
+      'type="button" data-dungeon-action="collect-loot"'
+    );
+}
+
 function normalizeMarkup(markup) {
   return markup
     .replace(/\r\n/g, '\n')
@@ -28,13 +42,13 @@ function normalizeMarkup(markup) {
 assert.deepEqual(
   [...ANGULAR_OWNED_PAGE_IDS],
   ['base', 'tavern', 'roster', 'storage', 'forge', 'market', 'dungeon', 'index'],
-  'Für v0.12.66 sollen alle acht sichtbaren Seiten Angular-eigenes Seitenmarkup besitzen.'
+  'Für v0.12.67 sollen alle acht sichtbaren Seiten Angular-eigenes Seitenmarkup besitzen.'
 );
 
 for (const pageId of ANGULAR_OWNED_PAGE_IDS) {
   assert.equal(
     normalizeMarkup(getAngularOwnedPageMarkup(pageId)),
-    normalizeMarkup(extractLegacyPage(pageId)),
+    normalizeMarkup(expectedReferenceMarkup(pageId)),
     `Das Angular-Markup für ${pageId} weicht von der bisherigen Referenzdarstellung ab.`
   );
 }
@@ -76,6 +90,9 @@ assert.match(dungeonMarkup, /id="runDuration"/, 'Der Wellenzähler-Anker fehlt i
 assert.match(dungeonMarkup, /id="dungeonRunCard"/, 'Der Dungeon-Statusanker fehlt im Angular-eigenen Dungeon-Markup.');
 assert.match(dungeonMarkup, /id="autoDungeonBtn"/, 'Der Dungeon-Automatikbutton fehlt im Angular-eigenen Dungeon-Markup.');
 assert.match(dungeonMarkup, /id="collectLootBtn"/, 'Der Beute-Einsammelbutton fehlt im Angular-eigenen Dungeon-Markup.');
+assert.match(dungeonMarkup, /data-dungeon-action="toggle-auto"/, 'Der Automatikbutton ist nicht an die Angular-Dungeon-Interaktion gebunden.');
+assert.match(dungeonMarkup, /data-dungeon-action="collect-loot"/, 'Der Einsammelbutton ist nicht an die Angular-Dungeon-Interaktion gebunden.');
+assert.doesNotMatch(dungeonMarkup, /onclick="toggleDungeonAuto\(\)"|onclick="collectDungeonLoot\(\)"/, 'Dungeon-Hauptaktionen verwenden weiterhin globale Legacy-onclick-Handler.');
 assert.match(dungeonMarkup, /id="teamCard"/, 'Der Dungeon-Team-Renderanker fehlt im Angular-eigenen Dungeon-Markup.');
 assert.match(dungeonMarkup, /id="dungeonLoot"/, 'Der Dungeon-Beute-Renderanker fehlt im Angular-eigenen Dungeon-Markup.');
 assert.match(dungeonMarkup, /id="dungeonLootEmpty"/, 'Der Dungeon-Beute-Leerzustand fehlt im Angular-eigenen Dungeon-Markup.');
@@ -106,6 +123,6 @@ assert.doesNotMatch(appComponent, /querySelector<HTMLElement>\('body > \.app'\)/
 assert.doesNotMatch(appComponent, /DOMParser/, 'Die Legacy-HTML wird weiterhin zur Laufzeit geparst.');
 assert.doesNotMatch(appComponent, /querySelector<HTMLScriptElement>/, 'Das Legacy-Script wird weiterhin aus der HTML-Datei extrahiert.');
 assert.match(appComponent, /composeAppShell\(pageMarkup\)/, 'Das Angular-eigene Seitenmarkup wird nicht mehr in die Angular-Shell eingesetzt.');
-assert.match(appComponent, /const APP_VERSION = '0\.12\.66';/, 'Die App-Version wurde nicht auf v0.12.66 gesetzt.');
+assert.match(appComponent, /const APP_VERSION = '0\.12\.67';/, 'Die App-Version wurde nicht auf v0.12.67 gesetzt.');
 
-console.log('Seiten-Markup: Alle acht sichtbaren Seiten liegen vollständig in Angular; die Legacy-HTML ist auch keine Runtime-Quelle mehr.');
+console.log('Seiten-Markup: Alle acht sichtbaren Seiten liegen in Angular; die zwei Dungeon-Hauptaktionen verwenden jetzt Angular-eigene Aktionsanker statt globaler Legacy-onclick-Handler.');

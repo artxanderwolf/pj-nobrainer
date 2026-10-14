@@ -48,6 +48,6 @@ const openMarketIndex = appComponent.indexOf('this.gameMarket.openLegacyCompatib
 const openStateIndex = appComponent.indexOf('this.gameState.openBootstrapRegistration();');
 assert.ok(openForgeIndex >= 0 && openMarketIndex > openForgeIndex && openStateIndex > openMarketIndex, 'Die Markt-Kompatibilitätsbrücke wird nicht vor State- und Runtime-Bootstrap geöffnet.');
 assert.match(appComponent, /ngOnDestroy\(\): void \{[\s\S]*this\.gameMarket\.closeLegacyCompatibilityBridge\(\);/, 'Die Markt-Kompatibilitätsbrücke wird beim App-Abbau nicht geschlossen.');
-assert.match(appComponent, /const APP_VERSION = '0\.12\.66';/, 'Die App-Version wurde nicht auf v0.12.66 gesetzt.');
+assert.match(appComponent, /const APP_VERSION = '0\.12\.67';/, 'Die App-Version wurde nicht auf v0.12.67 gesetzt.');
 
 console.log('Markt-Eigentümerschaft: Material-/Waffenverkauf, Plätze, Queue, Abbruch, Rückgabe, Fortschritt und Erlös laufen auf Angular-State im GameMarketService; Legacy-Code enthält nur noch UI-Kompatibilitätswrapper.');

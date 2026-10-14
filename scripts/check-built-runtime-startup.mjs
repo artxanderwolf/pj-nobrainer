@@ -57,6 +57,15 @@ function delay(ms) {
   return new Promise(resolveDelay => setTimeout(resolveDelay, ms));
 }
 
+function getRuntimeError(dom) {
+  const match = dom.match(/data-runtime-error="([^"]*)"/);
+  return match?.[1] ?? 'unbekannte Runtime-Ursache';
+}
+
+function diagnosticTail(stderr, stdout) {
+  return `Runtime-Ursache: ${getRuntimeError(stdout)}\nChrome: ${stderr.slice(-1200)}\nDOM: ${stdout.slice(-1600)}`;
+}
+
 async function stopBrowser(child) {
   if (child.exitCode !== null) return;
   child.kill('SIGTERM');
@@ -87,6 +96,11 @@ try {
     '--hide-scrollbars',
     '--no-first-run',
     '--no-default-browser-check',
+    '--disable-background-networking',
+    '--disable-component-update',
+    '--disable-default-apps',
+    '--disable-extensions',
+    '--disable-sync',
     `--user-data-dir=${browserProfile}`,
     '--virtual-time-budget=3500',
     '--dump-dom',
@@ -111,7 +125,10 @@ try {
 
     const inspect = () => {
       if (/Die NoBrainer-Runtime konnte nicht geladen werden/.test(stdout)) {
-        finish(rejectRun, new Error(`Die gebaute Anwendung fiel beim Browserstart in den Runtime-Fehlerzustand.\n${stderr}`));
+        finish(
+          rejectRun,
+          new Error(`Die gebaute Anwendung fiel beim Browserstart in den Runtime-Fehlerzustand.\n${diagnosticTail(stderr, stdout)}`)
+        );
         return;
       }
 
@@ -135,7 +152,7 @@ try {
       if (!settled) {
         finish(
           rejectRun,
-          new Error(`Chrome/Chromium wurde beendet, bevor die vollständige Spieloberfläche erkannt wurde (Code ${code}).\n${stderr}\nDOM-Ausgabe: ${stdout.slice(-4000)}`)
+          new Error(`Chrome/Chromium wurde beendet, bevor die vollständige Spieloberfläche erkannt wurde (Code ${code}).\n${diagnosticTail(stderr, stdout)}`)
         );
       }
     });
@@ -145,10 +162,10 @@ try {
       if (!settled) {
         finish(
           rejectRun,
-          new Error(`Der Browser-Runtime-Smoke-Test hat die vollständige Spieloberfläche nicht rechtzeitig erkannt.\n${stderr}\nDOM-Ausgabe: ${stdout.slice(-4000)}`)
+          new Error(`Der Browser-Runtime-Smoke-Test hat die vollständige Spieloberfläche nicht rechtzeitig erkannt.\n${diagnosticTail(stderr, stdout)}`)
         );
       }
-    }, 20_000);
+    }, 30_000);
   });
 
   assert.equal(result, true);

@@ -1,5 +1,5 @@
 import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
-import { GameDungeonService } from './core/game-dungeon.service';
+import { GameDungeonPresentationService } from './core/game-dungeon-presentation.service';
 import { GameEnergyService } from './core/game-energy.service';
 import { GameForgeService } from './core/game-forge.service';
 import { GameMarketService } from './core/game-market.service';
@@ -34,7 +34,7 @@ import { APP_SHELL_PAGE_IDS, composeAppShell } from './game/app-shell-presentati
 import { composePageMarkup } from './game/page-markup-presentation-core';
 import { adaptLegacyWeaponMarkup, adaptLegacyWeaponScript } from './game/weapon-naming';
 
-const APP_VERSION = '0.12.66';
+const APP_VERSION = '0.12.67';
 const LEGACY_RUNTIME_PATH = 'legacy/NoBrainer_GitHub_v0.12.2.runtime.js';
 const LEGACY_SCRIPT_ID = 'nobrainer-legacy-script';
 
@@ -48,7 +48,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     private readonly gameEnergy: GameEnergyService,
     private readonly gameForge: GameForgeService,
     private readonly gameMarket: GameMarketService,
-    private readonly gameDungeon: GameDungeonService,
+    private readonly gameDungeonPresentation: GameDungeonPresentationService,
     private readonly legacySourceAdapter: LegacySourceAdapterService,
     private readonly legacyStateAdapter: LegacyStateAdapterService,
     private readonly legacyGameTickAdapter: LegacyGameTickAdapterService,
@@ -84,18 +84,21 @@ export class AppComponent implements AfterViewInit, OnDestroy {
       try { this.gameRuntime.renderInitial(); } catch (error: unknown) { console.error('Der erste NoBrainer-Render ist fehlgeschlagen.', error); }
     } catch (error: unknown) {
       this.gameRuntime.stopTick();
-      this.gameDungeon.closeLegacyCompatibilityBridge();
+      this.gameDungeonPresentation.closeLegacyCompatibilityBridge();
+      this.gameDungeonPresentation.detach();
       this.gameMarket.closeLegacyCompatibilityBridge();
       this.gameForge.closeLegacyCompatibilityBridge();
       this.gameEnergy.closeLegacyCompatibilityBridge();
       console.error('Die NoBrainer-Runtime konnte nicht geladen werden.', error);
+      this.legacyHost.nativeElement.dataset['runtimeError'] = error instanceof Error ? error.message : String(error);
       this.legacyHost.nativeElement.textContent = 'Die NoBrainer-Runtime konnte nicht geladen werden. Bitte Seite neu laden.';
     }
   }
 
   ngOnDestroy(): void {
     this.gameRuntime.stopTick();
-    this.gameDungeon.closeLegacyCompatibilityBridge();
+    this.gameDungeonPresentation.closeLegacyCompatibilityBridge();
+    this.gameDungeonPresentation.detach();
     this.gameMarket.closeLegacyCompatibilityBridge();
     this.gameForge.closeLegacyCompatibilityBridge();
     this.gameEnergy.closeLegacyCompatibilityBridge();
@@ -117,7 +120,9 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     adaptedScript = this.legacySaveStatusPresentationAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyCombatLogPresentationAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyDungeonDomainAdapter.adapt(adaptedScript);
+    this.validateLegacyScriptStage('Dungeon-Domain-Adapter', adaptedScript);
     adaptedScript = this.legacyDungeonPresentationAdapter.adapt(adaptedScript);
+    this.validateLegacyScriptStage('Dungeon-Präsentationsadapter', adaptedScript);
     adaptedScript = adaptLegacyWeaponScript(adaptedScript);
     adaptedScript = this.legacyWeaponPresentationAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyMaterialPresentationAdapter.adapt(adaptedScript);
@@ -131,17 +136,23 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     adaptedScript = this.legacyCharacterAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyEquipmentAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyCharacterPresentationAdapter.adapt(adaptedScript);
+    this.validateLegacyScriptStage('Character-Präsentationsadapter', adaptedScript);
     adaptedScript = this.legacyProgressionAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyProgressionPresentationAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyEnergyAdapter.adapt(adaptedScript);
+    this.assertLegacyScriptSyntax(adaptedScript);
     const adaptedMarkup = adaptLegacyWeaponMarkup(composeAppShell(pageMarkup));
     this.legacyHost.nativeElement.innerHTML = adaptedMarkup;
     this.applyVersionMarker();
 
+    this.gameDungeonPresentation.attach(
+      this.legacyHost.nativeElement,
+      result => this.gameRuntime.handleDungeonActionResult(result)
+    );
+    this.gameDungeonPresentation.openLegacyCompatibilityBridge();
     this.gameEnergy.openLegacyCompatibilityBridge();
     this.gameForge.openLegacyCompatibilityBridge();
     this.gameMarket.openLegacyCompatibilityBridge();
-    this.gameDungeon.openLegacyCompatibilityBridge();
     this.gameState.openBootstrapRegistration();
     try {
       this.gameRuntime.openBootstrapRegistration();
@@ -154,6 +165,19 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     } finally {
       this.gameState.closeBootstrapRegistration();
     }
+  }
+
+  private validateLegacyScriptStage(stage: string, source: string): void {
+    try {
+      new Function(source);
+    } catch (error: unknown) {
+      const detail = error instanceof Error ? error.message : String(error);
+      throw new Error(`Adaptierte NoBrainer-Runtime ist nach ${stage} ungültig: ${detail}`);
+    }
+  }
+
+  private assertLegacyScriptSyntax(source: string): void {
+    this.validateLegacyScriptStage('vollständiger Adapterkette', source);
   }
 
   private applyVersionMarker(): void {

@@ -160,8 +160,8 @@ const DUNGEON_PAGE_MARKUP = `<section class="page" id="dungeon">
           </div>
           <div id="dungeonRunCard" class="empty" style="margin-top:14px">Automatik angehalten.</div>
           <div class="actions">
-            <button id="autoDungeonBtn" class="btn primary" onclick="toggleDungeonAuto()">Automatik starten</button>
-            <button id="collectLootBtn" class="btn" onclick="collectDungeonLoot()">Einsammeln</button>
+            <button id="autoDungeonBtn" class="btn primary" type="button" data-dungeon-action="toggle-auto">Automatik starten</button>
+            <button id="collectLootBtn" class="btn" type="button" data-dungeon-action="collect-loot">Einsammeln</button>
           </div>
           <p class="status-line">Die Gruppe durchsucht den Dungeon im Sekundentakt. Pro Suchschritt besteht eine Begegnungschance von 10 %. Energie wird erst bezahlt, wenn tatsächlich Gegner gefunden wurden. Jede vollständig besiegte Welle gibt genau einen Materialwurf pro Gegner.</p>
           <p class="status-line"><strong>Hinweis:</strong> Nach einem Sieg wird die Beute 1 Sekunde lang eingesammelt; danach beginnt die Suche erneut. Bei einer Niederlage startet das Team mit vollen HP wieder im Suchmodus.</p>

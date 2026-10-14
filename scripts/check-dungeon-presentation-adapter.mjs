@@ -19,8 +19,8 @@ function extractTemplateConstant(name) {
 
 function replaceOnce(source, search, replacement) {
   const first = source.indexOf(search);
-  assert.ok(first >= 0, `Anker fehlt: ${search}`);
-  assert.equal(source.indexOf(search, first + search.length), -1, `Anker ist nicht eindeutig: ${search}`);
+  assert.ok(first >= 0, `Anker fehlt: ${search.slice(0, 80)}`);
+  assert.equal(source.indexOf(search, first + search.length), -1, 'Anker ist nicht eindeutig.');
   return source.slice(0, first) + replacement + source.slice(first + search.length);
 }
 
@@ -34,145 +34,67 @@ function replaceRangeOnce(source, startMarker, endMarker, replacement) {
   return source.slice(0, start) + replacement + source.slice(end);
 }
 
+const summaryBlock = [
+  '  const displayedCount=state.dungeonRun?.participantIds?.length||getSelectedDungeonIds().length;',
+  '  document.getElementById("enemyHp").textContent=`${CONFIG.dungeon.enemyBase.damage} Basis-SCH`;',
+  '  document.getElementById("enemyArmor").textContent=`${Math.round(CONFIG.dungeon.enemyBase.hitChance*100)} % Basis-TRF`;',
+  '  document.getElementById("enemyDamage").textContent=`${CONFIG.dungeon.enemyBase.speed.toFixed(2)} Basis-GES`;',
+  '  const share=getEnergyCostPerCharacter(displayedCount);',
+  '  document.getElementById("energyCost").textContent=displayedCount?`${share} je Char. (${share*displayedCount} gesamt)`:"–";',
+  '  document.getElementById("runDuration").textContent=`${state.dungeonWavesDefeated||0} besiegt`;',
+  '',
+  ''
+].join('\n');
+const accessor = extractTemplateConstant('DUNGEON_PRESENTATION_ACCESSOR');
 const statusReplacement = extractTemplateConstant('ADAPTED_DUNGEON_STATUS');
 const lootReplacement = extractTemplateConstant('ADAPTED_DUNGEON_LOOT');
 
-assert.ok(
-  statusReplacement.includes('renderDungeonSessionWaveCounter();'),
-  'Der Wellenzähler wird nicht mehr durch die Dungeon-Status-Präsentation aktualisiert.'
-);
-assert.equal(
-  adapterSource.includes('Dungeon-Wellenaktualisierung im Runtime-Tick'),
-  false,
-  'Der Dungeon-Präsentationsadapter hängt weiterhin vom entfernten Legacy-gameTick ab.'
-);
-
 let source = scriptMatch[1];
-source = replaceOnce(
+source = replaceOnce(source, summaryBlock, '');
+source = replaceRangeOnce(
   source,
-  'document.getElementById("runDuration").textContent=`${state.dungeonWavesDefeated||0} besiegt`;',
-  'renderDungeonSessionWaveCounter();'
+  'function renderDungeonStatus(){',
+  'function renderDungeonLoot(){',
+  accessor + statusReplacement + '\n'
 );
-source = replaceRangeOnce(source, 'function renderDungeonStatus(){', 'function renderDungeonLoot(){', statusReplacement + '\n');
-source = replaceRangeOnce(source, 'function renderDungeonLoot(){', 'function render(){', lootReplacement + '\n');
+source = replaceRangeOnce(
+  source,
+  'function renderDungeonLoot(){',
+  'function render(){',
+  lootReplacement + '\n'
+);
 
-new vm.Script(source, { filename: 'NoBrainer_GitHub_v0.12.60.dungeon-presentation-hotfix.js' });
+new vm.Script(source, { filename: 'NoBrainer_GitHub_v0.12.67.dungeon-presentation.js' });
 assert.equal(source.split('function renderDungeonStatus(){').length - 1, 1);
 assert.equal(source.split('function renderDungeonLoot(){').length - 1, 1);
-assert.ok(source.includes('window.NoBrainerDungeonPresentationCore.getDungeonStatusPresentation'));
-assert.ok(source.includes('window.NoBrainerDungeonPresentationCore.getDungeonLootPresentation'));
-assert.ok(source.includes('renderDungeonSessionWaveCounter();'));
+assert.ok(source.includes('getDungeonPresentationCompatibility().renderStatus();'));
+assert.ok(source.includes('getDungeonPresentationCompatibility().renderLoot();'));
+assert.equal(source.includes('window.NoBrainerDungeonPresentationCore'), false);
+assert.equal(source.includes('renderDungeonSessionWaveCounter'), false);
+assert.equal(source.includes('const displayedCount=state.dungeonRun?.participantIds?.length||getSelectedDungeonIds().length;'), false);
 
 const renderStart = source.indexOf('function render(){');
 const renderEnd = source.indexOf('function gameTick(){', renderStart);
 assert.ok(renderStart >= 0 && renderEnd > renderStart, 'Master-Render konnte nicht isoliert werden.');
 const masterRender = source.slice(renderStart, renderEnd);
-assert.ok(masterRender.includes('const displayedCount=state.dungeonRun?.participantIds?.length||getSelectedDungeonIds().length;'));
+assert.ok(masterRender.includes('renderDungeonStatus();renderDungeonLoot();'));
 assert.ok(masterRender.includes('const tbody=document.getElementById("inventoryRows");tbody.innerHTML="";'));
 assert.ok(masterRender.includes('renderForgePreview();'));
-assert.equal(masterRender.includes('renderDungeonOverview();'), false);
 
-function makeElement() {
-  return {
-    className: '',
-    innerHTML: '',
-    textContent: '',
-    disabled: false,
-    style: { display: '' },
-    children: [],
-    appendChild(child) { this.children.push(child); }
-  };
-}
-
-const elements = {
-  dungeonRunCard: makeElement(),
-  autoDungeonBtn: makeElement(),
-  collectLootBtn: makeElement(),
-  dungeonLoot: makeElement(),
-  dungeonLootEmpty: makeElement()
-};
-
-let capturedStatus = null;
-let capturedLoot = null;
-let waveCounterUpdates = 0;
-const state = {
-  dungeonAuto: true,
-  dungeonRun: {
-    participantIds: [1, 2],
-    energyShare: 4,
-    enemies: [{ name: 'G Goblin 1', hp: 7, maxHp: 10, alive: true }]
-  },
-  dungeonLootCollect: null,
-  dungeonLoot: {
-    Aluminium: { category: 'Metall', qty: 1 },
-    Zinn: { category: 'Metall', qty: 2 }
-  }
-};
-
+let statusCalls = 0;
+let lootCalls = 0;
 const context = {
-  state,
-  getSelectedDungeonIds: () => [1, 2],
-  renderDungeonSessionWaveCounter: () => { waveCounterUpdates += 1; },
-  document: {
-    getElementById: id => elements[id] ?? null,
-    createElement: () => makeElement()
-  }
-};
-context.window = {
-  NoBrainerDungeonPresentationCore: {
-    getDungeonStatusPresentation(input) {
-      capturedStatus = input;
-      return {
-        autoButtonText: 'Automatik anhalten',
-        autoButtonDisabled: false,
-        collectButtonText: 'Einsammeln (3)',
-        collectButtonDisabled: false,
-        card: {
-          mode: 'active',
-          className: '',
-          title: 'Welle aktiv',
-          aliveText: '1 / 1 Gegner leben',
-          metaText: '2 Charaktere · 4 EN je Charakter · Automatik aktiv',
-          enemies: [{ name: 'G Goblin 1', hpText: '7.0 / 10 HP' }]
-        }
-      };
-    },
-    getDungeonLootPresentation(input) {
-      capturedLoot = input;
-      return {
-        empty: false,
-        entries: [
-          { name: 'Aluminium', quantityText: '×1' },
-          { name: 'Zinn', quantityText: '×2' }
-        ]
-      };
+  window: {
+    NoBrainerDungeonPresentationCompatibility: {
+      renderStatus() { statusCalls += 1; },
+      renderLoot() { lootCalls += 1; },
+      renderTeam() {}
     }
   }
 };
-
 vm.createContext(context);
-new vm.Script(`${statusReplacement}\n${lootReplacement}\nrenderDungeonStatus();\nrenderDungeonLoot();`).runInContext(context);
+new vm.Script(`${accessor}\n${statusReplacement}\n${lootReplacement}\nrenderDungeonStatus();\nrenderDungeonLoot();`).runInContext(context);
+assert.equal(statusCalls, 1);
+assert.equal(lootCalls, 1);
 
-assert.equal(waveCounterUpdates, 1);
-assert.equal(capturedStatus.auto, true);
-assert.equal(capturedStatus.selectedCharacterCount, 2);
-assert.equal(capturedStatus.lootTotal, 3);
-assert.equal(capturedStatus.run, state.dungeonRun);
-assert.equal(capturedStatus.lootCollect, null);
-assert.equal(elements.autoDungeonBtn.textContent, 'Automatik anhalten');
-assert.equal(elements.autoDungeonBtn.disabled, false);
-assert.equal(elements.collectLootBtn.textContent, 'Einsammeln (3)');
-assert.equal(elements.collectLootBtn.disabled, false);
-assert.equal(elements.dungeonRunCard.className, '');
-assert.ok(elements.dungeonRunCard.innerHTML.includes('Welle aktiv'));
-assert.ok(elements.dungeonRunCard.innerHTML.includes('7.0 / 10 HP'));
-
-assert.equal(capturedLoot, state.dungeonLoot);
-assert.equal(elements.dungeonLootEmpty.style.display, 'none');
-assert.equal(elements.dungeonLoot.children.length, 1);
-assert.equal(elements.dungeonLoot.children[0].className, 'loot-grid');
-assert.equal(elements.dungeonLoot.children[0].children.length, 2);
-assert.equal(elements.dungeonLoot.children[0].children[0].innerHTML, 'Aluminium<b>×1</b>');
-assert.equal(elements.dungeonLoot.children[0].children[1].innerHTML, 'Zinn<b>×2</b>');
-
-console.log('Dungeon-Presentation-Adapter: Status/Beute bleiben migriert; der Wellenzähler gehört zur Dungeon-Status-Präsentation und hängt nicht mehr vom Legacy-gameTick ab.');
+console.log('Dungeon-Presentation-Adapter: Legacy-Runtime besitzt nur noch Render-Weiterleitungen; Status, Kennzahlen und Loot werden durch den Angular-Präsentationsservice erzeugt.');
