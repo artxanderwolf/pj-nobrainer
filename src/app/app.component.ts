@@ -119,14 +119,10 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     adaptedScript = this.legacyNavigationPresentationAdapter.adapt(adaptedScript);
     adaptedScript = this.legacySaveStatusPresentationAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyCombatLogPresentationAdapter.adapt(adaptedScript);
-    adaptedScript = this.validateLegacyScriptStage(
-      'Dungeon-Domain-Adapter',
-      this.legacyDungeonDomainAdapter.adapt(adaptedScript)
-    );
-    adaptedScript = this.validateLegacyScriptStage(
-      'Dungeon-Präsentationsadapter',
-      this.legacyDungeonPresentationAdapter.adapt(adaptedScript)
-    );
+    adaptedScript = this.legacyDungeonDomainAdapter.adapt(adaptedScript);
+    this.validateLegacyScriptStage('Dungeon-Domain-Adapter', adaptedScript);
+    adaptedScript = this.legacyDungeonPresentationAdapter.adapt(adaptedScript);
+    this.validateLegacyScriptStage('Dungeon-Präsentationsadapter', adaptedScript);
     adaptedScript = adaptLegacyWeaponScript(adaptedScript);
     adaptedScript = this.legacyWeaponPresentationAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyMaterialPresentationAdapter.adapt(adaptedScript);
@@ -139,10 +135,8 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     adaptedScript = this.legacyTavernPresentationAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyCharacterAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyEquipmentAdapter.adapt(adaptedScript);
-    adaptedScript = this.validateLegacyScriptStage(
-      'Character-Präsentationsadapter',
-      this.legacyCharacterPresentationAdapter.adapt(adaptedScript)
-    );
+    adaptedScript = this.legacyCharacterPresentationAdapter.adapt(adaptedScript);
+    this.validateLegacyScriptStage('Character-Präsentationsadapter', adaptedScript);
     adaptedScript = this.legacyProgressionAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyProgressionPresentationAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyEnergyAdapter.adapt(adaptedScript);
@@ -173,10 +167,9 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  private validateLegacyScriptStage(stage: string, source: string): string {
+  private validateLegacyScriptStage(stage: string, source: string): void {
     try {
       new Function(source);
-      return source;
     } catch (error: unknown) {
       const detail = error instanceof Error ? error.message : String(error);
       throw new Error(`Adaptierte NoBrainer-Runtime ist nach ${stage} ungültig: ${detail}`);
