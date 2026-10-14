@@ -34,7 +34,6 @@ function replaceRangeOnce(source, startMarker, endMarker, replacement) {
   return source.slice(0, start) + replacement + source.slice(end);
 }
 
-const overviewReplacement = extractTemplateConstant('ADAPTED_DUNGEON_OVERVIEW');
 const statusReplacement = extractTemplateConstant('ADAPTED_DUNGEON_STATUS');
 const lootReplacement = extractTemplateConstant('ADAPTED_DUNGEON_LOOT');
 
@@ -49,29 +48,24 @@ source = replaceOnce(
   '  renderDungeonStatus();\n  renderDungeonLoot();',
   '  renderDungeonStatus();\n  renderDungeonSessionWaveCounter();\n  renderDungeonLoot();'
 );
-source = replaceOnce(
-  source,
-  'function renderDungeonStatus(){',
-  overviewReplacement + '\nfunction renderDungeonStatus(){'
-);
-source = replaceRangeOnce(
-  source,
-  '  const displayedCount=state.dungeonRun?.participantIds?.length||getSelectedDungeonIds().length;',
-  '  renderCharacter("teamCard");renderCharacter("rosterCard");renderTavern();',
-  '  renderDungeonOverview();\n  renderDungeonSessionWaveCounter();\n\n'
-);
 source = replaceRangeOnce(source, 'function renderDungeonStatus(){', 'function renderDungeonLoot(){', statusReplacement + '\n');
 source = replaceRangeOnce(source, 'function renderDungeonLoot(){', 'function render(){', lootReplacement + '\n');
 
-new vm.Script(source, { filename: 'NoBrainer_GitHub_v0.12.42.dungeon-overview-presentation.js' });
-assert.equal(source.split('function renderDungeonOverview(){').length - 1, 1);
+new vm.Script(source, { filename: 'NoBrainer_GitHub_v0.12.43.dungeon-presentation-hotfix.js' });
 assert.equal(source.split('function renderDungeonStatus(){').length - 1, 1);
 assert.equal(source.split('function renderDungeonLoot(){').length - 1, 1);
-assert.ok(source.includes('window.NoBrainerDungeonPresentationCore.getDungeonOverviewPresentation'));
 assert.ok(source.includes('window.NoBrainerDungeonPresentationCore.getDungeonStatusPresentation'));
 assert.ok(source.includes('window.NoBrainerDungeonPresentationCore.getDungeonLootPresentation'));
-assert.ok(source.includes('renderDungeonOverview();\n  renderDungeonSessionWaveCounter();'));
-assert.equal(source.includes('document.getElementById("enemyHp").textContent=`${CONFIG.dungeon.enemyBase.damage} Basis-SCH`;'), false);
+assert.ok(source.includes('renderDungeonSessionWaveCounter();'));
+
+const renderStart = source.indexOf('function render(){');
+const renderEnd = source.indexOf('function gameTick(){', renderStart);
+assert.ok(renderStart >= 0 && renderEnd > renderStart, 'Master-Render konnte nicht isoliert werden.');
+const masterRender = source.slice(renderStart, renderEnd);
+assert.ok(masterRender.includes('const displayedCount=state.dungeonRun?.participantIds?.length||getSelectedDungeonIds().length;'));
+assert.ok(masterRender.includes('const tbody=document.getElementById("inventoryRows");tbody.innerHTML="";'));
+assert.ok(masterRender.includes('renderForgePreview();'));
+assert.equal(masterRender.includes('renderDungeonOverview();'), false);
 
 function makeElement() {
   return {
@@ -86,10 +80,6 @@ function makeElement() {
 }
 
 const elements = {
-  enemyHp: makeElement(),
-  enemyArmor: makeElement(),
-  enemyDamage: makeElement(),
-  energyCost: makeElement(),
   dungeonRunCard: makeElement(),
   autoDungeonBtn: makeElement(),
   collectLootBtn: makeElement(),
@@ -97,7 +87,6 @@ const elements = {
   dungeonLootEmpty: makeElement()
 };
 
-let capturedOverview = null;
 let capturedStatus = null;
 let capturedLoot = null;
 const state = {
@@ -116,13 +105,7 @@ const state = {
 
 const context = {
   state,
-  CONFIG: {
-    dungeon: {
-      enemyBase: { damage: 6, hitChance: 0.5, speed: 0.8 }
-    }
-  },
   getSelectedDungeonIds: () => [1, 2],
-  getEnergyCostPerCharacter: count => count > 0 ? 4 : 0,
   document: {
     getElementById: id => elements[id] ?? null,
     createElement: () => makeElement()
@@ -130,15 +113,6 @@ const context = {
 };
 context.window = {
   NoBrainerDungeonPresentationCore: {
-    getDungeonOverviewPresentation(input) {
-      capturedOverview = input;
-      return {
-        enemyDamageText: '6 Basis-SCH',
-        enemyHitChanceText: '50 % Basis-TRF',
-        enemySpeedText: '0.80 Basis-GES',
-        energyCostText: '4 je Char. (8 gesamt)'
-      };
-    },
     getDungeonStatusPresentation(input) {
       capturedStatus = input;
       return {
@@ -170,17 +144,7 @@ context.window = {
 };
 
 vm.createContext(context);
-new vm.Script(`${overviewReplacement}\n${statusReplacement}\n${lootReplacement}\nrenderDungeonOverview();\nrenderDungeonStatus();\nrenderDungeonLoot();`).runInContext(context);
-
-assert.equal(capturedOverview.enemyBaseDamage, 6);
-assert.equal(capturedOverview.enemyBaseHitChance, 0.5);
-assert.equal(capturedOverview.enemyBaseSpeed, 0.8);
-assert.equal(capturedOverview.participantCount, 2);
-assert.equal(capturedOverview.energyCostPerCharacter, 4);
-assert.equal(elements.enemyHp.textContent, '6 Basis-SCH');
-assert.equal(elements.enemyArmor.textContent, '50 % Basis-TRF');
-assert.equal(elements.enemyDamage.textContent, '0.80 Basis-GES');
-assert.equal(elements.energyCost.textContent, '4 je Char. (8 gesamt)');
+new vm.Script(`${statusReplacement}\n${lootReplacement}\nrenderDungeonStatus();\nrenderDungeonLoot();`).runInContext(context);
 
 assert.equal(capturedStatus.auto, true);
 assert.equal(capturedStatus.selectedCharacterCount, 2);
@@ -203,4 +167,4 @@ assert.equal(elements.dungeonLoot.children[0].children.length, 2);
 assert.equal(elements.dungeonLoot.children[0].children[0].innerHTML, 'Aluminium<b>×1</b>');
 assert.equal(elements.dungeonLoot.children[0].children[1].innerHTML, 'Zinn<b>×2</b>');
 
-console.log('Dungeon-Presentation-Adapter: Übersicht, Anker, Syntax, Status-/Beute-Brücke und DOM-Ausgabe sind konsistent.');
+console.log('Dungeon-Presentation-Adapter: Status/Beute bleiben migriert; Master-Render behält Materiallager und Schmiedevorschau vollständig bei.');

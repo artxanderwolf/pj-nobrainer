@@ -1,35 +1,8 @@
 import assert from 'node:assert/strict';
 import {
   getDungeonLootPresentation,
-  getDungeonOverviewPresentation,
   getDungeonStatusPresentation
 } from '../src/app/game/dungeon-presentation-core.ts';
-
-assert.deepEqual(
-  getDungeonOverviewPresentation({
-    enemyBaseDamage: 6,
-    enemyBaseHitChance: 0.5,
-    enemyBaseSpeed: 0.8,
-    participantCount: 3,
-    energyCostPerCharacter: 4
-  }),
-  {
-    enemyDamageText: '6 Basis-SCH',
-    enemyHitChanceText: '50 % Basis-TRF',
-    enemySpeedText: '0.80 Basis-GES',
-    energyCostText: '4 je Char. (12 gesamt)'
-  }
-);
-assert.equal(
-  getDungeonOverviewPresentation({
-    enemyBaseDamage: 6,
-    enemyBaseHitChance: 0.5,
-    enemyBaseSpeed: 0.8,
-    participantCount: 0,
-    energyCostPerCharacter: 0
-  }).energyCostText,
-  '–'
-);
 
 const active = getDungeonStatusPresentation({
   auto: true,
@@ -143,4 +116,4 @@ assert.deepEqual(
 );
 assert.deepEqual(getDungeonLootPresentation({ Kupfer: { qty: 0 } }), { empty: true, entries: [] });
 
-console.log('Dungeon-Presentation-Core: Übersicht, Statusphasen, Buttons, Gegnerwerte und Beuteanzeige sind konsistent.');
+console.log('Dungeon-Presentation-Core: Statusphasen, Buttons, Gegnerwerte und Beuteanzeige sind konsistent.');

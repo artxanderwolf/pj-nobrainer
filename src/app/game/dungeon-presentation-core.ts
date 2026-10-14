@@ -1,18 +1,3 @@
-export interface DungeonOverviewPresentationInput {
-  enemyBaseDamage: number;
-  enemyBaseHitChance: number;
-  enemyBaseSpeed: number;
-  participantCount: number;
-  energyCostPerCharacter: number;
-}
-
-export interface DungeonOverviewPresentation {
-  enemyDamageText: string;
-  enemyHitChanceText: string;
-  enemySpeedText: string;
-  energyCostText: string;
-}
-
 export interface DungeonPresentationEnemyLike {
   name: string;
   hp: number;
@@ -86,26 +71,6 @@ export interface DungeonLootPresentation {
   entries: DungeonLootEntryPresentation[];
 }
 
-function numeric(value: number): number {
-  const normalized = Number(value);
-  return Number.isFinite(normalized) ? normalized : 0;
-}
-
-export function getDungeonOverviewPresentation(
-  input: DungeonOverviewPresentationInput
-): DungeonOverviewPresentation {
-  const participantCount = Math.max(0, Math.trunc(numeric(input.participantCount)));
-  const energyShare = Math.max(0, numeric(input.energyCostPerCharacter));
-  return {
-    enemyDamageText: `${numeric(input.enemyBaseDamage)} Basis-SCH`,
-    enemyHitChanceText: `${Math.round(numeric(input.enemyBaseHitChance) * 100)} % Basis-TRF`,
-    enemySpeedText: `${numeric(input.enemyBaseSpeed).toFixed(2)} Basis-GES`,
-    energyCostText: participantCount > 0
-      ? `${energyShare} je Char. (${energyShare * participantCount} gesamt)`
-      : '–'
-  };
-}
-
 export function getDungeonStatusPresentation(input: DungeonStatusPresentationInput): DungeonStatusPresentation {
   const selectedCharacterCount = Math.max(0, Number(input.selectedCharacterCount) || 0);
   const lootTotal = Math.max(0, Number(input.lootTotal) || 0);
@@ -176,7 +141,6 @@ export function getDungeonLootPresentation(
 }
 
 export const DUNGEON_PRESENTATION_CORE_BRIDGE = {
-  getDungeonOverviewPresentation,
   getDungeonStatusPresentation,
   getDungeonLootPresentation
 };
