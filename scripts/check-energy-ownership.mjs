@@ -31,6 +31,6 @@ const openBridgeIndex = appComponent.indexOf('this.gameEnergy.openLegacyCompatib
 const openStateIndex = appComponent.indexOf('this.gameState.openBootstrapRegistration();');
 assert.ok(openBridgeIndex >= 0 && openStateIndex > openBridgeIndex, 'Die Energie-Kompatibilitätsbrücke wird nicht vor der Legacy-Script-Installation bereitgestellt.');
 assert.match(appComponent, /ngOnDestroy\(\): void \{[\s\S]*this\.gameEnergy\.closeLegacyCompatibilityBridge\(\);/, 'Die Energie-Kompatibilitätsbrücke wird beim App-Abbau nicht geschlossen.');
-assert.match(appComponent, /const APP_VERSION = '0\.12\.63';/, 'Die App-Version wurde nicht auf v0.12.63 gesetzt.');
+assert.match(appComponent, /const APP_VERSION = '0\.12\.64';/, 'Die App-Version wurde nicht auf v0.12.64 gesetzt.');
 
 console.log('Energie-Eigentümerschaft: Regeneration und Energiekosten liegen im Angular-Service auf dem Angular-State; Legacy-Code besitzt nur noch eine kontrollierte Kompatibilitätsbrücke.');
