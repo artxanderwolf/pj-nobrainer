@@ -1,4 +1,4 @@
-export const ANGULAR_OWNED_PAGE_IDS = ['base', 'tavern'] as const;
+export const ANGULAR_OWNED_PAGE_IDS = ['base', 'tavern', 'roster', 'storage'] as const;
 
 type AngularOwnedPageId = typeof ANGULAR_OWNED_PAGE_IDS[number];
 
@@ -35,9 +35,35 @@ const TAVERN_PAGE_MARKUP = `<section class="page" id="tavern">
       </div>
     </section>`;
 
+const ROSTER_PAGE_MARKUP = `<section class="page" id="roster">
+      <div class="card">
+        <h2>Kader</h2>
+        <p class="muted">Alle angeworbenen Charaktere und ihre persönliche Ausrüstung.</p>
+        <div id="rosterCard"></div>
+      </div>
+    </section>`;
+
+const STORAGE_PAGE_MARKUP = `<section class="page" id="storage">
+      <div class="grid">
+        <div class="card span-12">
+          <h2>Materiallager</h2>
+          <table>
+            <thead><tr><th>Material</th><th>Kategorie</th><th>Menge</th><th>Wert / Stück</th></tr></thead>
+            <tbody id="inventoryRows"></tbody>
+          </table>
+          <div id="inventoryEmpty" class="empty">Noch keine Materialien gesammelt.</div>
+        </div>
+
+        <div class="card span-12"><h2>Waffenlager</h2><p class="muted">Kompakte Waffenkarten. Kürzel werden im Index erklärt.</p><div id="weaponInventory" class="weapon-card-list"></div><div id="weaponInventoryEmpty" class="empty">Noch keine Waffen vorhanden.</div>
+        </div>
+      </div>
+    </section>`;
+
 const ANGULAR_PAGE_MARKUP: Record<AngularOwnedPageId, string> = {
   base: BASE_PAGE_MARKUP,
-  tavern: TAVERN_PAGE_MARKUP
+  tavern: TAVERN_PAGE_MARKUP,
+  roster: ROSTER_PAGE_MARKUP,
+  storage: STORAGE_PAGE_MARKUP
 };
 
 export function getAngularOwnedPageMarkup(pageId: string): string | null {
