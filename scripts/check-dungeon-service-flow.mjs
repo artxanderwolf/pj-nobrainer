@@ -12,14 +12,14 @@ function writeTemporary(baseUrl, name, source) {
   return url;
 }
 
-const gameCore = writeTemporary(gameDir, 'game-core.node-check.ts', readFileSync(new URL('game-core.ts', gameDir), 'utf8'));
-const combatCore = writeTemporary(gameDir, 'combat-core.node-check.ts', readFileSync(new URL('combat-core.ts', gameDir), 'utf8'));
-const searchCore = writeTemporary(gameDir, 'dungeon-search-core.node-check.ts', readFileSync(new URL('dungeon-search-core.ts', gameDir), 'utf8'));
+writeTemporary(gameDir, 'game-core.node-check.ts', readFileSync(new URL('game-core.ts', gameDir), 'utf8'));
+writeTemporary(gameDir, 'combat-core.node-check.ts', readFileSync(new URL('combat-core.ts', gameDir), 'utf8'));
+writeTemporary(gameDir, 'dungeon-search-core.node-check.ts', readFileSync(new URL('dungeon-search-core.ts', gameDir), 'utf8'));
 const dungeonCoreSource = readFileSync(new URL('dungeon-core.ts', gameDir), 'utf8')
   .replace("from './game-core';", "from './game-core.node-check.ts';")
   .replace("from './combat-core';", "from './combat-core.node-check.ts';")
   .replace("from './dungeon-search-core';", "from './dungeon-search-core.node-check.ts';");
-const dungeonCore = writeTemporary(gameDir, 'dungeon-core.node-check.ts', dungeonCoreSource);
+writeTemporary(gameDir, 'dungeon-core.node-check.ts', dungeonCoreSource);
 
 let dungeonServiceSource = readFileSync(new URL('game-dungeon.service.ts', coreDir), 'utf8')
   .replace("import { Injectable } from '@angular/core';\n", '')
@@ -30,7 +30,11 @@ let dungeonServiceSource = readFileSync(new URL('game-dungeon.service.ts', coreD
     "import { GameStateService, type MutableGameState } from './game-state.service';",
     "import type { GameStateService, MutableGameState } from './game-state.service';"
   )
-  .replace("@Injectable({ providedIn: 'root' })\n", '');
+  .replace("@Injectable({ providedIn: 'root' })\n", '')
+  .replace(
+    'constructor(private readonly gameState: GameStateService) {}',
+    'private readonly gameState: GameStateService;\n\n  constructor(gameState: GameStateService) { this.gameState = gameState; }'
+  );
 const dungeonServiceUrl = writeTemporary(coreDir, 'game-dungeon.service.node-check.ts', dungeonServiceSource);
 
 function makeCharacter(id, energy = 100) {
