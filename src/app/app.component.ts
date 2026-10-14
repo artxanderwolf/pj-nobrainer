@@ -1,5 +1,6 @@
 import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
 import { GameRuntimeService } from './core/game-runtime.service';
+import { GameStateService } from './core/game-state.service';
 import { LegacyCharacterAdapterService } from './core/legacy-character-adapter.service';
 import { LegacyCharacterPresentationAdapterService } from './core/legacy-character-presentation-adapter.service';
 import { LegacyCombatLogPresentationAdapterService } from './core/legacy-combat-log-presentation-adapter.service';
@@ -22,13 +23,14 @@ import { LegacyResourcePresentationAdapterService } from './core/legacy-resource
 import { LegacyRuntimeRegistrationAdapterService } from './core/legacy-runtime-registration-adapter.service';
 import { LegacySaveStatusPresentationAdapterService } from './core/legacy-save-status-presentation-adapter.service';
 import { LegacySourceAdapterService } from './core/legacy-source-adapter.service';
+import { LegacyStateAdapterService } from './core/legacy-state-adapter.service';
 import { LegacyTavernPresentationAdapterService } from './core/legacy-tavern-presentation-adapter.service';
 import { LegacyWeaponPresentationAdapterService } from './core/legacy-weapon-presentation-adapter.service';
 import { APP_SHELL_PAGE_IDS, composeAppShell } from './game/app-shell-presentation-core';
 import { composePageMarkup } from './game/page-markup-presentation-core';
 import { adaptLegacyWeaponMarkup, adaptLegacyWeaponScript } from './game/weapon-naming';
 
-const APP_VERSION = '0.12.60';
+const APP_VERSION = '0.12.61';
 const LEGACY_RUNTIME_PATH = 'legacy/NoBrainer_GitHub_v0.12.2.runtime.js';
 const LEGACY_SCRIPT_ID = 'nobrainer-legacy-script';
 
@@ -38,7 +40,9 @@ export class AppComponent implements AfterViewInit, OnDestroy {
 
   constructor(
     private readonly gameRuntime: GameRuntimeService,
+    private readonly gameState: GameStateService,
     private readonly legacySourceAdapter: LegacySourceAdapterService,
+    private readonly legacyStateAdapter: LegacyStateAdapterService,
     private readonly legacyGameTickAdapter: LegacyGameTickAdapterService,
     private readonly legacyRuntimeRegistrationAdapter: LegacyRuntimeRegistrationAdapterService,
     private readonly legacyMobileTablePresentationAdapter: LegacyMobileTablePresentationAdapterService,
@@ -86,6 +90,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     const pageMarkup = composePageMarkup(APP_SHELL_PAGE_IDS);
 
     let adaptedScript = this.legacySourceAdapter.adapt(source);
+    adaptedScript = this.legacyStateAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyGameTickAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyRuntimeRegistrationAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyMobileTablePresentationAdapter.adapt(adaptedScript);
@@ -114,11 +119,17 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     this.legacyHost.nativeElement.innerHTML = adaptedMarkup;
     this.applyVersionMarker();
 
-    this.gameRuntime.openBootstrapRegistration();
+    this.gameState.openBootstrapRegistration();
     try {
-      this.installLegacyScript(adaptedScript);
+      this.gameRuntime.openBootstrapRegistration();
+      try {
+        this.installLegacyScript(adaptedScript);
+        this.gameState.getState();
+      } finally {
+        this.gameRuntime.closeBootstrapRegistration();
+      }
     } finally {
-      this.gameRuntime.closeBootstrapRegistration();
+      this.gameState.closeBootstrapRegistration();
     }
   }
 
