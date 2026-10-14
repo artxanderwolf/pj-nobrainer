@@ -10,6 +10,7 @@ const expectedVersion = packageJson.version;
 const basePath = '/pj-nobrainer/';
 
 assert.ok(existsSync(join(distRoot, 'index.html')), 'Das gebaute Angular-Artefakt fehlt: dist/nobrainer/browser/index.html');
+assert.equal(typeof WebSocket, 'function', 'Die Node-Laufzeit stellt für den Browser-Smoke-Test kein WebSocket bereit.');
 
 const browserCandidates = ['google-chrome', 'google-chrome-stable', 'chromium', 'chromium-browser'];
 const browser = browserCandidates.find(candidate => {
@@ -52,62 +53,151 @@ const server = createServer((request, response) => {
   response.end(readFileSync(filePath));
 });
 
-await new Promise((resolveListen, rejectListen) => {
-  server.once('error', rejectListen);
-  server.listen(0, '127.0.0.1', resolveListen);
-});
+function delay(ms) {
+  return new Promise(resolveDelay => setTimeout(resolveDelay, ms));
+}
+
+async function listenOnFreePort(testServer) {
+  await new Promise((resolveListen, rejectListen) => {
+    testServer.once('error', rejectListen);
+    testServer.listen(0, '127.0.0.1', resolveListen);
+  });
+  const address = testServer.address();
+  assert.ok(address && typeof address === 'object', 'Ein freier Port konnte nicht bereitgestellt werden.');
+  return address.port;
+}
+
+async function reserveFreePort() {
+  const probe = createServer();
+  const port = await listenOnFreePort(probe);
+  await new Promise(resolveClose => probe.close(resolveClose));
+  return port;
+}
+
+async function waitForPageTarget(debugPort, child, stderr) {
+  const endpoint = `http://127.0.0.1:${debugPort}/json/list`;
+  for (let attempt = 0; attempt < 80; attempt += 1) {
+    if (child.exitCode !== null) {
+      throw new Error(`Chrome/Chromium wurde vor dem Runtime-Smoke-Test beendet (Code ${child.exitCode}).\n${stderr()}`);
+    }
+    try {
+      const response = await fetch(endpoint, { cache: 'no-store' });
+      if (response.ok) {
+        const targets = await response.json();
+        const target = targets.find(entry => entry.type === 'page' && entry.webSocketDebuggerUrl);
+        if (target) return target;
+      }
+    } catch {}
+    await delay(125);
+  }
+  throw new Error(`Chrome-DevTools-Ziel wurde nicht rechtzeitig verfügbar.\n${stderr()}`);
+}
+
+function evaluateInPage(webSocketDebuggerUrl, expression) {
+  return new Promise((resolveEvaluation, rejectEvaluation) => {
+    const socket = new WebSocket(webSocketDebuggerUrl);
+    const requestId = 1;
+    const timeout = setTimeout(() => {
+      socket.close();
+      rejectEvaluation(new Error('Chrome-DevTools-Auswertung hat das Zeitlimit überschritten.'));
+    }, 5000);
+
+    const cleanup = () => clearTimeout(timeout);
+    socket.addEventListener('error', () => {
+      cleanup();
+      rejectEvaluation(new Error('Chrome-DevTools-WebSocket konnte nicht geöffnet werden.'));
+    }, { once: true });
+    socket.addEventListener('open', () => {
+      socket.send(JSON.stringify({
+        id: requestId,
+        method: 'Runtime.evaluate',
+        params: { expression, returnByValue: true, awaitPromise: true }
+      }));
+    }, { once: true });
+    socket.addEventListener('message', event => {
+      const message = JSON.parse(String(event.data));
+      if (message.id !== requestId) return;
+      cleanup();
+      socket.close();
+      if (message.error) {
+        rejectEvaluation(new Error(`Chrome-DevTools-Auswertung fehlgeschlagen: ${JSON.stringify(message.error)}`));
+        return;
+      }
+      if (message.result?.exceptionDetails) {
+        rejectEvaluation(new Error(`JavaScript-Auswertung im Browser schlug fehl: ${message.result.exceptionDetails.text ?? 'unbekannt'}`));
+        return;
+      }
+      resolveEvaluation(message.result?.result?.value);
+    });
+  });
+}
+
+async function stopBrowser(child) {
+  if (child.exitCode !== null) return;
+  child.kill('SIGTERM');
+  const closed = await Promise.race([
+    new Promise(resolveClose => child.once('close', () => resolveClose(true))),
+    delay(2000).then(() => false)
+  ]);
+  if (!closed && child.exitCode === null) child.kill('SIGKILL');
+}
+
+const serverPort = await listenOnFreePort(server);
+let child = null;
+let stderr = '';
 
 try {
-  const address = server.address();
-  assert.ok(address && typeof address === 'object', 'Der lokale Runtime-Smoke-Testserver konnte keinen Port bereitstellen.');
-  const pageUrl = `http://127.0.0.1:${address.port}${basePath}`;
+  const pageUrl = `http://127.0.0.1:${serverPort}${basePath}`;
+  const debugPort = await reserveFreePort();
   const browserArgs = [
     '--headless=new',
     '--no-sandbox',
     '--disable-gpu',
     '--disable-dev-shm-usage',
     '--hide-scrollbars',
-    '--virtual-time-budget=3500',
-    '--dump-dom',
+    `--remote-debugging-port=${debugPort}`,
     pageUrl
   ];
 
-  const child = spawn(browser, browserArgs, { stdio: ['ignore', 'pipe', 'pipe'] });
-  let stdout = '';
-  let stderr = '';
-  child.stdout.setEncoding('utf8');
+  child = spawn(browser, browserArgs, { stdio: ['ignore', 'ignore', 'pipe'] });
   child.stderr.setEncoding('utf8');
-  child.stdout.on('data', chunk => { stdout += chunk; });
   child.stderr.on('data', chunk => { stderr += chunk; });
 
-  const result = await new Promise((resolveRun, rejectRun) => {
-    const timeout = setTimeout(() => {
-      child.kill('SIGKILL');
-      rejectRun(new Error('Der Browser-Runtime-Smoke-Test hat das Zeitlimit überschritten.'));
-    }, 20_000);
+  const target = await waitForPageTarget(debugPort, child, () => stderr);
+  const expression = `(() => ({
+    bodyText: document.body?.innerText ?? '',
+    version: document.querySelector('.brand small')?.textContent ?? '',
+    nav: Boolean(document.getElementById('nav')),
+    market: Boolean(document.getElementById('marketJobCard')),
+    dungeon: Boolean(document.getElementById('dungeonRunCard')),
+    readyState: document.readyState
+  }))()`;
 
-    child.once('error', error => {
-      clearTimeout(timeout);
-      rejectRun(error);
-    });
-    child.once('close', code => {
-      clearTimeout(timeout);
-      resolveRun(code);
-    });
-  });
+  let snapshot = null;
+  for (let attempt = 0; attempt < 60; attempt += 1) {
+    snapshot = await evaluateInPage(target.webSocketDebuggerUrl, expression);
+    assert.ok(snapshot && typeof snapshot === 'object', 'Der gestartete Browser lieferte keinen auswertbaren DOM-Zustand.');
+    assert.doesNotMatch(
+      snapshot.bodyText,
+      /Die NoBrainer-Runtime konnte nicht geladen werden/,
+      `Die gebaute Anwendung fiel beim Browserstart in den Runtime-Fehlerzustand.\n${stderr}`
+    );
+    if (
+      snapshot.version === `Prototype v${expectedVersion}` &&
+      snapshot.nav &&
+      snapshot.market &&
+      snapshot.dungeon
+    ) break;
+    await delay(200);
+  }
 
-  assert.equal(result, 0, `Chrome/Chromium beendete den Runtime-Smoke-Test mit Code ${result}.\n${stderr}`);
-  assert.doesNotMatch(
-    stdout,
-    /Die NoBrainer-Runtime konnte nicht geladen werden/,
-    `Die gebaute Anwendung fiel beim Browserstart in den Runtime-Fehlerzustand.\n${stderr}`
-  );
-  assert.match(stdout, new RegExp(`Prototype v${expectedVersion.replaceAll('.', '\\.')}`), 'Die erwartete Versionsanzeige fehlt im gestarteten Build.');
-  assert.match(stdout, /id="nav"/, 'Die Navigation wurde beim Browserstart nicht aufgebaut.');
-  assert.match(stdout, /id="marketJobCard"/, 'Der Markt wurde beim Browserstart nicht aufgebaut.');
-  assert.match(stdout, /id="dungeonRunCard"/, 'Der Dungeon wurde beim Browserstart nicht aufgebaut.');
+  assert.equal(snapshot.version, `Prototype v${expectedVersion}`, 'Die erwartete Versionsanzeige fehlt im gestarteten Build.');
+  assert.equal(snapshot.nav, true, 'Die Navigation wurde beim Browserstart nicht aufgebaut.');
+  assert.equal(snapshot.market, true, 'Der Markt wurde beim Browserstart nicht aufgebaut.');
+  assert.equal(snapshot.dungeon, true, 'Der Dungeon wurde beim Browserstart nicht aufgebaut.');
 
   console.log(`Browser-Runtime-Smoke-Test: Prototype v${expectedVersion} startet aus dem finalen Angular-Build ohne Runtime-Fallback.`);
 } finally {
+  if (child) await stopBrowser(child);
   await new Promise(resolveClose => server.close(resolveClose));
 }
