@@ -50,7 +50,9 @@ export class LegacyCharacterPresentationAdapterService {
       '',
       'Legacy-Dungeon-Team-Pickerzustand'
     );
+    this.assertSyntax(adapted, 'Pickerzustand entfernen');
     adapted = this.replaceOnce(adapted, LEGACY_PICKER_KEY, ADAPTED_PICKER_KEY, 'Waffenpicker-Schlüssel');
+    this.assertSyntax(adapted, 'Waffenpicker-Schlüssel ersetzen');
     adapted = this.replaceRangeOnce(
       adapted,
       'function renderCharacterCard(',
@@ -58,6 +60,7 @@ export class LegacyCharacterPresentationAdapterService {
       ADAPTED_CHARACTER_CARD,
       'Kader-/Charakter-Präsentation'
     );
+    this.assertSyntax(adapted, 'Charakterkarte ersetzen');
     adapted = this.replaceRangeOnce(
       adapted,
       'function toggleDungeonTeamPicker(',
@@ -65,13 +68,24 @@ export class LegacyCharacterPresentationAdapterService {
       '',
       'Legacy-Dungeon-Team-Interaktionen und -Präsentation'
     );
+    this.assertSyntax(adapted, 'Dungeon-Team-Funktionen entfernen');
     adapted = this.replaceOnce(
       adapted,
       LEGACY_RENDER_CHARACTER,
       ADAPTED_RENDER_CHARACTER,
       'Dungeon-Team-Routing im Charakterrender'
     );
+    this.assertSyntax(adapted, 'Dungeon-Team-Routing ersetzen');
     return adapted;
+  }
+
+  private assertSyntax(source: string, stage: string): void {
+    try {
+      new Function(source);
+    } catch (error: unknown) {
+      const detail = error instanceof Error ? error.message : String(error);
+      throw new Error(`Character-Präsentationsadapter erzeugt nach „${stage}“ ungültiges JavaScript: ${detail}`);
+    }
   }
 
   private replaceOnce(source: string, search: string, replacement: string, label: string): string {
