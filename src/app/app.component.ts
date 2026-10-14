@@ -10,6 +10,7 @@ import { LegacyEnergyAdapterService } from './core/legacy-energy-adapter.service
 import { LegacyEquipmentAdapterService } from './core/legacy-equipment-adapter.service';
 import { LegacyForgeAdapterService } from './core/legacy-forge-adapter.service';
 import { LegacyForgePresentationAdapterService } from './core/legacy-forge-presentation-adapter.service';
+import { LegacyGameTickAdapterService } from './core/legacy-game-tick-adapter.service';
 import { LegacyMarketAdapterService } from './core/legacy-market-adapter.service';
 import { LegacyMarketPresentationAdapterService } from './core/legacy-market-presentation-adapter.service';
 import { LegacyMaterialPresentationAdapterService } from './core/legacy-material-presentation-adapter.service';
@@ -27,7 +28,7 @@ import { APP_SHELL_PAGE_IDS, composeAppShell } from './game/app-shell-presentati
 import { composePageMarkup } from './game/page-markup-presentation-core';
 import { adaptLegacyWeaponMarkup, adaptLegacyWeaponScript } from './game/weapon-naming';
 
-const APP_VERSION = '0.12.58';
+const APP_VERSION = '0.12.59';
 const LEGACY_RUNTIME_PATH = 'legacy/NoBrainer_GitHub_v0.12.2.runtime.js';
 const LEGACY_SCRIPT_ID = 'nobrainer-legacy-script';
 
@@ -38,6 +39,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   constructor(
     private readonly gameRuntime: GameRuntimeService,
     private readonly legacySourceAdapter: LegacySourceAdapterService,
+    private readonly legacyGameTickAdapter: LegacyGameTickAdapterService,
     private readonly legacyRuntimeRegistrationAdapter: LegacyRuntimeRegistrationAdapterService,
     private readonly legacyMobileTablePresentationAdapter: LegacyMobileTablePresentationAdapterService,
     private readonly legacyNavigationPresentationAdapter: LegacyNavigationPresentationAdapterService,
@@ -84,6 +86,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     const pageMarkup = composePageMarkup(APP_SHELL_PAGE_IDS);
 
     let adaptedScript = this.legacySourceAdapter.adapt(source);
+    adaptedScript = this.legacyGameTickAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyRuntimeRegistrationAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyMobileTablePresentationAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyNavigationPresentationAdapter.adapt(adaptedScript);

@@ -11,7 +11,22 @@ interface GameSaveStorageAdapter {
 export interface GameRuntimeApi {
   configureSaveStorage(adapter: GameSaveStorageAdapter): void;
   prepare(): void;
-  tick(): void;
+  updateEnergy(): void;
+  updateForgeJob(): boolean;
+  updateMarketJob(): boolean;
+  updateDungeonAutomation(): void;
+  renderForgeJob(): void;
+  renderMarketJob(): void;
+  renderDungeonStatus(): void;
+  renderDungeonLoot(): void;
+  renderTeam(): void;
+  renderForgePreview(): void;
+  renderWeaponInventory(): void;
+  renderMarketMaterials(): void;
+  renderMarketWeapons(): void;
+  refreshGold(): void;
+  renderRosterIfIdle(): void;
+  shouldAutoSave(now: number): boolean;
   renderInitial(): void;
   save(manual?: boolean): boolean;
   resetSave(): void;
@@ -98,7 +113,22 @@ export class GameRuntimeService {
     const required: Array<keyof GameRuntimeApi> = [
       'configureSaveStorage',
       'prepare',
-      'tick',
+      'updateEnergy',
+      'updateForgeJob',
+      'updateMarketJob',
+      'updateDungeonAutomation',
+      'renderForgeJob',
+      'renderMarketJob',
+      'renderDungeonStatus',
+      'renderDungeonLoot',
+      'renderTeam',
+      'renderForgePreview',
+      'renderWeaponInventory',
+      'renderMarketMaterials',
+      'renderMarketWeapons',
+      'refreshGold',
+      'renderRosterIfIdle',
+      'shouldAutoSave',
       'renderInitial',
       'save',
       'resetSave'
@@ -113,9 +143,38 @@ export class GameRuntimeService {
 
   private scheduleNextTick(): void {
     this.tickHandle = window.setTimeout(() => {
-      this.getRuntime().tick();
+      this.runTickCycle();
       if (this.tickHandle !== null) this.scheduleNextTick();
     }, 250);
+  }
+
+  private runTickCycle(): void {
+    const runtime = this.getRuntime();
+
+    runtime.updateEnergy();
+    const forgeCompleted = runtime.updateForgeJob();
+    const marketCompleted = runtime.updateMarketJob();
+    runtime.updateDungeonAutomation();
+
+    runtime.renderForgeJob();
+    runtime.renderMarketJob();
+    runtime.renderDungeonStatus();
+    runtime.renderDungeonLoot();
+    runtime.renderTeam();
+
+    if (forgeCompleted) {
+      runtime.renderForgePreview();
+      runtime.renderWeaponInventory();
+    }
+
+    if (marketCompleted) {
+      runtime.renderMarketMaterials();
+      runtime.renderMarketWeapons();
+      runtime.refreshGold();
+    }
+
+    runtime.renderRosterIfIdle();
+    if (runtime.shouldAutoSave(Date.now())) runtime.save(false);
   }
 
   private registerVisibilityHandler(): void {
@@ -134,7 +193,7 @@ export class GameRuntimeService {
       this.hiddenSnapshot = null;
       if (!before || !this.offlineProgress.shouldShowSummary(before)) return;
 
-      runtime.tick();
+      this.runTickCycle();
       runtime.save(false);
       const after = this.saveStorage.readSnapshot();
       if (after) this.offlineProgress.showSummary(before, after);
