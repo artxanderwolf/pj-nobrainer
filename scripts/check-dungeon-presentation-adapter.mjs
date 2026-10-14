@@ -34,7 +34,17 @@ function replaceRangeOnce(source, startMarker, endMarker, replacement) {
   return source.slice(0, start) + replacement + source.slice(end);
 }
 
-const summaryBlock = extractTemplateConstant('LEGACY_DUNGEON_SUMMARY_BLOCK');
+const summaryBlock = [
+  '  const displayedCount=state.dungeonRun?.participantIds?.length||getSelectedDungeonIds().length;',
+  '  document.getElementById("enemyHp").textContent=`${CONFIG.dungeon.enemyBase.damage} Basis-SCH`;',
+  '  document.getElementById("enemyArmor").textContent=`${Math.round(CONFIG.dungeon.enemyBase.hitChance*100)} % Basis-TRF`;',
+  '  document.getElementById("enemyDamage").textContent=`${CONFIG.dungeon.enemyBase.speed.toFixed(2)} Basis-GES`;',
+  '  const share=getEnergyCostPerCharacter(displayedCount);',
+  '  document.getElementById("energyCost").textContent=displayedCount?`${share} je Char. (${share*displayedCount} gesamt)`:"–";',
+  '  document.getElementById("runDuration").textContent=`${state.dungeonWavesDefeated||0} besiegt`;',
+  '',
+  ''
+].join('\n');
 const accessor = extractTemplateConstant('DUNGEON_PRESENTATION_ACCESSOR');
 const statusReplacement = extractTemplateConstant('ADAPTED_DUNGEON_STATUS');
 const lootReplacement = extractTemplateConstant('ADAPTED_DUNGEON_LOOT');
