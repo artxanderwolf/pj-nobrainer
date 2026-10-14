@@ -1,5 +1,6 @@
 import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
 import { GameEnergyService } from './core/game-energy.service';
+import { GameForgeService } from './core/game-forge.service';
 import { GameRuntimeService } from './core/game-runtime.service';
 import { GameStateService } from './core/game-state.service';
 import { LegacyCharacterAdapterService } from './core/legacy-character-adapter.service';
@@ -31,7 +32,7 @@ import { APP_SHELL_PAGE_IDS, composeAppShell } from './game/app-shell-presentati
 import { composePageMarkup } from './game/page-markup-presentation-core';
 import { adaptLegacyWeaponMarkup, adaptLegacyWeaponScript } from './game/weapon-naming';
 
-const APP_VERSION = '0.12.62';
+const APP_VERSION = '0.12.63';
 const LEGACY_RUNTIME_PATH = 'legacy/NoBrainer_GitHub_v0.12.2.runtime.js';
 const LEGACY_SCRIPT_ID = 'nobrainer-legacy-script';
 
@@ -43,6 +44,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     private readonly gameRuntime: GameRuntimeService,
     private readonly gameState: GameStateService,
     private readonly gameEnergy: GameEnergyService,
+    private readonly gameForge: GameForgeService,
     private readonly legacySourceAdapter: LegacySourceAdapterService,
     private readonly legacyStateAdapter: LegacyStateAdapterService,
     private readonly legacyGameTickAdapter: LegacyGameTickAdapterService,
@@ -78,6 +80,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
       try { this.gameRuntime.renderInitial(); } catch (error: unknown) { console.error('Der erste NoBrainer-Render ist fehlgeschlagen.', error); }
     } catch (error: unknown) {
       this.gameRuntime.stopTick();
+      this.gameForge.closeLegacyCompatibilityBridge();
       this.gameEnergy.closeLegacyCompatibilityBridge();
       console.error('Die NoBrainer-Runtime konnte nicht geladen werden.', error);
       this.legacyHost.nativeElement.textContent = 'Die NoBrainer-Runtime konnte nicht geladen werden. Bitte Seite neu laden.';
@@ -86,6 +89,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.gameRuntime.stopTick();
+    this.gameForge.closeLegacyCompatibilityBridge();
     this.gameEnergy.closeLegacyCompatibilityBridge();
   }
 
@@ -127,6 +131,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     this.applyVersionMarker();
 
     this.gameEnergy.openLegacyCompatibilityBridge();
+    this.gameForge.openLegacyCompatibilityBridge();
     this.gameState.openBootstrapRegistration();
     try {
       this.gameRuntime.openBootstrapRegistration();
