@@ -35,7 +35,11 @@ assert.match(
   'Die Dungeon-Wellenanzeige ist nicht mehr Teil der Dungeon-Status-Präsentation.'
 );
 
-assert.match(runtimeService, /private runTickCycle\(\): void \{/, 'Der zentrale Angular-Tick-Zyklus fehlt.');
+const tickStart = runtimeService.indexOf('private runTickCycle(): void {');
+const tickEnd = runtimeService.indexOf('private logForgeCompletions(', tickStart);
+assert.ok(tickStart >= 0 && tickEnd > tickStart, 'Der zentrale Angular-Tick-Zyklus konnte nicht isoliert werden.');
+const tickCycle = runtimeService.slice(tickStart, tickEnd);
+
 assert.match(runtimeService, /private readonly gameEnergy: GameEnergyService/, 'Der Angular-Tick besitzt keinen Angular-eigenen Energie-Service.');
 assert.match(runtimeService, /private readonly gameForge: GameForgeService/, 'Der Angular-Tick besitzt keinen Angular-eigenen Schmiede-Service.');
 assert.doesNotMatch(runtimeService, /\bupdateEnergy\(\): void;/, 'Die Runtime-API stellt weiterhin die Legacy-Energieaktualisierung bereit.');
@@ -59,12 +63,12 @@ const orderedRuntimeCalls = [
 ];
 let previousIndex = -1;
 for (const call of orderedRuntimeCalls) {
-  const index = runtimeService.indexOf(call);
+  const index = tickCycle.indexOf(call);
   assert.ok(index > previousIndex, `Angular-gameTick-Reihenfolge ist ungültig oder Aufruf fehlt: ${call}`);
   previousIndex = index;
 }
-assert.match(runtimeService, /if \(forgeCompleted\) \{[\s\S]*runtime\.renderForgePreview\(\);[\s\S]*runtime\.renderWeaponInventory\(\);[\s\S]*\}/, 'Schmiede-Abschluss-Refresh fehlt im Angular-Tick.');
-assert.match(runtimeService, /if \(marketCompleted\) \{[\s\S]*runtime\.renderMarketMaterials\(\);[\s\S]*runtime\.renderMarketWeapons\(\);[\s\S]*runtime\.refreshGold\(\);[\s\S]*\}/, 'Markt-Abschluss-Refresh fehlt im Angular-Tick.');
+assert.match(tickCycle, /if \(forgeCompleted\) \{[\s\S]*runtime\.renderForgePreview\(\);[\s\S]*runtime\.renderWeaponInventory\(\);[\s\S]*\}/, 'Schmiede-Abschluss-Refresh fehlt im Angular-Tick.');
+assert.match(tickCycle, /if \(marketCompleted\) \{[\s\S]*runtime\.renderMarketMaterials\(\);[\s\S]*runtime\.renderMarketWeapons\(\);[\s\S]*runtime\.refreshGold\(\);[\s\S]*\}/, 'Markt-Abschluss-Refresh fehlt im Angular-Tick.');
 assert.match(runtimeService, /this\.runTickCycle\(\);[\s\S]*this\.scheduleNextTick\(\);/, 'Der 250-ms-Scheduler verwendet nicht den Angular-Tick-Zyklus.');
 
 const angularRegistrationMatch = registrationAdapter.match(/const ANGULAR_RUNTIME_REGISTRATION = `([\s\S]*?)`;/);
