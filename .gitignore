@@ -2,5 +2,6 @@
 /dist
 /.angular
 /out-tsc
+/.generated
 *.log
 .DS_Store
