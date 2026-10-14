@@ -15,7 +15,8 @@ function extractTemplateConstant(name) {
   const bodyStart = start + prefix.length;
   const end = adapterSource.indexOf('`;\n', bodyStart);
   assert.ok(end > bodyStart, `${name} konnte nicht aus dem Adapter gelesen werden.`);
-  return adapterSource.slice(bodyStart, end);
+  const rawBody = adapterSource.slice(bodyStart, end);
+  return vm.runInNewContext('`' + rawBody + '`');
 }
 
 function extractQuotedConstant(name) {
