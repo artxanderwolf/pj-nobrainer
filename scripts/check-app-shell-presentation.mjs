@@ -56,6 +56,6 @@ assert.match(
   /const LEGACY_RUNTIME_PATH = 'legacy\/NoBrainer_GitHub_v0\.12\.2\.runtime\.js';/,
   'Der App-Component verweist nicht auf das eigenständige Runtime-Asset.'
 );
-assert.match(appComponent, /const APP_VERSION = '0\.12\.63';/, 'Die App-Version wurde nicht auf v0.12.63 gesetzt.');
+assert.match(appComponent, /const APP_VERSION = '0\.12\.64';/, 'Die App-Version wurde nicht auf v0.12.64 gesetzt.');
 
 console.log('App-Shell-Präsentation: Navigation, Topbar, Ressourcenrahmen und alle Seiten sind Angular-eigen; die Legacy-Runtime kommt als eigenständiges Asset.');
