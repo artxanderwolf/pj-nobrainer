@@ -35,17 +35,45 @@ function weaponCardHtml(w,o={}){
 
 `;
 
+const WEAPON_INVENTORY_BRIDGE = `function renderWeaponInventory(){
+  const box=document.getElementById("weaponInventory"),empty=document.getElementById("weaponInventoryEmpty");if(!box||!empty)return;
+  const ws=window.NoBrainerWeaponPresentationCore.sortWeaponInventory(state.weaponInventory);
+  box.innerHTML="";empty.style.display=ws.length?"none":"block";
+  ws.forEach((w,index)=>{
+    const presentation=window.NoBrainerEquipmentCore.getWeaponInventoryPresentation(state.characters,Number(w.id));
+    const loc=presentation.location;let actions="";
+    if(loc){
+      actions=\`<div class="weapon-card-actions"><button class="btn" onclick="unequipHand(\${loc.characterId},'\${loc.hand}')">Ablegen</button></div>\`;
+    }else{
+      const selectId=\`lagerEquip_\${index}\`;
+      const opts=presentation.targets.map(t=>{const c=getCharacterById(t.characterId);return \`<option value="\${t.characterId}:\${t.hand}">\${c?.name||"Charakter"} · \${t.label}</option>\`;}).join("");
+      actions=opts?\`<div class="weapon-card-actions" style="display:grid;grid-template-columns:1fr auto"><select id="\${selectId}" class="equip-select">\${opts}</select><button class="btn primary" onclick="equipWeaponFromInventory(\${w.id},'\${selectId}')">Ausrüsten</button></div>\`:\`<div class="weapon-card-actions"><button class="btn" disabled>Keine freie Hand</button></div>\`;
+    }
+    const d=document.createElement("div");d.innerHTML=weaponCardHtml(w,{status:presentation.status,actions});box.appendChild(d.firstElementChild);
+  });
+}
+
+`;
+
 @Injectable({ providedIn: 'root' })
 export class LegacyWeaponPresentationAdapterService {
   adapt(source: string): string {
     window.NoBrainerWeaponPresentationCore = WEAPON_PRESENTATION_CORE_BRIDGE;
-    return this.replaceRangeOnce(
+    let adapted = this.replaceRangeOnce(
       source,
       'function rarityLabelForWeapon(',
       'function weaponPickerKey(',
       ADAPTED_WEAPON_CARD_PRESENTATION,
       'Waffenkarten-Präsentation'
     );
+    adapted = this.replaceRangeOnce(
+      adapted,
+      'function renderWeaponInventory(',
+      'function displayVal(',
+      WEAPON_INVENTORY_BRIDGE,
+      'Waffenlager-Präsentation'
+    );
+    return adapted;
   }
 
   private replaceRangeOnce(
