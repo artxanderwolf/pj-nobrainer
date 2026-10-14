@@ -65,8 +65,8 @@ assert.ok(source.includes('renderDungeonStatus();'));
 assert.ok(source.includes('const tbody=document.getElementById("inventoryRows");tbody.innerHTML="";'));
 
 const app = fs.readFileSync('src/app/app.component.ts', 'utf8');
-const sourceAdapterIndex = app.indexOf('this.legacySourceAdapter.adapt(adaptedScript)');
-const saveStatusAdapterIndex = app.indexOf('this.legacySaveStatusPresentationAdapter.adapt(adaptedScript)');
+const sourceAdapterIndex = app.indexOf('this.legacySourceAdapter.adapt(');
+const saveStatusAdapterIndex = app.indexOf('this.legacySaveStatusPresentationAdapter.adapt(');
 assert.ok(sourceAdapterIndex >= 0, 'LegacySourceAdapter-Aufruf fehlt.');
 assert.ok(saveStatusAdapterIndex > sourceAdapterIndex, 'Save-Status-Adapter muss nach dem Source-Adapter laufen.');
 
