@@ -20,7 +20,7 @@ interface RuntimeDungeonPresentationCharacter extends DungeonTeamPresentationCha
 }
 
 interface RuntimeDungeonLootEntry {
-  qty?: number | null;
+  qty: number;
 }
 
 type RuntimeDungeonPresentationState = MutableGameState & {
@@ -158,7 +158,7 @@ export class GameDungeonPresentationService {
       return;
     }
 
-    box.innerHTML = card.text;
+    if (card.mode === 'idle') box.innerHTML = card.text;
   }
 
   renderLoot(): void {
