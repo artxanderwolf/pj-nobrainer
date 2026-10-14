@@ -20,11 +20,6 @@ window.NoBrainerLegacyRuntime={
 
 const ANGULAR_RUNTIME_REGISTRATION = `function prepareGameRuntime(){
   loadGame();
-  updateEnergy();
-  updateForgeJob();
-  updateMarketJob();
-  updateDungeonAutomation();
-  updateEnergy();
 }
 
 const runtimeBootstrap=window.NoBrainerRuntimeBootstrap;
@@ -32,7 +27,6 @@ if(!runtimeBootstrap||typeof runtimeBootstrap.register!=="function")throw new Er
 runtimeBootstrap.register({
   configureSaveStorage,
   prepare:prepareGameRuntime,
-  updateForgeJob,
   updateMarketJob,
   updateDungeonAutomation,
   renderForgeJob,
@@ -53,6 +47,7 @@ runtimeBootstrap.register({
     const rosterIsBeingUsed=rosterRoot&&rosterRoot.contains(document.activeElement);
     if(!rosterIsBeingUsed&&!openWeaponPickerHand)renderCharacter("rosterCard");
   },
+  addLog,
   shouldAutoSave:now=>!saveUnavailable&&now-lastAutoSaveAt>=10000,
   renderInitial:render,
   save:saveGame,
