@@ -1,4 +1,4 @@
-export const ANGULAR_OWNED_PAGE_IDS = ['base', 'tavern', 'roster', 'storage', 'forge', 'market'] as const;
+export const ANGULAR_OWNED_PAGE_IDS = ['base', 'tavern', 'roster', 'storage', 'forge', 'market', 'dungeon'] as const;
 
 type AngularOwnedPageId = typeof ANGULAR_OWNED_PAGE_IDS[number];
 
@@ -144,13 +144,52 @@ const MARKET_PAGE_MARKUP = `<section class="page" id="market">
       </div>
     </section>`;
 
+const DUNGEON_PAGE_MARKUP = `<section class="page" id="dungeon">
+      <div class="grid">
+        <div class="card span-5">
+          <h2>Dungeon 1 <span class="tag temp">TESTBALANCE</span></h2>
+          <p class="muted">Endlose Dungeon-Suche mit zufälligen Begegnungen und globaler Angriffs-Zeitleiste.</p>
+          <div class="statrow">
+            <div class="stat"><span>Gegnerbasis</span><b id="enemyHp">6 Basis-SCH</b></div>
+            <div class="stat"><span>Trefferchance</span><b id="enemyArmor">50 % Basis-TRF</b></div>
+            <div class="stat"><span>Geschwindigkeit</span><b id="enemyDamage">0,80 Basis-GES</b></div>
+            <div class="stat"><span>Energiekosten / Welle</span><b id="energyCost">4 gesamt</b></div>
+            <div class="stat"><span>Wellen</span><b id="runDuration">0 besiegt</b></div>
+          </div>
+          <div id="dungeonRunCard" class="empty" style="margin-top:14px">Automatik angehalten.</div>
+          <div class="actions">
+            <button id="autoDungeonBtn" class="btn primary" onclick="toggleDungeonAuto()">Automatik starten</button>
+            <button id="collectLootBtn" class="btn" onclick="collectDungeonLoot()">Einsammeln</button>
+          </div>
+          <p class="status-line">Die Gruppe durchsucht den Dungeon im Sekundentakt. Pro Suchschritt besteht eine Begegnungschance von 10 %. Energie wird erst bezahlt, wenn tatsächlich Gegner gefunden wurden. Jede vollständig besiegte Welle gibt genau einen Materialwurf pro Gegner.</p>
+          <p class="status-line"><strong>Hinweis:</strong> Nach einem Sieg wird die Beute 1 Sekunde lang eingesammelt; danach beginnt die Suche erneut. Bei einer Niederlage startet das Team mit vollen HP wieder im Suchmodus.</p>
+        </div>
+        <div class="card span-7">
+          <h2>Dungeon-Team</h2>
+          <p class="muted">Bis zu vier Charaktere zuweisen. Derselbe Charakter kann nicht mehrfach eingesetzt werden.</p>
+          <div id="teamCard"></div>
+        </div>
+        <div class="card span-5">
+          <h2>Gesammelte Dungeon-Beute</h2>
+          <p class="muted">Diese Materialien sind noch nicht im Lager und können erst nach „Einsammeln“ geschmiedet oder verkauft werden.</p>
+          <div id="dungeonLoot"></div>
+          <div id="dungeonLootEmpty" class="empty">Noch keine Beute gesammelt.</div>
+        </div>
+        <div class="card span-7">
+          <h2>Expeditionsprotokoll</h2>
+          <div class="log" id="combatLog"><div class="muted">Automatik noch nicht gestartet.</div></div>
+        </div>
+      </div>
+    </section>`;
+
 const ANGULAR_PAGE_MARKUP: Record<AngularOwnedPageId, string> = {
   base: BASE_PAGE_MARKUP,
   tavern: TAVERN_PAGE_MARKUP,
   roster: ROSTER_PAGE_MARKUP,
   storage: STORAGE_PAGE_MARKUP,
   forge: FORGE_PAGE_MARKUP,
-  market: MARKET_PAGE_MARKUP
+  market: MARKET_PAGE_MARKUP,
+  dungeon: DUNGEON_PAGE_MARKUP
 };
 
 export function getAngularOwnedPageMarkup(pageId: string): string | null {

@@ -27,8 +27,8 @@ function normalizeMarkup(markup) {
 
 assert.deepEqual(
   [...ANGULAR_OWNED_PAGE_IDS],
-  ['base', 'tavern', 'roster', 'storage', 'forge', 'market'],
-  'Für v0.12.54 sollen Stützpunkt, Taverne, Kader, Lager, Schmiede und Markt Angular-eigenes Seitenmarkup besitzen.'
+  ['base', 'tavern', 'roster', 'storage', 'forge', 'market', 'dungeon'],
+  'Für v0.12.55 sollen Stützpunkt, Taverne, Kader, Lager, Schmiede, Markt und Dungeon Angular-eigenes Seitenmarkup besitzen.'
 );
 
 for (const pageId of ANGULAR_OWNED_PAGE_IDS) {
@@ -67,6 +67,20 @@ assert.match(marketMarkup, /id="marketMaterialsEmpty"/, 'Der Materialverkauf-Lee
 assert.match(marketMarkup, /id="marketWeapons"/, 'Der Waffenverkauf-Renderanker fehlt im Angular-eigenen Markt-Markup.');
 assert.match(marketMarkup, /id="marketWeaponsEmpty"/, 'Der Waffenverkauf-Leerzustand fehlt im Angular-eigenen Markt-Markup.');
 
+const dungeonMarkup = getAngularOwnedPageMarkup('dungeon') ?? '';
+assert.match(dungeonMarkup, /id="enemyHp"/, 'Der Gegnerbasis-Anker fehlt im Angular-eigenen Dungeon-Markup.');
+assert.match(dungeonMarkup, /id="enemyArmor"/, 'Der Gegner-Trefferchance-Anker fehlt im Angular-eigenen Dungeon-Markup.');
+assert.match(dungeonMarkup, /id="enemyDamage"/, 'Der Gegner-Geschwindigkeits-Anker fehlt im Angular-eigenen Dungeon-Markup.');
+assert.match(dungeonMarkup, /id="energyCost"/, 'Der Energie-Anker fehlt im Angular-eigenen Dungeon-Markup.');
+assert.match(dungeonMarkup, /id="runDuration"/, 'Der Wellenzähler-Anker fehlt im Angular-eigenen Dungeon-Markup.');
+assert.match(dungeonMarkup, /id="dungeonRunCard"/, 'Der Dungeon-Statusanker fehlt im Angular-eigenen Dungeon-Markup.');
+assert.match(dungeonMarkup, /id="autoDungeonBtn"/, 'Der Dungeon-Automatikbutton fehlt im Angular-eigenen Dungeon-Markup.');
+assert.match(dungeonMarkup, /id="collectLootBtn"/, 'Der Beute-Einsammelbutton fehlt im Angular-eigenen Dungeon-Markup.');
+assert.match(dungeonMarkup, /id="teamCard"/, 'Der Dungeon-Team-Renderanker fehlt im Angular-eigenen Dungeon-Markup.');
+assert.match(dungeonMarkup, /id="dungeonLoot"/, 'Der Dungeon-Beute-Renderanker fehlt im Angular-eigenen Dungeon-Markup.');
+assert.match(dungeonMarkup, /id="dungeonLootEmpty"/, 'Der Dungeon-Beute-Leerzustand fehlt im Angular-eigenen Dungeon-Markup.');
+assert.match(dungeonMarkup, /id="combatLog"/, 'Das Expeditionsprotokoll fehlt im Angular-eigenen Dungeon-Markup.');
+
 const legacyFallbackCalls = [];
 const composed = composePageMarkup(APP_SHELL_PAGE_IDS, pageId => {
   legacyFallbackCalls.push(pageId);
@@ -75,7 +89,7 @@ const composed = composePageMarkup(APP_SHELL_PAGE_IDS, pageId => {
 
 assert.deepEqual(
   legacyFallbackCalls,
-  ['dungeon', 'index'],
+  ['index'],
   'Der Markup-Cutover greift auf mehr oder weniger Legacy-Seiten als vorgesehen zurück.'
 );
 
@@ -84,11 +98,10 @@ for (const pageId of APP_SHELL_PAGE_IDS) {
   assert.equal(matches.length, 1, `Seite ${pageId} ist im zusammengesetzten Markup nicht genau einmal vorhanden.`);
 }
 
-assert.equal(getAngularOwnedPageMarkup('dungeon'), null, 'Dungeon soll in v0.12.54 noch nicht Angular-eigen sein.');
-assert.equal(getAngularOwnedPageMarkup('index'), null, 'Index soll in v0.12.54 noch nicht Angular-eigen sein.');
+assert.equal(getAngularOwnedPageMarkup('index'), null, 'Index soll in v0.12.55 noch nicht Angular-eigen sein.');
 assert.match(appComponent, /composePageMarkup\(APP_SHELL_PAGE_IDS, pageId => \{/, 'Der App-Component verwendet den Seiten-Markup-Composer nicht mit der Shell-Seitenreihenfolge.');
-assert.match(appComponent, /app\.querySelector<HTMLElement>\(`main > section#\$\{pageId\}\.page`\)/, 'Der kontrollierte Legacy-Fallback für noch nicht migrierte Seiten fehlt.');
+assert.match(appComponent, /app\.querySelector<HTMLElement>\(`main > section#\$\{pageId\}\.page`\)/, 'Der kontrollierte Legacy-Fallback für die letzte noch nicht migrierte Seite fehlt.');
 assert.match(appComponent, /composeAppShell\(pageMarkup\)/, 'Das zusammengesetzte Seitenmarkup wird nicht mehr in die Angular-Shell eingesetzt.');
-assert.match(appComponent, /const APP_VERSION = '0\.12\.54';/, 'Die App-Version wurde nicht auf v0.12.54 gesetzt.');
+assert.match(appComponent, /const APP_VERSION = '0\.12\.55';/, 'Die App-Version wurde nicht auf v0.12.55 gesetzt.');
 
-console.log('Seiten-Markup: Stützpunkt, Taverne, Kader, Lager, Schmiede und Markt liegen in Angular; Dungeon und Index bleiben kontrollierter Legacy-Fallback.');
+console.log('Seiten-Markup: Sieben Seiten einschließlich Dungeon liegen in Angular; nur der Index bleibt kontrollierter Legacy-Fallback.');
