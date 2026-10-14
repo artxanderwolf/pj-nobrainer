@@ -1,19 +1,22 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-const adapter = readFileSync(new URL('../src/app/core/legacy-dungeon-domain-adapter.service.ts', import.meta.url), 'utf8');
+const service = readFileSync(new URL('../src/app/core/game-dungeon.service.ts', import.meta.url), 'utf8');
 const core = readFileSync(new URL('../src/app/game/dungeon-core.ts', import.meta.url), 'utf8');
 
 assert.match(core, /export function filterActiveDungeonAttackPoints/);
 assert.match(core, /filterActiveDungeonAttackPoints,/);
 assert.match(
-  adapter,
-  /run\.attackPoints=window\.NoBrainerDungeonCore\.filterActiveDungeonAttackPoints\(run\.attackPoints,alivePlayers\.map\(c=>c\.id\),aliveEnemies\.map\(e=>e\.id\)\);/
+  service,
+  /run\.attackPoints = filterActiveDungeonAttackPoints\([\s\S]*run\.attackPoints,[\s\S]*alivePlayers\.map\(character => character\.id\),[\s\S]*aliveEnemies\.map\(enemy => enemy\.id\)[\s\S]*\);/
 );
 
-const aliveCheckIndex = adapter.indexOf('if(!alivePlayers.length)');
-const pruneIndex = adapter.indexOf('run.attackPoints=window.NoBrainerDungeonCore.filterActiveDungeonAttackPoints');
-const dueIndex = adapter.indexOf('const due=window.NoBrainerDungeonCore.getNextDueAttack');
-assert.ok(aliveCheckIndex >= 0 && pruneIndex > aliveCheckIndex && dueIndex > pruneIndex, 'Inaktive Angriffspunkte müssen nach der Wellenprüfung und vor der Auswahl der nächsten Aktion entfernt werden.');
+const aliveCheckIndex = service.indexOf("if (!alivePlayers.length)");
+const pruneIndex = service.indexOf('run.attackPoints = filterActiveDungeonAttackPoints');
+const dueIndex = service.indexOf('const due = getNextDueAttack');
+assert.ok(
+  aliveCheckIndex >= 0 && pruneIndex > aliveCheckIndex && dueIndex > pruneIndex,
+  'Inaktive Angriffspunkte müssen nach der Wellenprüfung und vor der Auswahl der nächsten Aktion entfernt werden.'
+);
 
-console.log('Dungeon-Kampf-Hotfix: Runtime filtert inaktive Angriffspunkte vor der nächsten Kampfaktion.');
+console.log('Dungeon-Kampf-Hotfix: Angular-Dungeon-Service filtert inaktive Angriffspunkte vor der nächsten Kampfaktion.');
