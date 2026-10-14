@@ -15,12 +15,13 @@ import { LegacyProgressionAdapterService } from './core/legacy-progression-adapt
 import { LegacyProgressionPresentationAdapterService } from './core/legacy-progression-presentation-adapter.service';
 import { LegacyResourcePresentationAdapterService } from './core/legacy-resource-presentation-adapter.service';
 import { LegacyRuntimeService } from './core/legacy-runtime.service';
+import { LegacySaveStatusPresentationAdapterService } from './core/legacy-save-status-presentation-adapter.service';
 import { LegacySourceAdapterService } from './core/legacy-source-adapter.service';
 import { LegacyTavernPresentationAdapterService } from './core/legacy-tavern-presentation-adapter.service';
 import { LegacyWeaponPresentationAdapterService } from './core/legacy-weapon-presentation-adapter.service';
 import { adaptLegacyWeaponMarkup, adaptLegacyWeaponScript } from './game/weapon-naming';
 
-const APP_VERSION = '0.12.44';
+const APP_VERSION = '0.12.45';
 const LEGACY_PROTOTYPE_PATH = 'legacy/NoBrainer_GitHub_v0.12.2.html';
 const LEGACY_STYLE_ID = 'nobrainer-legacy-style';
 const LEGACY_SCRIPT_ID = 'nobrainer-legacy-script';
@@ -32,6 +33,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   constructor(
     private readonly legacyRuntime: LegacyRuntimeService,
     private readonly legacySourceAdapter: LegacySourceAdapterService,
+    private readonly legacySaveStatusPresentationAdapter: LegacySaveStatusPresentationAdapterService,
     private readonly legacyDungeonDomainAdapter: LegacyDungeonDomainAdapterService,
     private readonly legacyDungeonPresentationAdapter: LegacyDungeonPresentationAdapterService,
     private readonly legacyForgeAdapter: LegacyForgeAdapterService,
@@ -77,6 +79,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     if (!app || !legacyStyle || !legacyScript) throw new Error('Legacy-Prototyp hat nicht die erwartete v0.12.2-Struktur.');
 
     let adaptedScript = this.legacySourceAdapter.adapt(legacyScript.textContent ?? '');
+    adaptedScript = this.legacySaveStatusPresentationAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyDungeonDomainAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyDungeonPresentationAdapter.adapt(adaptedScript);
     adaptedScript = adaptLegacyWeaponScript(adaptedScript);
