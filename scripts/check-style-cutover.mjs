@@ -29,11 +29,11 @@ assert.match(
 assert.doesNotMatch(appComponent, /LEGACY_STYLE_ID/, 'Die alte dynamische Style-ID ist noch im App-Component vorhanden.');
 assert.doesNotMatch(appComponent, /installLegacyStyle/, 'Die alte dynamische Style-Installation ist noch aktiv.');
 assert.doesNotMatch(appComponent, /querySelector<HTMLStyleElement>\('head > style'\)/, 'Der App-Component liest weiterhin das Legacy-Stylesheet zur Laufzeit.');
-assert.match(appComponent, /querySelector<HTMLElement>\('body > \.app'\)/, 'Das Legacy-Markup wird nicht mehr wie erwartet geladen.');
+assert.doesNotMatch(appComponent, /querySelector<HTMLElement>\('body > \.app'\)/, 'Der App-Component liest weiterhin Legacy-Seitenmarkup zur Laufzeit.');
 assert.match(appComponent, /querySelector<HTMLScriptElement>\('body > script'\)/, 'Das Legacy-Script wird nicht mehr wie erwartet geladen.');
-assert.match(appComponent, /legacyHost\.nativeElement\.innerHTML = adaptedMarkup;/, 'Das adaptierte Legacy-Markup wird nicht mehr in den Angular-Host eingebunden.');
+assert.match(appComponent, /legacyHost\.nativeElement\.innerHTML = adaptedMarkup;/, 'Das zusammengesetzte Angular-Markup wird nicht mehr in den Angular-Host eingebunden.');
 
 const buildStyles = angularConfig.projects?.nobrainer?.architect?.build?.options?.styles ?? [];
 assert.ok(buildStyles.includes('src/styles.css'), 'src/styles.css ist nicht als Angular-Build-Stylesheet registriert.');
 
-console.log('Style-Cutover: Legacy-CSS liegt vollständig im Angular-Build und wird nicht mehr zur Laufzeit aus der HTML-Datei injiziert.');
+console.log('Style-Cutover: Legacy-CSS liegt vollständig im Angular-Build; Legacy-Seitenmarkup und Styles werden nicht mehr aus der HTML-Datei geladen.');

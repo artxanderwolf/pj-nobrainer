@@ -1,4 +1,6 @@
-export const ANGULAR_OWNED_PAGE_IDS = ['base', 'tavern', 'roster', 'storage', 'forge', 'market', 'dungeon'] as const;
+import { INDEX_PAGE_MARKUP } from './index-page-markup.ts';
+
+export const ANGULAR_OWNED_PAGE_IDS = ['base', 'tavern', 'roster', 'storage', 'forge', 'market', 'dungeon', 'index'] as const;
 
 type AngularOwnedPageId = typeof ANGULAR_OWNED_PAGE_IDS[number];
 
@@ -189,7 +191,8 @@ const ANGULAR_PAGE_MARKUP: Record<AngularOwnedPageId, string> = {
   storage: STORAGE_PAGE_MARKUP,
   forge: FORGE_PAGE_MARKUP,
   market: MARKET_PAGE_MARKUP,
-  dungeon: DUNGEON_PAGE_MARKUP
+  dungeon: DUNGEON_PAGE_MARKUP,
+  index: INDEX_PAGE_MARKUP
 };
 
 export function getAngularOwnedPageMarkup(pageId: string): string | null {
@@ -198,11 +201,12 @@ export function getAngularOwnedPageMarkup(pageId: string): string | null {
     : null;
 }
 
-export function composePageMarkup(
-  pageIds: readonly string[],
-  resolveLegacyPage: (pageId: string) => string
-): string {
+export function composePageMarkup(pageIds: readonly string[]): string {
   return pageIds
-    .map(pageId => getAngularOwnedPageMarkup(pageId) ?? resolveLegacyPage(pageId))
+    .map(pageId => {
+      const markup = getAngularOwnedPageMarkup(pageId);
+      if (markup === null) throw new Error(`Unbekannte Angular-Seite: ${pageId}`);
+      return markup;
+    })
     .join('\n');
 }
