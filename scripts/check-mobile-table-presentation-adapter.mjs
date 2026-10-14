@@ -49,7 +49,7 @@ assert.ok(source.includes('renderDungeonStatus();'));
 assert.ok(source.includes('const tbody=document.getElementById("inventoryRows");tbody.innerHTML="";'));
 
 const app = fs.readFileSync('src/app/app.component.ts', 'utf8');
-const sourceAdapterIndex = app.indexOf("let adaptedScript = this.legacySourceAdapter.adapt(legacyScript.textContent ?? '');");
+const sourceAdapterIndex = app.indexOf('let adaptedScript = this.legacySourceAdapter.adapt(source);');
 const mobileTableAdapterIndex = app.indexOf('adaptedScript = this.legacyMobileTablePresentationAdapter.adapt(adaptedScript);');
 const navigationAdapterIndex = app.indexOf('adaptedScript = this.legacyNavigationPresentationAdapter.adapt(adaptedScript);');
 assert.ok(sourceAdapterIndex >= 0, 'LegacySourceAdapter-Aufruf fehlt.');
