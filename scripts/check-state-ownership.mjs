@@ -40,6 +40,7 @@ assert.doesNotMatch(simulated, /state=createDefaultState\(\);/, 'Das Zurücksetz
 assert.match(simulated, /const state=gameStateBootstrap\.initialize\(createDefaultState\(\)\);/, 'Der simulierte State-Cutover verwendet nicht den Angular-Container.');
 
 assert.match(stateService, /private readonly state: MutableGameState = \{\};/, 'Der stabile Angular-State-Container fehlt.');
+assert.match(stateService, /getState<TState extends MutableGameState = MutableGameState>\(\): TState/, 'Der Angular-State kann nicht typisiert an Fachservices übergeben werden.');
 assert.match(stateService, /initialize: \(initialState: MutableGameState\) => this\.initializeState\(initialState\)/, 'Der State-Bootstrap initialisiert den Angular-Container nicht.');
 assert.match(stateService, /replace: \(nextState: MutableGameState\) => this\.replaceState\(nextState\)/, 'Der State-Bootstrap ersetzt State-Inhalte nicht über Angular.');
 assert.match(stateService, /for \(const key of Object\.keys\(this\.state\)\) delete this\.state\[key\];[\s\S]*Object\.assign\(this\.state, nextState\);/, 'State-Ersetzungen erhalten die Root-Objektidentität nicht.');
@@ -63,6 +64,6 @@ assert.ok(openStateIndex >= 0 && openRuntimeIndex > openStateIndex, 'Der State-B
 assert.ok(installIndex > openRuntimeIndex, 'Das Runtime-Script wird vor den Angular-Bootstraps installiert.');
 assert.ok(assertStateIndex > installIndex, 'Die State-Initialisierung wird nach der Script-Installation nicht verifiziert.');
 assert.ok(closeRuntimeIndex > assertStateIndex && closeStateIndex > closeRuntimeIndex, 'Die temporären Bootstraps werden nicht in sicherer Reihenfolge geschlossen.');
-assert.match(appComponent, /const APP_VERSION = '0\.12\.61';/, 'Die App-Version wurde nicht auf v0.12.61 gesetzt.');
+assert.match(appComponent, /const APP_VERSION = '0\.12\.62';/, 'Die App-Version wurde nicht auf v0.12.62 gesetzt.');
 
-console.log('State-Eigentümerschaft: Angular besitzt die stabile Root-State-Referenz; Laden und Reset ersetzen nur deren Inhalt, während die bestehende Fachlogik unverändert weiterarbeitet.');
+console.log('State-Eigentümerschaft: Angular besitzt die stabile Root-State-Referenz; Fachservices können denselben Container typisiert verwenden, Laden und Reset ersetzen nur dessen Inhalt.');
