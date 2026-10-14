@@ -6,6 +6,7 @@ const appComponent = readFileSync('src/app/app.component.ts', 'utf8');
 const runtimeService = readFileSync('src/app/core/game-runtime.service.ts', 'utf8');
 const gameTickAdapter = readFileSync('src/app/core/legacy-game-tick-adapter.service.ts', 'utf8');
 const registrationAdapter = readFileSync('src/app/core/legacy-runtime-registration-adapter.service.ts', 'utf8');
+const dungeonPresentationAdapter = readFileSync('src/app/core/legacy-dungeon-presentation-adapter.service.ts', 'utf8');
 
 const scriptMatch = html.match(/<script>([\s\S]*?)<\/script>\s*<\/body>/);
 assert.ok(scriptMatch, 'Das Legacy-Script konnte für den gameTick-Regressionscheck nicht extrahiert werden.');
@@ -22,6 +23,17 @@ assert.match(simulatedCutover, /function updateEnergy\(\)/, 'Die Energie-Fachfun
 assert.match(simulatedCutover, /function updateForgeJob\(\)/, 'Die Schmiede-Fachfunktion wurde beim gameTick-Cutover versehentlich entfernt.');
 assert.match(simulatedCutover, /function updateMarketJob\(\)/, 'Die Markt-Fachfunktion wurde beim gameTick-Cutover versehentlich entfernt.');
 assert.match(simulatedCutover, /function updateDungeonAutomation\(\)/, 'Die Dungeon-Fachfunktion wurde beim gameTick-Cutover versehentlich entfernt.');
+
+assert.doesNotMatch(
+  dungeonPresentationAdapter,
+  /Dungeon-Wellenaktualisierung im Runtime-Tick/,
+  'Der Dungeon-Präsentationsadapter erwartet weiterhin einen bereits entfernten Legacy-gameTick.'
+);
+assert.match(
+  dungeonPresentationAdapter,
+  /const ADAPTED_DUNGEON_STATUS = `function renderDungeonStatus\(\)\{\n  renderDungeonSessionWaveCounter\(\);/,
+  'Die Dungeon-Wellenanzeige ist nicht mehr Teil der Dungeon-Status-Präsentation.'
+);
 
 assert.match(runtimeService, /private runTickCycle\(\): void \{/, 'Der zentrale Angular-Tick-Zyklus fehlt.');
 assert.doesNotMatch(runtimeService, /\btick\(\): void;/, 'Die Runtime-API stellt weiterhin den alten Legacy-tick bereit.');
@@ -79,6 +91,6 @@ const sourceAdapterIndex = appComponent.indexOf('let adaptedScript = this.legacy
 const tickAdapterIndex = appComponent.indexOf('adaptedScript = this.legacyGameTickAdapter.adapt(adaptedScript);');
 const registrationAdapterIndex = appComponent.indexOf('adaptedScript = this.legacyRuntimeRegistrationAdapter.adapt(adaptedScript);');
 assert.ok(sourceAdapterIndex >= 0 && tickAdapterIndex > sourceAdapterIndex && registrationAdapterIndex > tickAdapterIndex, 'Die Adapterreihenfolge für den gameTick-Cutover ist nicht stabil.');
-assert.match(appComponent, /const APP_VERSION = '0\.12\.59';/, 'Die App-Version wurde nicht auf v0.12.59 gesetzt.');
+assert.match(appComponent, /const APP_VERSION = '0\.12\.60';/, 'Die App-Version wurde nicht auf v0.12.60 gesetzt.');
 
-console.log('gameTick-Eigentümerschaft: Der zentrale 250-ms-Zyklus liegt in Angular; der Legacy-gameTick wird vor Script-Installation entfernt und nur Fach-/Renderoperationen werden über die Übergangs-Runtime aufgerufen.');
+console.log('gameTick-Eigentümerschaft: Der zentrale 250-ms-Zyklus liegt in Angular; Präsentationsadapter hängen nicht mehr vom entfernten Legacy-gameTick ab.');
