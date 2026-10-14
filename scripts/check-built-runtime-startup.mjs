@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
 import { createServer } from 'node:http';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { extname, join, normalize, resolve } from 'node:path';
 
 const distRoot = resolve('dist/nobrainer/browser');
@@ -52,10 +53,27 @@ const server = createServer((request, response) => {
   response.end(readFileSync(filePath));
 });
 
+function delay(ms) {
+  return new Promise(resolveDelay => setTimeout(resolveDelay, ms));
+}
+
+async function stopBrowser(child) {
+  if (child.exitCode !== null) return;
+  child.kill('SIGTERM');
+  const closed = await Promise.race([
+    new Promise(resolveClose => child.once('close', () => resolveClose(true))),
+    delay(1500).then(() => false)
+  ]);
+  if (!closed && child.exitCode === null) child.kill('SIGKILL');
+}
+
 await new Promise((resolveListen, rejectListen) => {
   server.once('error', rejectListen);
   server.listen(0, '127.0.0.1', resolveListen);
 });
+
+const browserProfile = mkdtempSync(join(tmpdir(), 'nobrainer-runtime-smoke-'));
+let child = null;
 
 try {
   const address = server.address();
@@ -67,47 +85,76 @@ try {
     '--disable-gpu',
     '--disable-dev-shm-usage',
     '--hide-scrollbars',
+    '--no-first-run',
+    '--no-default-browser-check',
+    `--user-data-dir=${browserProfile}`,
     '--virtual-time-budget=3500',
     '--dump-dom',
     pageUrl
   ];
 
-  const child = spawn(browser, browserArgs, { stdio: ['ignore', 'pipe', 'pipe'] });
-  let stdout = '';
-  let stderr = '';
+  child = spawn(browser, browserArgs, { stdio: ['ignore', 'pipe', 'pipe'] });
   child.stdout.setEncoding('utf8');
   child.stderr.setEncoding('utf8');
-  child.stdout.on('data', chunk => { stdout += chunk; });
-  child.stderr.on('data', chunk => { stderr += chunk; });
+
+  let stdout = '';
+  let stderr = '';
+  let settled = false;
 
   const result = await new Promise((resolveRun, rejectRun) => {
-    const timeout = setTimeout(() => {
-      child.kill('SIGKILL');
-      rejectRun(new Error('Der Browser-Runtime-Smoke-Test hat das Zeitlimit überschritten.'));
-    }, 20_000);
+    const finish = (callback, value) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      callback(value);
+    };
 
-    child.once('error', error => {
-      clearTimeout(timeout);
-      rejectRun(error);
+    const inspect = () => {
+      if (/Die NoBrainer-Runtime konnte nicht geladen werden/.test(stdout)) {
+        finish(rejectRun, new Error(`Die gebaute Anwendung fiel beim Browserstart in den Runtime-Fehlerzustand.\n${stderr}`));
+        return;
+      }
+
+      const ready =
+        stdout.includes(`Prototype v${expectedVersion}`) &&
+        stdout.includes('id="nav"') &&
+        stdout.includes('id="marketJobCard"') &&
+        stdout.includes('id="dungeonRunCard"');
+      if (ready) finish(resolveRun, true);
+    };
+
+    child.stdout.on('data', chunk => {
+      stdout += chunk;
+      inspect();
     });
+    child.stderr.on('data', chunk => { stderr += chunk; });
+
+    child.once('error', error => finish(rejectRun, error));
     child.once('close', code => {
-      clearTimeout(timeout);
-      resolveRun(code);
+      inspect();
+      if (!settled) {
+        finish(
+          rejectRun,
+          new Error(`Chrome/Chromium wurde beendet, bevor die vollständige Spieloberfläche erkannt wurde (Code ${code}).\n${stderr}\nDOM-Ausgabe: ${stdout.slice(-4000)}`)
+        );
+      }
     });
+
+    const timeout = setTimeout(() => {
+      inspect();
+      if (!settled) {
+        finish(
+          rejectRun,
+          new Error(`Der Browser-Runtime-Smoke-Test hat die vollständige Spieloberfläche nicht rechtzeitig erkannt.\n${stderr}\nDOM-Ausgabe: ${stdout.slice(-4000)}`)
+        );
+      }
+    }, 20_000);
   });
 
-  assert.equal(result, 0, `Chrome/Chromium beendete den Runtime-Smoke-Test mit Code ${result}.\n${stderr}`);
-  assert.doesNotMatch(
-    stdout,
-    /Die NoBrainer-Runtime konnte nicht geladen werden/,
-    `Die gebaute Anwendung fiel beim Browserstart in den Runtime-Fehlerzustand.\n${stderr}`
-  );
-  assert.match(stdout, new RegExp(`Prototype v${expectedVersion.replaceAll('.', '\\.')}`), 'Die erwartete Versionsanzeige fehlt im gestarteten Build.');
-  assert.match(stdout, /id="nav"/, 'Die Navigation wurde beim Browserstart nicht aufgebaut.');
-  assert.match(stdout, /id="marketJobCard"/, 'Der Markt wurde beim Browserstart nicht aufgebaut.');
-  assert.match(stdout, /id="dungeonRunCard"/, 'Der Dungeon wurde beim Browserstart nicht aufgebaut.');
-
+  assert.equal(result, true);
   console.log(`Browser-Runtime-Smoke-Test: Prototype v${expectedVersion} startet aus dem finalen Angular-Build ohne Runtime-Fallback.`);
 } finally {
+  if (child) await stopBrowser(child);
+  rmSync(browserProfile, { recursive: true, force: true });
   await new Promise(resolveClose => server.close(resolveClose));
 }

@@ -18,7 +18,7 @@ assert.match(forgeService, /delete window\.NoBrainerForgeCompatibility;/, 'Die S
 
 assert.match(runtimeService, /private readonly gameForge: GameForgeService/, 'GameRuntimeService besitzt keinen Angular-Schmiede-Service.');
 assert.match(runtimeService, /private runTickCycle\(\): void \{[\s\S]*const forgeUpdate = this\.gameForge\.update\(\);/, 'Der Angular-Tick aktualisiert die Schmiede nicht direkt.');
-assert.match(runtimeService, /runtime\.prepare\(\);[\s\S]*this\.gameEnergy\.update\(\);[\s\S]*const forgeUpdate = this\.gameForge\.update\(\);[\s\S]*const marketUpdate = this\.gameMarket\.update\(\);[\s\S]*runtime\.updateDungeonAutomation\(\);[\s\S]*this\.gameEnergy\.update\(\);/, 'Die Startreihenfolge Energie → Schmiede → Markt → Dungeon → Energie wurde nicht erhalten.');
+assert.match(runtimeService, /runtime\.prepare\(\);[\s\S]*this\.gameEnergy\.update\(\);[\s\S]*const forgeUpdate = this\.gameForge\.update\(\);[\s\S]*const marketUpdate = this\.gameMarket\.update\(\);[\s\S]*const dungeonUpdate = this\.gameDungeon\.update\(\);[\s\S]*this\.gameEnergy\.update\(\);/, 'Die Startreihenfolge Energie → Schmiede → Markt → Dungeon → Energie wurde nicht erhalten.');
 assert.doesNotMatch(runtimeService, /\bupdateForgeJob\(\): boolean;/, 'GameRuntimeApi enthält weiterhin einen Legacy-Schmiede-Callback.');
 assert.doesNotMatch(runtimeService, /runtime\.updateForgeJob\(\)/, 'GameRuntimeService ruft weiterhin updateForgeJob aus der Legacy-Runtime auf.');
 assert.match(runtimeService, /runtime\.addLog\(`Schmiede fertig: \$\{name\} wurde dem Waffeninventar hinzugefügt\.`/, 'Schmiede-Abschlussmeldungen gehen beim Angular-Cutover verloren.');
@@ -40,6 +40,6 @@ const openForgeIndex = appComponent.indexOf('this.gameForge.openLegacyCompatibil
 const openStateIndex = appComponent.indexOf('this.gameState.openBootstrapRegistration();');
 assert.ok(openEnergyIndex >= 0 && openForgeIndex > openEnergyIndex && openStateIndex > openForgeIndex, 'Die Schmiede-Kompatibilitätsbrücke wird nicht vor State- und Runtime-Bootstrap geöffnet.');
 assert.match(appComponent, /ngOnDestroy\(\): void \{[\s\S]*this\.gameForge\.closeLegacyCompatibilityBridge\(\);/, 'Die Schmiede-Kompatibilitätsbrücke wird beim App-Abbau nicht geschlossen.');
-assert.match(appComponent, /const APP_VERSION = '0\.12\.65';/, 'Die App-Version wurde nicht auf v0.12.65 gesetzt.');
+assert.match(appComponent, /const APP_VERSION = '0\.12\.66';/, 'Die App-Version wurde nicht auf v0.12.66 gesetzt.');
 
 console.log('Schmiede-Eigentümerschaft: Auftragserstellung, Materialien, Slots, Queue, Fortschritt und Fertigstellung laufen auf Angular-State im GameForgeService; Legacy-Code enthält nur noch UI-Kompatibilitätswrapper.');
