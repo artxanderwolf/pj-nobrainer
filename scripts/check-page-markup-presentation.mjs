@@ -40,7 +40,7 @@ for (const pageId of ANGULAR_OWNED_PAGE_IDS) {
 }
 
 const legacyFallbackCalls = [];
-const composed = composePageMarkup(pageId => {
+const composed = composePageMarkup(APP_SHELL_PAGE_IDS, pageId => {
   legacyFallbackCalls.push(pageId);
   return extractLegacyPage(pageId);
 });
@@ -57,7 +57,7 @@ for (const pageId of APP_SHELL_PAGE_IDS) {
 }
 
 assert.equal(getAngularOwnedPageMarkup('dungeon'), null, 'Dungeon soll in v0.12.52 noch nicht Angular-eigen sein.');
-assert.match(appComponent, /composePageMarkup\(pageId => \{/, 'Der App-Component verwendet den neuen Seiten-Markup-Composer nicht.');
+assert.match(appComponent, /composePageMarkup\(APP_SHELL_PAGE_IDS, pageId => \{/, 'Der App-Component verwendet den neuen Seiten-Markup-Composer nicht mit der Shell-Seitenreihenfolge.');
 assert.match(appComponent, /app\.querySelector<HTMLElement>\(`main > section#\$\{pageId\}\.page`\)/, 'Der kontrollierte Legacy-Fallback für noch nicht migrierte Seiten fehlt.');
 assert.match(appComponent, /composeAppShell\(pageMarkup\)/, 'Das zusammengesetzte Seitenmarkup wird nicht mehr in die Angular-Shell eingesetzt.');
 assert.match(appComponent, /const APP_VERSION = '0\.12\.52';/, 'Die App-Version wurde nicht auf v0.12.52 gesetzt.');
