@@ -11,6 +11,7 @@ import { LegacyForgePresentationAdapterService } from './core/legacy-forge-prese
 import { LegacyMarketAdapterService } from './core/legacy-market-adapter.service';
 import { LegacyMarketPresentationAdapterService } from './core/legacy-market-presentation-adapter.service';
 import { LegacyMaterialPresentationAdapterService } from './core/legacy-material-presentation-adapter.service';
+import { LegacyNavigationPresentationAdapterService } from './core/legacy-navigation-presentation-adapter.service';
 import { LegacyProgressionAdapterService } from './core/legacy-progression-adapter.service';
 import { LegacyProgressionPresentationAdapterService } from './core/legacy-progression-presentation-adapter.service';
 import { LegacyResourcePresentationAdapterService } from './core/legacy-resource-presentation-adapter.service';
@@ -21,7 +22,7 @@ import { LegacyTavernPresentationAdapterService } from './core/legacy-tavern-pre
 import { LegacyWeaponPresentationAdapterService } from './core/legacy-weapon-presentation-adapter.service';
 import { adaptLegacyWeaponMarkup, adaptLegacyWeaponScript } from './game/weapon-naming';
 
-const APP_VERSION = '0.12.45';
+const APP_VERSION = '0.12.46';
 const LEGACY_PROTOTYPE_PATH = 'legacy/NoBrainer_GitHub_v0.12.2.html';
 const LEGACY_STYLE_ID = 'nobrainer-legacy-style';
 const LEGACY_SCRIPT_ID = 'nobrainer-legacy-script';
@@ -33,6 +34,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   constructor(
     private readonly legacyRuntime: LegacyRuntimeService,
     private readonly legacySourceAdapter: LegacySourceAdapterService,
+    private readonly legacyNavigationPresentationAdapter: LegacyNavigationPresentationAdapterService,
     private readonly legacySaveStatusPresentationAdapter: LegacySaveStatusPresentationAdapterService,
     private readonly legacyDungeonDomainAdapter: LegacyDungeonDomainAdapterService,
     private readonly legacyDungeonPresentationAdapter: LegacyDungeonPresentationAdapterService,
@@ -79,6 +81,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     if (!app || !legacyStyle || !legacyScript) throw new Error('Legacy-Prototyp hat nicht die erwartete v0.12.2-Struktur.');
 
     let adaptedScript = this.legacySourceAdapter.adapt(legacyScript.textContent ?? '');
+    adaptedScript = this.legacyNavigationPresentationAdapter.adapt(adaptedScript);
     adaptedScript = this.legacySaveStatusPresentationAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyDungeonDomainAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyDungeonPresentationAdapter.adapt(adaptedScript);
