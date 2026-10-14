@@ -10,6 +10,23 @@ declare global {
   }
 }
 
+const ADAPTED_DUNGEON_OVERVIEW = `function renderDungeonOverview(){
+  const participantCount=state.dungeonRun?.participantIds?.length||getSelectedDungeonIds().length;
+  const presentation=window.NoBrainerDungeonPresentationCore.getDungeonOverviewPresentation({
+    enemyBaseDamage:CONFIG.dungeon.enemyBase.damage,
+    enemyBaseHitChance:CONFIG.dungeon.enemyBase.hitChance,
+    enemyBaseSpeed:CONFIG.dungeon.enemyBase.speed,
+    participantCount,
+    energyCostPerCharacter:getEnergyCostPerCharacter(participantCount)
+  });
+  const damage=document.getElementById("enemyHp"),hit=document.getElementById("enemyArmor"),speed=document.getElementById("enemyDamage"),energy=document.getElementById("energyCost");
+  if(damage)damage.textContent=presentation.enemyDamageText;
+  if(hit)hit.textContent=presentation.enemyHitChanceText;
+  if(speed)speed.textContent=presentation.enemySpeedText;
+  if(energy)energy.textContent=presentation.energyCostText;
+}
+`;
+
 const ADAPTED_DUNGEON_STATUS = `function renderDungeonStatus(){
   const box=document.getElementById("dungeonRunCard"),autoBtn=document.getElementById("autoDungeonBtn"),collectBtn=document.getElementById("collectLootBtn");if(!box||!autoBtn||!collectBtn)return;
   const presentation=window.NoBrainerDungeonPresentationCore.getDungeonStatusPresentation({
@@ -59,6 +76,19 @@ export class LegacyDungeonPresentationAdapterService {
       '  renderDungeonStatus();\n  renderDungeonLoot();',
       '  renderDungeonStatus();\n  renderDungeonSessionWaveCounter();\n  renderDungeonLoot();',
       'Dungeon-Wellenaktualisierung im Runtime-Tick'
+    );
+    adapted = this.replaceOnce(
+      adapted,
+      'function renderDungeonStatus(){',
+      ADAPTED_DUNGEON_OVERVIEW + '\nfunction renderDungeonStatus(){',
+      'Dungeon-Übersicht-Renderfunktion'
+    );
+    adapted = this.replaceRangeOnce(
+      adapted,
+      '  const displayedCount=state.dungeonRun?.participantIds?.length||getSelectedDungeonIds().length;',
+      '  renderCharacter("teamCard");renderCharacter("rosterCard");renderTavern();',
+      '  renderDungeonOverview();\n  renderDungeonSessionWaveCounter();\n\n',
+      'Dungeon-Übersicht-Präsentation'
     );
     adapted = this.replaceRangeOnce(
       adapted,
