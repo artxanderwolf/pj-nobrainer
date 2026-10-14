@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { formatCurrencyNickel } from '../game/economy-core';
 import { OfflineProgressService, SaveSnapshot } from './offline-progress.service';
 import { SaveStorageService } from './save-storage.service';
+import { GameDungeonPresentationService } from './game-dungeon-presentation.service';
 import { GameDungeonService, type DungeonActionResult } from './game-dungeon.service';
 import { GameEnergyService } from './game-energy.service';
 import { GameForgeService } from './game-forge.service';
@@ -18,9 +19,6 @@ export interface GameRuntimeApi {
   prepare(): void;
   renderForgeJob(): void;
   renderMarketJob(): void;
-  renderDungeonStatus(): void;
-  renderDungeonLoot(): void;
-  renderTeam(): void;
   renderForgePreview(): void;
   renderWeaponInventory(): void;
   renderMarketMaterials(): void;
@@ -57,7 +55,8 @@ export class GameRuntimeService {
     private readonly gameEnergy: GameEnergyService,
     private readonly gameForge: GameForgeService,
     private readonly gameMarket: GameMarketService,
-    private readonly gameDungeon: GameDungeonService
+    private readonly gameDungeon: GameDungeonService,
+    private readonly gameDungeonPresentation: GameDungeonPresentationService
   ) {}
 
   openBootstrapRegistration(): void {
@@ -109,6 +108,12 @@ export class GameRuntimeService {
 
   renderInitial(): void {
     this.getRuntime().renderInitial();
+    this.gameDungeonPresentation.renderAll();
+  }
+
+  handleDungeonActionResult(result: DungeonActionResult): void {
+    if (result.alertMessage) window.alert(result.alertMessage);
+    this.applyDungeonResult(this.getRuntime(), result);
   }
 
   stopTick(): void {
@@ -129,9 +134,6 @@ export class GameRuntimeService {
       'prepare',
       'renderForgeJob',
       'renderMarketJob',
-      'renderDungeonStatus',
-      'renderDungeonLoot',
-      'renderTeam',
       'renderForgePreview',
       'renderWeaponInventory',
       'renderMarketMaterials',
@@ -174,9 +176,7 @@ export class GameRuntimeService {
 
     runtime.renderForgeJob();
     runtime.renderMarketJob();
-    runtime.renderDungeonStatus();
-    runtime.renderDungeonLoot();
-    runtime.renderTeam();
+    this.gameDungeonPresentation.renderAll();
 
     if (forgeCompleted) {
       runtime.renderForgePreview();
