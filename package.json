@@ -1,6 +1,6 @@
 {
   "name": "pj-nobrainer",
-  "version": "0.12.64",
+  "version": "0.12.65",
   "private": true,
   "scripts": {
     "start": "npm run prepare:legacy-runtime && ng serve",
