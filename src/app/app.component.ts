@@ -22,7 +22,7 @@ import { LegacySaveStatusPresentationAdapterService } from './core/legacy-save-s
 import { LegacySourceAdapterService } from './core/legacy-source-adapter.service';
 import { LegacyTavernPresentationAdapterService } from './core/legacy-tavern-presentation-adapter.service';
 import { LegacyWeaponPresentationAdapterService } from './core/legacy-weapon-presentation-adapter.service';
-import { composeAppShell } from './game/app-shell-presentation-core';
+import { APP_SHELL_PAGE_IDS, composeAppShell } from './game/app-shell-presentation-core';
 import { composePageMarkup } from './game/page-markup-presentation-core';
 import { adaptLegacyWeaponMarkup, adaptLegacyWeaponScript } from './game/weapon-naming';
 
@@ -84,7 +84,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     const legacyScript = parsed.querySelector<HTMLScriptElement>('body > script');
     if (!app || !legacyScript) throw new Error('Legacy-Prototyp hat nicht die erwartete v0.12.2-Struktur.');
 
-    const pageMarkup = composePageMarkup(pageId => {
+    const pageMarkup = composePageMarkup(APP_SHELL_PAGE_IDS, pageId => {
       const legacyPage = app.querySelector<HTMLElement>(`main > section#${pageId}.page`);
       if (!legacyPage) throw new Error(`Legacy-Prototyp enthält den erwarteten Seitenbereich "${pageId}" nicht mehr.`);
       return legacyPage.outerHTML;
