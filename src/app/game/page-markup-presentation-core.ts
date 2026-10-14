@@ -1,5 +1,3 @@
-import { APP_SHELL_PAGE_IDS } from './app-shell-presentation-core';
-
 export const ANGULAR_OWNED_PAGE_IDS = ['base', 'tavern'] as const;
 
 type AngularOwnedPageId = typeof ANGULAR_OWNED_PAGE_IDS[number];
@@ -48,8 +46,11 @@ export function getAngularOwnedPageMarkup(pageId: string): string | null {
     : null;
 }
 
-export function composePageMarkup(resolveLegacyPage: (pageId: string) => string): string {
-  return APP_SHELL_PAGE_IDS
+export function composePageMarkup(
+  pageIds: readonly string[],
+  resolveLegacyPage: (pageId: string) => string
+): string {
+  return pageIds
     .map(pageId => getAngularOwnedPageMarkup(pageId) ?? resolveLegacyPage(pageId))
     .join('\n');
 }
