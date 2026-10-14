@@ -29,3 +29,6 @@ jobs:
 
       - name: Build Angular app
         run: npm run build
+
+      - name: Smoke test built runtime
+        run: node scripts/check-built-runtime-startup.mjs
