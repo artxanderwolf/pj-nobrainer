@@ -24,7 +24,7 @@ assert.match(marketService, /delete window\.NoBrainerMarketCompatibility;/, 'Die
 
 assert.match(runtimeService, /private readonly gameMarket: GameMarketService/, 'GameRuntimeService besitzt keinen Angular-Markt-Service.');
 assert.match(runtimeService, /private runTickCycle\(\): void \{[\s\S]*const marketUpdate = this\.gameMarket\.update\(\);/, 'Der Angular-Tick aktualisiert den Markt nicht direkt.');
-assert.match(runtimeService, /runtime\.prepare\(\);[\s\S]*this\.gameEnergy\.update\(\);[\s\S]*const forgeUpdate = this\.gameForge\.update\(\);[\s\S]*const marketUpdate = this\.gameMarket\.update\(\);[\s\S]*runtime\.updateDungeonAutomation\(\);[\s\S]*this\.gameEnergy\.update\(\);/, 'Die Startreihenfolge Energie → Schmiede → Markt → Dungeon → Energie wurde nicht erhalten.');
+assert.match(runtimeService, /runtime\.prepare\(\);[\s\S]*this\.gameEnergy\.update\(\);[\s\S]*const forgeUpdate = this\.gameForge\.update\(\);[\s\S]*const marketUpdate = this\.gameMarket\.update\(\);[\s\S]*const dungeonUpdate = this\.gameDungeon\.update\(\);[\s\S]*this\.gameEnergy\.update\(\);/, 'Die Startreihenfolge Energie → Schmiede → Markt → Dungeon → Energie wurde nicht erhalten.');
 assert.doesNotMatch(runtimeService, /\bupdateMarketJob\(\): boolean;/, 'GameRuntimeApi enthält weiterhin einen Legacy-Markt-Callback.');
 assert.doesNotMatch(runtimeService, /runtime\.updateMarketJob\(\)/, 'GameRuntimeService ruft weiterhin updateMarketJob aus der Legacy-Runtime auf.');
 assert.match(runtimeService, /Verkauf abgeschlossen: \$\{sale\.name\} → \$\{formatCurrencyNickel\(sale\.valueNickel\)\}\./, 'Markt-Abschlussmeldungen gehen beim Angular-Cutover verloren.');
@@ -48,6 +48,6 @@ const openMarketIndex = appComponent.indexOf('this.gameMarket.openLegacyCompatib
 const openStateIndex = appComponent.indexOf('this.gameState.openBootstrapRegistration();');
 assert.ok(openForgeIndex >= 0 && openMarketIndex > openForgeIndex && openStateIndex > openMarketIndex, 'Die Markt-Kompatibilitätsbrücke wird nicht vor State- und Runtime-Bootstrap geöffnet.');
 assert.match(appComponent, /ngOnDestroy\(\): void \{[\s\S]*this\.gameMarket\.closeLegacyCompatibilityBridge\(\);/, 'Die Markt-Kompatibilitätsbrücke wird beim App-Abbau nicht geschlossen.');
-assert.match(appComponent, /const APP_VERSION = '0\.12\.65';/, 'Die App-Version wurde nicht auf v0.12.65 gesetzt.');
+assert.match(appComponent, /const APP_VERSION = '0\.12\.66';/, 'Die App-Version wurde nicht auf v0.12.66 gesetzt.');
 
 console.log('Markt-Eigentümerschaft: Material-/Waffenverkauf, Plätze, Queue, Abbruch, Rückgabe, Fortschritt und Erlös laufen auf Angular-State im GameMarketService; Legacy-Code enthält nur noch UI-Kompatibilitätswrapper.');
