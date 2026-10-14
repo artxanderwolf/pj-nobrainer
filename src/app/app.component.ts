@@ -26,7 +26,7 @@ import { APP_SHELL_PAGE_IDS, composeAppShell } from './game/app-shell-presentati
 import { composePageMarkup } from './game/page-markup-presentation-core';
 import { adaptLegacyWeaponMarkup, adaptLegacyWeaponScript } from './game/weapon-naming';
 
-const APP_VERSION = '0.12.55';
+const APP_VERSION = '0.12.56';
 const LEGACY_PROTOTYPE_PATH = 'legacy/NoBrainer_GitHub_v0.12.2.html';
 const LEGACY_SCRIPT_ID = 'nobrainer-legacy-script';
 
@@ -80,15 +80,10 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     if (!response.ok) throw new Error(`Legacy-Prototyp nicht erreichbar (${response.status}).`);
     const source = await response.text();
     const parsed = new DOMParser().parseFromString(source, 'text/html');
-    const app = parsed.querySelector<HTMLElement>('body > .app');
     const legacyScript = parsed.querySelector<HTMLScriptElement>('body > script');
-    if (!app || !legacyScript) throw new Error('Legacy-Prototyp hat nicht die erwartete v0.12.2-Struktur.');
+    if (!legacyScript) throw new Error('Legacy-Prototyp enthält nicht mehr das erwartete v0.12.2-Script.');
 
-    const pageMarkup = composePageMarkup(APP_SHELL_PAGE_IDS, pageId => {
-      const legacyPage = app.querySelector<HTMLElement>(`main > section#${pageId}.page`);
-      if (!legacyPage) throw new Error(`Legacy-Prototyp enthält den erwarteten Seitenbereich "${pageId}" nicht mehr.`);
-      return legacyPage.outerHTML;
-    });
+    const pageMarkup = composePageMarkup(APP_SHELL_PAGE_IDS);
 
     let adaptedScript = this.legacySourceAdapter.adapt(legacyScript.textContent ?? '');
     adaptedScript = this.legacyMobileTablePresentationAdapter.adapt(adaptedScript);
