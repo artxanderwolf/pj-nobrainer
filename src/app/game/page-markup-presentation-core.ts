@@ -1,4 +1,4 @@
-export const ANGULAR_OWNED_PAGE_IDS = ['base', 'tavern', 'roster', 'storage'] as const;
+export const ANGULAR_OWNED_PAGE_IDS = ['base', 'tavern', 'roster', 'storage', 'forge', 'market'] as const;
 
 type AngularOwnedPageId = typeof ANGULAR_OWNED_PAGE_IDS[number];
 
@@ -59,11 +59,98 @@ const STORAGE_PAGE_MARKUP = `<section class="page" id="storage">
       </div>
     </section>`;
 
+const FORGE_PAGE_MARKUP = `<section class="page" id="forge">
+      <div class="grid">
+        <div class="card span-7">
+          <h2>Schmiede <span class="tag fixed">AKTIV</span></h2>
+          <p class="muted">Eine vollständige Waffe wird aus sechs Slots hergestellt. Es werden nur Materialien angezeigt, die aktuell im Lager vorhanden sind.</p>
+
+          <div style="margin:14px 0">
+            <label class="field-label" for="forgeWeaponName">Waffenname</label>
+            <input id="forgeWeaponName" class="text-input" type="text" maxlength="40" placeholder="Leer = Standardname des Waffentyps">
+          </div>
+
+          <div class="statrow">
+            <div class="stat"><span>Waffenform</span>
+              <select id="weaponType" class="btn" style="width:100%;margin-top:6px" onchange="renderForgePreview()">
+                <option value="dagger">Dolch</option>
+                <option value="sword">Einhänder</option>
+              </select>
+            </div>
+            <div class="stat"><span>Herstellungszeit</span><b id="forgeTimePreview">–</b></div>
+            <div class="stat"><span>Waffenwert</span><b id="forgeValuePreview">–</b></div>
+          </div>
+
+          <div style="margin-top:16px" class="forge-slot-wrap">
+            <table>
+              <thead><tr><th>Slot</th><th>Material</th></tr></thead>
+              <tbody>
+                <tr><td>Waffentyp</td><td><select id="slotWeaponType" class="btn forge-select" data-categories="Holz,Metall" onchange="renderForgePreview()"></select></td></tr>
+                <tr><td>Schneide</td><td><select id="slotBlade" class="btn forge-select" data-categories="Metall" onchange="renderForgePreview()"></select></td></tr>
+                <tr><td>Rückseite</td><td><select id="slotBack" class="btn forge-select" data-categories="Metall" onchange="renderForgePreview()"></select></td></tr>
+                <tr><td>Griffform</td><td><select id="slotGripShape" class="btn forge-select" data-categories="Holz" onchange="renderForgePreview()"></select></td></tr>
+                <tr><td>Griffmaterial</td><td><select id="slotGripMaterial" class="btn forge-select" data-categories="Leder" onchange="renderForgePreview()"></select></td></tr>
+                <tr><td>Verstärkungsmaterial</td><td><select id="slotReinforcementMaterial" class="btn forge-select" data-categories="Holz,Metall,Leder" onchange="renderForgePreview()"></select></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="preview-grid">
+            <div class="stat"><span>Schaden / Treffer</span><b id="forgeDamagePreview">–</b><span id="forgeDamageBaseInfo" class="small muted"></span></div>
+            <div class="stat"><span>Angriffsgeschw.</span><b id="forgeSpeedPreview">–</b><span id="forgeSpeedBaseInfo" class="small muted"></span></div>
+            <div class="stat"><span>Trefferchance</span><b id="forgeHitPreview">–</b></div>
+            <div class="stat"><span>Erwarteter Rohschaden</span><b id="forgeRawPreview">–</b></div>
+            <div class="stat"><span>Durchschlag</span><b id="forgePenPreview">–</b></div>
+            <div class="stat"><span>Seltenheitsfaktor</span><b id="forgeRarityPreview">–</b></div>
+          </div>
+          <p id="forgeReinforcementPreview" class="status-line">Verstärkungseffekt: –</p>
+
+          <div class="actions">
+            <button id="forgeStartBtn" class="btn primary" onclick="startForgeJob()">Waffe herstellen</button>
+            <button class="btn" onclick="go('index')">Werte & Formeln öffnen</button>
+          </div>
+        </div>
+
+        <div class="card span-5">
+          <h2>Produktion & Ausbau</h2>
+          <div id="forgeUpgradeCard"></div>
+          <h3 style="margin-top:18px">Herstellungsplätze</h3>
+          <div id="forgeJobCard" class="empty">Kein aktiver Schmiedeauftrag.</div>
+          <h3 style="margin-top:18px">Warteschlange</h3>
+          <div id="forgeQueueCard" class="empty">Warteschlange leer.</div>
+        </div>
+      </div>
+    </section>`;
+
+const MARKET_PAGE_MARKUP = `<section class="page" id="market">
+      <div class="grid">
+        <div class="card span-12">
+          <h2>Verkaufsplätze & Ausbau</h2>
+          <p class="muted">Mehr Verkaufsplätze erhöhen den parallelen Durchsatz. Warteschlangenplätze erhöhen die Automatisierung.</p>
+          <div id="marketUpgradeCard"></div>
+          <h3 style="margin-top:18px">Aktive Verkäufe</h3><div id="marketJobCard" class="empty">Kein aktiver Verkauf.</div>
+          <h3 style="margin-top:18px">Warteschlange</h3><div id="marketQueueCard" class="empty">Warteschlange leer.</div>
+        </div>
+        <div class="card span-6">
+          <h2>Materialien verkaufen</h2>
+          <div id="marketMaterials"></div>
+          <div id="marketMaterialsEmpty" class="empty">Keine Materialien im Lager.</div>
+        </div>
+        <div class="card span-6">
+          <h2>Waffen verkaufen</h2>
+          <div id="marketWeapons"></div>
+          <div id="marketWeaponsEmpty" class="empty">Keine verkaufbaren Waffen im Lager.</div>
+        </div>
+      </div>
+    </section>`;
+
 const ANGULAR_PAGE_MARKUP: Record<AngularOwnedPageId, string> = {
   base: BASE_PAGE_MARKUP,
   tavern: TAVERN_PAGE_MARKUP,
   roster: ROSTER_PAGE_MARKUP,
-  storage: STORAGE_PAGE_MARKUP
+  storage: STORAGE_PAGE_MARKUP,
+  forge: FORGE_PAGE_MARKUP,
+  market: MARKET_PAGE_MARKUP
 };
 
 export function getAngularOwnedPageMarkup(pageId: string): string | null {
