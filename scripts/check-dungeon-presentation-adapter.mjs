@@ -37,21 +37,26 @@ function replaceRangeOnce(source, startMarker, endMarker, replacement) {
 const statusReplacement = extractTemplateConstant('ADAPTED_DUNGEON_STATUS');
 const lootReplacement = extractTemplateConstant('ADAPTED_DUNGEON_LOOT');
 
+assert.ok(
+  statusReplacement.includes('renderDungeonSessionWaveCounter();'),
+  'Der Wellenzähler wird nicht mehr durch die Dungeon-Status-Präsentation aktualisiert.'
+);
+assert.equal(
+  adapterSource.includes('Dungeon-Wellenaktualisierung im Runtime-Tick'),
+  false,
+  'Der Dungeon-Präsentationsadapter hängt weiterhin vom entfernten Legacy-gameTick ab.'
+);
+
 let source = scriptMatch[1];
 source = replaceOnce(
   source,
   'document.getElementById("runDuration").textContent=`${state.dungeonWavesDefeated||0} besiegt`;',
   'renderDungeonSessionWaveCounter();'
 );
-source = replaceOnce(
-  source,
-  '  renderDungeonStatus();\n  renderDungeonLoot();',
-  '  renderDungeonStatus();\n  renderDungeonSessionWaveCounter();\n  renderDungeonLoot();'
-);
 source = replaceRangeOnce(source, 'function renderDungeonStatus(){', 'function renderDungeonLoot(){', statusReplacement + '\n');
 source = replaceRangeOnce(source, 'function renderDungeonLoot(){', 'function render(){', lootReplacement + '\n');
 
-new vm.Script(source, { filename: 'NoBrainer_GitHub_v0.12.43.dungeon-presentation-hotfix.js' });
+new vm.Script(source, { filename: 'NoBrainer_GitHub_v0.12.60.dungeon-presentation-hotfix.js' });
 assert.equal(source.split('function renderDungeonStatus(){').length - 1, 1);
 assert.equal(source.split('function renderDungeonLoot(){').length - 1, 1);
 assert.ok(source.includes('window.NoBrainerDungeonPresentationCore.getDungeonStatusPresentation'));
@@ -89,6 +94,7 @@ const elements = {
 
 let capturedStatus = null;
 let capturedLoot = null;
+let waveCounterUpdates = 0;
 const state = {
   dungeonAuto: true,
   dungeonRun: {
@@ -106,6 +112,7 @@ const state = {
 const context = {
   state,
   getSelectedDungeonIds: () => [1, 2],
+  renderDungeonSessionWaveCounter: () => { waveCounterUpdates += 1; },
   document: {
     getElementById: id => elements[id] ?? null,
     createElement: () => makeElement()
@@ -146,6 +153,7 @@ context.window = {
 vm.createContext(context);
 new vm.Script(`${statusReplacement}\n${lootReplacement}\nrenderDungeonStatus();\nrenderDungeonLoot();`).runInContext(context);
 
+assert.equal(waveCounterUpdates, 1);
 assert.equal(capturedStatus.auto, true);
 assert.equal(capturedStatus.selectedCharacterCount, 2);
 assert.equal(capturedStatus.lootTotal, 3);
@@ -167,4 +175,4 @@ assert.equal(elements.dungeonLoot.children[0].children.length, 2);
 assert.equal(elements.dungeonLoot.children[0].children[0].innerHTML, 'Aluminium<b>×1</b>');
 assert.equal(elements.dungeonLoot.children[0].children[1].innerHTML, 'Zinn<b>×2</b>');
 
-console.log('Dungeon-Presentation-Adapter: Status/Beute bleiben migriert; Master-Render behält Materiallager und Schmiedevorschau vollständig bei.');
+console.log('Dungeon-Presentation-Adapter: Status/Beute bleiben migriert; der Wellenzähler gehört zur Dungeon-Status-Präsentation und hängt nicht mehr vom Legacy-gameTick ab.');
