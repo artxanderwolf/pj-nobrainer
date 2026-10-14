@@ -30,10 +30,17 @@ assert.doesNotMatch(appComponent, /LEGACY_STYLE_ID/, 'Die alte dynamische Style-
 assert.doesNotMatch(appComponent, /installLegacyStyle/, 'Die alte dynamische Style-Installation ist noch aktiv.');
 assert.doesNotMatch(appComponent, /querySelector<HTMLStyleElement>\('head > style'\)/, 'Der App-Component liest weiterhin das Legacy-Stylesheet zur Laufzeit.');
 assert.doesNotMatch(appComponent, /querySelector<HTMLElement>\('body > \.app'\)/, 'Der App-Component liest weiterhin Legacy-Seitenmarkup zur Laufzeit.');
-assert.match(appComponent, /querySelector<HTMLScriptElement>\('body > script'\)/, 'Das Legacy-Script wird nicht mehr wie erwartet geladen.');
+assert.doesNotMatch(appComponent, /DOMParser/, 'Der App-Component parst weiterhin die Legacy-HTML zur Laufzeit.');
+assert.doesNotMatch(appComponent, /querySelector<HTMLScriptElement>/, 'Der App-Component extrahiert weiterhin ein Script aus der Legacy-HTML.');
+assert.match(appComponent, /LEGACY_RUNTIME_PATH/, 'Der App-Component verwendet nicht das eigenständige Runtime-Asset.');
 assert.match(appComponent, /legacyHost\.nativeElement\.innerHTML = adaptedMarkup;/, 'Das zusammengesetzte Angular-Markup wird nicht mehr in den Angular-Host eingebunden.');
 
 const buildStyles = angularConfig.projects?.nobrainer?.architect?.build?.options?.styles ?? [];
 assert.ok(buildStyles.includes('src/styles.css'), 'src/styles.css ist nicht als Angular-Build-Stylesheet registriert.');
+const buildAssets = angularConfig.projects?.nobrainer?.architect?.build?.options?.assets ?? [];
+assert.ok(
+  !buildAssets.some(asset => typeof asset === 'object' && String(asset.glob).endsWith('.html')),
+  'Die Legacy-HTML wird weiterhin als Laufzeitasset ausgeliefert.'
+);
 
-console.log('Style-Cutover: Legacy-CSS liegt vollständig im Angular-Build; Legacy-Seitenmarkup und Styles werden nicht mehr aus der HTML-Datei geladen.');
+console.log('Style-Cutover: Legacy-CSS liegt vollständig im Angular-Build; Legacy-HTML wird weder für Seitenmarkup noch Styles oder Runtime zur Laufzeit geladen.');
