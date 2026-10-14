@@ -25,6 +25,21 @@ export interface MaterialIndexRowPresentation {
   dungeonChanceText: string;
 }
 
+export interface MaterialStorageEntryLike {
+  category: string;
+  qty: number;
+}
+
+export interface MaterialStorageRowPresentation {
+  name: string;
+  category: string;
+  quantityText: string;
+  valueText: string;
+  tooltip: string;
+}
+
+export type MaterialCurrencyFormatter = (valueNickel: number) => string;
+
 export function formatMaterialValue(value: number | null | undefined, kind: MaterialValueKind = 'number'): string {
   if (value === null || value === undefined) return '–';
   if (kind === 'percent') return `${Math.round(Number(value) * 100)} %`;
@@ -52,9 +67,35 @@ export function getMaterialIndexRowPresentation(
   };
 }
 
+export function sortMaterialStorageEntries(
+  entries: readonly (readonly [string, MaterialStorageEntryLike])[]
+): [string, MaterialStorageEntryLike][] {
+  return entries
+    .map(([name, entry]) => [name, entry] as [string, MaterialStorageEntryLike])
+    .sort((a, b) => a[0].localeCompare(b[0]));
+}
+
+export function getMaterialStorageRowPresentation(
+  name: string,
+  entry: MaterialStorageEntryLike,
+  unitValueNickel: number,
+  formatCurrency: MaterialCurrencyFormatter
+): MaterialStorageRowPresentation {
+  const valueText = formatCurrency(unitValueNickel);
+  return {
+    name,
+    category: entry.category,
+    quantityText: String(entry.qty),
+    valueText,
+    tooltip: `Verkaufswert: ${valueText}`
+  };
+}
+
 export const MATERIAL_PRESENTATION_CORE_BRIDGE = {
   formatMaterialValue,
-  getMaterialIndexRowPresentation
+  getMaterialIndexRowPresentation,
+  sortMaterialStorageEntries,
+  getMaterialStorageRowPresentation
 };
 
 export type MaterialPresentationCoreBridge = typeof MATERIAL_PRESENTATION_CORE_BRIDGE;

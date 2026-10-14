@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import {
   formatMaterialValue,
-  getMaterialIndexRowPresentation
+  getMaterialIndexRowPresentation,
+  getMaterialStorageRowPresentation,
+  sortMaterialStorageEntries
 } from '../src/app/game/material-presentation-core.ts';
 
 assert.equal(formatMaterialValue(null), '–');
@@ -58,4 +60,25 @@ const unavailable = getMaterialIndexRowPresentation(
 assert.equal(unavailable.dungeonChanceText, '– %');
 assert.equal(unavailable.rarityText, 'S3');
 
-console.log('Material-Presentation-Core: Tabellenwerte, Prozentformatierung, Seltenheit und Dungeonchance entsprechen der Legacy-Darstellung.');
+const sortedStorage = sortMaterialStorageEntries([
+  ['Zinn', { category: 'Metall', qty: 2 }],
+  ['Fichte', { category: 'Holz', qty: 4 }],
+  ['Kupfer', { category: 'Metall', qty: 3 }]
+]);
+assert.deepEqual(sortedStorage.map(([name]) => name), ['Fichte', 'Kupfer', 'Zinn']);
+
+const storageRow = getMaterialStorageRowPresentation(
+  'Kupfer',
+  { category: 'Metall', qty: 3 },
+  10,
+  value => `${value} Nickel`
+);
+assert.deepEqual(storageRow, {
+  name: 'Kupfer',
+  category: 'Metall',
+  quantityText: '3',
+  valueText: '10 Nickel',
+  tooltip: 'Verkaufswert: 10 Nickel'
+});
+
+console.log('Material-Presentation-Core: Index- und Lagerdarstellung, Sortierung, Prozentformatierung, Seltenheit und Dungeonchance sind konsistent.');
