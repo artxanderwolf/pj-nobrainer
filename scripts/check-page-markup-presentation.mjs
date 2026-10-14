@@ -28,7 +28,7 @@ function normalizeMarkup(markup) {
 assert.deepEqual(
   [...ANGULAR_OWNED_PAGE_IDS],
   ['base', 'tavern', 'roster', 'storage', 'forge', 'market', 'dungeon', 'index'],
-  'Für v0.12.61 sollen alle acht sichtbaren Seiten Angular-eigenes Seitenmarkup besitzen.'
+  'Für v0.12.62 sollen alle acht sichtbaren Seiten Angular-eigenes Seitenmarkup besitzen.'
 );
 
 for (const pageId of ANGULAR_OWNED_PAGE_IDS) {
@@ -106,6 +106,6 @@ assert.doesNotMatch(appComponent, /querySelector<HTMLElement>\('body > \.app'\)/
 assert.doesNotMatch(appComponent, /DOMParser/, 'Die Legacy-HTML wird weiterhin zur Laufzeit geparst.');
 assert.doesNotMatch(appComponent, /querySelector<HTMLScriptElement>/, 'Das Legacy-Script wird weiterhin aus der HTML-Datei extrahiert.');
 assert.match(appComponent, /composeAppShell\(pageMarkup\)/, 'Das Angular-eigene Seitenmarkup wird nicht mehr in die Angular-Shell eingesetzt.');
-assert.match(appComponent, /const APP_VERSION = '0\.12\.61';/, 'Die App-Version wurde nicht auf v0.12.61 gesetzt.');
+assert.match(appComponent, /const APP_VERSION = '0\.12\.62';/, 'Die App-Version wurde nicht auf v0.12.62 gesetzt.');
 
 console.log('Seiten-Markup: Alle acht sichtbaren Seiten liegen vollständig in Angular; die Legacy-HTML ist auch keine Runtime-Quelle mehr.');

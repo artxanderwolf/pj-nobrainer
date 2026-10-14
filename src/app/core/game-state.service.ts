@@ -33,11 +33,11 @@ export class GameStateService {
     delete window.NoBrainerStateBootstrap;
   }
 
-  getState(): Readonly<MutableGameState> {
+  getState<TState extends MutableGameState = MutableGameState>(): TState {
     if (!this.initialized) {
       throw new Error('NoBrainer-Spielzustand wurde noch nicht initialisiert.');
     }
-    return this.state;
+    return this.state as TState;
   }
 
   private initializeState(initialState: MutableGameState): MutableGameState {

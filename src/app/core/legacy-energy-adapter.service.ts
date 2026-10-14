@@ -1,11 +1,4 @@
 import { Injectable } from '@angular/core';
-import { ENERGY_CORE_BRIDGE, type EnergyCoreBridge } from '../game/energy-core';
-
-declare global {
-  interface Window {
-    NoBrainerEnergyCore?: EnergyCoreBridge;
-  }
-}
 
 const UPDATE_ENERGY_BLOCK = `function updateEnergy(){
   const now=Date.now();
@@ -19,17 +12,21 @@ const UPDATE_ENERGY_BLOCK = `function updateEnergy(){
 }`;
 
 const UPDATE_ENERGY_BRIDGE = `function updateEnergy(){
-  window.NoBrainerEnergyCore.updateEnergyState(state,getCharacterClass,Date.now());
+  const energyCompatibility=window.NoBrainerEnergyCompatibility;
+  if(!energyCompatibility||typeof energyCompatibility.update!=="function")throw new Error("NoBrainer-Energie-Kompatibilitätsbrücke wurde nicht registriert.");
+  return energyCompatibility.update();
 }`;
 
 const ENERGY_COST_BLOCK = `function getEnergyCostPerCharacter(count){return count>0?Math.ceil(CONFIG.dungeon.energyCost/count):0;}`;
-const ENERGY_COST_BRIDGE = `function getEnergyCostPerCharacter(count){return window.NoBrainerEnergyCore.energyCostPerCharacter(CONFIG.dungeon.energyCost,count);}`;
+const ENERGY_COST_BRIDGE = `function getEnergyCostPerCharacter(count){
+  const energyCompatibility=window.NoBrainerEnergyCompatibility;
+  if(!energyCompatibility||typeof energyCompatibility.costPerCharacter!=="function")throw new Error("NoBrainer-Energie-Kompatibilitätsbrücke wurde nicht registriert.");
+  return energyCompatibility.costPerCharacter(count);
+}`;
 
 @Injectable({ providedIn: 'root' })
 export class LegacyEnergyAdapterService {
   adapt(source: string): string {
-    window.NoBrainerEnergyCore = ENERGY_CORE_BRIDGE;
-
     let adapted = this.replaceOnce(source, UPDATE_ENERGY_BLOCK, UPDATE_ENERGY_BRIDGE, 'Energie-Regeneration');
     adapted = this.replaceOnce(adapted, ENERGY_COST_BLOCK, ENERGY_COST_BRIDGE, 'Dungeon-Energiekosten');
     return adapted;

@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { OfflineProgressService, SaveSnapshot } from './offline-progress.service';
 import { SaveStorageService } from './save-storage.service';
+import { GameEnergyService } from './game-energy.service';
 
 interface GameSaveStorageAdapter {
   read(): string | null;
@@ -11,7 +12,6 @@ interface GameSaveStorageAdapter {
 export interface GameRuntimeApi {
   configureSaveStorage(adapter: GameSaveStorageAdapter): void;
   prepare(): void;
-  updateEnergy(): void;
   updateForgeJob(): boolean;
   updateMarketJob(): boolean;
   updateDungeonAutomation(): void;
@@ -51,7 +51,8 @@ export class GameRuntimeService {
 
   constructor(
     private readonly saveStorage: SaveStorageService,
-    private readonly offlineProgress: OfflineProgressService
+    private readonly offlineProgress: OfflineProgressService,
+    private readonly gameEnergy: GameEnergyService
   ) {}
 
   openBootstrapRegistration(): void {
@@ -113,7 +114,6 @@ export class GameRuntimeService {
     const required: Array<keyof GameRuntimeApi> = [
       'configureSaveStorage',
       'prepare',
-      'updateEnergy',
       'updateForgeJob',
       'updateMarketJob',
       'updateDungeonAutomation',
@@ -151,7 +151,7 @@ export class GameRuntimeService {
   private runTickCycle(): void {
     const runtime = this.getRuntime();
 
-    runtime.updateEnergy();
+    this.gameEnergy.update();
     const forgeCompleted = runtime.updateForgeJob();
     const marketCompleted = runtime.updateMarketJob();
     runtime.updateDungeonAutomation();
