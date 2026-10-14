@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { OfflineProgressService, SaveSnapshot } from './offline-progress.service';
 import { SaveStorageService } from './save-storage.service';
 import { GameEnergyService } from './game-energy.service';
+import { GameForgeService } from './game-forge.service';
 
 interface GameSaveStorageAdapter {
   read(): string | null;
@@ -12,7 +13,6 @@ interface GameSaveStorageAdapter {
 export interface GameRuntimeApi {
   configureSaveStorage(adapter: GameSaveStorageAdapter): void;
   prepare(): void;
-  updateForgeJob(): boolean;
   updateMarketJob(): boolean;
   updateDungeonAutomation(): void;
   renderForgeJob(): void;
@@ -26,6 +26,7 @@ export interface GameRuntimeApi {
   renderMarketWeapons(): void;
   refreshGold(): void;
   renderRosterIfIdle(): void;
+  addLog(text: string, className?: string): void;
   shouldAutoSave(now: number): boolean;
   renderInitial(): void;
   save(manual?: boolean): boolean;
@@ -52,7 +53,8 @@ export class GameRuntimeService {
   constructor(
     private readonly saveStorage: SaveStorageService,
     private readonly offlineProgress: OfflineProgressService,
-    private readonly gameEnergy: GameEnergyService
+    private readonly gameEnergy: GameEnergyService,
+    private readonly gameForge: GameForgeService
   ) {}
 
   openBootstrapRegistration(): void {
@@ -79,6 +81,12 @@ export class GameRuntimeService {
 
     const before = this.saveStorage.readSnapshot();
     runtime.prepare();
+    this.gameEnergy.update();
+    const forgeUpdate = this.gameForge.update();
+    this.logForgeCompletions(runtime, forgeUpdate.completedNames);
+    runtime.updateMarketJob();
+    runtime.updateDungeonAutomation();
+    this.gameEnergy.update();
 
     if (before && this.offlineProgress.shouldShowSummary(before)) {
       runtime.save(false);
@@ -114,7 +122,6 @@ export class GameRuntimeService {
     const required: Array<keyof GameRuntimeApi> = [
       'configureSaveStorage',
       'prepare',
-      'updateForgeJob',
       'updateMarketJob',
       'updateDungeonAutomation',
       'renderForgeJob',
@@ -128,6 +135,7 @@ export class GameRuntimeService {
       'renderMarketWeapons',
       'refreshGold',
       'renderRosterIfIdle',
+      'addLog',
       'shouldAutoSave',
       'renderInitial',
       'save',
@@ -152,7 +160,9 @@ export class GameRuntimeService {
     const runtime = this.getRuntime();
 
     this.gameEnergy.update();
-    const forgeCompleted = runtime.updateForgeJob();
+    const forgeUpdate = this.gameForge.update();
+    const forgeCompleted = forgeUpdate.completedCount > 0;
+    this.logForgeCompletions(runtime, forgeUpdate.completedNames);
     const marketCompleted = runtime.updateMarketJob();
     runtime.updateDungeonAutomation();
 
@@ -175,6 +185,12 @@ export class GameRuntimeService {
 
     runtime.renderRosterIfIdle();
     if (runtime.shouldAutoSave(Date.now())) runtime.save(false);
+  }
+
+  private logForgeCompletions(runtime: GameRuntimeApi, completedNames: readonly string[]): void {
+    for (const name of completedNames) {
+      runtime.addLog(`Schmiede fertig: ${name} wurde dem Waffeninventar hinzugefügt.`, 'good');
+    }
   }
 
   private registerVisibilityHandler(): void {
