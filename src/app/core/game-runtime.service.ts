@@ -2,14 +2,14 @@ import { Injectable } from '@angular/core';
 import { OfflineProgressService, SaveSnapshot } from './offline-progress.service';
 import { SaveStorageService } from './save-storage.service';
 
-interface LegacySaveStorageAdapter {
+interface GameSaveStorageAdapter {
   read(): string | null;
   write(value: string): void;
   remove(): void;
 }
 
-interface NoBrainerLegacyRuntime {
-  configureSaveStorage(adapter: LegacySaveStorageAdapter): void;
+export interface GameRuntimeApi {
+  configureSaveStorage(adapter: GameSaveStorageAdapter): void;
   prepare(): void;
   tick(): void;
   renderInitial(): void;
@@ -17,14 +17,19 @@ interface NoBrainerLegacyRuntime {
   resetSave(): void;
 }
 
+interface GameRuntimeBootstrap {
+  register(runtime: GameRuntimeApi): void;
+}
+
 declare global {
   interface Window {
-    NoBrainerLegacyRuntime?: NoBrainerLegacyRuntime;
+    NoBrainerRuntimeBootstrap?: GameRuntimeBootstrap;
   }
 }
 
 @Injectable({ providedIn: 'root' })
-export class LegacyRuntimeService {
+export class GameRuntimeService {
+  private runtime: GameRuntimeApi | null = null;
   private tickHandle: number | null = null;
   private hiddenSnapshot: SaveSnapshot | null = null;
   private visibilityHandlerRegistered = false;
@@ -33,6 +38,20 @@ export class LegacyRuntimeService {
     private readonly saveStorage: SaveStorageService,
     private readonly offlineProgress: OfflineProgressService
   ) {}
+
+  openBootstrapRegistration(): void {
+    if (window.NoBrainerRuntimeBootstrap) {
+      throw new Error('NoBrainer-Runtime-Bootstrap ist bereits geöffnet.');
+    }
+
+    window.NoBrainerRuntimeBootstrap = {
+      register: (runtime: GameRuntimeApi) => this.registerRuntime(runtime)
+    };
+  }
+
+  closeBootstrapRegistration(): void {
+    delete window.NoBrainerRuntimeBootstrap;
+  }
 
   prepare(): void {
     const runtime = this.getRuntime();
@@ -69,6 +88,29 @@ export class LegacyRuntimeService {
     this.tickHandle = null;
   }
 
+  private registerRuntime(runtime: GameRuntimeApi): void {
+    if (this.runtime) throw new Error('NoBrainer-Runtime wurde bereits registriert.');
+    this.assertRuntimeApi(runtime);
+    this.runtime = runtime;
+  }
+
+  private assertRuntimeApi(runtime: GameRuntimeApi): void {
+    const required: Array<keyof GameRuntimeApi> = [
+      'configureSaveStorage',
+      'prepare',
+      'tick',
+      'renderInitial',
+      'save',
+      'resetSave'
+    ];
+
+    for (const key of required) {
+      if (typeof runtime?.[key] !== 'function') {
+        throw new Error(`NoBrainer-Runtime stellt ${String(key)} nicht bereit.`);
+      }
+    }
+  }
+
   private scheduleNextTick(): void {
     this.tickHandle = window.setTimeout(() => {
       this.getRuntime().tick();
@@ -99,9 +141,8 @@ export class LegacyRuntimeService {
     });
   }
 
-  private getRuntime(): NoBrainerLegacyRuntime {
-    const runtime = window.NoBrainerLegacyRuntime;
-    if (!runtime) throw new Error('NoBrainer-Legacy-Runtime wurde nicht registriert.');
-    return runtime;
+  private getRuntime(): GameRuntimeApi {
+    if (!this.runtime) throw new Error('NoBrainer-Runtime wurde noch nicht bei Angular registriert.');
+    return this.runtime;
   }
 }
