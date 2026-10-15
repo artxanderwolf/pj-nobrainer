@@ -8,12 +8,12 @@ import {
   type ProgressionStateLike,
   type UpgradeKind
 } from '../game/progression-core';
-import { GameStateService } from './game-state.service';
+import { GameStateService, type MutableGameState } from './game-state.service';
 
-interface RuntimeProgressionState extends ProgressionStateLike {
+type RuntimeProgressionState = MutableGameState & ProgressionStateLike & {
   characters: CharacterState[];
   nextCharacterId: number;
-}
+};
 
 export type ProgressionRecruitResult = ReturnType<GameProgressionService['recruit']>;
 export type ProgressionUpgradeResult = ReturnType<GameProgressionService['buyUpgrade']>;
