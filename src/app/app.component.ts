@@ -117,12 +117,12 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     adaptedScript = this.legacyDungeonPresentationAdapter.adapt(adaptedScript);
     adaptedScript = adaptLegacyWeaponScript(adaptedScript);
     adaptedScript = this.legacyWeaponPresentationAdapter.adapt(adaptedScript);
-    adaptedScript = this.legacyMaterialPresentationAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyForgeAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyMarketAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyEconomyAdapter.adapt(adaptedScript);
-    adaptedScript = this.legacyResourcePresentationAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyMarketPresentationAdapter.adapt(adaptedScript);
+    adaptedScript = this.legacyMaterialPresentationAdapter.adapt(adaptedScript);
+    adaptedScript = this.legacyResourcePresentationAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyForgePresentationAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyTavernPresentationAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyCharacterAdapter.adapt(adaptedScript);
