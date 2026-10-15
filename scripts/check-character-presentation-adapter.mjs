@@ -45,7 +45,7 @@ source = replaceRangeOnce(
 `
 );
 
-new vm.Script(source, { filename: 'NoBrainer_GitHub_v0.12.68.character-presentation-cutover.js' });
+new vm.Script(source, { filename: 'NoBrainer_GitHub_v0.12.69.character-presentation-cutover.js' });
 for (const obsolete of [
   'openDungeonTeamPickerSlot',
   'function toggleDungeonTeamPicker(',
