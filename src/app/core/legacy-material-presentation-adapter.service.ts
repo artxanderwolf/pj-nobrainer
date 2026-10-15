@@ -77,7 +77,7 @@ export class LegacyMaterialPresentationAdapterService {
     adapted = this.replaceRangeOnce(
       adapted,
       '  const tbody=document.getElementById("inventoryRows");tbody.innerHTML="";',
-      '  renderDungeonStatus();',
+      '  renderForgePreview();',
       '  renderMaterialStorage();',
       'Materiallager-Präsentation'
     );
