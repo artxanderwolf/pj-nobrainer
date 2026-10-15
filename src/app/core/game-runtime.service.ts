@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { formatCurrencyNickel } from '../game/economy-core';
 import { OfflineProgressService, SaveSnapshot } from './offline-progress.service';
 import { SaveStorageService } from './save-storage.service';
+import { GameCombatLogService } from './game-combat-log.service';
 import { GameDungeonService, type DungeonActionResult } from './game-dungeon.service';
 import { GameDungeonPresentationService } from './game-dungeon-presentation.service';
 import { GameEnergyService } from './game-energy.service';
@@ -26,7 +27,6 @@ export interface GameRuntimeApi {
   renderInventoryState(): void;
   refreshGold(): void;
   renderRosterIfIdle(): void;
-  addLog(text: string, className?: string): void;
   shouldAutoSave(now: number): boolean;
   renderInitial(): void;
   save(manual?: boolean): boolean;
@@ -53,6 +53,7 @@ export class GameRuntimeService {
   constructor(
     private readonly saveStorage: SaveStorageService,
     private readonly offlineProgress: OfflineProgressService,
+    private readonly combatLog: GameCombatLogService,
     private readonly gameEnergy: GameEnergyService,
     private readonly gameForge: GameForgeService,
     private readonly gameMarket: GameMarketService,
@@ -87,9 +88,9 @@ export class GameRuntimeService {
     this.dungeonPresentation.bindActions((result, inventoryChanged) => this.applyDungeonResult(runtime, result, inventoryChanged));
     this.gameEnergy.update();
     const forgeUpdate = this.gameForge.update();
-    this.logForgeCompletions(runtime, forgeUpdate.completedNames);
+    this.logForgeCompletions(forgeUpdate.completedNames);
     const marketUpdate = this.gameMarket.update();
-    this.logMarketCompletions(runtime, marketUpdate.completedSales);
+    this.logMarketCompletions(marketUpdate.completedSales);
     const dungeonUpdate = this.gameDungeon.update();
     this.applyDungeonResult(runtime, dungeonUpdate);
     this.gameEnergy.update();
@@ -138,7 +139,6 @@ export class GameRuntimeService {
       'renderInventoryState',
       'refreshGold',
       'renderRosterIfIdle',
-      'addLog',
       'shouldAutoSave',
       'renderInitial',
       'save',
@@ -165,10 +165,10 @@ export class GameRuntimeService {
     this.gameEnergy.update();
     const forgeUpdate = this.gameForge.update();
     const forgeCompleted = forgeUpdate.completedCount > 0;
-    this.logForgeCompletions(runtime, forgeUpdate.completedNames);
+    this.logForgeCompletions(forgeUpdate.completedNames);
     const marketUpdate = this.gameMarket.update();
     const marketCompleted = marketUpdate.completedCount > 0;
-    this.logMarketCompletions(runtime, marketUpdate.completedSales);
+    this.logMarketCompletions(marketUpdate.completedSales);
     const dungeonUpdate = this.gameDungeon.update();
     this.applyDungeonResult(runtime, dungeonUpdate);
 
@@ -191,18 +191,17 @@ export class GameRuntimeService {
     if (runtime.shouldAutoSave(Date.now())) runtime.save(false);
   }
 
-  private logForgeCompletions(runtime: GameRuntimeApi, completedNames: readonly string[]): void {
+  private logForgeCompletions(completedNames: readonly string[]): void {
     for (const name of completedNames) {
-      runtime.addLog(`Schmiede fertig: ${name} wurde dem Waffeninventar hinzugefügt.`, 'good');
+      this.combatLog.add(`Schmiede fertig: ${name} wurde dem Waffeninventar hinzugefügt.`, 'good');
     }
   }
 
   private logMarketCompletions(
-    runtime: GameRuntimeApi,
     completedSales: readonly { name: string; valueNickel: number }[]
   ): void {
     for (const sale of completedSales) {
-      runtime.addLog(
+      this.combatLog.add(
         `Verkauf abgeschlossen: ${sale.name} → ${formatCurrencyNickel(sale.valueNickel)}.`,
         'good'
       );
@@ -211,7 +210,7 @@ export class GameRuntimeService {
 
   private applyDungeonResult(runtime: GameRuntimeApi, result: DungeonActionResult, inventoryChanged = false): void {
     for (const event of result.events) {
-      runtime.addLog(event.text, event.className);
+      this.combatLog.add(event.text, event.className);
     }
     if (inventoryChanged) runtime.renderInventoryState();
     if (result.saveRequested || inventoryChanged) runtime.save(false);

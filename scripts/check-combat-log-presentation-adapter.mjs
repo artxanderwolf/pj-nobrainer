@@ -6,6 +6,12 @@ const html = fs.readFileSync('NoBrainer_GitHub_v0.12.2.html', 'utf8');
 const match = html.match(/<script>([\s\S]*?)<\/script>\s*<\/body>/);
 if (!match) throw new Error('Legacy-JavaScript konnte nicht extrahiert werden.');
 
+const adapter = fs.readFileSync('src/app/core/legacy-combat-log-presentation-adapter.service.ts', 'utf8');
+const service = fs.readFileSync('src/app/core/game-combat-log.service.ts', 'utf8');
+const runtime = fs.readFileSync('src/app/core/game-runtime.service.ts', 'utf8');
+const registration = fs.readFileSync('src/app/core/legacy-runtime-registration-adapter.service.ts', 'utf8');
+const app = fs.readFileSync('src/app/app.component.ts', 'utf8');
+
 function replaceRangeOnce(source, startMarker, endMarker, replacement, label) {
   const start = source.indexOf(startMarker);
   assert.ok(start >= 0, `${label}: Startanker fehlt.`);
@@ -16,51 +22,45 @@ function replaceRangeOnce(source, startMarker, endMarker, replacement, label) {
   return source.slice(0, start) + replacement + source.slice(end);
 }
 
-const adaptedAddLog = `function addLog(text, cls=""){
-  const log=document.getElementById("combatLog");if(!log)return;
-  const first=log.firstElementChild;
-  const presentation=window.NoBrainerCombatLogPresentationCore.getCombatLogEntryPresentation(text,cls,{
-    childCount:log.children.length,
-    firstChildClassName:first?.className||"",
-    firstChildText:first?.textContent||""
-  });
-  if(presentation.clearPlaceholder)log.innerHTML="";
-  const row=document.createElement("div");
-  row.className=presentation.className;
-  row.textContent=presentation.text;
-  log.prepend(row);
-}
-\n`;
+const replacementMatch = adapter.match(/const ADAPTED_ADD_LOG = `([\s\S]*?)`;/);
+assert.ok(replacementMatch, 'Die Legacy-Kampfprotokoll-Brücke konnte nicht aus dem Adapter gelesen werden.');
+const adaptedAddLog = replacementMatch[1].replace(/\\`/g, '`');
 
 let source = match[1];
 source = replaceRangeOnce(
   source,
   'function addLog(',
   'let openWeaponPickerHand=null;',
-  adaptedAddLog,
+  `${adaptedAddLog}\n`,
   'Kampfprotokoll-Präsentation'
 );
+new vm.Script(source, { filename: 'NoBrainer_GitHub_v0.12.71.combat-log-compatibility.js' });
 
-new vm.Script(source, { filename: 'NoBrainer_GitHub_v0.12.47.combat-log-presentation.js' });
-assert.equal((source.match(/getCombatLogEntryPresentation\(/g) || []).length, 1);
-assert.ok(source.includes('log.prepend(row);'));
+assert.match(adapter, /window\.NoBrainerCombatLogCompatibility/);
+assert.match(adapter, /combatLogCompatibility\.add\(text,cls\);/);
+assert.doesNotMatch(adapter, /NoBrainerCombatLogPresentationCore/);
 
-// Die bestehenden Ereignisquellen bleiben unverändert und liefern weiterhin Text/Klasse an addLog.
-assert.ok(source.includes('addLog(`${enemy.name} trifft ${target.name} für ${dealt.toFixed(2)} Schaden'));
+assert.match(service, /getCombatLogEntryPresentation/);
+assert.match(service, /document\.getElementById\('combatLog'\)/);
+assert.match(service, /log\.prepend\(row\);/);
+assert.match(service, /openLegacyCompatibilityBridge\(\): void/);
+assert.match(service, /closeLegacyCompatibilityBridge\(\): void/);
+assert.match(service, /window\.NoBrainerCombatLogCompatibility = \{/);
+assert.match(service, /delete window\.NoBrainerCombatLogCompatibility;/);
+
+assert.match(runtime, /private readonly combatLog: GameCombatLogService/);
+assert.match(runtime, /this\.combatLog\.add\(`/);
+assert.doesNotMatch(runtime, /\baddLog\(text: string/);
+assert.doesNotMatch(runtime, /runtime\.addLog\(/);
+assert.doesNotMatch(registration, /\n  addLog,/);
+
+const openIndex = app.indexOf('this.gameCombatLog.openLegacyCompatibilityBridge();');
+const installIndex = app.indexOf('this.installLegacyScript(adaptedScript);');
+assert.ok(openIndex >= 0 && installIndex > openIndex, 'Die Kampfprotokoll-Brücke muss vor der Legacy-Script-Installation geöffnet werden.');
+assert.match(app, /this\.gameCombatLog\.closeLegacyCompatibilityBridge\(\);/);
+
+// Noch nicht migrierte Legacy-Aktionen dürfen weiterhin addLog aufrufen; der dünne Wrapper hält sie funktionsfähig.
 assert.ok(source.includes('addLog(`Schmiedeauftrag gestartet: ${finalName}.`,"good")'));
 assert.ok(source.includes('addLog(`Verkauf abgeschlossen: ${j.name} → ${formatCurrencyNickel(j.valueNickel)}.`,"good")'));
 
-// Regression-Sicherung für zuletzt empfindliche Vollrender-Bereiche.
-assert.ok(source.includes('renderForgePreview();'));
-assert.ok(source.includes('renderDungeonStatus();'));
-assert.ok(source.includes('const tbody=document.getElementById("inventoryRows");tbody.innerHTML="";'));
-
-const app = fs.readFileSync('src/app/app.component.ts', 'utf8');
-const sourceAdapterIndex = app.indexOf('let adaptedScript = this.legacySourceAdapter.adapt(source);');
-const combatLogAdapterIndex = app.indexOf('adaptedScript = this.legacyCombatLogPresentationAdapter.adapt(adaptedScript);');
-const dungeonDomainAdapterIndex = app.indexOf('adaptedScript = this.legacyDungeonDomainAdapter.adapt(adaptedScript);');
-assert.ok(sourceAdapterIndex >= 0, 'LegacySourceAdapter-Aufruf fehlt.');
-assert.ok(combatLogAdapterIndex > sourceAdapterIndex, 'Combat-Log-Adapter muss nach dem Source-Adapter laufen.');
-assert.ok(dungeonDomainAdapterIndex > combatLogAdapterIndex, 'Dungeon-Domain-Adapter muss nach dem Combat-Log-Adapter laufen.');
-
-console.log('Combat-Log-Presentation-Adapter: DOM-Darstellung migriert; Ereignisquellen und Renderpfade bleiben erhalten.');
+console.log('Kampfprotokoll-Eigentümerschaft: DOM-Präsentation und Angular-Runtime-Ereignisse laufen über GameCombatLogService; Legacy-Aktionen besitzen nur noch einen dünnen addLog-Wrapper.');

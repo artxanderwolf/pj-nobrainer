@@ -28,6 +28,7 @@ const tickEnd = runtimeService.indexOf('private logForgeCompletions(', tickStart
 assert.ok(tickStart >= 0 && tickEnd > tickStart, 'Der zentrale Angular-Tick-Zyklus konnte nicht isoliert werden.');
 const tickCycle = runtimeService.slice(tickStart, tickEnd);
 
+assert.match(runtimeService, /private readonly combatLog: GameCombatLogService/, 'Der Angular-Tick besitzt keinen Angular-eigenen Kampfprotokoll-Service.');
 assert.match(runtimeService, /private readonly gameEnergy: GameEnergyService/, 'Der Angular-Tick besitzt keinen Angular-eigenen Energie-Service.');
 assert.match(runtimeService, /private readonly gameForge: GameForgeService/, 'Der Angular-Tick besitzt keinen Angular-eigenen Schmiede-Service.');
 assert.match(runtimeService, /private readonly gameMarket: GameMarketService/, 'Der Angular-Tick besitzt keinen Angular-eigenen Markt-Service.');
@@ -44,14 +45,16 @@ assert.doesNotMatch(runtimeService, /runtime\.updateDungeonAutomation\(\)/, 'Der
 assert.doesNotMatch(runtimeService, /renderDungeonStatus\(\): void;/, 'Die Runtime-API exportiert weiterhin den Legacy-Dungeonstatus-Renderer.');
 assert.doesNotMatch(runtimeService, /renderDungeonLoot\(\): void;/, 'Die Runtime-API exportiert weiterhin den Legacy-Dungeonloot-Renderer.');
 assert.doesNotMatch(runtimeService, /renderTeam\(\): void;/, 'Die Runtime-API exportiert weiterhin den Legacy-Dungeonteam-Renderer.');
+assert.doesNotMatch(runtimeService, /\baddLog\(text: string/, 'Die Runtime-API exportiert weiterhin den Legacy-Kampfprotokoll-Callback.');
+assert.doesNotMatch(runtimeService, /runtime\.addLog\(/, 'Der Angular-Tick schreibt weiterhin über die Legacy-Runtime ins Kampfprotokoll.');
 
 const orderedRuntimeCalls = [
   'this.gameEnergy.update();',
   'const forgeUpdate = this.gameForge.update();',
-  'this.logForgeCompletions(runtime, forgeUpdate.completedNames);',
+  'this.logForgeCompletions(forgeUpdate.completedNames);',
   'const marketUpdate = this.gameMarket.update();',
   'const marketCompleted = marketUpdate.completedCount > 0;',
-  'this.logMarketCompletions(runtime, marketUpdate.completedSales);',
+  'this.logMarketCompletions(marketUpdate.completedSales);',
   'const dungeonUpdate = this.gameDungeon.update();',
   'this.applyDungeonResult(runtime, dungeonUpdate);',
   'runtime.renderForgeJob();',
@@ -73,7 +76,7 @@ assert.match(runtimeService, /this\.runTickCycle\(\);[\s\S]*this\.scheduleNextTi
 const angularRegistrationMatch = registrationAdapter.match(/const ANGULAR_RUNTIME_REGISTRATION = `([\s\S]*?)`;/);
 assert.ok(angularRegistrationMatch, 'Die Angular-Runtime-Registrierung konnte nicht geprüft werden.');
 const angularRegistration = angularRegistrationMatch[1];
-for (const forbidden of ['tick:gameTick', 'updateEnergy,', 'updateForgeJob,', 'updateMarketJob,', 'updateDungeonAutomation,', 'renderDungeonStatus,', 'renderDungeonLoot,', 'renderTeam:']) {
+for (const forbidden of ['tick:gameTick', 'updateEnergy,', 'updateForgeJob,', 'updateMarketJob,', 'updateDungeonAutomation,', 'renderDungeonStatus,', 'renderDungeonLoot,', 'renderTeam:', '\n  addLog,']) {
   assert.equal(angularRegistration.includes(forbidden), false, `Legacy-Runtime registriert weiterhin ${forbidden}.`);
 }
 for (const callback of [
@@ -86,7 +89,6 @@ for (const callback of [
   'renderInventoryState:',
   'refreshGold:',
   'renderRosterIfIdle:',
-  'addLog',
   'shouldAutoSave:'
 ]) {
   assert.ok(angularRegistration.includes(callback), `Runtime-Callback für den Angular-Tick fehlt: ${callback}`);
@@ -97,4 +99,4 @@ const tickAdapterIndex = appComponent.indexOf('adaptedScript = this.legacyGameTi
 const registrationAdapterIndex = appComponent.indexOf('adaptedScript = this.legacyRuntimeRegistrationAdapter.adapt(adaptedScript);');
 assert.ok(sourceAdapterIndex >= 0 && tickAdapterIndex > sourceAdapterIndex && registrationAdapterIndex > tickAdapterIndex, 'Die Adapterreihenfolge für den gameTick-Cutover ist nicht stabil.');
 
-console.log('gameTick-Eigentümerschaft: Der zentrale 250-ms-Zyklus liegt in Angular; Dungeon-Status, Loot und Team werden dort ohne Legacy-Runtime-Callbacks gerendert.');
+console.log('gameTick-Eigentümerschaft: Der zentrale 250-ms-Zyklus liegt in Angular; Dungeon und Kampfprotokoll werden dort ohne Legacy-Runtime-Callbacks verarbeitet.');
