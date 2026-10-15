@@ -77,7 +77,9 @@ const browserHarness = `<script>
           marketText: document.getElementById('marketMaterials')?.textContent || '',
           dungeonLootText: document.getElementById('dungeonLoot')?.textContent || '',
           savedInventoryQty: saved?.state?.inventory?.[${JSON.stringify(materialName)}]?.qty ?? null,
-          savedDungeonLootQty: saved?.state?.dungeonLoot?.[${JSON.stringify(materialName)}]?.qty ?? null
+          savedDungeonLootQty: saved?.state?.dungeonLoot?.[${JSON.stringify(materialName)}]?.qty ?? null,
+          savedInventory: saved?.state?.inventory ?? null,
+          savedDungeonLoot: saved?.state?.dungeonLoot ?? null
         });
       }, 500);
       return;
@@ -186,14 +188,15 @@ try {
   const markerMatch = stdout.match(/<pre id="lootE2EResult">([^<]*)<\/pre>/);
   assert.ok(markerMatch, `Der Dungeon-Loot-Browsertest lieferte kein Ergebnis.\n${stderr}\nDOM-Ausgabe: ${stdout.slice(-5000)}`);
   const payload = JSON.parse(markerMatch[1].replaceAll('&amp;', '&').replaceAll('&lt;', '<').replaceAll('&gt;', '>'));
+  console.log(`Dungeon-Loot-Diagnose: ${JSON.stringify(payload)}`);
 
   assert.equal(payload.error, null, `Dungeon-Loot-Browserablauf scheiterte: ${JSON.stringify(payload)}`);
-  assert.equal(payload.materialCountText, String(expectedQuantity), 'Der Materialzähler wurde nach dem Einsammeln nicht aktualisiert.');
-  assert.match(payload.storageText, new RegExp(materialName), 'Das eingesammelte Material erscheint nicht im Lager.');
-  assert.ok(payload.forgeOptions.some(text => text.includes(materialName)), 'Das eingesammelte Material erscheint nicht in der Schmiedeauswahl.');
-  assert.match(payload.marketText, new RegExp(materialName), 'Das eingesammelte Material erscheint nicht im Markt.');
-  assert.equal(payload.savedInventoryQty, expectedQuantity, 'Der eingesammelte Loot wurde nicht im Spielstand-Inventar gespeichert.');
-  assert.equal(payload.savedDungeonLootQty, null, 'Der eingesammelte Loot bleibt fälschlich im Dungeon-Loot gespeichert.');
+  assert.equal(payload.materialCountText, String(expectedQuantity), `Der Materialzähler wurde nach dem Einsammeln nicht aktualisiert: ${JSON.stringify(payload)}`);
+  assert.match(payload.storageText, new RegExp(materialName), `Das eingesammelte Material erscheint nicht im Lager: ${JSON.stringify(payload)}`);
+  assert.ok(payload.forgeOptions.some(text => text.includes(materialName)), `Das eingesammelte Material erscheint nicht in der Schmiedeauswahl: ${JSON.stringify(payload)}`);
+  assert.match(payload.marketText, new RegExp(materialName), `Das eingesammelte Material erscheint nicht im Markt: ${JSON.stringify(payload)}`);
+  assert.equal(payload.savedInventoryQty, expectedQuantity, `Der eingesammelte Loot wurde nicht im Spielstand-Inventar gespeichert: ${JSON.stringify(payload)}`);
+  assert.equal(payload.savedDungeonLootQty, null, `Der eingesammelte Loot bleibt fälschlich im Dungeon-Loot gespeichert: ${JSON.stringify(payload)}`);
 
   console.log('Dungeon-Loot-Browserablauf: Einsammeln aktualisiert Materialzähler, Lager, Schmiede, Markt und gespeicherten Inventarzustand.');
 } finally {
