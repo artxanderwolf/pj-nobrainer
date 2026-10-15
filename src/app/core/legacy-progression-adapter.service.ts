@@ -1,11 +1,4 @@
 import { Injectable } from '@angular/core';
-import { PROGRESSION_CORE_BRIDGE, type ProgressionCoreBridge } from '../game/progression-core';
-
-declare global {
-  interface Window {
-    NoBrainerProgressionCore?: ProgressionCoreBridge;
-  }
-}
 
 const RECRUIT_BLOCK = `function recruitCharacter(classId="recruit"){
   if(state.characters.length>=state.upgrades.innCapacity){alert("Das Inn ist voll. Bitte zuerst einen weiteren Kaderplatz ausbauen.");return;}
@@ -18,16 +11,15 @@ const RECRUIT_BLOCK = `function recruitCharacter(classId="recruit"){
 }`;
 
 const RECRUIT_BRIDGE = `function recruitCharacter(classId="recruit"){
-  const result=window.NoBrainerProgressionCore.spendRecruitCost(state,classId);
+  const progressionCompatibility=window.NoBrainerProgressionCompatibility;
+  if(!progressionCompatibility)throw new Error("NoBrainer-Progression-Kompatibilitätsbrücke fehlt.");
+  const result=progressionCompatibility.recruit(classId);
   if(!result.ok){
     if(result.reason==="inn-full")alert("Das Inn ist voll. Bitte zuerst einen weiteren Kaderplatz ausbauen.");
     else if(result.reason==="insufficient-funds")alert(\`Nicht genügend Geld. Benötigt: \${formatCurrencyNickel(result.costNickel)}.\`);
     return;
   }
-  const cls=CHARACTER_CLASSES[classId];if(!cls)return;
-  const id=state.nextCharacterId++;
-  const c=createCharacter(id,\`${'${cls.name}'} \${String(result.number).padStart(2,"0")}\`,classId,false);state.characters.push(c);
-  addLog(\`${'${c.name}'} wurde für \${formatCurrencyNickel(result.costNickel)} angeworben.\`,"good");render();
+  addLog(\`${'${result.character.name}'} wurde für \${formatCurrencyNickel(result.costNickel)} angeworben.\`,"good");render();
 }`;
 
 const UPGRADE_BLOCK = `function buyUpgrade(kind){
@@ -45,7 +37,9 @@ const UPGRADE_BLOCK = `function buyUpgrade(kind){
 }`;
 
 const UPGRADE_BRIDGE = `function buyUpgrade(kind){
-  const result=window.NoBrainerProgressionCore.buyUpgrade(state,kind);
+  const progressionCompatibility=window.NoBrainerProgressionCompatibility;
+  if(!progressionCompatibility)throw new Error("NoBrainer-Progression-Kompatibilitätsbrücke fehlt.");
+  const result=progressionCompatibility.buyUpgrade(kind);
   if(!result.ok){
     if(result.reason==="insufficient-funds")alert(\`Nicht genügend Geld. Benötigt: \${formatCurrencyNickel(result.costNickel)}.\`);
     return;
@@ -56,7 +50,6 @@ const UPGRADE_BRIDGE = `function buyUpgrade(kind){
 @Injectable({ providedIn: 'root' })
 export class LegacyProgressionAdapterService {
   adapt(source: string): string {
-    window.NoBrainerProgressionCore = PROGRESSION_CORE_BRIDGE;
     let adapted = this.replaceOnce(source, RECRUIT_BLOCK, RECRUIT_BRIDGE, 'Rekrutierungsablauf');
     adapted = this.replaceOnce(adapted, UPGRADE_BLOCK, UPGRADE_BRIDGE, 'Ausbaukauf');
     return adapted;
