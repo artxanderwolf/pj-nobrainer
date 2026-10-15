@@ -26,6 +26,6 @@ const bridgeOpen = appComponent.indexOf('this.gameProgression.openLegacyCompatib
 const stateBootstrap = appComponent.indexOf('this.gameState.openBootstrapRegistration();');
 assert.ok(bridgeOpen >= 0 && stateBootstrap > bridgeOpen, 'Progression-Bridge muss vor dem State-/Legacy-Bootstrap geöffnet werden.');
 assert.match(appComponent, /ngOnDestroy\(\): void \{[\s\S]*this\.gameProgression\.closeLegacyCompatibilityBridge\(\);/);
-assert.match(appComponent, /const APP_VERSION = '0\.12\.75';/);
+assert.match(appComponent, /const APP_VERSION = '0\.12\.76';/);
 
 console.log('Progression-Eigentümerschaft: Rekrutierung und Ausbaukäufe verändern den Angular-State im GameProgressionService; Legacy-Code delegiert nur noch UI-Aktionen.');
