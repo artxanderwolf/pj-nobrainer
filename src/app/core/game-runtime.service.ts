@@ -9,6 +9,7 @@ import { GameDungeonPresentationService } from './game-dungeon-presentation.serv
 import { GameEnergyService } from './game-energy.service';
 import { GameForgeService } from './game-forge.service';
 import { GameMarketService } from './game-market.service';
+import { GameWeaponInventoryPresentationService } from './game-weapon-inventory-presentation.service';
 
 interface GameSaveStorageAdapter {
   read(): string | null;
@@ -22,7 +23,6 @@ export interface GameRuntimeApi {
   renderForgeJob(): void;
   renderMarketJob(): void;
   renderForgePreview(): void;
-  renderWeaponInventory(): void;
   renderMarketMaterials(): void;
   renderMarketWeapons(): void;
   renderInventoryState(): void;
@@ -54,6 +54,7 @@ export class GameRuntimeService {
     private readonly saveStorage: SaveStorageService,
     private readonly offlineProgress: OfflineProgressService,
     private readonly characterPresentation: GameCharacterPresentationService,
+    private readonly weaponInventoryPresentation: GameWeaponInventoryPresentationService,
     private readonly combatLog: GameCombatLogService,
     private readonly gameEnergy: GameEnergyService,
     private readonly gameForge: GameForgeService,
@@ -87,7 +88,11 @@ export class GameRuntimeService {
     const before = this.saveStorage.readSnapshot();
     runtime.prepare();
     this.characterPresentation.bindActions(() => {
-      runtime.renderWeaponInventory();
+      this.weaponInventoryPresentation.render();
+      runtime.renderMarketWeapons();
+    });
+    this.weaponInventoryPresentation.bindActions(() => {
+      this.characterPresentation.render();
       runtime.renderMarketWeapons();
     });
     this.dungeonPresentation.bindActions((result, inventoryChanged) => this.applyDungeonResult(runtime, result, inventoryChanged));
@@ -117,6 +122,7 @@ export class GameRuntimeService {
   renderInitial(): void {
     this.getRuntime().renderInitial();
     this.characterPresentation.render();
+    this.weaponInventoryPresentation.render();
     this.dungeonPresentation.render();
   }
 
@@ -139,7 +145,6 @@ export class GameRuntimeService {
       'renderForgeJob',
       'renderMarketJob',
       'renderForgePreview',
-      'renderWeaponInventory',
       'renderMarketMaterials',
       'renderMarketWeapons',
       'renderInventoryState',
@@ -184,7 +189,7 @@ export class GameRuntimeService {
 
     if (forgeCompleted) {
       runtime.renderForgePreview();
-      runtime.renderWeaponInventory();
+      this.weaponInventoryPresentation.render();
     }
 
     if (marketCompleted) {
