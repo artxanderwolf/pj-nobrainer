@@ -1,0 +1,40 @@
+name: Angular CI
+
+on:
+  push:
+    branches:
+      - migration/angular
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+
+      - name: Pin npm
+        run: npm install --global npm@11.6.0 --no-audit --no-fund
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Build Angular app
+        run: npm run build
+
+      - name: Smoke test built runtime
+        run: node scripts/check-built-runtime-startup.mjs
+
+      - name: Dungeon loot browser regression
+        run: node scripts/check-dungeon-loot-browser-flow.mjs
