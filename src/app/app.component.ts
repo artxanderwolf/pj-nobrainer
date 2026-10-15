@@ -1,4 +1,5 @@
 import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
+import { GameCombatLogService } from './core/game-combat-log.service';
 import { GameEnergyService } from './core/game-energy.service';
 import { GameForgeService } from './core/game-forge.service';
 import { GameMarketService } from './core/game-market.service';
@@ -33,7 +34,7 @@ import { APP_SHELL_PAGE_IDS, composeAppShell } from './game/app-shell-presentati
 import { composePageMarkup } from './game/page-markup-presentation-core';
 import { adaptLegacyWeaponMarkup, adaptLegacyWeaponScript } from './game/weapon-naming';
 
-const APP_VERSION = '0.12.70';
+const APP_VERSION = '0.12.71';
 const LEGACY_RUNTIME_PATH = 'legacy/NoBrainer_GitHub_v0.12.2.runtime.js';
 const LEGACY_SCRIPT_ID = 'nobrainer-legacy-script';
 
@@ -44,6 +45,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   constructor(
     private readonly gameRuntime: GameRuntimeService,
     private readonly gameState: GameStateService,
+    private readonly gameCombatLog: GameCombatLogService,
     private readonly gameEnergy: GameEnergyService,
     private readonly gameForge: GameForgeService,
     private readonly gameMarket: GameMarketService,
@@ -60,14 +62,14 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     private readonly legacyForgeAdapter: LegacyForgeAdapterService,
     private readonly legacyMarketAdapter: LegacyMarketAdapterService,
     private readonly legacyEconomyAdapter: LegacyEconomyAdapterService,
-    private readonly legacyResourcePresentationAdapter: LegacyResourcePresentationAdapterService,
     private readonly legacyMarketPresentationAdapter: LegacyMarketPresentationAdapterService,
+    private readonly legacyMaterialPresentationAdapter: LegacyMaterialPresentationAdapterService,
+    private readonly legacyResourcePresentationAdapter: LegacyResourcePresentationAdapterService,
     private readonly legacyForgePresentationAdapter: LegacyForgePresentationAdapterService,
     private readonly legacyTavernPresentationAdapter: LegacyTavernPresentationAdapterService,
     private readonly legacyCharacterAdapter: LegacyCharacterAdapterService,
     private readonly legacyEquipmentAdapter: LegacyEquipmentAdapterService,
     private readonly legacyWeaponPresentationAdapter: LegacyWeaponPresentationAdapterService,
-    private readonly legacyMaterialPresentationAdapter: LegacyMaterialPresentationAdapterService,
     private readonly legacyCharacterPresentationAdapter: LegacyCharacterPresentationAdapterService,
     private readonly legacyProgressionAdapter: LegacyProgressionAdapterService,
     private readonly legacyProgressionPresentationAdapter: LegacyProgressionPresentationAdapterService,
@@ -85,6 +87,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
       this.gameMarket.closeLegacyCompatibilityBridge();
       this.gameForge.closeLegacyCompatibilityBridge();
       this.gameEnergy.closeLegacyCompatibilityBridge();
+      this.gameCombatLog.closeLegacyCompatibilityBridge();
       console.error('Die NoBrainer-Runtime konnte nicht geladen werden.', error);
       this.legacyHost.nativeElement.dataset['runtimeError'] = error instanceof Error ? error.message : String(error);
       this.legacyHost.nativeElement.textContent = 'Die NoBrainer-Runtime konnte nicht geladen werden. Bitte Seite neu laden.';
@@ -96,6 +99,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     this.gameMarket.closeLegacyCompatibilityBridge();
     this.gameForge.closeLegacyCompatibilityBridge();
     this.gameEnergy.closeLegacyCompatibilityBridge();
+    this.gameCombatLog.closeLegacyCompatibilityBridge();
   }
 
   private async mountGameRuntime(): Promise<void> {
@@ -135,6 +139,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     this.legacyHost.nativeElement.innerHTML = adaptedMarkup;
     this.applyVersionMarker();
 
+    this.gameCombatLog.openLegacyCompatibilityBridge();
     this.gameEnergy.openLegacyCompatibilityBridge();
     this.gameForge.openLegacyCompatibilityBridge();
     this.gameMarket.openLegacyCompatibilityBridge();
