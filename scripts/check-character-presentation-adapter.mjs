@@ -7,10 +7,10 @@ const match = html.match(/<script>([\s\S]*?)<\/script>\s*<\/body>/);
 if (!match) throw new Error('Legacy-JavaScript konnte nicht extrahiert werden.');
 const adapterSource = fs.readFileSync('src/app/core/legacy-character-presentation-adapter.service.ts', 'utf8');
 
-assert.match(adapterSource, /NoBrainerCharacterPresentationCore\.getCharacterCardPresentation/, 'Kaderkarten delegieren nicht an den Character-Presentation-Core.');
-assert.match(adapterSource, /NoBrainerCharacterPresentationCore\.getWeaponPickerKey/, 'Waffenpicker-Schlüssel delegiert nicht an den Character-Presentation-Core.');
-assert.doesNotMatch(adapterSource, /ADAPTED_DUNGEON_TEAM|ADAPTED_DUNGEON_TEAM_PICKER|getDungeonTeamPresentation|getDungeonTeamPickerPresentation/, 'Der Legacy-Character-Adapter enthält weiterhin eine zweite Dungeon-Team-Präsentation.');
-assert.match(adapterSource, /if\(target!=="rosterCard"\)return;/, 'Der verbleibende Legacy-Charakterrenderer ist nicht auf den Kader begrenzt.');
+assert.doesNotMatch(adapterSource, /NoBrainerCharacterPresentationCore|CHARACTER_PRESENTATION_CORE_BRIDGE/, 'Der Legacy-Character-Adapter registriert weiterhin eine Presentation-Brücke.');
+assert.match(adapterSource, /'function weaponPickerKey\('/, 'Der Kader-Cutover besitzt keinen eindeutigen Startanker.');
+assert.match(adapterSource, /'function getMaterialsForCategories\('/, 'Der Kader-Cutover besitzt keinen stabilen Endanker.');
+assert.match(adapterSource, /'  renderCharacter\("rosterCard"\);renderTavern\(\);'/, 'Der alte Kader-Aufruf im Legacy-Gesamtrender wird nicht entfernt.');
 
 function replaceOnce(source, search, replacement) {
   const first = source.indexOf(search);
@@ -30,34 +30,28 @@ function replaceRangeOnce(source, startMarker, endMarker, replacement) {
 }
 
 let source = match[1];
-source = replaceOnce(source, 'let openWeaponPickerHand=null;\nlet openDungeonTeamPickerSlot=null;', 'let openWeaponPickerHand=null;');
-source = replaceRangeOnce(source, 'function toggleDungeonTeamPicker(', 'function renderCharacter(', '');
-source = replaceRangeOnce(
-  source,
-  'function renderCharacter(',
-  'function getMaterialsForCategories(',
-  `function renderCharacter(target){
-  if(target!=="rosterCard")return;
-  const root=document.getElementById(target);if(!root)return;
-  root.innerHTML=state.characters.map(renderCharacterCard).join("");
-}
+source = replaceOnce(source, '  renderCharacter("teamCard");renderCharacter("rosterCard");renderTavern();', '  renderCharacter("rosterCard");renderTavern();');
+source = replaceOnce(source, 'let openWeaponPickerHand=null;\nlet openDungeonTeamPickerSlot=null;', '');
+source = replaceRangeOnce(source, 'function weaponPickerKey(', 'function getMaterialsForCategories(', '');
+source = replaceOnce(source, '  renderCharacter("rosterCard");renderTavern();', '  renderTavern();');
 
-`
-);
-
-new vm.Script(source, { filename: 'NoBrainer_GitHub_v0.12.69.character-presentation-cutover.js' });
+new vm.Script(source, { filename: 'NoBrainer_GitHub_v0.12.74.character-presentation-cutover.js' });
 for (const obsolete of [
-  'openDungeonTeamPickerSlot',
+  'function weaponPickerKey(',
+  'function toggleWeaponPicker(',
+  'function equipFromWeaponPicker(',
+  'function weaponPickerHtml(',
+  'function renderCharacterCard(',
   'function toggleDungeonTeamPicker(',
   'function assignDungeonCharacter(',
   'function removeDungeonCharacter(',
   'function dungeonTeamPickerHtml(',
-  'function renderDungeonTeam('
+  'function renderDungeonTeam(',
+  'function renderCharacter(target)'
 ]) {
-  assert.equal(source.includes(obsolete), false, `Veralteter Dungeon-Team-Pfad bleibt im adaptierten Character-Script: ${obsolete}`);
+  assert.equal(source.includes(obsolete), false, `Veralteter Character-Präsentationspfad bleibt im adaptierten Script: ${obsolete}`);
 }
-assert.ok(source.includes('function renderCharacter(target){\n  if(target!=="rosterCard")return;'), 'Kaderrenderer wurde beim Team-Cutover nicht auf rosterCard begrenzt.');
-assert.ok(source.includes('function renderCharacterCard(c){'), 'Kaderkarten wurden beim Team-Cutover entfernt.');
 assert.ok(source.includes('function getMaterialsForCategories('), 'Nachfolgender Schmiede-/Materialbereich wurde beschädigt.');
+assert.ok(source.includes('  renderTavern();'), 'Der Kader-Cutover beschädigt den verbleibenden Taverne-Render.');
 
-console.log('Character-Presentation-Adapter: Kader- und Waffenpicker-Präsentation bleiben erhalten; der doppelte Legacy-Dungeon-Team-Pfad ist vollständig entfernt.');
+console.log('Character-Presentation-Adapter: Kader-, Waffenpicker- und alter Dungeon-Team-Pfad werden vollständig aus der Legacy-Runtime entfernt.');
