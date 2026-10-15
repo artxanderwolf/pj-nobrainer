@@ -27,6 +27,7 @@ if(!runtimeBootstrap||typeof runtimeBootstrap.register!=="function")throw new Er
 runtimeBootstrap.register({
   configureSaveStorage,
   prepare:prepareGameRuntime,
+  getStateReference:()=>state,
   renderForgeJob,
   renderMarketJob,
   renderForgePreview,
