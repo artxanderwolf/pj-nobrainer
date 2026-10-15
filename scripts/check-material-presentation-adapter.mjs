@@ -66,8 +66,16 @@ source = replaceRangeOnce(source, 'function displayVal(', 'function renderMateri
 source = replaceRangeOnce(source, 'function renderMaterialIndex(', 'function rarityFactorFromRarity(', materialIndexBridge, 'Materialindex-Präsentation');
 source = replaceRangeOnce(
   source,
+  'function renderDungeonStatus(){',
+  'function render(){',
+  '',
+  'vorheriger Dungeon-Präsentations-Cutover'
+);
+source = source.replace('renderDungeonStatus();renderDungeonLoot();renderForgePreview();', 'renderForgePreview();');
+source = replaceRangeOnce(
+  source,
   '  const tbody=document.getElementById("inventoryRows");tbody.innerHTML="";',
-  '  renderDungeonStatus();',
+  '  renderForgePreview();',
   '  renderMaterialStorage();',
   'Materiallager-Präsentation'
 );
@@ -79,7 +87,7 @@ source = replaceRangeOnce(
   'Materiallager-Renderfunktion'
 );
 
-new vm.Script(source, { filename: 'NoBrainer_GitHub_v0.12.40.material-presentation.js' });
+new vm.Script(source, { filename: 'NoBrainer_GitHub_v0.12.68.material-presentation.js' });
 assert.ok(source.includes('window.NoBrainerMaterialPresentationCore.formatMaterialValue'));
 assert.ok(source.includes('window.NoBrainerMaterialPresentationCore.getMaterialIndexRowPresentation'));
 assert.ok(source.includes('window.NoBrainerMaterialPresentationCore.sortMaterialStorageEntries'));
@@ -88,9 +96,10 @@ assert.ok(source.includes('reinforcementEffectText(name)'));
 assert.ok(source.includes('getDungeonMaterialChance(1,name)'));
 assert.ok(source.includes('function rarityFactorFromRarity(rarity)'));
 assert.ok(source.includes('function renderMaterialStorage(){'));
-assert.ok(source.includes('  renderMaterialStorage();\n\n  renderDungeonStatus();'));
+assert.ok(source.includes('  renderMaterialStorage();\n\n  renderForgePreview();'));
 assert.equal((source.match(/function renderMaterialIndex\(/g) || []).length, 1);
 assert.equal((source.match(/function renderMaterialStorage\(/g) || []).length, 1);
 assert.equal(source.includes('const tbody=document.getElementById("inventoryRows");tbody.innerHTML="";'), false);
+assert.equal(source.includes('renderDungeonStatus();'), false);
 
-console.log('Material-Presentation-Adapter: Materialindex und Materiallager nutzen den Presentation Core; Legacy-Anker und JavaScript-Syntax sind konsistent.');
+console.log('Material-Presentation-Adapter: Materialindex und Materiallager bleiben nach dem Dungeon-Präsentations-Cutover stabil und nutzen den Presentation Core.');
