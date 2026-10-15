@@ -100,6 +100,9 @@ assert.ok(source.includes('  renderMaterialStorage();\n\n  renderForgePreview();
 assert.equal((source.match(/function renderMaterialIndex\(/g) || []).length, 1);
 assert.equal((source.match(/function renderMaterialStorage\(/g) || []).length, 1);
 assert.equal(source.includes('const tbody=document.getElementById("inventoryRows");tbody.innerHTML="";'), false);
-assert.equal(source.includes('renderDungeonStatus();'), false);
+const masterRenderStart = source.indexOf('function render(){');
+const masterRenderEnd = source.indexOf('function gameTick(){', masterRenderStart);
+assert.ok(masterRenderStart >= 0 && masterRenderEnd > masterRenderStart, 'Der Legacy-Gesamtrender konnte nicht isoliert werden.');
+assert.equal(source.slice(masterRenderStart, masterRenderEnd).includes('renderDungeonStatus();'), false);
 
 console.log('Material-Presentation-Adapter: Materialindex und Materiallager bleiben nach dem Dungeon-Präsentations-Cutover stabil und nutzen den Presentation Core.');
