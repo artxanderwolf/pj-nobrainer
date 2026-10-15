@@ -11,6 +11,8 @@ declare global {
 }
 
 const ADAPTED_UPGRADE_CARDS = `function renderUpgradeCards(){
+  const progressionCompatibility=window.NoBrainerProgressionCompatibility;
+  if(!progressionCompatibility)throw new Error("NoBrainer-Progression-Kompatibilitätsbrücke fehlt.");
   const presentation=window.NoBrainerProgressionPresentationCore.getUpgradeCardsPresentation({
     characterCount:state.characters.length,
     innCapacity:state.upgrades.innCapacity,
@@ -23,11 +25,11 @@ const ADAPTED_UPGRADE_CARDS = `function renderUpgradeCards(){
     marketQueueCount:state.marketQueue.length,
     marketQueueCapacity:state.upgrades.marketQueue,
     offers:{
-      inn:window.NoBrainerProgressionCore.getUpgradeOffer(state,"inn"),
-      forgeSlots:window.NoBrainerProgressionCore.getUpgradeOffer(state,"forgeSlots"),
-      forgeQueue:window.NoBrainerProgressionCore.getUpgradeOffer(state,"forgeQueue"),
-      marketSlots:window.NoBrainerProgressionCore.getUpgradeOffer(state,"marketSlots"),
-      marketQueue:window.NoBrainerProgressionCore.getUpgradeOffer(state,"marketQueue")
+      inn:progressionCompatibility.getUpgradeOffer("inn"),
+      forgeSlots:progressionCompatibility.getUpgradeOffer("forgeSlots"),
+      forgeQueue:progressionCompatibility.getUpgradeOffer("forgeQueue"),
+      marketSlots:progressionCompatibility.getUpgradeOffer("marketSlots"),
+      marketQueue:progressionCompatibility.getUpgradeOffer("marketQueue")
     }
   },formatCurrencyNickel);
   const renderStats=stats=>stats.map(stat=>\`<div class="stat"><span>\${stat.label}</span><b>\${stat.value}</b></div>\`).join("");
