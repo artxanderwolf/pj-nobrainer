@@ -25,6 +25,8 @@ assert.ok(start >= 0 && end > start);
 assert.equal(source.indexOf(startMarker, start + startMarker.length), -1);
 
 const replacement = `function renderUpgradeCards(){
+  const progressionCompatibility=window.NoBrainerProgressionCompatibility;
+  if(!progressionCompatibility)throw new Error("NoBrainer-Progression-Kompatibilitätsbrücke fehlt.");
   const presentation=window.NoBrainerProgressionPresentationCore.getUpgradeCardsPresentation({
     characterCount:state.characters.length,
     innCapacity:state.upgrades.innCapacity,
@@ -37,11 +39,11 @@ const replacement = `function renderUpgradeCards(){
     marketQueueCount:state.marketQueue.length,
     marketQueueCapacity:state.upgrades.marketQueue,
     offers:{
-      inn:window.NoBrainerProgressionCore.getUpgradeOffer(state,"inn"),
-      forgeSlots:window.NoBrainerProgressionCore.getUpgradeOffer(state,"forgeSlots"),
-      forgeQueue:window.NoBrainerProgressionCore.getUpgradeOffer(state,"forgeQueue"),
-      marketSlots:window.NoBrainerProgressionCore.getUpgradeOffer(state,"marketSlots"),
-      marketQueue:window.NoBrainerProgressionCore.getUpgradeOffer(state,"marketQueue")
+      inn:progressionCompatibility.getUpgradeOffer("inn"),
+      forgeSlots:progressionCompatibility.getUpgradeOffer("forgeSlots"),
+      forgeQueue:progressionCompatibility.getUpgradeOffer("forgeQueue"),
+      marketSlots:progressionCompatibility.getUpgradeOffer("marketSlots"),
+      marketQueue:progressionCompatibility.getUpgradeOffer("marketQueue")
     }
   },formatCurrencyNickel);
   const renderStats=stats=>stats.map(stat=>\`<div class="stat"><span>\${stat.label}</span><b>\${stat.value}</b></div>\`).join("");
@@ -56,13 +58,14 @@ const replacement = `function renderUpgradeCards(){
 `;
 
 source = source.slice(0, start) + replacement + source.slice(end);
-new vm.Script(source, { filename: 'NoBrainer_GitHub_v0.12.65.progression-presentation.js' });
+new vm.Script(source, { filename: 'NoBrainer_GitHub_v0.12.71.progression-presentation.js' });
 
 assert.ok(source.includes('window.NoBrainerProgressionPresentationCore.getUpgradeCardsPresentation'));
-assert.ok(source.includes('window.NoBrainerProgressionCore.getUpgradeOffer(state,"inn")'));
+assert.ok(source.includes('progressionCompatibility.getUpgradeOffer("inn")'));
+assert.equal(source.includes('window.NoBrainerProgressionCore.getUpgradeOffer'), false);
 assert.equal(source.includes('function upgradeButton(kind,stateKey,cfgKey,label){'), false);
 assert.equal(source.split('function renderUpgradeCards(){').length - 1, 1);
 assert.ok(source.includes('function startForgeJob(){'));
 assert.equal(source.includes('function startForgeQueuedJob('), false);
 
-console.log('Progression-Presentation-Adapter: Ausbaukarten-Anker bleibt nach dem aktuellen Forge-Cutover kompatibel und resultierende JavaScript-Syntax ist konsistent.');
+console.log('Progression-Presentation-Adapter: Ausbaukarten beziehen Angebote aus der Angular-Progression-Kompatibilitätsbrücke; Legacy-Core-Eigentümerschaft ist entfernt.');
