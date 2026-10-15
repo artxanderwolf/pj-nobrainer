@@ -44,6 +44,9 @@ const seededSave = {
 const browserHarness = `<script>
 (() => {
   localStorage.setItem(${JSON.stringify(saveKey)}, ${JSON.stringify(JSON.stringify(seededSave))});
+  const readSave = () => {
+    try { return JSON.parse(localStorage.getItem(${JSON.stringify(saveKey)}) || 'null'); } catch { return null; }
+  };
   const finish = payload => {
     const marker = document.createElement('pre');
     marker.id = 'lootE2EResult';
@@ -66,15 +69,19 @@ const browserHarness = `<script>
     if (!clicked && button && !button.disabled && String(button.textContent || '').includes('(${expectedQuantity})')) {
       clicked = true;
       const inlineHandlerBeforeClick = button.getAttribute('onclick');
+      const savedBeforeClick = readSave();
       button.click();
+      const savedImmediatelyAfterClick = readSave();
       setTimeout(() => {
-        let saved = null;
-        try { saved = JSON.parse(localStorage.getItem(${JSON.stringify(saveKey)}) || 'null'); } catch {}
+        const saved = readSave();
         finish({
           error: null,
           inlineHandlerBeforeClick,
           stateIdentityBeforeLoad: document.body.dataset.stateIdentityBeforeLoad ?? null,
           stateIdentityAfterLoad: document.body.dataset.stateIdentityAfterLoad ?? null,
+          inventoryDebugBeforeRender: document.body.dataset.inventoryDebugBeforeRender ?? null,
+          inventoryDebugAfterRender: document.body.dataset.inventoryDebugAfterRender ?? null,
+          inventoryDebugAfterSave: document.body.dataset.inventoryDebugAfterSave ?? null,
           buttonText: button.textContent || '',
           materialCountText: document.getElementById('matCount')?.textContent || '',
           storageText: document.getElementById('inventoryRows')?.textContent || '',
@@ -83,7 +90,11 @@ const browserHarness = `<script>
           dungeonLootText: document.getElementById('dungeonLoot')?.textContent || '',
           combatLogText: document.getElementById('combatLog')?.textContent || '',
           seededSavedAt: ${seededSavedAt},
+          savedAtBeforeClick: savedBeforeClick?.savedAt ?? null,
+          savedAtImmediatelyAfterClick: savedImmediatelyAfterClick?.savedAt ?? null,
           savedAt: saved?.savedAt ?? null,
+          immediateInventoryQty: savedImmediatelyAfterClick?.state?.inventory?.[${JSON.stringify(materialName)}]?.qty ?? null,
+          immediateDungeonLootQty: savedImmediatelyAfterClick?.state?.dungeonLoot?.[${JSON.stringify(materialName)}]?.qty ?? null,
           savedInventoryQty: saved?.state?.inventory?.[${JSON.stringify(materialName)}]?.qty ?? null,
           savedDungeonLootQty: saved?.state?.dungeonLoot?.[${JSON.stringify(materialName)}]?.qty ?? null,
           savedInventory: saved?.state?.inventory ?? null,
