@@ -3,6 +3,7 @@ import { formatCurrencyNickel } from '../game/economy-core';
 import { OfflineProgressService, SaveSnapshot } from './offline-progress.service';
 import { SaveStorageService } from './save-storage.service';
 import { GameDungeonService, type DungeonActionResult } from './game-dungeon.service';
+import { GameDungeonPresentationService } from './game-dungeon-presentation.service';
 import { GameEnergyService } from './game-energy.service';
 import { GameForgeService } from './game-forge.service';
 import { GameMarketService } from './game-market.service';
@@ -18,9 +19,6 @@ export interface GameRuntimeApi {
   prepare(): void;
   renderForgeJob(): void;
   renderMarketJob(): void;
-  renderDungeonStatus(): void;
-  renderDungeonLoot(): void;
-  renderTeam(): void;
   renderForgePreview(): void;
   renderWeaponInventory(): void;
   renderMarketMaterials(): void;
@@ -57,7 +55,8 @@ export class GameRuntimeService {
     private readonly gameEnergy: GameEnergyService,
     private readonly gameForge: GameForgeService,
     private readonly gameMarket: GameMarketService,
-    private readonly gameDungeon: GameDungeonService
+    private readonly gameDungeon: GameDungeonService,
+    private readonly dungeonPresentation: GameDungeonPresentationService
   ) {}
 
   openBootstrapRegistration(): void {
@@ -84,6 +83,7 @@ export class GameRuntimeService {
 
     const before = this.saveStorage.readSnapshot();
     runtime.prepare();
+    this.dungeonPresentation.bindActions(result => this.applyDungeonResult(runtime, result));
     this.gameEnergy.update();
     const forgeUpdate = this.gameForge.update();
     this.logForgeCompletions(runtime, forgeUpdate.completedNames);
@@ -109,6 +109,7 @@ export class GameRuntimeService {
 
   renderInitial(): void {
     this.getRuntime().renderInitial();
+    this.dungeonPresentation.render();
   }
 
   stopTick(): void {
@@ -129,9 +130,6 @@ export class GameRuntimeService {
       'prepare',
       'renderForgeJob',
       'renderMarketJob',
-      'renderDungeonStatus',
-      'renderDungeonLoot',
-      'renderTeam',
       'renderForgePreview',
       'renderWeaponInventory',
       'renderMarketMaterials',
@@ -174,9 +172,7 @@ export class GameRuntimeService {
 
     runtime.renderForgeJob();
     runtime.renderMarketJob();
-    runtime.renderDungeonStatus();
-    runtime.renderDungeonLoot();
-    runtime.renderTeam();
+    this.dungeonPresentation.render();
 
     if (forgeCompleted) {
       runtime.renderForgePreview();

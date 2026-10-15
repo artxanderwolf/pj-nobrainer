@@ -6,7 +6,6 @@ const appComponent = readFileSync('src/app/app.component.ts', 'utf8');
 const runtimeService = readFileSync('src/app/core/game-runtime.service.ts', 'utf8');
 const gameTickAdapter = readFileSync('src/app/core/legacy-game-tick-adapter.service.ts', 'utf8');
 const registrationAdapter = readFileSync('src/app/core/legacy-runtime-registration-adapter.service.ts', 'utf8');
-const dungeonPresentationAdapter = readFileSync('src/app/core/legacy-dungeon-presentation-adapter.service.ts', 'utf8');
 
 const scriptMatch = html.match(/<script>([\s\S]*?)<\/script>\s*<\/body>/);
 assert.ok(scriptMatch, 'Das Legacy-Script konnte für den gameTick-Regressionscheck nicht extrahiert werden.');
@@ -20,20 +19,9 @@ assert.ok(legacyScript.includes(legacyTickBlock), 'Der gameTick-Adapter entspric
 const simulatedCutover = legacyScript.replace(legacyTickBlock, '');
 assert.doesNotMatch(simulatedCutover, /function gameTick\(\)/, 'Der Legacy-gameTick bleibt nach dem Cutover erhalten.');
 assert.match(simulatedCutover, /function updateEnergy\(\)/, 'Die Energie-Kompatibilitätsfunktion wurde beim gameTick-Cutover versehentlich entfernt.');
-assert.match(simulatedCutover, /function updateForgeJob\(\)/, 'Die spätere Schmiede-Migrationsstelle wurde beim gameTick-Cutover versehentlich entfernt.');
-assert.match(simulatedCutover, /function updateMarketJob\(\)/, 'Die spätere Markt-Migrationsstelle wurde beim gameTick-Cutover versehentlich entfernt.');
-assert.match(simulatedCutover, /function updateDungeonAutomation\(\)/, 'Die spätere Dungeon-Migrationsstelle wurde beim gameTick-Cutover versehentlich entfernt.');
-
-assert.doesNotMatch(
-  dungeonPresentationAdapter,
-  /Dungeon-Wellenaktualisierung im Runtime-Tick/,
-  'Der Dungeon-Präsentationsadapter erwartet weiterhin einen bereits entfernten Legacy-gameTick.'
-);
-assert.match(
-  dungeonPresentationAdapter,
-  /const ADAPTED_DUNGEON_STATUS = `function renderDungeonStatus\(\)\{\n  renderDungeonSessionWaveCounter\(\);/,
-  'Die Dungeon-Wellenanzeige ist nicht mehr Teil der Dungeon-Status-Präsentation.'
-);
+assert.match(simulatedCutover, /function updateForgeJob\(\)/, 'Die Schmiede-Kompatibilitätsfunktion wurde beim gameTick-Cutover versehentlich entfernt.');
+assert.match(simulatedCutover, /function updateMarketJob\(\)/, 'Die Markt-Kompatibilitätsfunktion wurde beim gameTick-Cutover versehentlich entfernt.');
+assert.match(simulatedCutover, /function updateDungeonAutomation\(\)/, 'Die Dungeon-Referenzfunktion wurde beim gameTick-Cutover versehentlich entfernt.');
 
 const tickStart = runtimeService.indexOf('private runTickCycle(): void {');
 const tickEnd = runtimeService.indexOf('private logForgeCompletions(', tickStart);
@@ -44,6 +32,7 @@ assert.match(runtimeService, /private readonly gameEnergy: GameEnergyService/, '
 assert.match(runtimeService, /private readonly gameForge: GameForgeService/, 'Der Angular-Tick besitzt keinen Angular-eigenen Schmiede-Service.');
 assert.match(runtimeService, /private readonly gameMarket: GameMarketService/, 'Der Angular-Tick besitzt keinen Angular-eigenen Markt-Service.');
 assert.match(runtimeService, /private readonly gameDungeon: GameDungeonService/, 'Der Angular-Tick besitzt keinen Angular-eigenen Dungeon-Service.');
+assert.match(runtimeService, /private readonly dungeonPresentation: GameDungeonPresentationService/, 'Der Angular-Tick besitzt keine Angular-eigene Dungeon-Präsentation.');
 assert.doesNotMatch(runtimeService, /\bupdateEnergy\(\): void;/, 'Die Runtime-API stellt weiterhin die Legacy-Energieaktualisierung bereit.');
 assert.doesNotMatch(runtimeService, /runtime\.updateEnergy\(\)/, 'Der Scheduler ruft weiterhin die Legacy-Energieaktualisierung auf.');
 assert.doesNotMatch(runtimeService, /\bupdateForgeJob\(\): boolean;/, 'Die Runtime-API stellt weiterhin die Legacy-Schmiedeaktualisierung bereit.');
@@ -52,6 +41,9 @@ assert.doesNotMatch(runtimeService, /\bupdateMarketJob\(\): boolean;/, 'Die Runt
 assert.doesNotMatch(runtimeService, /runtime\.updateMarketJob\(\)/, 'Der Scheduler ruft weiterhin die Legacy-Marktaktualisierung auf.');
 assert.doesNotMatch(runtimeService, /\bupdateDungeonAutomation\(\): void;/, 'Die Runtime-API stellt weiterhin die Legacy-Dungeonaktualisierung bereit.');
 assert.doesNotMatch(runtimeService, /runtime\.updateDungeonAutomation\(\)/, 'Der Scheduler ruft weiterhin die Legacy-Dungeonaktualisierung auf.');
+assert.doesNotMatch(runtimeService, /renderDungeonStatus\(\): void;/, 'Die Runtime-API exportiert weiterhin den Legacy-Dungeonstatus-Renderer.');
+assert.doesNotMatch(runtimeService, /renderDungeonLoot\(\): void;/, 'Die Runtime-API exportiert weiterhin den Legacy-Dungeonloot-Renderer.');
+assert.doesNotMatch(runtimeService, /renderTeam\(\): void;/, 'Die Runtime-API exportiert weiterhin den Legacy-Dungeonteam-Renderer.');
 
 const orderedRuntimeCalls = [
   'this.gameEnergy.update();',
@@ -64,9 +56,7 @@ const orderedRuntimeCalls = [
   'this.applyDungeonResult(runtime, dungeonUpdate);',
   'runtime.renderForgeJob();',
   'runtime.renderMarketJob();',
-  'runtime.renderDungeonStatus();',
-  'runtime.renderDungeonLoot();',
-  'runtime.renderTeam();',
+  'this.dungeonPresentation.render();',
   'runtime.renderRosterIfIdle();',
   'if (runtime.shouldAutoSave(Date.now())) runtime.save(false);'
 ];
@@ -83,17 +73,12 @@ assert.match(runtimeService, /this\.runTickCycle\(\);[\s\S]*this\.scheduleNextTi
 const angularRegistrationMatch = registrationAdapter.match(/const ANGULAR_RUNTIME_REGISTRATION = `([\s\S]*?)`;/);
 assert.ok(angularRegistrationMatch, 'Die Angular-Runtime-Registrierung konnte nicht geprüft werden.');
 const angularRegistration = angularRegistrationMatch[1];
-assert.doesNotMatch(angularRegistration, /tick:gameTick/, 'Die Angular-Runtime registriert weiterhin den Legacy-gameTick.');
-assert.doesNotMatch(angularRegistration, /\n  updateEnergy,/, 'Die Angular-Runtime registriert weiterhin Energie als Legacy-Callback.');
-assert.doesNotMatch(angularRegistration, /\n  updateForgeJob,/, 'Die Angular-Runtime registriert weiterhin die Schmiede als Legacy-Callback.');
-assert.doesNotMatch(angularRegistration, /\n  updateMarketJob,/, 'Die Angular-Runtime registriert weiterhin den Markt als Legacy-Callback.');
-assert.doesNotMatch(angularRegistration, /\n  updateDungeonAutomation,/, 'Die Angular-Runtime registriert weiterhin den Dungeon als Legacy-Callback.');
+for (const forbidden of ['tick:gameTick', 'updateEnergy,', 'updateForgeJob,', 'updateMarketJob,', 'updateDungeonAutomation,', 'renderDungeonStatus,', 'renderDungeonLoot,', 'renderTeam:']) {
+  assert.equal(angularRegistration.includes(forbidden), false, `Legacy-Runtime registriert weiterhin ${forbidden}.`);
+}
 for (const callback of [
   'renderForgeJob',
   'renderMarketJob',
-  'renderDungeonStatus',
-  'renderDungeonLoot',
-  'renderTeam:',
   'renderForgePreview',
   'renderWeaponInventory',
   'renderMarketMaterials',
@@ -110,6 +95,5 @@ const sourceAdapterIndex = appComponent.indexOf('let adaptedScript = this.legacy
 const tickAdapterIndex = appComponent.indexOf('adaptedScript = this.legacyGameTickAdapter.adapt(adaptedScript);');
 const registrationAdapterIndex = appComponent.indexOf('adaptedScript = this.legacyRuntimeRegistrationAdapter.adapt(adaptedScript);');
 assert.ok(sourceAdapterIndex >= 0 && tickAdapterIndex > sourceAdapterIndex && registrationAdapterIndex > tickAdapterIndex, 'Die Adapterreihenfolge für den gameTick-Cutover ist nicht stabil.');
-assert.match(appComponent, /const APP_VERSION = '0\.12\.66';/, 'Die App-Version wurde nicht auf v0.12.66 gesetzt.');
 
-console.log('gameTick-Eigentümerschaft: Der zentrale 250-ms-Zyklus liegt in Angular; Energie, Schmiede, Markt und Dungeon laufen dort direkt über Angular-Fachservices.');
+console.log('gameTick-Eigentümerschaft: Der zentrale 250-ms-Zyklus liegt in Angular; Dungeon-Status, Loot und Team werden dort ohne Legacy-Runtime-Callbacks gerendert.');
