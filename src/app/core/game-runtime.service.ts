@@ -9,6 +9,7 @@ import { GameDungeonPresentationService } from './game-dungeon-presentation.serv
 import { GameEnergyService } from './game-energy.service';
 import { GameForgeService } from './game-forge.service';
 import { GameMarketService } from './game-market.service';
+import { GameResourcePresentationService } from './game-resource-presentation.service';
 import { GameWeaponInventoryPresentationService } from './game-weapon-inventory-presentation.service';
 
 interface GameSaveStorageAdapter {
@@ -26,7 +27,6 @@ export interface GameRuntimeApi {
   renderMarketMaterials(): void;
   renderMarketWeapons(): void;
   renderInventoryState(): void;
-  refreshGold(): void;
   shouldAutoSave(now: number): boolean;
   renderInitial(): void;
   save(manual?: boolean): boolean;
@@ -55,6 +55,7 @@ export class GameRuntimeService {
     private readonly offlineProgress: OfflineProgressService,
     private readonly characterPresentation: GameCharacterPresentationService,
     private readonly weaponInventoryPresentation: GameWeaponInventoryPresentationService,
+    private readonly resourcePresentation: GameResourcePresentationService,
     private readonly combatLog: GameCombatLogService,
     private readonly gameEnergy: GameEnergyService,
     private readonly gameForge: GameForgeService,
@@ -121,6 +122,7 @@ export class GameRuntimeService {
 
   renderInitial(): void {
     this.getRuntime().renderInitial();
+    this.resourcePresentation.render();
     this.characterPresentation.render();
     this.weaponInventoryPresentation.render();
     this.dungeonPresentation.render();
@@ -148,7 +150,6 @@ export class GameRuntimeService {
       'renderMarketMaterials',
       'renderMarketWeapons',
       'renderInventoryState',
-      'refreshGold',
       'shouldAutoSave',
       'renderInitial',
       'save',
@@ -195,7 +196,7 @@ export class GameRuntimeService {
     if (marketCompleted) {
       runtime.renderMarketMaterials();
       runtime.renderMarketWeapons();
-      runtime.refreshGold();
+      this.resourcePresentation.render();
     }
 
     if (runtime.shouldAutoSave(Date.now())) runtime.save(false);
@@ -222,7 +223,10 @@ export class GameRuntimeService {
     for (const event of result.events) {
       this.combatLog.add(event.text, event.className);
     }
-    if (inventoryChanged) runtime.renderInventoryState();
+    if (inventoryChanged) {
+      this.resourcePresentation.render();
+      runtime.renderInventoryState();
+    }
     if (result.saveRequested || inventoryChanged) runtime.save(false);
   }
 
