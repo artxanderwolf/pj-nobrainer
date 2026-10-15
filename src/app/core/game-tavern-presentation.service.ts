@@ -52,6 +52,7 @@ export class GameTavernPresentationService {
     }
 
     if (offer) {
+      offer.dataset['tavernPresentationOwner'] = 'angular';
       offer.innerHTML = presentation.offers.map(entry =>
         `<div class="tavern-offer"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><strong>${entry.name}</strong><span class="tag fixed">${entry.roleTag}</span></div><div class="statrow">${this.renderStats(entry.stats)}</div><div class="actions"><button class="btn primary" onclick="recruitCharacter('${entry.classId}')" ${entry.disabled ? 'disabled' : ''}>${entry.recruitLabel}</button></div></div>`
       ).join('') + (presentation.statusText ? `<p class="status-line">${presentation.statusText}</p>` : '');
