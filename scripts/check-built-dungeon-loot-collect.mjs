@@ -28,7 +28,12 @@ const fixture = JSON.stringify({
   }
 });
 
-const seedScript = `<script>localStorage.setItem(${JSON.stringify(saveKey)},${JSON.stringify(fixture)});</script>`;
+const seedScript = `<script>
+window.__lootErrors=[];
+window.addEventListener('error',event=>window.__lootErrors.push(String(event.error?.stack||event.message||event.error||'error')));
+window.addEventListener('unhandledrejection',event=>window.__lootErrors.push(String(event.reason?.stack||event.reason||'rejection')));
+localStorage.setItem(${JSON.stringify(saveKey)},${JSON.stringify(fixture)});
+</script>`;
 const probeScript = `<script>
 (() => {
   const finish = status => {
@@ -41,7 +46,8 @@ const probeScript = `<script>
       materialCount: document.getElementById('matCount')?.textContent?.trim() || '',
       storageText: document.getElementById('inventoryRows')?.textContent?.replace(/\\s+/g, ' ').trim() || '',
       dungeonLootText: document.getElementById('dungeonLoot')?.textContent?.replace(/\\s+/g, ' ').trim() || '',
-      runtimeError: document.querySelector('.legacy-host')?.getAttribute('data-runtime-error') || ''
+      runtimeError: document.querySelector('.legacy-host')?.getAttribute('data-runtime-error') || '',
+      browserErrors: Array.isArray(window.__lootErrors) ? window.__lootErrors : []
     };
     const node = document.createElement('pre');
     node.id = 'lootE2EResult';
@@ -158,6 +164,7 @@ try {
 
   assert.equal(result.status, 'clicked', `Der Einsammeln-Button wurde nicht verwendbar: ${JSON.stringify(result)}`);
   assert.equal(result.inventoryQty, 2, `Dungeon-Loot wurde nicht in das gespeicherte Inventar übertragen: ${JSON.stringify(result)}`);
+  assert.equal(result.browserErrors.length, 0, `Beim Loot-Einsammeln trat ein Browserfehler auf: ${JSON.stringify(result)}`);
   assert.equal(result.materialCount, '2', `Der Materialzähler wurde nach dem Einsammeln nicht aktualisiert: ${JSON.stringify(result)}`);
   assert.match(result.storageText, /Morsche Fichte/, `Das Materiallager zeigt den eingesammelten Loot nicht: ${JSON.stringify(result)}`);
   assert.equal(result.dungeonLootText, '', `Die Dungeon-Lootanzeige wurde nach dem Einsammeln nicht geleert: ${JSON.stringify(result)}`);
