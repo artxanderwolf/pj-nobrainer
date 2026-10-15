@@ -21,7 +21,6 @@ type RuntimeEquipmentState = MutableGameState & {
 interface EquipmentCompatibilityBridge {
   getWeaponEquipLocation(weaponId: number): WeaponEquipLocation | null;
   getWeaponInventoryPresentation(weaponId: number): WeaponInventoryPresentation;
-  getWeaponPickerPresentation(weaponId: number, characterId: number, hand: string): WeaponPickerPresentation;
   equipWeapon(weaponId: number, hand: string, characterId: number): EquipWeaponResult;
   unequipHand(characterId: number, hand: string): boolean;
 }
@@ -65,8 +64,6 @@ export class GameEquipmentService {
     window.NoBrainerEquipmentCompatibility = {
       getWeaponEquipLocation: (weaponId) => this.getWeaponEquipLocation(weaponId),
       getWeaponInventoryPresentation: (weaponId) => this.getWeaponInventoryPresentation(weaponId),
-      getWeaponPickerPresentation: (weaponId, characterId, hand) =>
-        this.getWeaponPickerPresentation(weaponId, characterId, hand),
       equipWeapon: (weaponId, hand, characterId) => this.equipWeapon(weaponId, hand, characterId),
       unequipHand: (characterId, hand) => this.unequipHand(characterId, hand)
     };
