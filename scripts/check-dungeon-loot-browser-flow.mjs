@@ -73,6 +73,8 @@ const browserHarness = `<script>
         finish({
           error: null,
           inlineHandlerBeforeClick,
+          stateIdentityBeforeLoad: document.body.dataset.stateIdentityBeforeLoad ?? null,
+          stateIdentityAfterLoad: document.body.dataset.stateIdentityAfterLoad ?? null,
           buttonText: button.textContent || '',
           materialCountText: document.getElementById('matCount')?.textContent || '',
           storageText: document.getElementById('inventoryRows')?.textContent || '',
@@ -95,6 +97,8 @@ const browserHarness = `<script>
       clearInterval(timer);
       finish({
         error: 'collect-button-not-ready',
+        stateIdentityBeforeLoad: document.body.dataset.stateIdentityBeforeLoad ?? null,
+        stateIdentityAfterLoad: document.body.dataset.stateIdentityAfterLoad ?? null,
         buttonText: button?.textContent || '',
         buttonDisabled: button?.disabled ?? null,
         dungeonLootText: document.getElementById('dungeonLoot')?.textContent || '',
