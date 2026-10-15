@@ -1,12 +1,7 @@
 import { Injectable } from '@angular/core';
-import { formatCurrencyNickel } from '../game/economy-core';
 import {
   CHARACTER_CLASSES,
-  CONFIG,
-  rarityFactor,
-  reinforcementEffectText,
-  weaponDamageAfterArmor,
-  type WeaponStats
+  weaponDamageAfterArmor
 } from '../game/game-core';
 import { type CharacterState } from '../game/character-core';
 import {
@@ -14,29 +9,17 @@ import {
   getWeaponPickerKey,
   type CharacterHandPresentation
 } from '../game/character-presentation-core';
-import {
-  createWeaponPresentationCore,
-  type WeaponCardLike
-} from '../game/weapon-presentation-core';
 import { GameEquipmentService } from './game-equipment.service';
 import { GameStateService, type MutableGameState } from './game-state.service';
+import {
+  GameWeaponPresentationService,
+  type RuntimeWeaponPresentation
+} from './game-weapon-presentation.service';
 
-type RuntimeWeapon = WeaponCardLike & {
-  id: number;
-  name: string;
-  stats?: Partial<WeaponStats> | null;
-};
 type RuntimeCharacterPresentationState = MutableGameState & {
   characters: CharacterState[];
-  weaponInventory: RuntimeWeapon[];
+  weaponInventory: RuntimeWeaponPresentation[];
 };
-
-const WEAPON_PRESENTATION = createWeaponPresentationCore({
-  resolveFormName: (weaponForm, starter) =>
-    CONFIG.forge.weaponForms[weaponForm ?? '']?.name ?? (starter ? 'Einhänder' : 'Waffe'),
-  rarityFactor,
-  reinforcementEffectText
-});
 
 @Injectable({ providedIn: 'root' })
 export class GameCharacterPresentationService {
@@ -46,7 +29,8 @@ export class GameCharacterPresentationService {
 
   constructor(
     private readonly gameState: GameStateService,
-    private readonly gameEquipment: GameEquipmentService
+    private readonly gameEquipment: GameEquipmentService,
+    private readonly weaponPresentation: GameWeaponPresentationService
   ) {}
 
   bindActions(equipmentChanged: () => void): void {
@@ -90,7 +74,7 @@ export class GameCharacterPresentationService {
   private renderHand(character: CharacterState, handPresentation: CharacterHandPresentation): string {
     const weapon = this.getWeaponById(handPresentation.weaponId);
     const weaponHtml = weapon
-      ? this.renderWeaponCard(weapon, null, handPresentation.equippedStatus)
+      ? this.weaponPresentation.renderCard(weapon, null, handPresentation.equippedStatus)
       : `<div class="empty">${handPresentation.emptyText}</div>`;
     const pickerHtml = this.renderWeaponPicker(character, handPresentation);
 
@@ -105,41 +89,23 @@ export class GameCharacterPresentationService {
       const disabled = picker.disabled;
       const label = disabled ? picker.status : 'Ausrüsten';
       const actions = `<div class="weapon-card-actions"><button class="btn ${disabled ? '' : 'primary'}" ${disabled ? 'disabled' : ''} data-roster-action="equip-weapon" data-character-id="${character.id}" data-hand="${handPresentation.hand}" data-weapon-id="${weapon.id}">${label}</button></div>`;
-      return this.renderWeaponCard(weapon, currentWeapon, picker.status, actions);
+      return this.weaponPresentation.renderCard(weapon, currentWeapon, picker.status, actions);
     }).join('');
 
     return `<div class="weapon-picker"><div class="weapon-picker-title">Klammerwerte = Änderung zur aktuell ausgerüsteten Waffe.</div><div class="weapon-card-actions"><button class="btn" data-roster-action="clear-hand" data-character-id="${character.id}" data-hand="${handPresentation.hand}">Hand leeren</button></div><div class="weapon-card-list">${cards}</div></div>`;
   }
 
-  private renderWeaponCard(
-    weapon: RuntimeWeapon,
-    compareWeapon: RuntimeWeapon | null,
-    status = '',
-    actions = ''
-  ): string {
-    const presentation = WEAPON_PRESENTATION.getWeaponCardPresentation(weapon, compareWeapon);
-    const statHtml = presentation.stats.map(stat => {
-      const value = stat.value.kind === 'currency' ? formatCurrencyNickel(stat.value.nickel) : stat.value.text;
-      const diff = stat.diff ? ` <span class="weapon-diff ${stat.diff.tone}">${stat.diff.text}</span>` : '';
-      return `<div class="weapon-stat"><span>${stat.label}</span><b>${value}${diff}</b></div>`;
-    }).join('');
-    const reinforcement = presentation.reinforcementText ? ` · ${presentation.reinforcementText}` : '';
-    const statusHtml = status ? `<span class="tag fixed">${status}</span>` : '';
-
-    return `<div class="weapon-card"><div class="weapon-card-head"><div><div class="weapon-card-title">${presentation.title}</div><div class="weapon-card-sub">${presentation.formName} · ${presentation.rarityLabel}${reinforcement}</div></div>${statusHtml}</div><div class="weapon-stats">${statHtml}</div>${actions}</div>`;
-  }
-
   private effectiveOffense(character: CharacterState): number {
     const weapons = [character.equipment.leftHand, character.equipment.rightHand]
       .map(weaponId => this.getWeaponById(weaponId))
-      .filter((weapon): weapon is RuntimeWeapon => Boolean(weapon));
+      .filter((weapon): weapon is RuntimeWeaponPresentation => Boolean(weapon));
     if (weapons.length) {
       return weapons.reduce((sum, weapon) => sum + weaponDamageAfterArmor(weapon, 0, character).raw, 0);
     }
     return character.strengthFactor * 0.5 * character.precision;
   }
 
-  private getWeaponById(weaponId: number | null): RuntimeWeapon | null {
+  private getWeaponById(weaponId: number | null): RuntimeWeaponPresentation | null {
     if (weaponId === null) return null;
     return this.state().weaponInventory.find(weapon => Number(weapon.id) === Number(weaponId)) ?? null;
   }
