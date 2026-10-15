@@ -48,7 +48,6 @@ runtimeBootstrap.register({
     const rosterIsBeingUsed=rosterRoot&&rosterRoot.contains(document.activeElement);
     if(!rosterIsBeingUsed&&!openWeaponPickerHand)renderCharacter("rosterCard");
   },
-  addLog,
   shouldAutoSave:now=>!saveUnavailable&&now-lastAutoSaveAt>=10000,
   renderInitial:render,
   save:saveGame,
