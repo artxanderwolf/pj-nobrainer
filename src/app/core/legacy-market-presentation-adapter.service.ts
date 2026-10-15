@@ -115,7 +115,7 @@ export class LegacyMarketPresentationAdapterService {
     return this.replaceRangeOnce(
       source,
       'function renderMarketJob(){',
-      'function renderDungeonStatus(',
+      'function render(){',
       ADAPTED_MARKET_PRESENTATION,
       'Markt-Präsentation'
     );

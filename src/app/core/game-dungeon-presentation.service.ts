@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { CHARACTER_CLASSES, type CharacterClassId } from '../game/game-core';
+import { CHARACTER_CLASSES, CONFIG, type CharacterClassId } from '../game/game-core';
 import { getDungeonLootPresentation, getDungeonStatusPresentation } from '../game/dungeon-presentation-core';
 import {
   getDungeonTeamPickerPresentation,
@@ -7,6 +7,7 @@ import {
   type DungeonTeamPresentationCharacterLike
 } from '../game/character-presentation-core';
 import { GameDungeonService, type DungeonActionResult } from './game-dungeon.service';
+import { GameEnergyService } from './game-energy.service';
 import { GameStateService, type MutableGameState } from './game-state.service';
 
 interface DungeonPresentationCharacter extends DungeonTeamPresentationCharacterLike { classId?: string | null; }
@@ -27,7 +28,11 @@ export class GameDungeonPresentationService {
   private actionsBound = false;
   private actionHandler: ((result: DungeonActionResult) => void) | null = null;
 
-  constructor(private readonly gameState: GameStateService, private readonly gameDungeon: GameDungeonService) {}
+  constructor(
+    private readonly gameState: GameStateService,
+    private readonly gameDungeon: GameDungeonService,
+    private readonly gameEnergy: GameEnergyService
+  ) {}
 
   bindActions(handler: (result: DungeonActionResult) => void): void {
     this.actionHandler = handler;
@@ -44,7 +49,29 @@ export class GameDungeonPresentationService {
     this.actionsBound = true;
   }
 
-  render(): void { this.renderStatus(); this.renderLoot(); this.renderTeam(); }
+  render(): void {
+    this.renderOverview();
+    this.renderStatus();
+    this.renderLoot();
+    this.renderTeam();
+  }
+
+  private renderOverview(): void {
+    const state = this.getState();
+    const displayedCount = state.dungeonRun?.participantIds?.length || this.getSelectedIds(state).length;
+    const enemyHp = document.getElementById('enemyHp');
+    const enemyArmor = document.getElementById('enemyArmor');
+    const enemyDamage = document.getElementById('enemyDamage');
+    const energyCost = document.getElementById('energyCost');
+
+    if (enemyHp) enemyHp.textContent = `${CONFIG.dungeon.enemyBase.damage} Basis-SCH`;
+    if (enemyArmor) enemyArmor.textContent = `${Math.round(CONFIG.dungeon.enemyBase.hitChance * 100)} % Basis-TRF`;
+    if (enemyDamage) enemyDamage.textContent = `${CONFIG.dungeon.enemyBase.speed.toFixed(2)} Basis-GES`;
+    if (energyCost) {
+      const share = this.gameEnergy.costPerCharacter(displayedCount);
+      energyCost.textContent = displayedCount ? `${share} je Char. (${share * displayedCount} gesamt)` : '–';
+    }
+  }
 
   private renderStatus(): void {
     const state = this.getState();
@@ -112,11 +139,23 @@ export class GameDungeonPresentationService {
     const slot = Number(target.dataset['slot']); if (!Number.isInteger(slot) || slot < 0 || slot >= 4) return;
     const action = target.dataset['dungeonAction'];
     if (action === 'picker') { this.openTeamPickerSlot = this.openTeamPickerSlot === slot ? null : slot; this.renderTeam(); return; }
-    if (action === 'remove') { state.dungeonTeamSlots[slot] = null; this.openTeamPickerSlot = null; this.handleResult({ events: [], saveRequested: true }); return; }
+    if (action === 'remove') {
+      state.dungeonTeamSlots[slot] = null;
+      state.dungeonCycleOriginalIds = [];
+      state.dungeonCycleActiveIds = [];
+      this.openTeamPickerSlot = null;
+      this.handleResult({ events: [], saveRequested: true });
+      return;
+    }
     if (action === 'assign') {
-      const characterId = Number(target.dataset['characterId']); if (!state.characters.some(character => character.id === characterId)) return;
-      state.dungeonTeamSlots = state.dungeonTeamSlots.map((id, index) => index !== slot && id === characterId ? null : id);
-      state.dungeonTeamSlots[slot] = characterId; this.openTeamPickerSlot = null; this.handleResult({ events: [], saveRequested: true });
+      const characterId = Number(target.dataset['characterId']);
+      if (!state.characters.some(character => character.id === characterId)) return;
+      if (state.dungeonTeamSlots.some((id, index) => index !== slot && id === characterId)) return;
+      state.dungeonTeamSlots[slot] = characterId;
+      state.dungeonCycleOriginalIds = [];
+      state.dungeonCycleActiveIds = [];
+      this.openTeamPickerSlot = null;
+      this.handleResult({ events: [], saveRequested: true });
     }
   }
 

@@ -119,18 +119,6 @@ type RuntimeDungeonState = MutableGameState & {
   lastEnergyUpdate: number;
 };
 
-interface LegacyDungeonCompatibilityBridge {
-  toggleAuto(at?: number): DungeonActionResult;
-  collectLoot(): DungeonActionResult;
-  getSessionWaveCount(): number;
-}
-
-declare global {
-  interface Window {
-    NoBrainerDungeonCompatibility?: LegacyDungeonCompatibilityBridge;
-  }
-}
-
 @Injectable({ providedIn: 'root' })
 export class GameDungeonService {
   private catchupMode = false;
@@ -286,22 +274,6 @@ export class GameDungeonService {
       ? Number(state.dungeonSessionStartWaves)
       : Number(state.dungeonWavesDefeated) || 0;
     return Math.max(0, (Number(state.dungeonWavesDefeated) || 0) - start);
-  }
-
-  openLegacyCompatibilityBridge(): void {
-    if (window.NoBrainerDungeonCompatibility) {
-      throw new Error('NoBrainer-Dungeon-Kompatibilitätsbrücke ist bereits geöffnet.');
-    }
-
-    window.NoBrainerDungeonCompatibility = {
-      toggleAuto: at => this.toggleAuto(at),
-      collectLoot: () => this.collectLoot(),
-      getSessionWaveCount: () => this.getSessionWaveCount()
-    };
-  }
-
-  closeLegacyCompatibilityBridge(): void {
-    delete window.NoBrainerDungeonCompatibility;
   }
 
   private beginSearch(state: RuntimeDungeonState, at: number, outcome: DungeonActionResult): boolean {
