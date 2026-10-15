@@ -5,7 +5,8 @@ import {
   CONFIG,
   rarityFactor,
   reinforcementEffectText,
-  weaponDamageAfterArmor
+  weaponDamageAfterArmor,
+  type WeaponStats
 } from '../game/game-core';
 import { type CharacterState } from '../game/character-core';
 import {
@@ -15,13 +16,16 @@ import {
 } from '../game/character-presentation-core';
 import {
   createWeaponPresentationCore,
-  type WeaponCardLike,
-  type WeaponCardPresentation
+  type WeaponCardLike
 } from '../game/weapon-presentation-core';
 import { GameEquipmentService } from './game-equipment.service';
 import { GameStateService, type MutableGameState } from './game-state.service';
 
-type RuntimeWeapon = WeaponCardLike & { id: number; name: string };
+type RuntimeWeapon = WeaponCardLike & {
+  id: number;
+  name: string;
+  stats?: Partial<WeaponStats> | null;
+};
 type RuntimeCharacterPresentationState = MutableGameState & {
   characters: CharacterState[];
   weaponInventory: RuntimeWeapon[];
