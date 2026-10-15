@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { formatCurrencyNickel } from '../game/economy-core';
 import { OfflineProgressService, SaveSnapshot } from './offline-progress.service';
 import { SaveStorageService } from './save-storage.service';
+import { GameCharacterPresentationService } from './game-character-presentation.service';
 import { GameCombatLogService } from './game-combat-log.service';
 import { GameDungeonService, type DungeonActionResult } from './game-dungeon.service';
 import { GameDungeonPresentationService } from './game-dungeon-presentation.service';
@@ -26,7 +27,6 @@ export interface GameRuntimeApi {
   renderMarketWeapons(): void;
   renderInventoryState(): void;
   refreshGold(): void;
-  renderRosterIfIdle(): void;
   shouldAutoSave(now: number): boolean;
   renderInitial(): void;
   save(manual?: boolean): boolean;
@@ -53,6 +53,7 @@ export class GameRuntimeService {
   constructor(
     private readonly saveStorage: SaveStorageService,
     private readonly offlineProgress: OfflineProgressService,
+    private readonly characterPresentation: GameCharacterPresentationService,
     private readonly combatLog: GameCombatLogService,
     private readonly gameEnergy: GameEnergyService,
     private readonly gameForge: GameForgeService,
@@ -85,6 +86,10 @@ export class GameRuntimeService {
 
     const before = this.saveStorage.readSnapshot();
     runtime.prepare();
+    this.characterPresentation.bindActions(() => {
+      runtime.renderWeaponInventory();
+      runtime.renderMarketWeapons();
+    });
     this.dungeonPresentation.bindActions((result, inventoryChanged) => this.applyDungeonResult(runtime, result, inventoryChanged));
     this.gameEnergy.update();
     const forgeUpdate = this.gameForge.update();
@@ -111,6 +116,7 @@ export class GameRuntimeService {
 
   renderInitial(): void {
     this.getRuntime().renderInitial();
+    this.characterPresentation.render();
     this.dungeonPresentation.render();
   }
 
@@ -138,7 +144,6 @@ export class GameRuntimeService {
       'renderMarketWeapons',
       'renderInventoryState',
       'refreshGold',
-      'renderRosterIfIdle',
       'shouldAutoSave',
       'renderInitial',
       'save',
@@ -174,6 +179,7 @@ export class GameRuntimeService {
 
     runtime.renderForgeJob();
     runtime.renderMarketJob();
+    this.characterPresentation.renderIfIdle();
     this.dungeonPresentation.render();
 
     if (forgeCompleted) {
@@ -187,7 +193,6 @@ export class GameRuntimeService {
       runtime.refreshGold();
     }
 
-    runtime.renderRosterIfIdle();
     if (runtime.shouldAutoSave(Date.now())) runtime.save(false);
   }
 
