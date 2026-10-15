@@ -46,6 +46,6 @@ assert.ok(registrationMatch, 'Die Angular-Runtime-Registrierung konnte nicht gel
 assert.doesNotMatch(registrationMatch[1], /renderDungeonStatus,|renderDungeonLoot,|renderTeam:|updateDungeonAutomation,/, 'Legacy-Runtime exportiert weiterhin Dungeon-Fach- oder Präsentationscallbacks.');
 assert.match(registrationMatch[1], /renderInventoryState:\(\)=>\{[\s\S]*renderResourceHeader\(\);[\s\S]*renderMaterialStorage\(\);[\s\S]*renderForgePreview\(\);[\s\S]*renderMarketMaterials\(\);[\s\S]*\}/, 'Der gezielte Inventar-Refresh deckt Ressourcen, Lager, Schmiede und Markt nicht vollständig ab.');
 assert.doesNotMatch(appComponent, /GameDungeonService|NoBrainerDungeonCompatibility|gameDungeon\.openLegacyCompatibilityBridge|gameDungeon\.closeLegacyCompatibilityBridge/, 'AppComponent verwaltet weiterhin die alte Dungeon-Kompatibilitätsbrücke.');
-assert.match(appComponent, /const APP_VERSION = '0\.12\.71';/, 'Die App-Version wurde nicht auf v0.12.71 gesetzt.');
+assert.match(appComponent, /const APP_VERSION = '0\.12\.72';/, 'Die App-Version wurde nicht auf v0.12.72 gesetzt.');
 
 console.log('Dungeon-Eigentümerschaft: Domain, Übersicht, Status, Loot und Team laufen ausschließlich über Angular; eingesammelter Loot aktualisiert die inventarabhängigen Ansichten gezielt.');
