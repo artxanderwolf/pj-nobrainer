@@ -35,10 +35,20 @@ runtimeBootstrap.register({
   renderMarketMaterials,
   renderMarketWeapons,
   renderInventoryState:()=>{
-    renderResourceHeader();
-    renderMaterialStorage();
-    renderForgePreview();
-    renderMarketMaterials();
+    try{
+      document.body.dataset.inventoryRefreshStage="start";
+      renderResourceHeader();
+      document.body.dataset.inventoryRefreshStage="resource";
+      renderMaterialStorage();
+      document.body.dataset.inventoryRefreshStage="storage";
+      renderForgePreview();
+      document.body.dataset.inventoryRefreshStage="forge";
+      renderMarketMaterials();
+      document.body.dataset.inventoryRefreshStage="market";
+    }catch(error){
+      document.body.dataset.inventoryRefreshError=error instanceof Error?error.message:String(error);
+      throw error;
+    }
   },
   refreshGold:()=>{
     const goldEl=document.getElementById("gold");
