@@ -33,14 +33,9 @@ runtimeBootstrap.register({
   renderMarketMaterials,
   renderMarketWeapons,
   renderInventoryState:()=>{
-    renderResourceHeader();
     renderMaterialStorage();
     renderForgePreview();
     renderMarketMaterials();
-  },
-  refreshGold:()=>{
-    const goldEl=document.getElementById("gold");
-    if(goldEl)goldEl.textContent=formatHighestCurrency(state.gold);
   },
   shouldAutoSave:now=>!saveUnavailable&&now-lastAutoSaveAt>=10000,
   renderInitial:render,
