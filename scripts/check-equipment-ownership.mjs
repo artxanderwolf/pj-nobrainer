@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 const appComponent = readFileSync('src/app/app.component.ts', 'utf8');
 const equipmentService = readFileSync('src/app/core/game-equipment.service.ts', 'utf8');
 const characterPresentationService = readFileSync('src/app/core/game-character-presentation.service.ts', 'utf8');
+const weaponInventoryPresentationService = readFileSync('src/app/core/game-weapon-inventory-presentation.service.ts', 'utf8');
 const equipmentAdapter = readFileSync('src/app/core/legacy-equipment-adapter.service.ts', 'utf8');
 const weaponPresentationAdapter = readFileSync('src/app/core/legacy-weapon-presentation-adapter.service.ts', 'utf8');
 
@@ -20,14 +21,17 @@ assert.match(equipmentAdapter, /equipmentCompatibility\.equipWeapon\(Number\(wea
 assert.match(equipmentAdapter, /equipmentCompatibility\.unequipHand\(Number\(characterId\),hand\)/);
 assert.doesNotMatch(equipmentAdapter, /getWeaponPickerPresentation/, 'Legacy-Equipment-Adapter besitzt weiterhin die Kader-Waffenpicker-Präsentation.');
 assert.match(characterPresentationService, /gameEquipment\.getWeaponPickerPresentation\(weapon\.id, character\.id, handPresentation\.hand\)/);
+assert.match(weaponInventoryPresentationService, /gameEquipment\.getWeaponInventoryPresentation\(weapon\.id\)/);
+assert.match(weaponInventoryPresentationService, /gameEquipment\.equipWeapon\(weaponId, hand, characterId\)/);
+assert.match(weaponInventoryPresentationService, /gameEquipment\.unequipHand\(characterId, hand\)/);
 
-assert.doesNotMatch(weaponPresentationAdapter, /NoBrainerEquipmentCore/);
-assert.match(weaponPresentationAdapter, /equipmentCompatibility\.getWeaponInventoryPresentation\(Number\(w\.id\)\)/);
+assert.doesNotMatch(weaponPresentationAdapter, /NoBrainerEquipmentCore|equipmentCompatibility\.getWeaponInventoryPresentation/);
+assert.match(weaponPresentationAdapter, /weaponInventoryPresentation\.render\(\);/);
 
 const bridgeOpen = appComponent.indexOf('this.gameEquipment.openLegacyCompatibilityBridge();');
 const stateBootstrap = appComponent.indexOf('this.gameState.openBootstrapRegistration();');
 assert.ok(bridgeOpen >= 0 && stateBootstrap > bridgeOpen, 'Equipment-Bridge muss vor dem State-/Legacy-Bootstrap geöffnet werden.');
 assert.match(appComponent, /ngOnDestroy\(\): void \{[\s\S]*this\.gameEquipment\.closeLegacyCompatibilityBridge\(\);/);
-assert.match(appComponent, /const APP_VERSION = '0\.12\.74';/);
+assert.match(appComponent, /const APP_VERSION = '0\.12\.75';/);
 
-console.log('Equipment-Eigentümerschaft: Ausrüsten und Ablegen laufen über den Angular-Service; Kader-Picker-Abfragen sind Angular-intern, verbleibende Legacy-Ansichten delegieren nur noch notwendige Equipment-Aktionen.');
+console.log('Equipment-Eigentümerschaft: Ausrüsten und Ablegen laufen über den Angular-Service; Kader und Waffenlager greifen für ihre Equipment-Präsentation direkt auf ihn zu.');

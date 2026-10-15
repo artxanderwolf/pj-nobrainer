@@ -3,14 +3,16 @@ import { readFileSync } from 'node:fs';
 
 const app = readFileSync('src/app/app.component.ts', 'utf8');
 const service = readFileSync('src/app/core/game-character-presentation.service.ts', 'utf8');
+const weaponPresentationService = readFileSync('src/app/core/game-weapon-presentation.service.ts', 'utf8');
 const runtime = readFileSync('src/app/core/game-runtime.service.ts', 'utf8');
 const registration = readFileSync('src/app/core/legacy-runtime-registration-adapter.service.ts', 'utf8');
 const characterAdapter = readFileSync('src/app/core/legacy-character-presentation-adapter.service.ts', 'utf8');
 const equipmentAdapter = readFileSync('src/app/core/legacy-equipment-adapter.service.ts', 'utf8');
 
-assert.match(service, /constructor\([\s\S]*private readonly gameState: GameStateService,[\s\S]*private readonly gameEquipment: GameEquipmentService/);
+assert.match(service, /constructor\([\s\S]*private readonly gameState: GameStateService,[\s\S]*private readonly gameEquipment: GameEquipmentService,[\s\S]*private readonly weaponPresentation: GameWeaponPresentationService/);
 assert.match(service, /getCharacterCardPresentation\(/, 'Angular-Kaderdarstellung nutzt den Character-Presentation-Core nicht.');
-assert.match(service, /createWeaponPresentationCore\(/, 'Angular-Kaderdarstellung nutzt den Weapon-Presentation-Core nicht.');
+assert.match(weaponPresentationService, /createWeaponPresentationCore\(/, 'Gemeinsame Angular-Waffenpräsentation nutzt den Weapon-Presentation-Core nicht.');
+assert.match(service, /weaponPresentation\.renderCard\(/, 'Angular-Kader nutzt die gemeinsame Waffenkarten-Präsentation nicht.');
 assert.match(service, /weaponDamageAfterArmor\(weapon, 0, character\)\.raw/, 'Die bestehende Waffen-/Charakter-Offensivberechnung wird im Kader nicht wiederverwendet.');
 assert.match(service, /gameEquipment\.getWeaponPickerPresentation\(/, 'Waffenpicker liest Equipment-Zustand nicht über den Angular-Service.');
 assert.match(service, /gameEquipment\.equipWeapon\(/, 'Waffenpicker rüstet nicht über den Angular-Equipment-Service aus.');
@@ -21,7 +23,7 @@ assert.match(service, /data-roster-action="clear-hand"/, 'Angular-Kader besitzt 
 assert.match(service, /renderIfIdle\(\): void/, 'Der Angular-Kader besitzt keinen fokus-schonenden Tick-Render.');
 
 assert.match(runtime, /private readonly characterPresentation: GameCharacterPresentationService/, 'GameRuntimeService besitzt keinen Angular-Kader-Präsentationsservice.');
-assert.match(runtime, /this\.characterPresentation\.bindActions\(\(\) => \{[\s\S]*runtime\.renderWeaponInventory\(\);[\s\S]*runtime\.renderMarketWeapons\(\);[\s\S]*\}\);/, 'Equipment-Änderungen aus dem Kader aktualisieren abhängige Legacy-Ansichten nicht gezielt.');
+assert.match(runtime, /this\.characterPresentation\.bindActions\(\(\) => \{[\s\S]*this\.weaponInventoryPresentation\.render\(\);[\s\S]*runtime\.renderMarketWeapons\(\);[\s\S]*\}\);/, 'Equipment-Änderungen aus dem Kader aktualisieren abhängige Ansichten nicht gezielt.');
 assert.match(runtime, /renderInitial\(\): void \{[\s\S]*this\.characterPresentation\.render\(\);[\s\S]*this\.dungeonPresentation\.render\(\);/, 'Initialer Angular-Render enthält den Kader nicht.');
 assert.match(runtime, /private runTickCycle\(\): void \{[\s\S]*this\.characterPresentation\.renderIfIdle\(\);/, 'Der zentrale Angular-Tick aktualisiert den Kader nicht.');
 assert.doesNotMatch(runtime, /renderRosterIfIdle/, 'GameRuntimeApi exportiert weiterhin den Legacy-Kaderrenderer.');
@@ -31,6 +33,6 @@ assert.ok(registrationMatch, 'Angular-Runtime-Registrierung konnte nicht gelesen
 assert.doesNotMatch(registrationMatch[1], /renderRosterIfIdle|openWeaponPickerHand|renderCharacter\(/, 'Legacy-Runtime-Registrierung besitzt weiterhin Kader-Präsentationslogik.');
 assert.doesNotMatch(characterAdapter, /NoBrainerCharacterPresentationCore|CHARACTER_PRESENTATION_CORE_BRIDGE/, 'Legacy-Character-Adapter registriert weiterhin Presentation-Logik.');
 assert.doesNotMatch(equipmentAdapter, /getWeaponPickerPresentation/, 'Legacy-Equipment-Adapter enthält weiterhin die Kader-Waffenpicker-Präsentation.');
-assert.match(app, /const APP_VERSION = '0\.12\.74';/);
+assert.match(app, /const APP_VERSION = '0\.12\.75';/);
 
-console.log('Character-Präsentations-Eigentümerschaft: Kader, Waffenpicker und deren Interaktionen werden direkt durch Angular auf dem Angular-State gerendert; die Legacy-Runtime enthält nur noch verbleibende Nicht-Kader-UI.');
+console.log('Character-Präsentations-Eigentümerschaft: Kader und Waffenpicker laufen direkt durch Angular und teilen die Waffenkarten-Präsentation mit dem Angular-Waffenlager.');

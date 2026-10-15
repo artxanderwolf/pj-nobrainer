@@ -36,23 +36,9 @@ function weaponCardHtml(w,o={}){
 `;
 
 const WEAPON_INVENTORY_BRIDGE = `function renderWeaponInventory(){
-  const box=document.getElementById("weaponInventory"),empty=document.getElementById("weaponInventoryEmpty");if(!box||!empty)return;
-  const equipmentCompatibility=window.NoBrainerEquipmentCompatibility;
-  if(!equipmentCompatibility)throw new Error("NoBrainer-Equipment-Kompatibilitätsbrücke fehlt.");
-  const ws=window.NoBrainerWeaponPresentationCore.sortWeaponInventory(state.weaponInventory);
-  box.innerHTML="";empty.style.display=ws.length?"none":"block";
-  ws.forEach((w,index)=>{
-    const presentation=equipmentCompatibility.getWeaponInventoryPresentation(Number(w.id));
-    const loc=presentation.location;let actions="";
-    if(loc){
-      actions=\`<div class="weapon-card-actions"><button class="btn" onclick="unequipHand(\${loc.characterId},'\${loc.hand}')">Ablegen</button></div>\`;
-    }else{
-      const selectId=\`lagerEquip_\${index}\`;
-      const opts=presentation.targets.map(t=>{const c=getCharacterById(t.characterId);return \`<option value="\${t.characterId}:\${t.hand}">\${c?.name||"Charakter"} · \${t.label}</option>\`;}).join("");
-      actions=opts?\`<div class="weapon-card-actions" style="display:grid;grid-template-columns:1fr auto"><select id="\${selectId}" class="equip-select">\${opts}</select><button class="btn primary" onclick="equipWeaponFromInventory(\${w.id},'\${selectId}')">Ausrüsten</button></div>\`:\`<div class="weapon-card-actions"><button class="btn" disabled>Keine freie Hand</button></div>\`;
-    }
-    const d=document.createElement("div");d.innerHTML=weaponCardHtml(w,{status:presentation.status,actions});box.appendChild(d.firstElementChild);
-  });
+  const weaponInventoryPresentation=window.NoBrainerWeaponInventoryPresentationCompatibility;
+  if(!weaponInventoryPresentation)throw new Error("NoBrainer-Waffenlager-Präsentationsbrücke fehlt.");
+  weaponInventoryPresentation.render();
 }
 
 `;
