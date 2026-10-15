@@ -37,10 +37,12 @@ function weaponCardHtml(w,o={}){
 
 const WEAPON_INVENTORY_BRIDGE = `function renderWeaponInventory(){
   const box=document.getElementById("weaponInventory"),empty=document.getElementById("weaponInventoryEmpty");if(!box||!empty)return;
+  const equipmentCompatibility=window.NoBrainerEquipmentCompatibility;
+  if(!equipmentCompatibility)throw new Error("NoBrainer-Equipment-Kompatibilitätsbrücke fehlt.");
   const ws=window.NoBrainerWeaponPresentationCore.sortWeaponInventory(state.weaponInventory);
   box.innerHTML="";empty.style.display=ws.length?"none":"block";
   ws.forEach((w,index)=>{
-    const presentation=window.NoBrainerEquipmentCore.getWeaponInventoryPresentation(state.characters,Number(w.id));
+    const presentation=equipmentCompatibility.getWeaponInventoryPresentation(Number(w.id));
     const loc=presentation.location;let actions="";
     if(loc){
       actions=\`<div class="weapon-card-actions"><button class="btn" onclick="unequipHand(\${loc.characterId},'\${loc.hand}')">Ablegen</button></div>\`;
