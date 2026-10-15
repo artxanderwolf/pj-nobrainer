@@ -20,7 +20,7 @@ assert.ok(start >= 0 && end > start);
 assert.equal(source.indexOf(startMarker, start + startMarker.length), -1);
 
 source = source.slice(0, start) + replacement + source.slice(end);
-new vm.Script(source, { filename: 'NoBrainer_GitHub_v0.12.76.tavern-presentation.js' });
+new vm.Script(source, { filename: 'NoBrainer_GitHub_v0.12.77.tavern-presentation.js' });
 
 assert.ok(source.includes('window.NoBrainerTavernPresentationCompatibility'));
 assert.ok(source.includes('tavernPresentation.render();'));
