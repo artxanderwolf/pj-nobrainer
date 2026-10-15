@@ -38,5 +38,5 @@ assert.throws(() => composePageMarkup(['unknown-page']), /Unbekannte Angular-Sei
 assert.match(appComponent, /composePageMarkup\(APP_SHELL_PAGE_IDS\)/, 'Der App-Component verwendet nicht ausschließlich Angular-eigenes Seitenmarkup.');
 assert.doesNotMatch(appComponent, /main > section#|DOMParser|querySelector<HTMLScriptElement>/, 'Der App-Component verwendet weiterhin eine Legacy-Markupquelle.');
 assert.match(appComponent, /composeAppShell\(pageMarkup\)/, 'Das Angular-eigene Seitenmarkup wird nicht in die Angular-Shell eingesetzt.');
-assert.match(appComponent, /const APP_VERSION = '0\.12\.68';/, 'Die App-Version wurde nicht auf v0.12.68 gesetzt.');
+assert.match(appComponent, /const APP_VERSION = '0\.12\.69';/, 'Die App-Version wurde nicht auf v0.12.69 gesetzt.');
 console.log('Seiten-Markup: Alle acht sichtbaren Seiten liegen vollständig in Angular; die Legacy-HTML bleibt nur Referenz für Darstellungsparität.');
