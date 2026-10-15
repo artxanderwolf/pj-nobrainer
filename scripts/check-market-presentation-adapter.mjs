@@ -9,6 +9,11 @@ if (!scriptMatch) throw new Error('Legacy-JavaScript konnte nicht extrahiert wer
 let source = scriptMatch[1];
 source = source.replace('function startMarketQueuedJob(job){', 'function startMarketQueuedJob(job,at=Date.now()){');
 
+const dungeonPresentationStart = source.indexOf('function renderDungeonStatus(){');
+const masterRenderStartBeforeCutover = source.indexOf('function render(){', dungeonPresentationStart);
+assert.ok(dungeonPresentationStart >= 0 && masterRenderStartBeforeCutover > dungeonPresentationStart, 'Dungeon-Präsentationsbereich konnte nicht für die Adapterreihenfolge entfernt werden.');
+source = source.slice(0, dungeonPresentationStart) + source.slice(masterRenderStartBeforeCutover);
+
 const adapterText = fs.readFileSync('src/app/core/legacy-market-presentation-adapter.service.ts', 'utf8');
 const replacementStartToken = 'const ADAPTED_MARKET_PRESENTATION = `';
 const replacementStart = adapterText.indexOf(replacementStartToken);
@@ -18,7 +23,7 @@ const rawReplacement = adapterText.slice(replacementStart + replacementStartToke
 const replacement = new Function(`return \`${rawReplacement}\`;`)();
 
 const startMarker = 'function renderMarketJob(){';
-const endMarker = 'function renderDungeonStatus(';
+const endMarker = 'function render(){';
 const start = source.indexOf(startMarker);
 const end = source.indexOf(endMarker, start + startMarker.length);
 assert.ok(start >= 0 && end > start);
@@ -26,7 +31,7 @@ assert.equal(source.indexOf(startMarker, start + startMarker.length), -1);
 assert.equal(source.indexOf(endMarker, end + endMarker.length), -1);
 
 source = source.slice(0, start) + replacement + source.slice(end);
-new vm.Script(source, { filename: 'NoBrainer_GitHub_v0.12.64.market-presentation.js' });
+new vm.Script(source, { filename: 'NoBrainer_GitHub_v0.12.68.market-presentation.js' });
 assert.ok(source.includes('window.NoBrainerMarketPresentationCore.getActiveMarketJobPresentation'));
 assert.ok(source.includes('window.NoBrainerMarketPresentationCore.getQueuedMarketJobPresentation'));
 assert.ok(source.includes('window.NoBrainerMarketPresentationCore.getMarketMaterialPresentation'));
@@ -35,7 +40,8 @@ assert.ok(source.includes('window.NoBrainerMarketCompatibility.hasCapacity'));
 assert.ok(!source.includes('window.NoBrainerMarketCore.hasMarketCapacity'));
 assert.equal(source.split('function renderMarketJob(){').length - 1, 1);
 assert.ok(source.includes('function startMarketQueuedJob(job,at=Date.now()){'));
-assert.ok(source.includes('function renderDungeonStatus(){'));
+assert.ok(source.includes('function render(){'));
+assert.ok(!source.includes('function renderDungeonStatus(){'));
 
 const marketJobFunction = replacement.slice(0, replacement.indexOf('function setMarketQty('));
 const elements = {
@@ -85,4 +91,4 @@ assert.match(elements.marketJobCard.innerHTML, /80 Nickel/);
 assert.match(elements.marketQueueCard.innerHTML, /1\. Klinge/);
 assert.match(elements.marketQueueCard.innerHTML, /30s · 120 Nickel/);
 
-console.log('Market-Presentation-Adapter: Adapterreihenfolge, Anker, Syntax und Markt-DOM-Brücke sind mit Angular-eigener Marktkapazität konsistent.');
+console.log('Market-Presentation-Adapter: Markt-DOM-Brücke bleibt nach dem Dungeon-Präsentations-Cutover stabil und verwendet Angular-eigene Marktkapazität.');
