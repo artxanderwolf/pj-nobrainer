@@ -71,7 +71,7 @@ const harness = `<script>
           error: null,
           materialCountText: document.getElementById('matCount')?.textContent || '',
           storageText: document.getElementById('inventoryRows')?.textContent || '',
-          forgeOptions: [...document.querySelectorAll('#slotWeaponType option')].map(option => option.textContent || ''),
+          forgeOptions: [...document.querySelectorAll('#slotBaseMaterial option')].map(option => option.textContent || ''),
           marketText: document.getElementById('marketMaterials')?.textContent || '',
           dungeonLootText: document.getElementById('dungeonLoot')?.textContent || '',
           savedInventoryQty: saved?.state?.inventory?.[${JSON.stringify(materialName)}]?.qty ?? null,
