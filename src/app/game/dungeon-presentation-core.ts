@@ -139,10 +139,3 @@ export function getDungeonLootPresentation(
     entries
   };
 }
-
-export const DUNGEON_PRESENTATION_CORE_BRIDGE = {
-  getDungeonStatusPresentation,
-  getDungeonLootPresentation
-};
-
-export type DungeonPresentationCoreBridge = typeof DUNGEON_PRESENTATION_CORE_BRIDGE;
