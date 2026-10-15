@@ -7,6 +7,7 @@ import { GameDungeonPresentationService } from './game-dungeon-presentation.serv
 import { GameEnergyService } from './game-energy.service';
 import { GameForgeService } from './game-forge.service';
 import { GameMarketService } from './game-market.service';
+import { GameStateService, type MutableGameState } from './game-state.service';
 
 interface GameSaveStorageAdapter {
   read(): string | null;
@@ -17,6 +18,7 @@ interface GameSaveStorageAdapter {
 export interface GameRuntimeApi {
   configureSaveStorage(adapter: GameSaveStorageAdapter): void;
   prepare(): void;
+  getStateReference(): MutableGameState;
   renderForgeJob(): void;
   renderMarketJob(): void;
   renderForgePreview(): void;
@@ -53,6 +55,7 @@ export class GameRuntimeService {
   constructor(
     private readonly saveStorage: SaveStorageService,
     private readonly offlineProgress: OfflineProgressService,
+    private readonly gameState: GameStateService,
     private readonly gameEnergy: GameEnergyService,
     private readonly gameForge: GameForgeService,
     private readonly gameMarket: GameMarketService,
@@ -82,8 +85,10 @@ export class GameRuntimeService {
       remove: () => this.saveStorage.remove()
     });
 
+    document.body.dataset['stateIdentityBeforeLoad'] = String(runtime.getStateReference() === this.gameState.getState());
     const before = this.saveStorage.readSnapshot();
     runtime.prepare();
+    document.body.dataset['stateIdentityAfterLoad'] = String(runtime.getStateReference() === this.gameState.getState());
     this.dungeonPresentation.bindActions((result, inventoryChanged) => this.applyDungeonResult(runtime, result, inventoryChanged));
     this.gameEnergy.update();
     const forgeUpdate = this.gameForge.update();
@@ -129,6 +134,7 @@ export class GameRuntimeService {
     const required: Array<keyof GameRuntimeApi> = [
       'configureSaveStorage',
       'prepare',
+      'getStateReference',
       'renderForgeJob',
       'renderMarketJob',
       'renderForgePreview',
