@@ -35,3 +35,6 @@ jobs:
 
       - name: Smoke test built runtime
         run: node scripts/check-built-runtime-startup.mjs
+
+      - name: Dungeon loot browser regression
+        run: node scripts/check-dungeon-loot-browser-flow.mjs
