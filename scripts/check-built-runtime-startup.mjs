@@ -4,157 +4,24 @@ import { createServer } from 'node:http';
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { extname, join, normalize, resolve } from 'node:path';
-
-const distRoot = resolve('dist/nobrainer/browser');
-const packageJson = JSON.parse(readFileSync('package.json', 'utf8'));
-const expectedVersion = packageJson.version;
-const basePath = '/pj-nobrainer/';
-
-assert.ok(existsSync(join(distRoot, 'index.html')), 'Das gebaute Angular-Artefakt fehlt: dist/nobrainer/browser/index.html');
-
-const browserCandidates = ['google-chrome', 'google-chrome-stable', 'chromium', 'chromium-browser'];
-const browser = browserCandidates.find(candidate => {
-  const probe = spawnSync('which', [candidate], { encoding: 'utf8' });
-  return probe.status === 0 && probe.stdout.trim();
-});
-assert.ok(browser, 'Für den Runtime-Smoke-Test wurde kein Chrome/Chromium auf dem CI-Runner gefunden.');
-
-const contentTypes = new Map([
-  ['.html', 'text/html; charset=utf-8'],
-  ['.js', 'application/javascript; charset=utf-8'],
-  ['.css', 'text/css; charset=utf-8'],
-  ['.json', 'application/json; charset=utf-8'],
-  ['.svg', 'image/svg+xml'],
-  ['.png', 'image/png'],
-  ['.ico', 'image/x-icon']
-]);
-
-const server = createServer((request, response) => {
-  const url = new URL(request.url ?? '/', 'http://127.0.0.1');
-  if (!url.pathname.startsWith(basePath)) {
-    response.writeHead(404).end('Not found');
-    return;
-  }
-
-  let relativePath = decodeURIComponent(url.pathname.slice(basePath.length));
-  if (!relativePath) relativePath = 'index.html';
-  const safePath = normalize(relativePath).replace(/^(\.\.(\/|\\|$))+/, '');
-  const filePath = join(distRoot, safePath);
-
-  if (!existsSync(filePath)) {
-    response.writeHead(404).end('Not found');
-    return;
-  }
-
-  response.writeHead(200, {
-    'content-type': contentTypes.get(extname(filePath)) ?? 'application/octet-stream',
-    'cache-control': 'no-store'
-  });
-  response.end(readFileSync(filePath));
-});
-
-function delay(ms) {
-  return new Promise(resolveDelay => setTimeout(resolveDelay, ms));
-}
-
-async function stopBrowser(child) {
-  if (child.exitCode !== null) return;
-  child.kill('SIGTERM');
-  const closed = await Promise.race([
-    new Promise(resolveClose => child.once('close', () => resolveClose(true))),
-    delay(1500).then(() => false)
-  ]);
-  if (!closed && child.exitCode === null) child.kill('SIGKILL');
-}
-
-await new Promise((resolveListen, rejectListen) => {
-  server.once('error', rejectListen);
-  server.listen(0, '127.0.0.1', resolveListen);
-});
-
-const browserProfile = mkdtempSync(join(tmpdir(), 'nobrainer-runtime-smoke-'));
-let child = null;
-
-try {
-  const address = server.address();
-  assert.ok(address && typeof address === 'object', 'Der lokale Runtime-Smoke-Testserver konnte keinen Port bereitstellen.');
-  const pageUrl = `http://127.0.0.1:${address.port}${basePath}`;
-  const browserArgs = [
-    '--headless=new',
-    '--no-sandbox',
-    '--disable-gpu',
-    '--disable-dev-shm-usage',
-    '--hide-scrollbars',
-    '--no-first-run',
-    '--no-default-browser-check',
-    `--user-data-dir=${browserProfile}`,
-    '--virtual-time-budget=3500',
-    '--dump-dom',
-    pageUrl
-  ];
-
-  child = spawn(browser, browserArgs, { stdio: ['ignore', 'pipe', 'pipe'] });
-  child.stdout.setEncoding('utf8');
-  child.stderr.setEncoding('utf8');
-
-  let stdout = '';
-  let stderr = '';
-  let settled = false;
-
-  const result = await new Promise((resolveRun, rejectRun) => {
-    const finish = (callback, value) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timeout);
-      callback(value);
-    };
-
-    const inspect = () => {
-      if (/Die NoBrainer-Runtime konnte nicht geladen werden/.test(stdout)) {
-        finish(rejectRun, new Error(`Die gebaute Anwendung fiel beim Browserstart in den Runtime-Fehlerzustand.\n${stderr}`));
-        return;
-      }
-
-      const ready =
-        stdout.includes(`Prototype v${expectedVersion}`) &&
-        stdout.includes('id="nav"') &&
-        stdout.includes('id="marketJobCard"') &&
-        stdout.includes('id="dungeonRunCard"');
-      if (ready) finish(resolveRun, true);
-    };
-
-    child.stdout.on('data', chunk => {
-      stdout += chunk;
-      inspect();
-    });
-    child.stderr.on('data', chunk => { stderr += chunk; });
-
-    child.once('error', error => finish(rejectRun, error));
-    child.once('close', code => {
-      inspect();
-      if (!settled) {
-        finish(
-          rejectRun,
-          new Error(`Chrome/Chromium wurde beendet, bevor die vollständige Spieloberfläche erkannt wurde (Code ${code}).\n${stderr}\nDOM-Ausgabe: ${stdout.slice(-4000)}`)
-        );
-      }
-    });
-
-    const timeout = setTimeout(() => {
-      inspect();
-      if (!settled) {
-        finish(
-          rejectRun,
-          new Error(`Der Browser-Runtime-Smoke-Test hat die vollständige Spieloberfläche nicht rechtzeitig erkannt.\n${stderr}\nDOM-Ausgabe: ${stdout.slice(-4000)}`)
-        );
-      }
-    }, 20_000);
-  });
-
-  assert.equal(result, true);
-  console.log(`Browser-Runtime-Smoke-Test: Prototype v${expectedVersion} startet aus dem finalen Angular-Build ohne Runtime-Fallback.`);
-} finally {
-  if (child) await stopBrowser(child);
-  rmSync(browserProfile, { recursive: true, force: true });
-  await new Promise(resolveClose => server.close(resolveClose));
-}
+const distRoot=resolve('dist/nobrainer/browser'), packageJson=JSON.parse(readFileSync('package.json','utf8')), expectedVersion=packageJson.version, basePath='/pj-nobrainer/';
+assert.ok(existsSync(join(distRoot,'index.html')));
+const browser=['google-chrome','google-chrome-stable','chromium','chromium-browser'].find(candidate=>{const probe=spawnSync('which',[candidate],{encoding:'utf8'}); return probe.status===0&&probe.stdout.trim();}); assert.ok(browser);
+const contentTypes=new Map([['.html','text/html; charset=utf-8'],['.js','application/javascript; charset=utf-8'],['.css','text/css; charset=utf-8'],['.json','application/json; charset=utf-8'],['.svg','image/svg+xml'],['.png','image/png'],['.ico','image/x-icon']]);
+const server=createServer((request,response)=>{const url=new URL(request.url??'/','http://127.0.0.1'); if(!url.pathname.startsWith(basePath)){response.writeHead(404).end('Not found');return;} let relativePath=decodeURIComponent(url.pathname.slice(basePath.length)); if(!relativePath)relativePath='index.html'; const safePath=normalize(relativePath).replace(/^(\.\.(\/|\\|$))+/,''); const filePath=join(distRoot,safePath); if(!existsSync(filePath)){response.writeHead(404).end('Not found');return;} response.writeHead(200,{'content-type':contentTypes.get(extname(filePath))??'application/octet-stream','cache-control':'no-store'}); response.end(readFileSync(filePath));});
+const delay=ms=>new Promise(resolveDelay=>setTimeout(resolveDelay,ms));
+async function stopBrowser(child){if(child.exitCode!==null)return; child.kill('SIGTERM'); const closed=await Promise.race([new Promise(resolveClose=>child.once('close',()=>resolveClose(true))),delay(1500).then(()=>false)]); if(!closed&&child.exitCode===null)child.kill('SIGKILL');}
+await new Promise((resolveListen,rejectListen)=>{server.once('error',rejectListen);server.listen(0,'127.0.0.1',resolveListen);});
+const browserProfile=mkdtempSync(join(tmpdir(),'nobrainer-runtime-smoke-')); let child=null;
+try{
+ const address=server.address(); assert.ok(address&&typeof address==='object'); const pageUrl=`http://127.0.0.1:${address.port}${basePath}`;
+ child=spawn(browser,['--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--hide-scrollbars','--no-first-run','--no-default-browser-check',`--user-data-dir=${browserProfile}`,'--virtual-time-budget=3500','--dump-dom',pageUrl],{stdio:['ignore','pipe','pipe']});
+ child.stdout.setEncoding('utf8'); child.stderr.setEncoding('utf8'); let stdout='',stderr='',settled=false;
+ const result=await new Promise((resolveRun,rejectRun)=>{
+  const finish=(callback,value)=>{if(settled)return;settled=true;clearTimeout(timeout);callback(value);};
+  const inspect=()=>{if(/Die NoBrainer-Runtime konnte nicht geladen werden/.test(stdout)){finish(rejectRun,new Error(`Die gebaute Anwendung fiel beim Browserstart in den Runtime-Fehlerzustand.\n${stderr}`));return;} const ready=stdout.includes(`Prototype v${expectedVersion}`)&&stdout.includes('id="nav"')&&stdout.includes('id="marketJobCard"')&&stdout.includes('id="dungeonRunCard"'); if(ready)finish(resolveRun,true);};
+  child.stdout.on('data',chunk=>{stdout+=chunk;inspect();}); child.stderr.on('data',chunk=>{stderr+=chunk;}); child.once('error',error=>finish(rejectRun,error)); child.once('close',code=>{inspect();if(!settled)finish(rejectRun,new Error(`Chrome/Chromium wurde beendet, bevor die vollständige Spieloberfläche erkannt wurde (Code ${code}).\n${stderr}\nDOM-Ausgabe: ${stdout.slice(-4000)}`));});
+  const timeout=setTimeout(()=>{inspect();if(!settled)finish(rejectRun,new Error(`Der Browser-Runtime-Smoke-Test hat die vollständige Spieloberfläche nicht rechtzeitig erkannt.\n${stderr}\nDOM-Ausgabe: ${stdout.slice(-4000)}`));},60_000);
+ });
+ assert.equal(result,true); console.log(`Browser-Runtime-Smoke-Test: Prototype v${expectedVersion} startet aus dem finalen Angular-Build ohne Runtime-Fallback.`);
+}finally{if(child)await stopBrowser(child);rmSync(browserProfile,{recursive:true,force:true});await new Promise(resolveClose=>server.close(resolveClose));}
