@@ -1,6 +1,7 @@
 import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
 import { GameCombatLogService } from './core/game-combat-log.service';
 import { GameEnergyService } from './core/game-energy.service';
+import { GameEquipmentService } from './core/game-equipment.service';
 import { GameForgeService } from './core/game-forge.service';
 import { GameMarketService } from './core/game-market.service';
 import { GameProgressionService } from './core/game-progression.service';
@@ -35,7 +36,7 @@ import { APP_SHELL_PAGE_IDS, composeAppShell } from './game/app-shell-presentati
 import { composePageMarkup } from './game/page-markup-presentation-core';
 import { adaptLegacyWeaponMarkup, adaptLegacyWeaponScript } from './game/weapon-naming';
 
-const APP_VERSION = '0.12.72';
+const APP_VERSION = '0.12.73';
 const LEGACY_RUNTIME_PATH = 'legacy/NoBrainer_GitHub_v0.12.2.runtime.js';
 const LEGACY_SCRIPT_ID = 'nobrainer-legacy-script';
 
@@ -48,6 +49,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     private readonly gameState: GameStateService,
     private readonly gameCombatLog: GameCombatLogService,
     private readonly gameEnergy: GameEnergyService,
+    private readonly gameEquipment: GameEquipmentService,
     private readonly gameForge: GameForgeService,
     private readonly gameMarket: GameMarketService,
     private readonly gameProgression: GameProgressionService,
@@ -89,6 +91,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
       this.gameProgression.closeLegacyCompatibilityBridge();
       this.gameMarket.closeLegacyCompatibilityBridge();
       this.gameForge.closeLegacyCompatibilityBridge();
+      this.gameEquipment.closeLegacyCompatibilityBridge();
       this.gameEnergy.closeLegacyCompatibilityBridge();
       this.gameCombatLog.closeLegacyCompatibilityBridge();
       console.error('Die NoBrainer-Runtime konnte nicht geladen werden.', error);
@@ -102,6 +105,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     this.gameProgression.closeLegacyCompatibilityBridge();
     this.gameMarket.closeLegacyCompatibilityBridge();
     this.gameForge.closeLegacyCompatibilityBridge();
+    this.gameEquipment.closeLegacyCompatibilityBridge();
     this.gameEnergy.closeLegacyCompatibilityBridge();
     this.gameCombatLog.closeLegacyCompatibilityBridge();
   }
@@ -145,6 +149,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
 
     this.gameCombatLog.openLegacyCompatibilityBridge();
     this.gameEnergy.openLegacyCompatibilityBridge();
+    this.gameEquipment.openLegacyCompatibilityBridge();
     this.gameForge.openLegacyCompatibilityBridge();
     this.gameMarket.openLegacyCompatibilityBridge();
     this.gameProgression.openLegacyCompatibilityBridge();
