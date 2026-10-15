@@ -4,5 +4,5 @@ for(const p of [/forgeRequirements\(slots\)/,/reserveForgeMaterials\(/,/enqueueF
 assert.match(runtime,/private readonly gameForge: GameForgeService/); assert.match(runtime,/const forgeUpdate = this\.gameForge\.update\(\);/); assert.doesNotMatch(runtime,/\bupdateForgeJob\(\): boolean;|runtime\.updateForgeJob\(\)/); assert.match(runtime,/Schmiede fertig:/);
 assert.doesNotMatch(adapter,/FORGE_CORE_BRIDGE|NoBrainerForgeCore/); assert.match(adapter,/forgeCompatibility\.requirements\(slots\)/); assert.match(adapter,/forgeCompatibility\.start\(/);
 const r=registration.match(/const ANGULAR_RUNTIME_REGISTRATION = `([\s\S]*?)`;/); assert.ok(r); assert.doesNotMatch(r[1],/\n  updateForgeJob,/); assert.match(r[1],/function prepareGameRuntime\(\)\{\n  loadGame\(\);\n\}/);
-assert.match(app,/this\.gameForge\.openLegacyCompatibilityBridge\(\);/); assert.match(app,/this\.gameForge\.closeLegacyCompatibilityBridge\(\);/); assert.match(app,/const APP_VERSION = '0\.12\.75';/);
+assert.match(app,/this\.gameForge\.openLegacyCompatibilityBridge\(\);/); assert.match(app,/this\.gameForge\.closeLegacyCompatibilityBridge\(\);/); assert.match(app,/const APP_VERSION = '0\.12\.76';/);
 console.log('Schmiede-Eigentümerschaft: Auftragserstellung, Materialien, Queue, Fortschritt und Fertigstellung laufen auf Angular-State im GameForgeService.');

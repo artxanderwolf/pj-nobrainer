@@ -34,7 +34,7 @@ source = replaceRangeOnce(
   `${adaptedAddLog}\n`,
   'Kampfprotokoll-Präsentation'
 );
-new vm.Script(source, { filename: 'NoBrainer_GitHub_v0.12.75.combat-log-compatibility.js' });
+new vm.Script(source, { filename: 'NoBrainer_GitHub_v0.12.76.combat-log-compatibility.js' });
 
 assert.match(adapter, /window\.NoBrainerCombatLogCompatibility/);
 assert.match(adapter, /combatLogCompatibility\.add\(text,cls\);/);
