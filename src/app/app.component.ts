@@ -33,7 +33,7 @@ import { APP_SHELL_PAGE_IDS, composeAppShell } from './game/app-shell-presentati
 import { composePageMarkup } from './game/page-markup-presentation-core';
 import { adaptLegacyWeaponMarkup, adaptLegacyWeaponScript } from './game/weapon-naming';
 
-const APP_VERSION = '0.12.69';
+const APP_VERSION = '0.12.70';
 const LEGACY_RUNTIME_PATH = 'legacy/NoBrainer_GitHub_v0.12.2.runtime.js';
 const LEGACY_SCRIPT_ID = 'nobrainer-legacy-script';
 
@@ -117,12 +117,12 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     adaptedScript = this.legacyDungeonPresentationAdapter.adapt(adaptedScript);
     adaptedScript = adaptLegacyWeaponScript(adaptedScript);
     adaptedScript = this.legacyWeaponPresentationAdapter.adapt(adaptedScript);
-    adaptedScript = this.legacyMaterialPresentationAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyForgeAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyMarketAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyEconomyAdapter.adapt(adaptedScript);
-    adaptedScript = this.legacyResourcePresentationAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyMarketPresentationAdapter.adapt(adaptedScript);
+    adaptedScript = this.legacyMaterialPresentationAdapter.adapt(adaptedScript);
+    adaptedScript = this.legacyResourcePresentationAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyForgePresentationAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyTavernPresentationAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyCharacterAdapter.adapt(adaptedScript);
