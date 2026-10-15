@@ -18,9 +18,6 @@ export interface GameRuntimeApi {
   prepare(): void;
   renderForgeJob(): void;
   renderMarketJob(): void;
-  renderDungeonStatus(): void;
-  renderDungeonLoot(): void;
-  renderTeam(): void;
   renderForgePreview(): void;
   renderWeaponInventory(): void;
   renderMarketMaterials(): void;
@@ -109,6 +106,7 @@ export class GameRuntimeService {
 
   renderInitial(): void {
     this.getRuntime().renderInitial();
+    this.gameDungeon.renderPresentation();
   }
 
   stopTick(): void {
@@ -129,9 +127,6 @@ export class GameRuntimeService {
       'prepare',
       'renderForgeJob',
       'renderMarketJob',
-      'renderDungeonStatus',
-      'renderDungeonLoot',
-      'renderTeam',
       'renderForgePreview',
       'renderWeaponInventory',
       'renderMarketMaterials',
@@ -174,9 +169,7 @@ export class GameRuntimeService {
 
     runtime.renderForgeJob();
     runtime.renderMarketJob();
-    runtime.renderDungeonStatus();
-    runtime.renderDungeonLoot();
-    runtime.renderTeam();
+    this.gameDungeon.renderPresentation();
 
     if (forgeCompleted) {
       runtime.renderForgePreview();
