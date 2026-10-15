@@ -26,7 +26,7 @@ interface DungeonPresentationState extends MutableGameState {
 export class GameDungeonPresentationService {
   private openTeamPickerSlot: number | null = null;
   private actionsBound = false;
-  private actionHandler: ((result: DungeonActionResult) => void) | null = null;
+  private actionHandler: ((result: DungeonActionResult, inventoryChanged: boolean) => void) | null = null;
 
   constructor(
     private readonly gameState: GameStateService,
@@ -34,7 +34,7 @@ export class GameDungeonPresentationService {
     private readonly gameEnergy: GameEnergyService
   ) {}
 
-  bindActions(handler: (result: DungeonActionResult) => void): void {
+  bindActions(handler: (result: DungeonActionResult, inventoryChanged: boolean) => void): void {
     this.actionHandler = handler;
     if (this.actionsBound) return;
     const autoButton = document.getElementById('autoDungeonBtn');
@@ -44,7 +44,10 @@ export class GameDungeonPresentationService {
     autoButton.removeAttribute('onclick');
     collectButton.removeAttribute('onclick');
     autoButton.addEventListener('click', () => this.handleResult(this.gameDungeon.toggleAuto(Date.now())));
-    collectButton.addEventListener('click', () => this.handleResult(this.gameDungeon.collectLoot()));
+    collectButton.addEventListener('click', () => {
+      const result = this.gameDungeon.collectLoot();
+      this.handleResult(result, result.events.length > 0);
+    });
     teamCard.addEventListener('click', event => this.handleTeamClick(event));
     this.actionsBound = true;
   }
@@ -159,7 +162,11 @@ export class GameDungeonPresentationService {
     }
   }
 
-  private handleResult(result: DungeonActionResult): void { if (result.alertMessage) window.alert(result.alertMessage); this.actionHandler?.(result); this.render(); }
+  private handleResult(result: DungeonActionResult, inventoryChanged = false): void {
+    if (result.alertMessage) window.alert(result.alertMessage);
+    this.actionHandler?.(result, inventoryChanged);
+    this.render();
+  }
   private presentationCharacters(state: DungeonPresentationState): DungeonTeamPresentationCharacterLike[] {
     return state.characters.map(character => ({ id: character.id, name: character.name, hp: character.hp, maxHp: character.maxHp, energy: character.energy, maxEnergy: character.maxEnergy, className: CHARACTER_CLASSES[(character.classId as CharacterClassId) || 'recruit']?.name ?? CHARACTER_CLASSES.recruit.name }));
   }

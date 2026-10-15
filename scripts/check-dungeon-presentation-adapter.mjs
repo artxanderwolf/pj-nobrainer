@@ -46,7 +46,7 @@ source = replaceRangeIncludingEndOnce(
 );
 source = replaceOnce(source, 'renderDungeonStatus();renderDungeonLoot();renderForgePreview();', 'renderForgePreview();');
 
-new vm.Script(source, { filename: 'NoBrainer_GitHub_v0.12.68.dungeon-presentation-cutover.js' });
+new vm.Script(source, { filename: 'NoBrainer_GitHub_v0.12.69.dungeon-presentation-cutover.js' });
 assert.equal(source.includes('function renderDungeonStatus(){'), false, 'Legacy-Dungeon-Statusrenderer bleibt erhalten.');
 assert.equal(source.includes('function renderDungeonLoot(){'), false, 'Legacy-Dungeon-Lootrenderer bleibt erhalten.');
 assert.equal(source.includes('window.NoBrainerDungeonPresentationCore'), false, 'Legacy-Dungeon-Presentation-Core bleibt global registriert.');

@@ -33,6 +33,12 @@ runtimeBootstrap.register({
   renderWeaponInventory,
   renderMarketMaterials,
   renderMarketWeapons,
+  renderInventoryState:()=>{
+    renderResourceHeader();
+    renderMaterialStorage();
+    renderForgePreview();
+    renderMarketMaterials();
+  },
   refreshGold:()=>{
     const goldEl=document.getElementById("gold");
     if(goldEl)goldEl.textContent=formatHighestCurrency(state.gold);

@@ -23,6 +23,7 @@ export interface GameRuntimeApi {
   renderWeaponInventory(): void;
   renderMarketMaterials(): void;
   renderMarketWeapons(): void;
+  renderInventoryState(): void;
   refreshGold(): void;
   renderRosterIfIdle(): void;
   addLog(text: string, className?: string): void;
@@ -83,7 +84,7 @@ export class GameRuntimeService {
 
     const before = this.saveStorage.readSnapshot();
     runtime.prepare();
-    this.dungeonPresentation.bindActions(result => this.applyDungeonResult(runtime, result));
+    this.dungeonPresentation.bindActions((result, inventoryChanged) => this.applyDungeonResult(runtime, result, inventoryChanged));
     this.gameEnergy.update();
     const forgeUpdate = this.gameForge.update();
     this.logForgeCompletions(runtime, forgeUpdate.completedNames);
@@ -134,6 +135,7 @@ export class GameRuntimeService {
       'renderWeaponInventory',
       'renderMarketMaterials',
       'renderMarketWeapons',
+      'renderInventoryState',
       'refreshGold',
       'renderRosterIfIdle',
       'addLog',
@@ -207,11 +209,12 @@ export class GameRuntimeService {
     }
   }
 
-  private applyDungeonResult(runtime: GameRuntimeApi, result: DungeonActionResult): void {
+  private applyDungeonResult(runtime: GameRuntimeApi, result: DungeonActionResult, inventoryChanged = false): void {
     for (const event of result.events) {
       runtime.addLog(event.text, event.className);
     }
-    if (result.saveRequested) runtime.save(false);
+    if (inventoryChanged) runtime.renderInventoryState();
+    if (result.saveRequested || inventoryChanged) runtime.save(false);
   }
 
   private registerVisibilityHandler(): void {

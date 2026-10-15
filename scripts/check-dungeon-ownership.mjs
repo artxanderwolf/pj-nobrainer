@@ -22,7 +22,7 @@ assert.match(presentationService, /getDungeonLootPresentation\(/, 'Angular-Dunge
 assert.match(presentationService, /getDungeonTeamPresentation\(/, 'Angular-Dungeon-Präsentation nutzt den Team-Core nicht.');
 assert.match(presentationService, /getDungeonTeamPickerPresentation\(/, 'Angular-Dungeon-Präsentation nutzt den Team-Picker-Core nicht.');
 assert.match(presentationService, /gameDungeon\.toggleAuto\(Date\.now\(\)\)/, 'Automatik-UI delegiert nicht direkt an GameDungeonService.');
-assert.match(presentationService, /gameDungeon\.collectLoot\(\)/, 'Loot-UI delegiert nicht direkt an GameDungeonService.');
+assert.match(presentationService, /const result = this\.gameDungeon\.collectLoot\(\);[\s\S]*this\.handleResult\(result, result\.events\.length > 0\);/, 'Loot-Einsammeln signalisiert eine erfolgreiche Inventaränderung nicht an den Runtime-Pfad.');
 assert.match(presentationService, /state\.dungeonCycleOriginalIds = \[\];[\s\S]*state\.dungeonCycleActiveIds = \[\];/, 'Teamänderungen setzen den vorherigen Dungeon-Zyklus nicht zurück.');
 
 assert.doesNotMatch(dungeonAdapter, /DUNGEON_UI_BRIDGE|NoBrainerDungeonCompatibility|toggleDungeonAuto|collectDungeonLoot/, 'Der Legacy-Dungeon-Domain-Adapter enthält weiterhin Kompatibilitätswrapper.');
@@ -37,12 +37,15 @@ assert.match(runtimeService, /private readonly gameDungeon: GameDungeonService/,
 assert.match(runtimeService, /private readonly dungeonPresentation: GameDungeonPresentationService/, 'GameRuntimeService besitzt keine Angular-Dungeon-Präsentation.');
 assert.match(runtimeService, /const dungeonUpdate = this\.gameDungeon\.update\(\);[\s\S]*this\.applyDungeonResult\(runtime, dungeonUpdate\);/, 'Der Angular-Tick aktualisiert den Dungeon nicht direkt.');
 assert.match(runtimeService, /this\.dungeonPresentation\.render\(\);/, 'Der Angular-Tick rendert den Dungeon nicht direkt.');
+assert.match(runtimeService, /renderInventoryState\(\): void;/, 'GameRuntimeApi stellt keinen gezielten Inventar-Refresh bereit.');
+assert.match(runtimeService, /if \(inventoryChanged\) runtime\.renderInventoryState\(\);[\s\S]*if \(result\.saveRequested \|\| inventoryChanged\) runtime\.save\(false\);/, 'Dungeon-Loot aktualisiert und speichert inventarabhängige Ansichten nicht gezielt.');
 assert.doesNotMatch(runtimeService, /renderDungeonStatus\(\): void;|renderDungeonLoot\(\): void;|renderTeam\(\): void;/, 'GameRuntimeApi exportiert weiterhin Dungeon-Präsentationscallbacks.');
 
 const registrationMatch = registrationAdapter.match(/const ANGULAR_RUNTIME_REGISTRATION = `([\s\S]*?)`;/);
 assert.ok(registrationMatch, 'Die Angular-Runtime-Registrierung konnte nicht gelesen werden.');
 assert.doesNotMatch(registrationMatch[1], /renderDungeonStatus,|renderDungeonLoot,|renderTeam:|updateDungeonAutomation,/, 'Legacy-Runtime exportiert weiterhin Dungeon-Fach- oder Präsentationscallbacks.');
+assert.match(registrationMatch[1], /renderInventoryState:\(\)=>\{[\s\S]*renderResourceHeader\(\);[\s\S]*renderMaterialStorage\(\);[\s\S]*renderForgePreview\(\);[\s\S]*renderMarketMaterials\(\);[\s\S]*\}/, 'Der gezielte Inventar-Refresh deckt Ressourcen, Lager, Schmiede und Markt nicht vollständig ab.');
 assert.doesNotMatch(appComponent, /GameDungeonService|NoBrainerDungeonCompatibility|gameDungeon\.openLegacyCompatibilityBridge|gameDungeon\.closeLegacyCompatibilityBridge/, 'AppComponent verwaltet weiterhin die alte Dungeon-Kompatibilitätsbrücke.');
-assert.match(appComponent, /const APP_VERSION = '0\.12\.68';/, 'Die App-Version wurde nicht auf v0.12.68 gesetzt.');
+assert.match(appComponent, /const APP_VERSION = '0\.12\.69';/, 'Die App-Version wurde nicht auf v0.12.69 gesetzt.');
 
-console.log('Dungeon-Eigentümerschaft: Domain, Übersicht, Status, Loot und Team laufen ausschließlich über Angular; die alte Dungeon-Kompatibilitäts- und Präsentationsschicht ist aus dem laufenden Legacy-Script entfernt.');
+console.log('Dungeon-Eigentümerschaft: Domain, Übersicht, Status, Loot und Team laufen ausschließlich über Angular; eingesammelter Loot aktualisiert die inventarabhängigen Ansichten gezielt.');

@@ -83,6 +83,7 @@ for (const callback of [
   'renderWeaponInventory',
   'renderMarketMaterials',
   'renderMarketWeapons',
+  'renderInventoryState:',
   'refreshGold:',
   'renderRosterIfIdle:',
   'addLog',
