@@ -30,21 +30,22 @@ let source = match[1];
 source = replaceOnce(source, 'function render(){', `${resourceHeaderRender}\n\nfunction render(){`);
 source = replaceOnce(source, legacyHeader, '  renderResourceHeader();');
 
-new vm.Script(source, { filename: 'NoBrainer_GitHub_v0.12.44.resource-presentation.js' });
+new vm.Script(source, { filename: 'NoBrainer_GitHub_v0.12.78.resource-presentation.js' });
 assert.equal((source.match(/function renderResourceHeader\(/g) || []).length, 1);
-assert.ok(source.includes('window.NoBrainerResourcePresentationCore.getResourceHeaderPresentation'));
+assert.ok(source.includes('window.NoBrainerResourcePresentationCompatibility'));
+assert.ok(source.includes('resourcePresentation.render();'));
 assert.ok(source.includes('  renderResourceHeader();'));
 assert.equal(source.includes('const total=Object.values(state.inventory).reduce((s,x)=>s+x.qty,0);'), false);
+assert.doesNotMatch(adapterSource, /NoBrainerResourcePresentationCore|RESOURCE_PRESENTATION_CORE_BRIDGE/);
 
-// Regression-Sicherung für den v0.12.43-Fehlerbereich: Der kleine Kopfzeilen-Patch darf
-// weder das Materiallager noch die Schmiedevorschau aus dem Legacy-Renderpfad entfernen.
+// Der kleine Kopfzeilen-Patch darf weder das Materiallager noch die Schmiedevorschau
+// aus dem noch nicht vollständig migrierten Legacy-Renderpfad entfernen.
 assert.ok(source.includes('const tbody=document.getElementById("inventoryRows");tbody.innerHTML="";'));
 assert.ok(source.includes('renderForgePreview();'));
 assert.ok(source.includes('renderDungeonStatus();'));
 
-// v0.12.70: Der Markt-Präsentationsadapter ersetzt den Bereich bis zum Master-Render.
-// Deshalb muss er vor den Hilfsfunktionen für Materiallager und Ressourcen-Kopfzeile laufen,
-// sonst entfernt sein Range-Cut diese Funktionen wieder aus dem finalen Runtime-Script.
+// Der Markt-Präsentationsadapter ersetzt den Bereich bis zum Master-Render. Deshalb
+// müssen Material- und Ressourcenadapter weiterhin nach diesem Range-Cut laufen.
 const marketPresentationIndex = appComponent.indexOf('adaptedScript = this.legacyMarketPresentationAdapter.adapt(adaptedScript);');
 const materialPresentationIndex = appComponent.indexOf('adaptedScript = this.legacyMaterialPresentationAdapter.adapt(adaptedScript);');
 const resourcePresentationIndex = appComponent.indexOf('adaptedScript = this.legacyResourcePresentationAdapter.adapt(adaptedScript);');
@@ -52,4 +53,4 @@ assert.ok(marketPresentationIndex >= 0, 'Der Markt-Präsentationsadapter fehlt i
 assert.ok(materialPresentationIndex > marketPresentationIndex, 'Der Material-Präsentationsadapter muss nach dem Markt-Range-Cut laufen.');
 assert.ok(resourcePresentationIndex > materialPresentationIndex, 'Der Ressourcen-Präsentationsadapter muss nach Material- und Markt-Präsentation laufen.');
 
-console.log('Ressourcen-Presentation-Adapter: Kopfzeile migriert; Materiallager, Schmiede und Dungeon-Render bleiben erhalten; die Adapterreihenfolge schützt die Inventar-Hilfsfunktionen.');
+console.log('Ressourcen-Presentation-Adapter: Legacy-renderResourceHeader delegiert nur noch an Angular; Materiallager, Schmiede und Dungeon-Render bleiben erhalten.');

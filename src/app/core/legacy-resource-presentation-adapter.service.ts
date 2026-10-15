@@ -1,20 +1,9 @@
 import { Injectable } from '@angular/core';
-import {
-  RESOURCE_PRESENTATION_CORE_BRIDGE,
-  type ResourcePresentationCoreBridge
-} from '../game/resource-presentation-core';
-
-declare global {
-  interface Window {
-    NoBrainerResourcePresentationCore?: ResourcePresentationCoreBridge;
-  }
-}
 
 const RESOURCE_HEADER_RENDER = `function renderResourceHeader(){
-  const presentation=window.NoBrainerResourcePresentationCore.getResourceHeaderPresentation(state.gold,state.inventory,formatHighestCurrency);
-  const gold=document.getElementById("gold"),materials=document.getElementById("matCount");
-  if(gold)gold.textContent=presentation.goldText;
-  if(materials)materials.textContent=presentation.materialCountText;
+  const resourcePresentation=window.NoBrainerResourcePresentationCompatibility;
+  if(!resourcePresentation)throw new Error("NoBrainer-Ressourcen-Präsentationsbrücke fehlt.");
+  resourcePresentation.render();
 }`;
 
 const LEGACY_RESOURCE_HEADER = `  document.getElementById("gold").textContent=formatHighestCurrency(state.gold);
@@ -23,8 +12,6 @@ const LEGACY_RESOURCE_HEADER = `  document.getElementById("gold").textContent=fo
 @Injectable({ providedIn: 'root' })
 export class LegacyResourcePresentationAdapterService {
   adapt(source: string): string {
-    window.NoBrainerResourcePresentationCore = RESOURCE_PRESENTATION_CORE_BRIDGE;
-
     let adapted = this.replaceOnce(
       source,
       'function render(){',

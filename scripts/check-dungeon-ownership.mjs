@@ -38,14 +38,15 @@ assert.match(runtimeService, /private readonly dungeonPresentation: GameDungeonP
 assert.match(runtimeService, /const dungeonUpdate = this\.gameDungeon\.update\(\);[\s\S]*this\.applyDungeonResult\(runtime, dungeonUpdate\);/, 'Der Angular-Tick aktualisiert den Dungeon nicht direkt.');
 assert.match(runtimeService, /this\.dungeonPresentation\.render\(\);/, 'Der Angular-Tick rendert den Dungeon nicht direkt.');
 assert.match(runtimeService, /renderInventoryState\(\): void;/, 'GameRuntimeApi stellt keinen gezielten Inventar-Refresh bereit.');
-assert.match(runtimeService, /if \(inventoryChanged\) runtime\.renderInventoryState\(\);[\s\S]*if \(result\.saveRequested \|\| inventoryChanged\) runtime\.save\(false\);/, 'Dungeon-Loot aktualisiert und speichert inventarabhängige Ansichten nicht gezielt.');
+assert.match(runtimeService, /if \(inventoryChanged\) \{[\s\S]*this\.resourcePresentation\.render\(\);[\s\S]*runtime\.renderInventoryState\(\);[\s\S]*\}[\s\S]*if \(result\.saveRequested \|\| inventoryChanged\) runtime\.save\(false\);/, 'Dungeon-Loot aktualisiert Ressourcen und inventarabhängige Ansichten nicht gezielt.');
 assert.doesNotMatch(runtimeService, /renderDungeonStatus\(\): void;|renderDungeonLoot\(\): void;|renderTeam\(\): void;/, 'GameRuntimeApi exportiert weiterhin Dungeon-Präsentationscallbacks.');
 
 const registrationMatch = registrationAdapter.match(/const ANGULAR_RUNTIME_REGISTRATION = `([\s\S]*?)`;/);
 assert.ok(registrationMatch, 'Die Angular-Runtime-Registrierung konnte nicht gelesen werden.');
 assert.doesNotMatch(registrationMatch[1], /renderDungeonStatus,|renderDungeonLoot,|renderTeam:|updateDungeonAutomation,/, 'Legacy-Runtime exportiert weiterhin Dungeon-Fach- oder Präsentationscallbacks.');
-assert.match(registrationMatch[1], /renderInventoryState:\(\)=>\{[\s\S]*renderResourceHeader\(\);[\s\S]*renderMaterialStorage\(\);[\s\S]*renderForgePreview\(\);[\s\S]*renderMarketMaterials\(\);[\s\S]*\}/, 'Der gezielte Inventar-Refresh deckt Ressourcen, Lager, Schmiede und Markt nicht vollständig ab.');
+assert.match(registrationMatch[1], /renderInventoryState:\(\)=>\{[\s\S]*renderMaterialStorage\(\);[\s\S]*renderForgePreview\(\);[\s\S]*renderMarketMaterials\(\);[\s\S]*\}/, 'Der gezielte Inventar-Refresh deckt Lager, Schmiede und Markt nicht vollständig ab.');
+assert.doesNotMatch(registrationMatch[1], /renderResourceHeader\(\)/, 'Ressourcen-Kopfzeile hängt weiterhin am Legacy-Inventar-Refresh.');
 assert.doesNotMatch(appComponent, /GameDungeonService|NoBrainerDungeonCompatibility|gameDungeon\.openLegacyCompatibilityBridge|gameDungeon\.closeLegacyCompatibilityBridge/, 'AppComponent verwaltet weiterhin die alte Dungeon-Kompatibilitätsbrücke.');
-assert.match(appComponent, /const APP_VERSION = '0\.12\.77';/, 'Die App-Version wurde nicht auf v0.12.77 gesetzt.');
+assert.match(appComponent, /const APP_VERSION = '0\.12\.78';/, 'Die App-Version wurde nicht auf v0.12.78 gesetzt.');
 
-console.log('Dungeon-Eigentümerschaft: Domain, Übersicht, Status, Loot und Team laufen ausschließlich über Angular; eingesammelter Loot aktualisiert die inventarabhängigen Ansichten gezielt.');
+console.log('Dungeon-Eigentümerschaft: Domain, Übersicht, Status, Loot und Team laufen ausschließlich über Angular; eingesammelter Loot aktualisiert Ressourcen und inventarabhängige Ansichten gezielt.');

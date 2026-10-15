@@ -6,6 +6,7 @@ import { GameForgeService } from './core/game-forge.service';
 import { GameMarketService } from './core/game-market.service';
 import { GameProgressionPresentationService } from './core/game-progression-presentation.service';
 import { GameProgressionService } from './core/game-progression.service';
+import { GameResourcePresentationService } from './core/game-resource-presentation.service';
 import { GameRuntimeService } from './core/game-runtime.service';
 import { GameStateService } from './core/game-state.service';
 import { GameTavernPresentationService } from './core/game-tavern-presentation.service';
@@ -39,7 +40,7 @@ import { APP_SHELL_PAGE_IDS, composeAppShell } from './game/app-shell-presentati
 import { composePageMarkup } from './game/page-markup-presentation-core';
 import { adaptLegacyWeaponMarkup, adaptLegacyWeaponScript } from './game/weapon-naming';
 
-const APP_VERSION = '0.12.77';
+const APP_VERSION = '0.12.78';
 const LEGACY_RUNTIME_PATH = 'legacy/NoBrainer_GitHub_v0.12.2.runtime.js';
 const LEGACY_SCRIPT_ID = 'nobrainer-legacy-script';
 
@@ -57,6 +58,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     private readonly gameMarket: GameMarketService,
     private readonly gameProgression: GameProgressionService,
     private readonly gameProgressionPresentation: GameProgressionPresentationService,
+    private readonly gameResourcePresentation: GameResourcePresentationService,
     private readonly gameTavernPresentation: GameTavernPresentationService,
     private readonly gameWeaponInventoryPresentation: GameWeaponInventoryPresentationService,
     private readonly legacySourceAdapter: LegacySourceAdapterService,
@@ -96,6 +98,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
       this.gameRuntime.stopTick();
       this.gameWeaponInventoryPresentation.closeLegacyCompatibilityBridge();
       this.gameTavernPresentation.closeLegacyCompatibilityBridge();
+      this.gameResourcePresentation.closeLegacyCompatibilityBridge();
       this.gameProgressionPresentation.closeLegacyCompatibilityBridge();
       this.gameProgression.closeLegacyCompatibilityBridge();
       this.gameMarket.closeLegacyCompatibilityBridge();
@@ -113,6 +116,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     this.gameRuntime.stopTick();
     this.gameWeaponInventoryPresentation.closeLegacyCompatibilityBridge();
     this.gameTavernPresentation.closeLegacyCompatibilityBridge();
+    this.gameResourcePresentation.closeLegacyCompatibilityBridge();
     this.gameProgressionPresentation.closeLegacyCompatibilityBridge();
     this.gameProgression.closeLegacyCompatibilityBridge();
     this.gameMarket.closeLegacyCompatibilityBridge();
@@ -166,6 +170,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     this.gameMarket.openLegacyCompatibilityBridge();
     this.gameProgression.openLegacyCompatibilityBridge();
     this.gameProgressionPresentation.openLegacyCompatibilityBridge();
+    this.gameResourcePresentation.openLegacyCompatibilityBridge();
     this.gameTavernPresentation.openLegacyCompatibilityBridge();
     this.gameWeaponInventoryPresentation.openLegacyCompatibilityBridge();
     this.gameState.openBootstrapRegistration();
