@@ -69,6 +69,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     private readonly legacyTavernPresentationAdapter: LegacyTavernPresentationAdapterService,
     private readonly legacyCharacterAdapter: LegacyCharacterAdapterService,
     private readonly legacyEquipmentAdapter: LegacyEquipmentAdapterService,
+    private readonly legacyWeaponPresentationAdapter: LegacyWeaponPresentationAdapterService,
     private readonly legacyCharacterPresentationAdapter: LegacyCharacterPresentationAdapterService,
     private readonly legacyProgressionAdapter: LegacyProgressionAdapterService,
     private readonly legacyProgressionPresentationAdapter: LegacyProgressionPresentationAdapterService,
