@@ -1,5 +1,4 @@
 import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
-import { GameDungeonService } from './core/game-dungeon.service';
 import { GameEnergyService } from './core/game-energy.service';
 import { GameForgeService } from './core/game-forge.service';
 import { GameMarketService } from './core/game-market.service';
@@ -34,7 +33,7 @@ import { APP_SHELL_PAGE_IDS, composeAppShell } from './game/app-shell-presentati
 import { composePageMarkup } from './game/page-markup-presentation-core';
 import { adaptLegacyWeaponMarkup, adaptLegacyWeaponScript } from './game/weapon-naming';
 
-const APP_VERSION = '0.12.67';
+const APP_VERSION = '0.12.68';
 const LEGACY_RUNTIME_PATH = 'legacy/NoBrainer_GitHub_v0.12.2.runtime.js';
 const LEGACY_SCRIPT_ID = 'nobrainer-legacy-script';
 
@@ -48,7 +47,6 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     private readonly gameEnergy: GameEnergyService,
     private readonly gameForge: GameForgeService,
     private readonly gameMarket: GameMarketService,
-    private readonly gameDungeon: GameDungeonService,
     private readonly legacySourceAdapter: LegacySourceAdapterService,
     private readonly legacyStateAdapter: LegacyStateAdapterService,
     private readonly legacyGameTickAdapter: LegacyGameTickAdapterService,
@@ -84,7 +82,6 @@ export class AppComponent implements AfterViewInit, OnDestroy {
       try { this.gameRuntime.renderInitial(); } catch (error: unknown) { console.error('Der erste NoBrainer-Render ist fehlgeschlagen.', error); }
     } catch (error: unknown) {
       this.gameRuntime.stopTick();
-      this.gameDungeon.closeLegacyCompatibilityBridge();
       this.gameMarket.closeLegacyCompatibilityBridge();
       this.gameForge.closeLegacyCompatibilityBridge();
       this.gameEnergy.closeLegacyCompatibilityBridge();
@@ -95,7 +92,6 @@ export class AppComponent implements AfterViewInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.gameRuntime.stopTick();
-    this.gameDungeon.closeLegacyCompatibilityBridge();
     this.gameMarket.closeLegacyCompatibilityBridge();
     this.gameForge.closeLegacyCompatibilityBridge();
     this.gameEnergy.closeLegacyCompatibilityBridge();
@@ -141,7 +137,6 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     this.gameEnergy.openLegacyCompatibilityBridge();
     this.gameForge.openLegacyCompatibilityBridge();
     this.gameMarket.openLegacyCompatibilityBridge();
-    this.gameDungeon.openLegacyCompatibilityBridge();
     this.gameState.openBootstrapRegistration();
     try {
       this.gameRuntime.openBootstrapRegistration();
