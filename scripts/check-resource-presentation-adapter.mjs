@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 
 const html = fs.readFileSync('NoBrainer_GitHub_v0.12.2.html', 'utf8');
+const appComponent = fs.readFileSync('src/app/app.component.ts', 'utf8');
 const match = html.match(/<script>([\s\S]*?)<\/script>\s*<\/body>/);
 if (!match) throw new Error('Legacy-JavaScript konnte nicht extrahiert werden.');
 
@@ -41,4 +42,14 @@ assert.ok(source.includes('const tbody=document.getElementById("inventoryRows");
 assert.ok(source.includes('renderForgePreview();'));
 assert.ok(source.includes('renderDungeonStatus();'));
 
-console.log('Ressourcen-Presentation-Adapter: Kopfzeile migriert; Materiallager, Schmiede und Dungeon-Render bleiben erhalten.');
+// v0.12.70: Der Markt-Präsentationsadapter ersetzt den Bereich bis zum Master-Render.
+// Deshalb muss er vor den Hilfsfunktionen für Materiallager und Ressourcen-Kopfzeile laufen,
+// sonst entfernt sein Range-Cut diese Funktionen wieder aus dem finalen Runtime-Script.
+const marketPresentationIndex = appComponent.indexOf('adaptedScript = this.legacyMarketPresentationAdapter.adapt(adaptedScript);');
+const materialPresentationIndex = appComponent.indexOf('adaptedScript = this.legacyMaterialPresentationAdapter.adapt(adaptedScript);');
+const resourcePresentationIndex = appComponent.indexOf('adaptedScript = this.legacyResourcePresentationAdapter.adapt(adaptedScript);');
+assert.ok(marketPresentationIndex >= 0, 'Der Markt-Präsentationsadapter fehlt im App-Component.');
+assert.ok(materialPresentationIndex > marketPresentationIndex, 'Der Material-Präsentationsadapter muss nach dem Markt-Range-Cut laufen.');
+assert.ok(resourcePresentationIndex > materialPresentationIndex, 'Der Ressourcen-Präsentationsadapter muss nach Material- und Markt-Präsentation laufen.');
+
+console.log('Ressourcen-Presentation-Adapter: Kopfzeile migriert; Materiallager, Schmiede und Dungeon-Render bleiben erhalten; die Adapterreihenfolge schützt die Inventar-Hilfsfunktionen.');
