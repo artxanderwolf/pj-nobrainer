@@ -41,15 +41,6 @@ function unequipHand(characterId,hand){
   render();
 }`;
 
-const LEGACY_PICKER_PRESENTATION = `const loc=getWeaponEquipLocation(w.id);let st="",dis=false;
-    if(w.id===curId){st="AUSGERÜSTET";dis=true;}
-    else if(w.id===otherId){st="ANDERE HAND";dis=true;}
-    else if(loc){const owner=getCharacterById(loc.characterId);st=\`BELEGT: \${owner?.name||"Charakter"}\`;dis=true;}`;
-
-const ADAPTED_PICKER_PRESENTATION = `const equipmentCompatibility=window.NoBrainerEquipmentCompatibility;
-    if(!equipmentCompatibility)throw new Error("NoBrainer-Equipment-Kompatibilitätsbrücke fehlt.");
-    const pickerPresentation=equipmentCompatibility.getWeaponPickerPresentation(Number(w.id),Number(c.id),hand);const st=pickerPresentation.status,dis=pickerPresentation.disabled;`;
-
 function replaceOnce(source: string, expected: string, replacement: string): string {
   const first = source.indexOf(expected);
   if (first < 0) throw new Error('Legacy-Equipment-Block wurde nicht gefunden.');
@@ -60,8 +51,6 @@ function replaceOnce(source: string, expected: string, replacement: string): str
 @Injectable({ providedIn: 'root' })
 export class LegacyEquipmentAdapterService {
   adapt(source: string): string {
-    let adapted = replaceOnce(source, LEGACY_EQUIPMENT_BLOCK, ADAPTED_EQUIPMENT_BLOCK);
-    adapted = replaceOnce(adapted, LEGACY_PICKER_PRESENTATION, ADAPTED_PICKER_PRESENTATION);
-    return adapted;
+    return replaceOnce(source, LEGACY_EQUIPMENT_BLOCK, ADAPTED_EQUIPMENT_BLOCK);
   }
 }
