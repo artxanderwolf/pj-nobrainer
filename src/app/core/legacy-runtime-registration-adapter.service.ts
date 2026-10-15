@@ -46,7 +46,9 @@ runtimeBootstrap.register({
       renderMarketMaterials();
       document.body.dataset.inventoryRefreshStage="market";
     }catch(error){
-      document.body.dataset.inventoryRefreshError=error instanceof Error?error.message:String(error);
+      const message=error instanceof Error?error.message:String(error);
+      document.body.dataset.inventoryRefreshError=message;
+      addLog("Inventory-Refresh-Fehler ["+(document.body.dataset.inventoryRefreshStage||"unknown")+"]: "+message,"bad");
       throw error;
     }
   },
