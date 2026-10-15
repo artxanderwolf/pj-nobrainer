@@ -9,51 +9,34 @@ const stateAdapter = readFileSync('src/app/core/legacy-state-adapter.service.ts'
 const scriptMatch = html.match(/<script>([\s\S]*?)<\/script>\s*<\/body>/);
 assert.ok(scriptMatch, 'Das Legacy-Script konnte für den State-Regressionscheck nicht extrahiert werden.');
 const legacyScript = scriptMatch[1];
-
 assert.match(legacyScript, /let state=createDefaultState\(\);/, 'Die erwartete Legacy-State-Deklaration fehlt.');
 assert.match(legacyScript, /state=normalizeLoadedState\(parsed\.state\|\|parsed\);/, 'Die erwartete Legacy-State-Zuweisung beim Laden fehlt.');
 assert.match(legacyScript, /function resetSave\(\)[\s\S]*state=createDefaultState\(\);/, 'Die erwartete Legacy-State-Zuweisung beim Reset fehlt.');
-
 const directAssignments = [...legacyScript.matchAll(/(^|[^\w.])state\s*=/gm)];
 assert.equal(directAssignments.length, 3, 'Die Anzahl direkter Legacy-State-Zuweisungen hat sich geändert; State-Cutover muss überprüft werden.');
-
 const declarationMatch = stateAdapter.match(/const ANGULAR_STATE_DECLARATION = `([\s\S]*?)`;/);
 assert.ok(declarationMatch, 'Die Angular-State-Deklaration konnte nicht aus dem Adapter gelesen werden.');
 const angularDeclaration = declarationMatch[1];
 assert.match(angularDeclaration, /const state=gameStateBootstrap\.initialize\(createDefaultState\(\)\);/, 'Der Legacy-State wird nicht aus dem Angular-State-Container bezogen.');
 assert.match(angularDeclaration, /function replaceGameState\(nextState\)\{gameStateBootstrap\.replace\(nextState\);\}/, 'State-Ersetzungen laufen nicht über Angular.');
-
-let simulated = legacyScript.replace(
-  'state=normalizeLoadedState(parsed.state||parsed);',
-  'state=normalizeLoadedState(parsed.state);'
-);
+let simulated = legacyScript.replace('state=normalizeLoadedState(parsed.state||parsed);', 'state=normalizeLoadedState(parsed.state);');
 simulated = simulated.replace('let state=createDefaultState();', angularDeclaration);
-simulated = simulated.replace(
-  'state=normalizeLoadedState(parsed.state);',
-  'replaceGameState(normalizeLoadedState(parsed.state));'
-);
+simulated = simulated.replace('state=normalizeLoadedState(parsed.state);', 'replaceGameState(normalizeLoadedState(parsed.state));');
 simulated = simulated.replace('state=createDefaultState();', 'replaceGameState(createDefaultState());');
-
 assert.doesNotMatch(simulated, /let state=createDefaultState\(\);/, 'Der Legacy-State besitzt nach dem Cutover weiterhin die Root-Eigentümerschaft.');
 assert.doesNotMatch(simulated, /state=normalizeLoadedState\(/, 'Das Laden ersetzt weiterhin die Legacy-State-Referenz.');
 assert.doesNotMatch(simulated, /state=createDefaultState\(\);/, 'Das Zurücksetzen ersetzt weiterhin die Legacy-State-Referenz.');
 assert.match(simulated, /const state=gameStateBootstrap\.initialize\(createDefaultState\(\)\);/, 'Der simulierte State-Cutover verwendet nicht den Angular-Container.');
-
 assert.match(stateService, /private readonly state: MutableGameState = \{\};/, 'Der stabile Angular-State-Container fehlt.');
 assert.match(stateService, /getState<TState extends MutableGameState = MutableGameState>\(\): TState/, 'Der Angular-State kann nicht typisiert an Fachservices übergeben werden.');
 assert.match(stateService, /initialize: \(initialState: MutableGameState\) => this\.initializeState\(initialState\)/, 'Der State-Bootstrap initialisiert den Angular-Container nicht.');
 assert.match(stateService, /replace: \(nextState: MutableGameState\) => this\.replaceState\(nextState\)/, 'Der State-Bootstrap ersetzt State-Inhalte nicht über Angular.');
 assert.match(stateService, /for \(const key of Object\.keys\(this\.state\)\) delete this\.state\[key\];[\s\S]*Object\.assign\(this\.state, nextState\);/, 'State-Ersetzungen erhalten die Root-Objektidentität nicht.');
 assert.match(stateService, /delete window\.NoBrainerStateBootstrap;/, 'Der temporäre State-Bootstrap wird nach dem Start nicht entfernt.');
-
 const sourceAdapterIndex = appComponent.indexOf('let adaptedScript = this.legacySourceAdapter.adapt(source);');
 const stateAdapterIndex = appComponent.indexOf('adaptedScript = this.legacyStateAdapter.adapt(adaptedScript);');
 const tickAdapterIndex = appComponent.indexOf('adaptedScript = this.legacyGameTickAdapter.adapt(adaptedScript);');
-assert.ok(
-  sourceAdapterIndex >= 0 && stateAdapterIndex > sourceAdapterIndex && tickAdapterIndex > stateAdapterIndex,
-  'Die Adapterreihenfolge für den State-Cutover ist nicht stabil.'
-);
-
+assert.ok(sourceAdapterIndex >= 0 && stateAdapterIndex > sourceAdapterIndex && tickAdapterIndex > stateAdapterIndex, 'Die Adapterreihenfolge für den State-Cutover ist nicht stabil.');
 const openStateIndex = appComponent.indexOf('this.gameState.openBootstrapRegistration();');
 const openRuntimeIndex = appComponent.indexOf('this.gameRuntime.openBootstrapRegistration();');
 const installIndex = appComponent.indexOf('this.installLegacyScript(adaptedScript);');
@@ -64,6 +47,5 @@ assert.ok(openStateIndex >= 0 && openRuntimeIndex > openStateIndex, 'Der State-B
 assert.ok(installIndex > openRuntimeIndex, 'Das Runtime-Script wird vor den Angular-Bootstraps installiert.');
 assert.ok(assertStateIndex > installIndex, 'Die State-Initialisierung wird nach der Script-Installation nicht verifiziert.');
 assert.ok(closeRuntimeIndex > assertStateIndex && closeStateIndex > closeRuntimeIndex, 'Die temporären Bootstraps werden nicht in sicherer Reihenfolge geschlossen.');
-assert.match(appComponent, /const APP_VERSION = '0\.12\.66';/, 'Die App-Version wurde nicht auf v0.12.66 gesetzt.');
-
+assert.match(appComponent, /const APP_VERSION = '0\.12\.67';/, 'Die App-Version wurde nicht auf v0.12.67 gesetzt.');
 console.log('State-Eigentümerschaft: Angular besitzt die stabile Root-State-Referenz; Fachservices können denselben Container typisiert verwenden, Laden und Reset ersetzen nur dessen Inhalt.');
