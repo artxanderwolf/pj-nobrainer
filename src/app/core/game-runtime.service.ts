@@ -15,6 +15,11 @@ interface GameSaveStorageAdapter {
   remove(): void;
 }
 
+interface DebugInventoryState extends MutableGameState {
+  inventory: Record<string, { qty?: number | null } | undefined>;
+  dungeonLoot: Record<string, { qty?: number | null } | undefined>;
+}
+
 export interface GameRuntimeApi {
   configureSaveStorage(adapter: GameSaveStorageAdapter): void;
   prepare(): void;
@@ -219,8 +224,24 @@ export class GameRuntimeService {
     for (const event of result.events) {
       runtime.addLog(event.text, event.className);
     }
-    if (inventoryChanged) runtime.renderInventoryState();
-    if (result.saveRequested || inventoryChanged) runtime.save(false);
+    if (inventoryChanged) {
+      this.recordInventoryDebug('BeforeRender');
+      runtime.renderInventoryState();
+      this.recordInventoryDebug('AfterRender');
+    }
+    if (result.saveRequested || inventoryChanged) {
+      runtime.save(false);
+      if (inventoryChanged) this.recordInventoryDebug('AfterSave');
+    }
+  }
+
+  private recordInventoryDebug(stage: 'BeforeRender' | 'AfterRender' | 'AfterSave'): void {
+    const state = this.gameState.getState<DebugInventoryState>();
+    const payload = {
+      inventory: Object.fromEntries(Object.entries(state.inventory ?? {}).map(([name, entry]) => [name, Number(entry?.qty) || 0])),
+      dungeonLoot: Object.fromEntries(Object.entries(state.dungeonLoot ?? {}).map(([name, entry]) => [name, Number(entry?.qty) || 0]))
+    };
+    document.body.dataset[`inventoryDebug${stage}`] = JSON.stringify(payload);
   }
 
   private registerVisibilityHandler(): void {
