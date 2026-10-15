@@ -17,7 +17,11 @@ assert.match(service, /delete window\.NoBrainerResourcePresentationCompatibility
 
 assert.match(adapter, /window\.NoBrainerResourcePresentationCompatibility/);
 assert.match(adapter, /resourcePresentation\.render\(\);/);
-assert.doesNotMatch(adapter, /RESOURCE_PRESENTATION_CORE_BRIDGE|NoBrainerResourcePresentationCore|getResourceHeaderPresentation|state\.gold|state\.inventory|formatHighestCurrency/, 'Legacy-Ressourcenadapter enthält weiterhin Präsentations- oder State-Logik.');
+assert.doesNotMatch(adapter, /RESOURCE_PRESENTATION_CORE_BRIDGE|NoBrainerResourcePresentationCore|getResourceHeaderPresentation/, 'Legacy-Ressourcenadapter besitzt weiterhin einen Presentation-Core.');
+const bridgeMatch = adapter.match(/const RESOURCE_HEADER_RENDER = `([\s\S]*?)`;/);
+assert.ok(bridgeMatch, 'Ausführbarer Legacy-Ressourcenwrapper konnte nicht gelesen werden.');
+assert.doesNotMatch(bridgeMatch[1], /state\.gold|state\.inventory|formatHighestCurrency|document\.getElementById/, 'Ausführbarer Legacy-Ressourcenwrapper enthält weiterhin State- oder DOM-Präsentationslogik.');
+assert.match(adapter, /const LEGACY_RESOURCE_HEADER = `/, 'Der reine Legacy-Suchanker für den bisherigen Inline-Renderer fehlt.');
 
 assert.match(runtime, /private readonly resourcePresentation: GameResourcePresentationService/);
 assert.match(runtime, /renderInitial\(\): void \{[\s\S]*this\.resourcePresentation\.render\(\);/, 'Initialer Angular-Render enthält die Ressourcen-Kopfzeile nicht.');
