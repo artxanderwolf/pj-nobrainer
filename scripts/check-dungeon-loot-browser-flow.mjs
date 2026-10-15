@@ -10,6 +10,7 @@ const basePath = '/pj-nobrainer/';
 const saveKey = 'nobrainer_save_v1';
 const materialName = 'Zinn';
 const expectedQuantity = 2;
+const seededSavedAt = Date.now() - 60_000;
 
 assert.ok(existsSync(join(distRoot, 'index.html')), 'Der gebaute Angular-Index fehlt.');
 
@@ -31,7 +32,7 @@ const contentTypes = new Map([
 
 const seededSave = {
   saveVersion: 8,
-  savedAt: Date.now(),
+  savedAt: seededSavedAt,
   state: {
     inventory: {},
     dungeonLoot: {
@@ -64,18 +65,23 @@ const browserHarness = `<script>
     const button = document.getElementById('collectLootBtn');
     if (!clicked && button && !button.disabled && String(button.textContent || '').includes('(${expectedQuantity})')) {
       clicked = true;
+      const inlineHandlerBeforeClick = button.getAttribute('onclick');
       button.click();
       setTimeout(() => {
         let saved = null;
         try { saved = JSON.parse(localStorage.getItem(${JSON.stringify(saveKey)}) || 'null'); } catch {}
         finish({
           error: null,
+          inlineHandlerBeforeClick,
           buttonText: button.textContent || '',
           materialCountText: document.getElementById('matCount')?.textContent || '',
           storageText: document.getElementById('inventoryRows')?.textContent || '',
           forgeOptions: [...document.querySelectorAll('#slotWeaponType option')].map(option => option.textContent || ''),
           marketText: document.getElementById('marketMaterials')?.textContent || '',
           dungeonLootText: document.getElementById('dungeonLoot')?.textContent || '',
+          combatLogText: document.getElementById('combatLog')?.textContent || '',
+          seededSavedAt: ${seededSavedAt},
+          savedAt: saved?.savedAt ?? null,
           savedInventoryQty: saved?.state?.inventory?.[${JSON.stringify(materialName)}]?.qty ?? null,
           savedDungeonLootQty: saved?.state?.dungeonLoot?.[${JSON.stringify(materialName)}]?.qty ?? null,
           savedInventory: saved?.state?.inventory ?? null,
