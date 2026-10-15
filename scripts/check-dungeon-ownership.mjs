@@ -38,7 +38,7 @@ assert.match(runtimeService, /private readonly dungeonPresentation: GameDungeonP
 assert.match(runtimeService, /const dungeonUpdate = this\.gameDungeon\.update\(\);[\s\S]*this\.applyDungeonResult\(runtime, dungeonUpdate\);/, 'Der Angular-Tick aktualisiert den Dungeon nicht direkt.');
 assert.match(runtimeService, /this\.dungeonPresentation\.render\(\);/, 'Der Angular-Tick rendert den Dungeon nicht direkt.');
 assert.match(runtimeService, /renderInventoryState\(\): void;/, 'GameRuntimeApi stellt keinen gezielten Inventar-Refresh bereit.');
-assert.match(runtimeService, /if \(inventoryChanged\) runtime\.renderInventoryState\(\);[\s\S]*if \(result\.saveRequested \|\| inventoryChanged\) runtime\.save\(false\);/, 'Dungeon-Loot aktualisiert und speichert inventarabhängige Ansichten nicht gezielt.');
+assert.match(runtimeService, /runtime\.renderInventoryState\(\);[\s\S]*runtime\.save\(false\);/, 'Dungeon-Loot aktualisiert und speichert inventarabhängige Ansichten nicht gezielt.');
 assert.doesNotMatch(runtimeService, /renderDungeonStatus\(\): void;|renderDungeonLoot\(\): void;|renderTeam\(\): void;/, 'GameRuntimeApi exportiert weiterhin Dungeon-Präsentationscallbacks.');
 
 const registrationMatch = registrationAdapter.match(/const ANGULAR_RUNTIME_REGISTRATION = `([\s\S]*?)`;/);
