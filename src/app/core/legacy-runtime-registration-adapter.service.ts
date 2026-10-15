@@ -43,11 +43,6 @@ runtimeBootstrap.register({
     const goldEl=document.getElementById("gold");
     if(goldEl)goldEl.textContent=formatHighestCurrency(state.gold);
   },
-  renderRosterIfIdle:()=>{
-    const rosterRoot=document.getElementById("rosterCard");
-    const rosterIsBeingUsed=rosterRoot&&rosterRoot.contains(document.activeElement);
-    if(!rosterIsBeingUsed&&!openWeaponPickerHand)renderCharacter("rosterCard");
-  },
   shouldAutoSave:now=>!saveUnavailable&&now-lastAutoSaveAt>=10000,
   renderInitial:render,
   save:saveGame,
