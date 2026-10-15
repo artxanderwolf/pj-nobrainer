@@ -11,6 +11,7 @@ assert.match(service, /this\.gameProgression\.getRecruitOffer\('recruit'\)\.cost
 assert.match(service, /document\.getElementById\('tavernOffer'\)/, 'Angular-Tavernenservice rendert die Rekrutierungsangebote nicht.');
 assert.match(service, /document\.getElementById\('tavernCapacity'\)/, 'Angular-Tavernenservice rendert die Kapazitätsanzeige nicht.');
 assert.match(service, /document\.getElementById\('baseTavernSummary'\)/, 'Angular-Tavernenservice rendert die Stützpunkt-Zusammenfassung nicht.');
+assert.match(service, /offer\.dataset\['tavernPresentationOwner'\] = 'angular';/, 'Angular-Tavernenrenderer markiert seinen finalen Browser-Output nicht.');
 assert.match(service, /onclick="recruitCharacter\('\$\{entry\.classId\}'\)"/, 'Bestehende Rekrutierungsaktion wird durch den Angular-Renderer nicht beibehalten.');
 assert.match(service, /onclick="go\('base'\)"/, 'Bestehende Navigation zum Inn-Ausbau wird durch den Angular-Renderer nicht beibehalten.');
 assert.match(service, /window\.NoBrainerTavernPresentationCompatibility = \{ render: \(\) => this\.render\(\) \};/);
