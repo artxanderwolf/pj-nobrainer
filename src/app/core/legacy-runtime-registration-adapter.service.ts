@@ -30,7 +30,6 @@ runtimeBootstrap.register({
   renderForgeJob,
   renderMarketJob,
   renderForgePreview,
-  renderWeaponInventory,
   renderMarketMaterials,
   renderMarketWeapons,
   renderInventoryState:()=>{
