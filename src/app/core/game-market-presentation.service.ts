@@ -84,20 +84,43 @@ export class GameMarketPresentationService {
       row.className = 'sell-row';
       const presentation = getMarketMaterialPresentation(name, stock, 1, sale.valueNickel, sale.seconds, hasCapacity, formatCurrencyNickel, formatDuration);
       row.title = presentation.title;
-      row.innerHTML = `<div><strong>${name}</strong><div class="sell-meta">${presentation.stockText}</div><div class="sell-meta" data-market-preview>${presentation.previewText}</div></div><div class="market-qty"><button class="btn smallbtn" type="button">−</button><input id="${inputId}" class="number-input" type="number" min="1" max="${stock}" value="1" data-material="${name}"><button class="btn smallbtn" type="button">+</button><button class="btn smallbtn primary" type="button" ${presentation.sellDisabled ? 'disabled' : ''}>Verkaufen</button></div>`;
+      row.innerHTML = `<div><strong>${name}</strong><div class="sell-meta">${presentation.stockText}</div><div class="sell-meta" data-market-preview>${presentation.previewText}</div></div><div class="market-qty"><button class="btn smallbtn" type="button">−</button><input id="${inputId}" class="number-input" type="number" min="1" max="${stock}" step="1" value="1" data-material="${name}"><button class="btn smallbtn" type="button">+</button><button class="btn smallbtn primary" type="button" ${presentation.sellDisabled ? 'disabled' : ''}>Verkaufen</button></div>`;
       const buttons = row.querySelectorAll<HTMLButtonElement>('button');
       const input = row.querySelector<HTMLInputElement>('input');
       const preview = row.querySelector<HTMLElement>('[data-market-preview]');
       if (!input || !preview) return;
-      const update = (delta = 0) => {
-        const quantity = Math.max(1, Math.min(stock, Math.floor(Number(input.value) || 1) + delta));
-        input.value = String(quantity);
-        preview.textContent = getMarketMaterialPresentation(name, stock, quantity, sale.valueNickel, sale.seconds, this.gameMarket.hasCapacity(), formatCurrencyNickel, formatDuration).previewText;
+
+      const clampQuantity = (value: number): number =>
+        Math.max(1, Math.min(stock, Math.floor(Number(value) || 1)));
+      const updatePreview = (quantity: number): void => {
+        preview.textContent = getMarketMaterialPresentation(
+          name,
+          stock,
+          quantity,
+          sale.valueNickel,
+          sale.seconds,
+          this.gameMarket.hasCapacity(),
+          formatCurrencyNickel,
+          formatDuration
+        ).previewText;
       };
-      buttons[0]?.addEventListener('click', () => update(-1));
-      buttons[1]?.addEventListener('click', () => update(1));
-      buttons[2]?.addEventListener('click', () => this.startMaterial(name, Number(input.value)));
-      input.addEventListener('input', () => update());
+      const commitQuantity = (value: number): number => {
+        const quantity = clampQuantity(value);
+        input.value = String(quantity);
+        updatePreview(quantity);
+        return quantity;
+      };
+
+      buttons[0]?.addEventListener('click', () => commitQuantity(clampQuantity(Number(input.value)) - 1));
+      buttons[1]?.addEventListener('click', () => commitQuantity(clampQuantity(Number(input.value)) + 1));
+      buttons[2]?.addEventListener('click', () => this.startMaterial(name, commitQuantity(Number(input.value))));
+      input.addEventListener('input', () => {
+        if (input.value === '') return;
+        const value = Number(input.value);
+        if (!Number.isFinite(value)) return;
+        updatePreview(clampQuantity(value));
+      });
+      input.addEventListener('change', () => commitQuantity(Number(input.value)));
       box.appendChild(row);
     });
   }
