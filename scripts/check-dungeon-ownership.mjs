@@ -35,18 +35,20 @@ assert.doesNotMatch(characterPresentationAdapter, /ADAPTED_DUNGEON_TEAM|ADAPTED_
 
 assert.match(runtimeService, /private readonly gameDungeon: GameDungeonService/, 'GameRuntimeService besitzt keinen Angular-Dungeon-Service.');
 assert.match(runtimeService, /private readonly dungeonPresentation: GameDungeonPresentationService/, 'GameRuntimeService besitzt keine Angular-Dungeon-Präsentation.');
+assert.match(runtimeService, /private readonly forgePreviewPresentation: GameForgePreviewPresentationService/, 'GameRuntimeService besitzt keine Angular-Schmiedevorschau für Inventaränderungen.');
 assert.match(runtimeService, /const dungeonUpdate = this\.gameDungeon\.update\(\);[\s\S]*this\.applyDungeonResult\(runtime, dungeonUpdate\);/, 'Der Angular-Tick aktualisiert den Dungeon nicht direkt.');
 assert.match(runtimeService, /this\.dungeonPresentation\.render\(\);/, 'Der Angular-Tick rendert den Dungeon nicht direkt.');
 assert.match(runtimeService, /renderInventoryState\(\): void;/, 'GameRuntimeApi stellt keinen gezielten Inventar-Refresh bereit.');
-assert.match(runtimeService, /if \(inventoryChanged\) \{[\s\S]*this\.resourcePresentation\.render\(\);[\s\S]*runtime\.renderInventoryState\(\);[\s\S]*\}[\s\S]*if \(result\.saveRequested \|\| inventoryChanged\) runtime\.save\(false\);/, 'Dungeon-Loot aktualisiert Ressourcen und inventarabhängige Ansichten nicht gezielt.');
+assert.match(runtimeService, /if \(inventoryChanged\) \{[\s\S]*this\.resourcePresentation\.render\(\);[\s\S]*this\.forgePreviewPresentation\.render\(\);[\s\S]*runtime\.renderInventoryState\(\);[\s\S]*\}[\s\S]*if \(result\.saveRequested \|\| inventoryChanged\) runtime\.save\(false\);/, 'Dungeon-Loot aktualisiert Ressourcen, Schmiedevorschau und verbleibende inventarabhängige Ansichten nicht gezielt.');
 assert.doesNotMatch(runtimeService, /renderDungeonStatus\(\): void;|renderDungeonLoot\(\): void;|renderTeam\(\): void;/, 'GameRuntimeApi exportiert weiterhin Dungeon-Präsentationscallbacks.');
 
 const registrationMatch = registrationAdapter.match(/const ANGULAR_RUNTIME_REGISTRATION = `([\s\S]*?)`;/);
 assert.ok(registrationMatch, 'Die Angular-Runtime-Registrierung konnte nicht gelesen werden.');
 assert.doesNotMatch(registrationMatch[1], /renderDungeonStatus,|renderDungeonLoot,|renderTeam:|updateDungeonAutomation,/, 'Legacy-Runtime exportiert weiterhin Dungeon-Fach- oder Präsentationscallbacks.');
-assert.match(registrationMatch[1], /renderInventoryState:\(\)=>\{[\s\S]*renderMaterialStorage\(\);[\s\S]*renderForgePreview\(\);[\s\S]*renderMarketMaterials\(\);[\s\S]*\}/, 'Der gezielte Inventar-Refresh deckt Lager, Schmiede und Markt nicht vollständig ab.');
+assert.match(registrationMatch[1], /renderInventoryState:\(\)=>\{[\s\S]*renderMaterialStorage\(\);[\s\S]*renderMarketMaterials\(\);[\s\S]*\}/, 'Der gezielte Legacy-Inventar-Refresh deckt Materiallager und Markt nicht vollständig ab.');
+assert.doesNotMatch(registrationMatch[1], /renderForgePreview\(\)/, 'Schmiedevorschau hängt weiterhin am Legacy-Inventar-Refresh.');
 assert.doesNotMatch(registrationMatch[1], /renderResourceHeader\(\)/, 'Ressourcen-Kopfzeile hängt weiterhin am Legacy-Inventar-Refresh.');
 assert.doesNotMatch(appComponent, /GameDungeonService|NoBrainerDungeonCompatibility|gameDungeon\.openLegacyCompatibilityBridge|gameDungeon\.closeLegacyCompatibilityBridge/, 'AppComponent verwaltet weiterhin die alte Dungeon-Kompatibilitätsbrücke.');
-assert.match(appComponent, /const APP_VERSION = '0\.12\.79';/, 'Die App-Version wurde nicht auf v0.12.79 gesetzt.');
+assert.match(appComponent, /const APP_VERSION = '0\.12\.80';/, 'Die App-Version wurde nicht auf v0.12.80 gesetzt.');
 
-console.log('Dungeon-Eigentümerschaft: Domain, Übersicht, Status, Loot und Team laufen ausschließlich über Angular; eingesammelter Loot aktualisiert Ressourcen und inventarabhängige Ansichten gezielt.');
+console.log('Dungeon-Eigentümerschaft: Domain, Übersicht, Status, Loot und Team laufen ausschließlich über Angular; eingesammelter Loot aktualisiert Ressourcen, Schmiedevorschau und verbleibende inventarabhängige Ansichten gezielt.');
