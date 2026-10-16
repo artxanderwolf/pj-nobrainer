@@ -28,12 +28,10 @@ runtimeBootstrap.register({
   configureSaveStorage,
   prepare:prepareGameRuntime,
   renderMarketJob,
-  renderForgePreview,
   renderMarketMaterials,
   renderMarketWeapons,
   renderInventoryState:()=>{
     renderMaterialStorage();
-    renderForgePreview();
     renderMarketMaterials();
   },
   shouldAutoSave:now=>!saveUnavailable&&now-lastAutoSaveAt>=10000,
