@@ -61,7 +61,13 @@ try {
       id: 42,
       name: 'Testwaffe',
       valueNickel: 200,
-      slots: [{ slot: 'baseMaterial', material: 'Aluminium' }]
+      slots: [
+        { slot: 'workingPart', material: 'Aluminium' },
+        { slot: 'back', material: 'Aluminium' },
+        { slot: 'gripCore', material: 'Tanne' },
+        { slot: 'gripWrap', material: 'Hasen-Leder' },
+        { slot: 'special', material: 'Aluminium' }
+      ]
     }),
     {
       type: 'weapon',
