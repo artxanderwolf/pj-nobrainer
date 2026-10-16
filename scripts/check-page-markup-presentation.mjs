@@ -36,7 +36,7 @@ for (const obsolete of ['slotBaseMaterial', 'slotBlade', 'slotGripShape', 'slotG
 }
 assert.match(forgeMarkup, /Die Waffenform ist ein Bauplan/);
 assert.match(forgeMarkup, /Materialmenge bestimmt die Herstellungskosten/);
-assert.match(forgeMarkup, /Parier/);
+assert.match(forgeMarkup, /id="forgeParryInfo"/, 'Der dynamische Hinweis für die optionale Parierstange fehlt.');
 
 const indexMarkup = getAngularOwnedPageMarkup('index') ?? '';
 for (const heading of ['Waffenslots & Funktion', 'Klassen', 'Aktuelle Schadensberechnungen', 'Gebäude-Upgrades', 'Versionshinweise']) assert.ok(indexMarkup.includes(`<h2>${heading}</h2>`), `Index-Abschnitt ${heading} fehlt.`);
