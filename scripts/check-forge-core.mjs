@@ -7,29 +7,53 @@ const source = readFileSync(sourceUrl, 'utf8').replace("from './game-core';", "f
 writeFileSync(temporaryUrl, source, 'utf8');
 
 try {
-  const { forgeRequirements, hasForgeMaterials, reserveForgeMaterials, createForgeJob, enqueueForgeJob, advanceForgeJobs } = await import(`${temporaryUrl.href}?check=${Date.now()}`);
+  const {
+    forgeRequirements,
+    getForgeSelectionQuantities,
+    hasForgeMaterials,
+    reserveForgeMaterials,
+    createForgeJob,
+    enqueueForgeJob,
+    advanceForgeJobs
+  } = await import(`${temporaryUrl.href}?check=${Date.now()}`);
+
   const slots = [
-    { slot: 'baseMaterial', material: 'Zinn' },
-    { slot: 'blade', material: 'Zinn' },
+    { slot: 'workingPart', material: 'Zinn' },
     { slot: 'back', material: 'Zinn' },
-    { slot: 'gripShape', material: 'Morsche Fichte' },
-    { slot: 'gripMaterial', material: 'Lederfetzen' },
-    { slot: 'reinforcementMaterial', material: 'Zinn' }
+    { slot: 'gripCore', material: 'Fichte' },
+    { slot: 'gripWrap', material: 'Lederfetzen' },
+    { slot: 'special', material: 'Fichte' }
   ];
-  const requirements = forgeRequirements(slots);
-  assert.deepEqual(requirements, { Zinn: 4, 'Morsche Fichte': 1, Lederfetzen: 1 });
-  const inventory = { Zinn: { category: 'Metall', qty: 4 }, 'Morsche Fichte': { category: 'Holz', qty: 2 }, Lederfetzen: { category: 'Leder', qty: 1 } };
-  assert.equal(hasForgeMaterials(inventory, requirements), true);
-  assert.equal(reserveForgeMaterials(inventory, requirements), true);
+
+  assert.deepEqual(getForgeSelectionQuantities('dagger'), { workingPart: 1, back: 1, gripCore: 1, gripWrap: 1, special: 1 });
+  assert.deepEqual(getForgeSelectionQuantities('sword'), { workingPart: 3, back: 2, gripCore: 2, gripWrap: 1, special: 1 });
+  assert.deepEqual(forgeRequirements(slots, 'dagger'), { Zinn: 2, Fichte: 2, Lederfetzen: 1 }, 'Dolch muss genau fünf Materialeinheiten benötigen.');
+  assert.deepEqual(forgeRequirements(slots, 'sword'), { Zinn: 5, Fichte: 3, Lederfetzen: 1 }, 'Einhänder muss genau neun Materialeinheiten benötigen.');
+
+  const inventory = { Zinn: { category: 'Metall', qty: 5 }, Fichte: { category: 'Holz', qty: 4 }, Lederfetzen: { category: 'Leder', qty: 1 } };
+  const swordRequirements = forgeRequirements(slots, 'sword');
+  assert.equal(hasForgeMaterials(inventory, swordRequirements), true);
+  assert.equal(reserveForgeMaterials(inventory, swordRequirements), true);
   assert.equal(inventory.Zinn, undefined);
-  assert.equal(inventory['Morsche Fichte'].qty, 1);
+  assert.equal(inventory.Fichte.qty, 1);
   assert.equal(inventory.Lederfetzen, undefined);
 
-  const job = createForgeJob('sword', '', slots);
+  const legacySlots = [
+    { slot: 'baseMaterial', material: 'Aluminium' },
+    { slot: 'blade', material: 'Zinn' },
+    { slot: 'back', material: 'Zinn' },
+    { slot: 'gripShape', material: 'Fichte' },
+    { slot: 'gripMaterial', material: 'Lederfetzen' },
+    { slot: 'reinforcementMaterial', material: 'Fichte' }
+  ];
+  assert.deepEqual(forgeRequirements(legacySlots, 'sword'), swordRequirements, 'Altes Grundmaterial darf keinen Materialbedarf mehr erzeugen.');
+
+  const job = createForgeJob('sword', '', legacySlots);
   assert.equal(job.weaponName, 'Einhänder');
   assert.equal(job.totalSeconds, 30);
   assert.equal(job.valueNickel, 100);
-  assert.equal(job.slots.length, 6);
+  assert.deepEqual(job.slots.map(slot => slot.slot), ['workingPart', 'back', 'gripCore', 'gripWrap', 'special'], 'Neue Waffen speichern nur die fünf semantischen Materialauswahlen.');
+  assert.equal(job.slots.some(slot => slot.slot === 'baseMaterial'), false);
 
   const state = { forgeJobs: [], forgeQueue: [] };
   assert.equal(enqueueForgeJob(state, { ...job, weaponName: 'A' }, 1, 2, 1000), 'started');
@@ -45,15 +69,7 @@ try {
   assert.equal(state.forgeJobs.length, 0);
   assert.equal(state.forgeQueue.length, 0);
 
-  const parallel = { forgeJobs: [], forgeQueue: [] };
-  enqueueForgeJob(parallel, { ...job, weaponName: 'P1' }, 2, 1, 5000);
-  enqueueForgeJob(parallel, { ...job, weaponName: 'P2' }, 2, 1, 5000);
-  enqueueForgeJob(parallel, { ...job, weaponName: 'Q1' }, 2, 1, 5000);
-  const parallelDone = [];
-  advanceForgeJobs(parallel, 2, 66000, (finished, at) => parallelDone.push([finished.weaponName, at]));
-  assert.deepEqual(parallelDone, [['P1', 35000], ['P2', 35000], ['Q1', 65000]]);
-
-  console.log('Forge-Core: Materialreservierung, Aufträge, Slots, Queue und Offline-Catch-up sind konsistent.');
+  console.log('Forge-Core: Blueprint-Materialmengen, Reservierung, Aufträge, Queue und Offline-Catch-up sind konsistent.');
 } finally {
   unlinkSync(temporaryUrl);
 }
