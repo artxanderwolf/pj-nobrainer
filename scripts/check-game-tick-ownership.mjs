@@ -31,6 +31,7 @@ const tickCycle = runtimeService.slice(tickStart, tickEnd);
 assert.match(runtimeService, /private readonly characterPresentation: GameCharacterPresentationService/, 'Der Angular-Tick besitzt keine Angular-eigene Kader-Präsentation.');
 assert.match(runtimeService, /private readonly weaponInventoryPresentation: GameWeaponInventoryPresentationService/, 'Der Angular-Tick besitzt keine Angular-eigene Waffenlager-Präsentation.');
 assert.match(runtimeService, /private readonly resourcePresentation: GameResourcePresentationService/, 'Der Angular-Tick besitzt keine Angular-eigene Ressourcen-Präsentation.');
+assert.match(runtimeService, /private readonly forgeJobPresentation: GameForgeJobPresentationService/, 'Der Angular-Tick besitzt keine Angular-eigene Schmiedeauftrags-Präsentation.');
 assert.match(runtimeService, /private readonly combatLog: GameCombatLogService/, 'Der Angular-Tick besitzt keinen Angular-eigenen Kampfprotokoll-Service.');
 assert.match(runtimeService, /private readonly gameEnergy: GameEnergyService/, 'Der Angular-Tick besitzt keinen Angular-eigenen Energie-Service.');
 assert.match(runtimeService, /private readonly gameForge: GameForgeService/, 'Der Angular-Tick besitzt keinen Angular-eigenen Schmiede-Service.');
@@ -50,6 +51,7 @@ assert.doesNotMatch(runtimeService, /renderDungeonLoot\(\): void;/, 'Die Runtime
 assert.doesNotMatch(runtimeService, /renderTeam\(\): void;/, 'Die Runtime-API exportiert weiterhin den Legacy-Dungeonteam-Renderer.');
 assert.doesNotMatch(runtimeService, /renderRosterIfIdle/, 'Die Runtime-API exportiert weiterhin den Legacy-Kaderrenderer.');
 assert.doesNotMatch(runtimeService, /renderWeaponInventory\(\): void;/, 'Die Runtime-API exportiert weiterhin den Legacy-Waffenlager-Renderer.');
+assert.doesNotMatch(runtimeService, /renderForgeJob\(\): void;|runtime\.renderForgeJob\(\)/, 'Die Runtime-API exportiert weiterhin den Legacy-Schmiedeauftragsrenderer.');
 assert.doesNotMatch(runtimeService, /refreshGold\(\): void;/, 'Die Runtime-API exportiert weiterhin den Legacy-Gold-Refresh.');
 assert.doesNotMatch(runtimeService, /\baddLog\(text: string/, 'Die Runtime-API exportiert weiterhin den Legacy-Kampfprotokoll-Callback.');
 assert.doesNotMatch(runtimeService, /runtime\.addLog\(/, 'Der Angular-Tick schreibt weiterhin über die Legacy-Runtime ins Kampfprotokoll.');
@@ -63,7 +65,7 @@ const orderedRuntimeCalls = [
   'this.logMarketCompletions(marketUpdate.completedSales);',
   'const dungeonUpdate = this.gameDungeon.update();',
   'this.applyDungeonResult(runtime, dungeonUpdate);',
-  'runtime.renderForgeJob();',
+  'this.forgeJobPresentation.render();',
   'runtime.renderMarketJob();',
   'this.characterPresentation.renderIfIdle();',
   'this.dungeonPresentation.render();',
@@ -82,11 +84,10 @@ assert.match(runtimeService, /this\.runTickCycle\(\);[\s\S]*this\.scheduleNextTi
 const angularRegistrationMatch = registrationAdapter.match(/const ANGULAR_RUNTIME_REGISTRATION = `([\s\S]*?)`;/);
 assert.ok(angularRegistrationMatch, 'Die Angular-Runtime-Registrierung konnte nicht geprüft werden.');
 const angularRegistration = angularRegistrationMatch[1];
-for (const forbidden of ['tick:gameTick', 'updateEnergy,', 'updateForgeJob,', 'updateMarketJob,', 'updateDungeonAutomation,', 'renderDungeonStatus,', 'renderDungeonLoot,', 'renderTeam:', '\n  addLog,', 'renderRosterIfIdle:', '\n  renderWeaponInventory,', 'refreshGold:']) {
+for (const forbidden of ['tick:gameTick', 'updateEnergy,', 'updateForgeJob,', 'updateMarketJob,', 'updateDungeonAutomation,', 'renderDungeonStatus,', 'renderDungeonLoot,', 'renderTeam:', '\n  addLog,', 'renderRosterIfIdle:', '\n  renderWeaponInventory,', '\n  renderForgeJob,', 'refreshGold:']) {
   assert.equal(angularRegistration.includes(forbidden), false, `Legacy-Runtime registriert weiterhin ${forbidden}.`);
 }
 for (const callback of [
-  'renderForgeJob',
   'renderMarketJob',
   'renderForgePreview',
   'renderMarketMaterials',
@@ -102,4 +103,4 @@ const tickAdapterIndex = appComponent.indexOf('adaptedScript = this.legacyGameTi
 const registrationAdapterIndex = appComponent.indexOf('adaptedScript = this.legacyRuntimeRegistrationAdapter.adapt(adaptedScript);');
 assert.ok(sourceAdapterIndex >= 0 && tickAdapterIndex > sourceAdapterIndex && registrationAdapterIndex > tickAdapterIndex, 'Die Adapterreihenfolge für den gameTick-Cutover ist nicht stabil.');
 
-console.log('gameTick-Eigentümerschaft: Der zentrale 250-ms-Zyklus liegt in Angular; Kader, Waffenlager, Ressourcen, Dungeon und Kampfprotokoll werden dort ohne Legacy-Runtime-Präsentationscallbacks verarbeitet.');
+console.log('gameTick-Eigentümerschaft: Der zentrale 250-ms-Zyklus liegt in Angular; Kader, Waffenlager, Ressourcen, Schmiedeaufträge, Dungeon und Kampfprotokoll werden dort ohne Legacy-Runtime-Präsentationscallbacks verarbeitet.');
