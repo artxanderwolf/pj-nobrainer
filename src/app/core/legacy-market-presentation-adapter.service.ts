@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { GameMarketPresentationService } from './game-market-presentation.service';
 
 const ADAPTED_MARKET_PRESENTATION = `function getMarketPresentationCompatibility(){
   const presentation=window.NoBrainerMarketPresentationCompatibility;
@@ -13,7 +14,10 @@ function renderMarketWeapons(){getMarketPresentationCompatibility().renderWeapon
 
 @Injectable({ providedIn: 'root' })
 export class LegacyMarketPresentationAdapterService {
+  constructor(private readonly presentation: GameMarketPresentationService) {}
+
   adapt(source: string): string {
+    this.presentation.openLegacyCompatibilityBridge();
     return this.replaceRangeOnce(
       source,
       'function renderMarketJob(){',
