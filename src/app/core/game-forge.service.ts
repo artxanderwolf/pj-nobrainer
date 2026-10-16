@@ -1,10 +1,18 @@
 import { Injectable } from '@angular/core';
-import { CONFIG, type WeaponFormDefinition, type WeaponSlot, type WeaponStats } from '../game/game-core';
+import {
+  CONFIG,
+  getWeaponForm,
+  isWeaponSelectionComplete,
+  type WeaponFormDefinition,
+  type WeaponSlot,
+  type WeaponStats
+} from '../game/game-core';
 import {
   advanceForgeJobs,
   createForgeJob,
   enqueueForgeJob,
   forgeRequirements,
+  getForgeSelectionQuantities,
   hasForgeCapacity,
   hasForgeMaterials,
   reserveForgeMaterials,
@@ -58,7 +66,7 @@ type RuntimeForgeState = MutableGameState & ForgeStateLike & {
 };
 
 interface LegacyForgeCompatibilityBridge {
-  requirements(slots: readonly WeaponSlot[]): Record<string, number>;
+  requirements(weaponForm: string, slots: readonly WeaponSlot[]): Record<string, number>;
   hasMaterials(requirements: Readonly<Record<string, number>>): boolean;
   preview(weaponForm: string, slots: readonly WeaponSlot[]): ForgePreviewResult;
   start(weaponForm: string, weaponName: string, slots: readonly WeaponSlot[], at?: number): ForgeStartResult;
@@ -74,8 +82,16 @@ declare global {
 export class GameForgeService {
   constructor(private readonly gameState: GameStateService) {}
 
-  requirements(slots: readonly WeaponSlot[]): Record<string, number> {
-    return forgeRequirements(slots);
+  requirements(weaponForm: string, slots: readonly WeaponSlot[]): Record<string, number> {
+    return forgeRequirements(slots, weaponForm);
+  }
+
+  selectionQuantities(weaponForm: string) {
+    return getForgeSelectionQuantities(weaponForm);
+  }
+
+  isComplete(weaponForm: string, slots: readonly WeaponSlot[]): boolean {
+    return isWeaponSelectionComplete(slots, weaponForm);
   }
 
   hasMaterials(requirements: Readonly<Record<string, number>>): boolean {
@@ -83,9 +99,9 @@ export class GameForgeService {
   }
 
   preview(weaponForm: string, slots: readonly WeaponSlot[]): ForgePreviewResult {
-    const form = CONFIG.forge.weaponForms[weaponForm] ?? CONFIG.forge.weaponForms['sword'];
+    const form = getWeaponForm(weaponForm);
     const copiedSlots = slots.map(slot => ({ ...slot }));
-    const complete = copiedSlots.every(slot => slot.material);
+    const complete = this.isComplete(weaponForm, copiedSlots);
 
     if (!complete) {
       return {
@@ -117,9 +133,9 @@ export class GameForgeService {
     const queueSlots = Number(state.upgrades.forgeQueue) || 0;
 
     if (!hasForgeCapacity(state, activeSlots, queueSlots)) return { status: 'full' };
-    if (!slots.every(slot => slot.material)) return { status: 'incomplete' };
+    if (!this.isComplete(weaponForm, slots)) return { status: 'incomplete' };
 
-    const requirements = forgeRequirements(slots);
+    const requirements = forgeRequirements(slots, weaponForm);
     const missing = Object.entries(requirements).find(
       ([material, required]) => (Number(state.inventory[material]?.qty) || 0) < required
     );
@@ -151,9 +167,7 @@ export class GameForgeService {
     }
 
     const status = enqueueForgeJob(state, job, activeSlots, queueSlots, at);
-    if (status === 'full') {
-      throw new Error('Schmiedekapazität änderte sich während einer synchronen Auftragserstellung.');
-    }
+    if (status === 'full') throw new Error('Schmiedekapazität änderte sich während einer synchronen Auftragserstellung.');
     return { status, weaponName: job.weaponName };
   }
 
@@ -170,12 +184,9 @@ export class GameForgeService {
   }
 
   openLegacyCompatibilityBridge(): void {
-    if (window.NoBrainerForgeCompatibility) {
-      throw new Error('NoBrainer-Schmiede-Kompatibilitätsbrücke ist bereits geöffnet.');
-    }
-
+    if (window.NoBrainerForgeCompatibility) throw new Error('NoBrainer-Schmiede-Kompatibilitätsbrücke ist bereits geöffnet.');
     window.NoBrainerForgeCompatibility = {
-      requirements: slots => this.requirements(slots),
+      requirements: (weaponForm, slots) => this.requirements(weaponForm, slots),
       hasMaterials: requirements => this.hasMaterials(requirements),
       preview: (weaponForm, slots) => this.preview(weaponForm, slots),
       start: (weaponForm, weaponName, slots, at) => this.start(weaponForm, weaponName, slots, at)
@@ -191,7 +202,7 @@ export class GameForgeService {
   }
 
   private completeJob(state: RuntimeForgeState, job: ForgeJob): string {
-    const form = CONFIG.forge.weaponForms[job.weaponForm] ?? CONFIG.forge.weaponForms['sword'];
+    const form = getWeaponForm(job.weaponForm);
     const name = job.weaponName || form.name;
     state.weaponInventory.unshift({
       id: state.nextWeaponId++,
@@ -207,14 +218,17 @@ export class GameForgeService {
 
   private emptyStats(form: WeaponFormDefinition): WeaponStats {
     return {
-      materialBaseDamage: 0,
-      materialBaseSpeed: 0,
-      formDamageFactor: form.damageFactor ?? 1,
-      formSpeedFactor: form.speedFactor ?? 1,
-      baseDamage: 0,
-      baseSpeed: 0,
+      weaponBaseDamage: form.baseDamage,
+      weaponBaseSpeed: form.baseSpeed,
+      materialBaseDamage: form.baseDamage,
+      materialBaseSpeed: form.baseSpeed,
+      formDamageFactor: 1,
+      formSpeedFactor: 1,
+      baseDamage: form.baseDamage,
+      baseSpeed: form.baseSpeed,
       bladeMultiplier: 1,
       gripMultiplier: 1,
+      specialMaterial: null,
       reinforcementMaterial: null,
       reinforcementSpeedFactor: 1,
       reinforcementHitChanceAdd: 0,
