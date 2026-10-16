@@ -25,7 +25,8 @@ assert.ok(jobsMatch, 'Der dünne Legacy-renderForgeJob-Wrapper konnte nicht gele
 assert.match(jobsMatch[1], /window\.NoBrainerForgeJobPresentationCompatibility/);
 assert.match(jobsMatch[1], /forgeJobPresentation\.render\(\);/);
 assert.doesNotMatch(jobsMatch[1], /state\.forgeJobs|state\.forgeQueue|getActiveForgeJobPresentation|getQueuedForgeJobPresentation|formatCurrencyNickel|formatDuration|innerHTML/, 'Legacy-renderForgeJob enthält weiterhin State- oder DOM-Präsentationslogik.');
-assert.match(adapter, /NoBrainerForgePresentationCore\.getForgePreviewPresentation/, 'Die bewusst noch nicht migrierte Schmiedevorschau wurde versehentlich entfernt.');
+assert.match(adapter, /window\.NoBrainerForgePreviewPresentationCompatibility/, 'Die Angular-eigene Schmiedevorschau-Brücke fehlt im gemeinsamen Forge-Präsentationsadapter.');
+assert.doesNotMatch(adapter, /NoBrainerForgePresentationCore|FORGE_PRESENTATION_CORE_BRIDGE/, 'Der Forge-Präsentationsadapter registriert weiterhin den alten Legacy-Presentation-Core.');
 
 assert.match(runtime, /private readonly forgeJobPresentation: GameForgeJobPresentationService/);
 assert.match(runtime, /renderInitial\(\): void \{[\s\S]*this\.forgeJobPresentation\.render\(\);/, 'Initialer Angular-Render enthält Schmiedeaufträge nicht.');
@@ -41,6 +42,6 @@ const stateBootstrap = app.indexOf('this.gameState.openBootstrapRegistration();'
 assert.ok(bridgeOpen >= 0 && stateBootstrap > bridgeOpen, 'Schmiedeauftrags-Präsentationsbrücke muss vor dem State-/Legacy-Bootstrap geöffnet werden.');
 assert.match(app, /private readonly gameForgeJobPresentation: GameForgeJobPresentationService/);
 assert.match(app, /ngOnDestroy\(\): void \{[\s\S]*this\.gameForgeJobPresentation\.closeLegacyCompatibilityBridge\(\);/);
-assert.match(app, /const APP_VERSION = '0\.12\.79';/);
+assert.match(app, /const APP_VERSION = '0\.12\.80';/);
 
 console.log('Schmiedeauftrags-Präsentations-Eigentümerschaft: aktive Aufträge und Warteschlange werden direkt durch Angular aus dem Angular-State gerendert; Legacy besitzt nur noch einen dünnen renderForgeJob-Wrapper.');
