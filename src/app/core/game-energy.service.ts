@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { CHARACTER_CLASSES, CONFIG, type CharacterClassId } from '../game/game-core';
+import { CONFIG, calculateCharacterStats, type WeaponStats } from '../game/game-core';
 import {
   energyCostPerCharacter,
   updateEnergyState,
@@ -20,16 +20,52 @@ declare global {
   }
 }
 
-type RuntimeEnergyState = MutableGameState & EnergyStateLike<EnergyCharacterLike>;
+interface RuntimeEnergyCharacter extends EnergyCharacterLike {
+  id: number;
+  classId?: string | null;
+  equipment?: {
+    leftHand?: number | null;
+    rightHand?: number | null;
+  } | null;
+}
+
+interface RuntimeEnergyWeapon {
+  id: number;
+  weaponForm?: string | null;
+  stats?: Partial<WeaponStats> | null;
+}
+
+type RuntimeEnergyState = MutableGameState & EnergyStateLike<RuntimeEnergyCharacter> & {
+  weaponInventory: RuntimeEnergyWeapon[];
+};
 
 @Injectable({ providedIn: 'root' })
 export class GameEnergyService {
   constructor(private readonly gameState: GameStateService) {}
 
   update(now = Date.now()): EnergyUpdateResult {
+    const state = this.gameState.getState<RuntimeEnergyState>();
+    const effectiveByCharacter = new Map<number, ReturnType<typeof calculateCharacterStats>>();
+
+    for (const character of state.characters) {
+      const equippedIds = [...new Set([
+        character.equipment?.leftHand ?? null,
+        character.equipment?.rightHand ?? null
+      ].filter((id): id is number => id !== null))];
+      const weapons = equippedIds
+        .map(id => state.weaponInventory.find(weapon => Number(weapon.id) === Number(id)))
+        .filter((weapon): weapon is RuntimeEnergyWeapon => Boolean(weapon));
+      const effective = calculateCharacterStats(character.classId, weapons);
+      effectiveByCharacter.set(character.id, effective);
+      character.maxEnergy = effective.maxEnergy;
+      if (character.energy > effective.maxEnergy) character.energy = effective.maxEnergy;
+    }
+
     return updateEnergyState(
-      this.gameState.getState<RuntimeEnergyState>(),
-      character => CHARACTER_CLASSES[this.resolveClassId(character.classId)],
+      state,
+      character => ({
+        energyRegenPerMinute: effectiveByCharacter.get(character.id)?.energyRegenPerMinute ?? 0
+      }),
       now
     );
   }
@@ -51,11 +87,5 @@ export class GameEnergyService {
 
   closeLegacyCompatibilityBridge(): void {
     delete window.NoBrainerEnergyCompatibility;
-  }
-
-  private resolveClassId(classId: string | null | undefined): CharacterClassId {
-    return classId && Object.prototype.hasOwnProperty.call(CHARACTER_CLASSES, classId)
-      ? classId as CharacterClassId
-      : 'recruit';
   }
 }
