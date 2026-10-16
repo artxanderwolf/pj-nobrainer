@@ -48,7 +48,7 @@ const FORGE_START = `function startForgeJob(){
 @Injectable({ providedIn: 'root' })
 export class LegacyForgeAdapterService {
   adapt(source: string): string {
-    let adapted = this.replaceRange(source, 'function getForgeSelection(){', 'function calculateWeaponStats(', FORGE_SELECTION + '\n\n', 'Schmiedeauswahl');
+    let adapted = this.replaceRange(source, 'function getForgeSelection(){', 'function normalizeWeaponSlots(', FORGE_SELECTION + '\n\n', 'Schmiedeauswahl');
     adapted = this.replaceRange(adapted, 'function requirements(', 'function formatCurrencyNickel(', FORGE_REQUIREMENTS + '\n\n', 'Materialbedarf');
     adapted = this.replaceRange(adapted, 'function forgePreview(){', 'function renderForgePreview(){', FORGE_PREVIEW + '\n\n', 'Schmiedevorschau');
     adapted = this.replaceRange(adapted, 'function startForgeQueuedJob(', 'function startForgeJob(){', '', 'Schmiede-Slots');
