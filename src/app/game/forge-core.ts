@@ -1,4 +1,16 @@
-import { CONFIG, calculateWeaponStats, rarityFactor, type WeaponSlot, type WeaponStats } from './game-core';
+import {
+  CONFIG,
+  calculateWeaponStats,
+  getWeaponCraftingSlots,
+  getWeaponForm,
+  getWeaponSelectionQuantity,
+  isWeaponSelectionComplete,
+  normalizeWeaponSlots,
+  rarityFactor,
+  type WeaponCraftingSlotId,
+  type WeaponSlot,
+  type WeaponStats
+} from './game-core';
 
 export interface ForgeInventoryEntry { qty?: number | null; }
 export type ForgeInventory = Record<string, ForgeInventoryEntry | undefined>;
@@ -17,12 +29,23 @@ export interface ForgeStateLike {
   forgeQueue: ForgeJob[];
 }
 
-export function forgeRequirements(slots: readonly WeaponSlot[]): Record<string, number> {
+export function forgeRequirements(slots: readonly WeaponSlot[], weaponForm = 'sword'): Record<string, number> {
+  const normalized = normalizeWeaponSlots(slots);
+  const selected = new Map(normalized.map(slot => [slot.slot, slot.material]));
   const requirements: Record<string, number> = {};
-  for (const slot of slots) {
-    if (slot.material) requirements[slot.material] = (requirements[slot.material] ?? 0) + 1;
+
+  for (const slot of getWeaponCraftingSlots(weaponForm)) {
+    const material = selected.get(slot);
+    const quantity = getWeaponSelectionQuantity(weaponForm, slot);
+    if (material && quantity > 0) requirements[material] = (requirements[material] ?? 0) + quantity;
   }
   return requirements;
+}
+
+export function getForgeSelectionQuantities(weaponForm: string): Record<WeaponCraftingSlotId, number> {
+  return Object.fromEntries(
+    getWeaponCraftingSlots(weaponForm).map(slot => [slot, getWeaponSelectionQuantity(weaponForm, slot)])
+  ) as Record<WeaponCraftingSlotId, number>;
 }
 
 export function hasForgeMaterials(inventory: ForgeInventory, requirements: Readonly<Record<string, number>>): boolean {
@@ -40,13 +63,18 @@ export function reserveForgeMaterials(inventory: ForgeInventory, requirements: R
 }
 
 export function createForgeJob(weaponForm: string, weaponName: string, slots: readonly WeaponSlot[]): ForgeJob {
-  const form = CONFIG.forge.weaponForms[weaponForm] ?? CONFIG.forge.weaponForms['sword'];
-  const factor = rarityFactor(slots);
+  const form = getWeaponForm(weaponForm);
+  const normalized = normalizeWeaponSlots(slots);
+  const craftingSlots = new Set(getWeaponCraftingSlots(weaponForm));
+  const storedSlots = normalized
+    .filter(slot => craftingSlots.has(slot.slot as WeaponCraftingSlotId))
+    .map(slot => ({ ...slot }));
+  const factor = rarityFactor(storedSlots);
   return {
     weaponForm,
     weaponName: weaponName.trim() || form.name,
-    slots: slots.map((slot) => ({ ...slot })),
-    stats: calculateWeaponStats(slots, weaponForm),
+    slots: storedSlots,
+    stats: calculateWeaponStats(storedSlots, weaponForm),
     valueNickel: Math.round(100 * factor),
     totalSeconds: Math.round(CONFIG.forge.baseSeconds * form.timeFactor * factor)
   };
@@ -90,14 +118,14 @@ export function advanceForgeJobs(state: ForgeStateLike, activeSlots: number, now
   let guard = 0;
   while (guard++ < 10000) {
     const next = state.forgeJobs
-      .filter((job) => Number.isFinite(job.finishesAt) && Number(job.finishesAt) <= now)
+      .filter(job => Number.isFinite(job.finishesAt) && Number(job.finishesAt) <= now)
       .sort((a, b) => Number(a.finishesAt) - Number(b.finishesAt))[0];
     if (!next) break;
     const at = Number(next.finishesAt);
-    const done = state.forgeJobs.filter((job) => Number(job.finishesAt) <= at);
+    const done = state.forgeJobs.filter(job => Number(job.finishesAt) <= at);
     for (const job of done) onComplete(job, at);
     completed += done.length;
-    state.forgeJobs = state.forgeJobs.filter((job) => Number(job.finishesAt) > at);
+    state.forgeJobs = state.forgeJobs.filter(job => Number(job.finishesAt) > at);
     fillForgeSlots(state, activeSlots, at);
   }
   fillForgeSlots(state, activeSlots, now);
@@ -106,6 +134,8 @@ export function advanceForgeJobs(state: ForgeStateLike, activeSlots: number, now
 
 export const FORGE_CORE_BRIDGE = {
   forgeRequirements,
+  getForgeSelectionQuantities,
+  isWeaponSelectionComplete,
   hasForgeMaterials,
   reserveForgeMaterials,
   createForgeJob,
