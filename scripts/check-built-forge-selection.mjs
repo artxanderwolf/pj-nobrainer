@@ -71,6 +71,7 @@ const probeScript = `<script>
           gripCore: choose('slotGripCore', 'Fichte'),
           gripWrap: choose('slotGripWrap', 'Lederfetzen'),
           special: choose('slotSpecial', 'Fichte'),
+          parry: choose('slotParry', 'Fichte'),
           form: formChosen
         };
         setTimeout(() => {
@@ -147,17 +148,17 @@ try {
   assert.equal(result.status, 'tested', `Die Schmiedeauswahl wurde nicht testbereit: ${JSON.stringify(result)}`);
   assert.equal(result.browserErrors.length, 0, `Bei der Schmiedeauswahl trat ein Browserfehler auf: ${JSON.stringify(result)}`);
   assert.equal(result.runtimeError, '', `Die Runtime meldet bei der Schmiedeauswahl einen Fehler: ${JSON.stringify(result)}`);
-  assert.deepEqual(result.selected, { workingPart: true, back: true, gripCore: true, gripWrap: true, special: true, form: true }, `Mindestens eine Bauplan-Auswahl ließ sich nicht setzen: ${JSON.stringify(result)}`);
+  assert.deepEqual(result.selected, { workingPart: true, back: true, gripCore: true, gripWrap: true, special: true, parry: true, form: true }, `Mindestens eine Bauplan-Auswahl ließ sich nicht setzen: ${JSON.stringify(result)}`);
   assert.equal(result.finalForm, 'sword');
   assert.equal(result.timeText, '30 s');
-  assert.equal(result.materialTotalText, '9 Materialeinheiten');
-  assert.match(result.parryText, /Parierstange/);
-  assert.equal(result.damageText, '10.00');
-  assert.equal(result.speedText, '1.20');
+  assert.equal(result.materialTotalText, '8 Materialeinheiten');
+  assert.match(result.parryText, /eigene Materialwahl/);
+  assert.equal(result.damageText, '10.50');
+  assert.equal(result.speedText, '1.00');
   assert.equal(result.startDisabled, false);
   assert.equal(result.oldBaseMaterialPresent, false, 'Der alte Grundmaterial-Slot darf im Angular-Markup nicht mehr existieren.');
 
-  console.log('Schmiedeauswahl-Browserregression: Einhänder-Bauplan nutzt fünf Materialwahlen, neun Einheiten und keine alte Grundmaterialauswahl.');
+  console.log('Schmiedeauswahl-Browserregression: 1H-Schwert-Bauplan nutzt sechs Materialwahlen, acht Einheiten und eine eigenständige Parierstange.');
 } finally {
   if (child) await stopBrowser(child);
   rmSync(browserProfile, { recursive: true, force: true });
