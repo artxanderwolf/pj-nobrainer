@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { CONFIG, calculateCharacterStats, type WeaponStats } from '../game/game-core';
+import { characterStatLevelMultiplier } from '../game/character-progression-core';
 import {
   energyCostPerCharacter,
   updateEnergyState,
@@ -23,6 +24,9 @@ declare global {
 interface RuntimeEnergyCharacter extends EnergyCharacterLike {
   id: number;
   classId?: string | null;
+  level?: number | null;
+  hp: number;
+  maxHp: number;
   equipment?: {
     leftHand?: number | null;
     rightHand?: number | null;
@@ -55,9 +59,15 @@ export class GameEnergyService {
       const weapons = equippedIds
         .map(id => state.weaponInventory.find(weapon => Number(weapon.id) === Number(id)))
         .filter((weapon): weapon is RuntimeEnergyWeapon => Boolean(weapon));
-      const effective = calculateCharacterStats(character.classId, weapons);
+      const effective = calculateCharacterStats(
+        character.classId,
+        weapons,
+        characterStatLevelMultiplier(character.level)
+      );
       effectiveByCharacter.set(character.id, effective);
+      character.maxHp = effective.maxHp;
       character.maxEnergy = effective.maxEnergy;
+      if (character.hp > effective.maxHp) character.hp = effective.maxHp;
       if (character.energy > effective.maxEnergy) character.energy = effective.maxEnergy;
     }
 
