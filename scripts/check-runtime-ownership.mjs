@@ -23,7 +23,7 @@ const closeBootstrapIndex = appComponent.indexOf('this.gameRuntime.closeBootstra
 assert.ok(openBootstrapIndex >= 0, 'Der temporäre Runtime-Bootstrap wird nicht geöffnet.');
 assert.ok(installScriptIndex > openBootstrapIndex, 'Das Runtime-Script wird vor dem Angular-Bootstrap installiert.');
 assert.ok(closeBootstrapIndex > installScriptIndex, 'Der temporäre Runtime-Bootstrap wird nach der Script-Installation nicht wieder geschlossen.');
-assert.match(appComponent, /const APP_VERSION = '0\.12\.82';/, 'Die App-Version wurde nicht auf v0.12.82 gesetzt.');
+assert.match(appComponent, /const APP_VERSION = '0\.12\.83';/, 'Die App-Version wurde nicht auf v0.12.83 gesetzt.');
 
 assert.match(runtimeService, /private runtime: GameRuntimeApi \| null = null;/, 'Die Runtime-Instanz liegt nicht im Angular-Service.');
 assert.match(runtimeService, /window\.NoBrainerRuntimeBootstrap = \{/, 'Der temporäre Runtime-Bootstrap wird nicht durch Angular bereitgestellt.');
