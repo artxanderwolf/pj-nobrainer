@@ -9,9 +9,12 @@ const equipmentAdapter = readFileSync('src/app/core/legacy-equipment-adapter.ser
 const weaponPresentationAdapter = readFileSync('src/app/core/legacy-weapon-presentation-adapter.service.ts', 'utf8');
 
 assert.match(equipmentService, /constructor\(private readonly gameState: GameStateService\)/);
-assert.match(equipmentService, /return equipWeapon\(this\.characters\(\), Number\(weaponId\), hand, Number\(characterId\)\);/);
+assert.match(equipmentService, /weaponInventory: RuntimeEquipmentWeapon\[\];/);
+assert.match(equipmentService, /getWeaponHandCount\(weapon\?\.weaponForm\)/);
+assert.match(equipmentService, /return equipWeapon\([\s\S]*this\.characters\(\),[\s\S]*Number\(weaponId\),[\s\S]*hand,[\s\S]*Number\(characterId\),[\s\S]*id => this\.weaponHandCount\(id\)[\s\S]*\);/);
 assert.match(equipmentService, /return unequipHand\(this\.characters\(\), Number\(characterId\), hand\);/);
 assert.match(equipmentService, /getWeaponPickerPresentation\(weaponId: number, characterId: number, hand: string\)/);
+assert.match(equipmentService, /id => this\.weaponHandCount\(id\)/);
 assert.match(equipmentService, /window\.NoBrainerEquipmentCompatibility = \{/);
 assert.match(equipmentService, /delete window\.NoBrainerEquipmentCompatibility;/);
 
@@ -34,4 +37,4 @@ assert.ok(bridgeOpen >= 0 && stateBootstrap > bridgeOpen, 'Equipment-Bridge muss
 assert.match(appComponent, /ngOnDestroy\(\): void \{[\s\S]*this\.gameEquipment\.closeLegacyCompatibilityBridge\(\);/);
 assert.match(appComponent, /const APP_VERSION = '0\.12\.84';/);
 
-console.log('Equipment-Eigentümerschaft: Ausrüsten und Ablegen laufen über den Angular-Service; Kader und Waffenlager greifen für ihre Equipment-Präsentation direkt auf ihn zu.');
+console.log('Equipment-Eigentümerschaft: 1H-/2H-Auflösung, Ausrüsten und Ablegen laufen über Angular; Kader und Waffenlager greifen direkt auf den Service zu.');
