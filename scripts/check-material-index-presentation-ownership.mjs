@@ -30,6 +30,6 @@ const stateBootstrap = app.indexOf('this.gameState.openBootstrapRegistration();'
 assert.ok(bridgeOpen >= 0 && stateBootstrap > bridgeOpen, 'Materialindex-Präsentationsbrücke muss vor dem State-/Legacy-Bootstrap geöffnet werden.');
 assert.match(app, /private readonly gameMaterialIndexPresentation: GameMaterialIndexPresentationService/);
 assert.match(app, /ngOnDestroy\(\): void \{[\s\S]*this\.gameMaterialIndexPresentation\.closeLegacyCompatibilityBridge\(\);/);
-assert.match(app, /const APP_VERSION = '0\.12\.83';/);
+assert.match(app, /const APP_VERSION = '0\.12\.84';/);
 
 console.log('Materialindex-Präsentations-Eigentümerschaft: Materialwerte, Verstärkungseffekt und Dungeon-Dropchance werden direkt durch Angular aus den gemeinsamen Definitionen gerendert; Legacy delegiert nur noch den Renderaufruf.');
