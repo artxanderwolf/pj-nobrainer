@@ -155,7 +155,7 @@ export class GameForgePreviewPresentationService {
         select.appendChild(option);
       }
 
-      select.value = previous && [...select.options].some(option => option.value === previous) ? previous : '';
+      select.value = previous && Array.from(select.options).some(option => option.value === previous) ? previous : '';
     }
   }
 
