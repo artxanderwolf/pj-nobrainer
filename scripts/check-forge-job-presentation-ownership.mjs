@@ -42,6 +42,6 @@ const stateBootstrap = app.indexOf('this.gameState.openBootstrapRegistration();'
 assert.ok(bridgeOpen >= 0 && stateBootstrap > bridgeOpen, 'Schmiedeauftrags-Präsentationsbrücke muss vor dem State-/Legacy-Bootstrap geöffnet werden.');
 assert.match(app, /private readonly gameForgeJobPresentation: GameForgeJobPresentationService/);
 assert.match(app, /ngOnDestroy\(\): void \{[\s\S]*this\.gameForgeJobPresentation\.closeLegacyCompatibilityBridge\(\);/);
-assert.match(app, /const APP_VERSION = '0\.12\.81';/);
+assert.match(app, /const APP_VERSION = '0\.12\.82';/);
 
 console.log('Schmiedeauftrags-Präsentations-Eigentümerschaft: aktive Aufträge und Warteschlange werden direkt durch Angular aus dem Angular-State gerendert; Legacy besitzt nur noch einen dünnen renderForgeJob-Wrapper.');
