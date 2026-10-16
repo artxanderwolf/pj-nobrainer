@@ -13,14 +13,14 @@ const extractLegacyPage = pageId => {
 const normalizeMarkup = markup => markup.replace(/\r\n/g, '\n').split('\n').map(line => line.trim()).filter(Boolean).join('\n');
 
 assert.deepEqual([...ANGULAR_OWNED_PAGE_IDS], ['base', 'tavern', 'roster', 'storage', 'forge', 'market', 'dungeon', 'index'], 'Alle acht sichtbaren Seiten müssen Angular-eigenes Seitenmarkup besitzen.');
-for (const pageId of ANGULAR_OWNED_PAGE_IDS.filter(pageId => pageId !== 'forge')) {
+for (const pageId of ['base', 'storage', 'market', 'dungeon']) {
   assert.equal(normalizeMarkup(getAngularOwnedPageMarkup(pageId)), normalizeMarkup(extractLegacyPage(pageId)), `Das Angular-Markup für ${pageId} weicht unerwartet von der bisherigen Referenzdarstellung ab.`);
 }
 
 const requiredAnchors = {
   roster: ['rosterCard'],
   storage: ['inventoryRows', 'inventoryEmpty', 'weaponInventory', 'weaponInventoryEmpty'],
-  forge: ['forgeWeaponName', 'weaponForm', 'slotWorkingPart', 'slotBack', 'slotGripCore', 'slotGripWrap', 'slotSpecial', 'forgeParryInfo', 'forgeMaterialTotalPreview', 'forgeStartBtn', 'forgeUpgradeCard', 'forgeJobCard', 'forgeQueueCard'],
+  forge: ['forgeWeaponName', 'weaponForm', 'slotWorkingPart', 'slotBack', 'slotGripCore', 'slotGripWrap', 'slotSpecial', 'slotParry', 'forgeParryInfo', 'forgeMaterialTotalPreview', 'forgeStartBtn', 'forgeUpgradeCard', 'forgeJobCard', 'forgeQueueCard'],
   market: ['marketUpgradeCard', 'marketJobCard', 'marketQueueCard', 'marketMaterials', 'marketMaterialsEmpty', 'marketWeapons', 'marketWeaponsEmpty'],
   dungeon: ['enemyHp', 'enemyArmor', 'enemyDamage', 'energyCost', 'runDuration', 'dungeonRunCard', 'autoDungeonBtn', 'collectLootBtn', 'teamCard', 'dungeonLoot', 'dungeonLootEmpty', 'combatLog'],
   index: ['materialIndexRows']
@@ -35,11 +35,17 @@ for (const obsolete of ['slotBaseMaterial', 'slotBlade', 'slotGripShape', 'slotG
   assert.doesNotMatch(forgeMarkup, new RegExp(`id="${obsolete}"`), `Alter Schmiede-Renderanker ${obsolete} darf nicht mehr verwendet werden.`);
 }
 assert.match(forgeMarkup, /Die Waffenform ist ein Bauplan/);
-assert.match(forgeMarkup, /Materialmenge bestimmt die Herstellungskosten/);
-assert.match(forgeMarkup, /id="forgeParryInfo"/, 'Der dynamische Hinweis für die optionale Parierstange fehlt.');
+assert.match(forgeMarkup, /Materialmenge bestimmt ausschließlich den Verbrauch/);
+assert.match(forgeMarkup, /id="forgeParryRow"/, 'Die optionale Parierstangenzeile fehlt.');
+assert.match(forgeMarkup, /id="slotParry"/, 'Die eigenständige Parierstangen-Materialwahl fehlt.');
 
 const indexMarkup = getAngularOwnedPageMarkup('index') ?? '';
-for (const heading of ['Waffenslots & Funktion', 'Klassen', 'Aktuelle Schadensberechnungen', 'Gebäude-Upgrades', 'Versionshinweise']) assert.ok(indexMarkup.includes(`<h2>${heading}</h2>`), `Index-Abschnitt ${heading} fehlt.`);
+for (const heading of ['Materialindex – gemeinsames Stat-System', 'Bauteile & Materialwirkung', 'Waffenbaupläne', 'Waffen-Grundwerte & Formboni', 'Klassen-Grundwerte', 'Kampfberechnung', 'Stat-Legende & Displayposition', 'Seltenheit, Herstellung & aktueller Umfang']) {
+  assert.ok(indexMarkup.includes(`<h2>${heading}</h2>`), `Index-Abschnitt ${heading} fehlt.`);
+}
+assert.match(indexMarkup, /Bedrohung = ausschließlich Klassenbasis/);
+assert.match(indexMarkup, /1H Schwert/);
+assert.match(indexMarkup, /Parierstange/);
 
 const composed = composePageMarkup(APP_SHELL_PAGE_IDS);
 for (const pageId of APP_SHELL_PAGE_IDS) assert.equal((composed.match(new RegExp(`id="${pageId}"`, 'g')) ?? []).length, 1, `Seite ${pageId} ist im zusammengesetzten Markup nicht genau einmal vorhanden.`);
@@ -49,4 +55,4 @@ assert.match(appComponent, /composeAppShell\(pageMarkup\)/, 'Das Angular-eigene 
 assert.doesNotMatch(appComponent, /adaptLegacyWeaponMarkup/, 'Angular-eigenes Seitenmarkup darf nicht mehr durch den Legacy-Waffen-Markupadapter verändert werden.');
 assert.match(appComponent, /const APP_VERSION = '0\.12\.84';/, 'Die App-Version wurde nicht auf v0.12.84 gesetzt.');
 
-console.log('Seiten-Markup: Die Schmiede verwendet den neuen Angular-Bauplan; alle übrigen Seiten bleiben zur Legacy-Referenz darstellungsidentisch.');
+console.log('Seiten-Markup: Schmiede, Kaderhinweis und Index bilden das gemeinsame Stat-/Bauplansystem ab; übrige Fachseiten bleiben referenzgleich.');
