@@ -152,7 +152,8 @@ assert.equal(reinforcementEffectText('Fichte'), 'Kein Spezialeffekt');
 assert.equal(reinforcementEffectText('Tanne'), '+15 % GES');
 assert.equal(reinforcementEffectText('Hasen-Leder'), '+5 % P');
 
-const recruit = calculateCharacterStats('recruit', [{ stats: sword }]);
+const swordWeapon = { id: 77, stats: sword };
+const recruit = calculateCharacterStats('recruit', [swordWeapon]);
 closeTo(recruit.strengthFactor, 1.10);
 closeTo(recruit.precision, 1.05);
 closeTo(recruit.armor, 6);
@@ -161,6 +162,10 @@ closeTo(recruit.threat, 50);
 closeTo(recruit.critChance, 0.07);
 closeTo(recruit.critDamage, 1.60);
 closeTo(recruit.penetration, 0.10);
+const sameTwoHandedWeaponTwice = calculateCharacterStats('recruit', [swordWeapon, swordWeapon]);
+assert.deepEqual(sameTwoHandedWeaponTwice, recruit, 'Eine 2H-Waffe in beiden Handplätzen darf ihre Charakterboni nur einmal beitragen.');
+const clonedSameId = calculateCharacterStats('recruit', [swordWeapon, { id: 77, stats: sword }]);
+assert.deepEqual(clonedSameId, recruit, 'Auch dieselbe Waffen-ID aus zwei Zustandsreferenzen darf nur einmal beitragen.');
 assert.equal(CHARACTER_CLASSES.fighter.threat, 100);
 assert.equal(CHARACTER_CLASSES.archer.threat, 33);
 assert.equal(CHARACTER_CLASSES.scholar.threat, 25);
@@ -171,4 +176,4 @@ closeTo(armored.penetration, 0.10);
 closeTo(armored.effectiveArmor, 90);
 assert.ok(armored.afterArmor > 0 && armored.afterArmor < armored.raw);
 
-console.log('Game-Core: sieben Waffenformen, Sehne, Materialwerte, Charakterboni, Handmetadaten und Kampfübergabe sind konsistent.');
+console.log('Game-Core: sieben Waffenformen, Sehne, Materialwerte, 2H-Statdeduplizierung, Handmetadaten und Kampfübergabe sind konsistent.');
