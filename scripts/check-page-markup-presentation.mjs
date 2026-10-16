@@ -13,14 +13,14 @@ const extractLegacyPage = pageId => {
 const normalizeMarkup = markup => markup.replace(/\r\n/g, '\n').split('\n').map(line => line.trim()).filter(Boolean).join('\n');
 
 assert.deepEqual([...ANGULAR_OWNED_PAGE_IDS], ['base', 'tavern', 'roster', 'storage', 'forge', 'market', 'dungeon', 'index'], 'Alle acht sichtbaren Seiten müssen Angular-eigenes Seitenmarkup besitzen.');
-for (const pageId of ANGULAR_OWNED_PAGE_IDS) {
-  assert.equal(normalizeMarkup(getAngularOwnedPageMarkup(pageId)), normalizeMarkup(extractLegacyPage(pageId)), `Das Angular-Markup für ${pageId} weicht von der bisherigen Referenzdarstellung ab.`);
+for (const pageId of ANGULAR_OWNED_PAGE_IDS.filter(pageId => pageId !== 'forge')) {
+  assert.equal(normalizeMarkup(getAngularOwnedPageMarkup(pageId)), normalizeMarkup(extractLegacyPage(pageId)), `Das Angular-Markup für ${pageId} weicht unerwartet von der bisherigen Referenzdarstellung ab.`);
 }
 
 const requiredAnchors = {
   roster: ['rosterCard'],
   storage: ['inventoryRows', 'inventoryEmpty', 'weaponInventory', 'weaponInventoryEmpty'],
-  forge: ['forgeWeaponName', 'weaponType', 'slotWeaponType', 'slotReinforcementMaterial', 'forgeStartBtn', 'forgeUpgradeCard', 'forgeJobCard', 'forgeQueueCard'],
+  forge: ['forgeWeaponName', 'weaponForm', 'slotWorkingPart', 'slotBack', 'slotGripCore', 'slotGripWrap', 'slotSpecial', 'forgeParryInfo', 'forgeMaterialTotalPreview', 'forgeStartBtn', 'forgeUpgradeCard', 'forgeJobCard', 'forgeQueueCard'],
   market: ['marketUpgradeCard', 'marketJobCard', 'marketQueueCard', 'marketMaterials', 'marketMaterialsEmpty', 'marketWeapons', 'marketWeaponsEmpty'],
   dungeon: ['enemyHp', 'enemyArmor', 'enemyDamage', 'energyCost', 'runDuration', 'dungeonRunCard', 'autoDungeonBtn', 'collectLootBtn', 'teamCard', 'dungeonLoot', 'dungeonLootEmpty', 'combatLog'],
   index: ['materialIndexRows']
@@ -29,6 +29,15 @@ for (const [pageId, ids] of Object.entries(requiredAnchors)) {
   const markup = getAngularOwnedPageMarkup(pageId) ?? '';
   for (const id of ids) assert.match(markup, new RegExp(`id="${id}"`), `Renderanker ${id} fehlt auf ${pageId}.`);
 }
+
+const forgeMarkup = getAngularOwnedPageMarkup('forge') ?? '';
+for (const obsolete of ['slotBaseMaterial', 'slotBlade', 'slotGripShape', 'slotGripMaterial', 'slotReinforcementMaterial']) {
+  assert.doesNotMatch(forgeMarkup, new RegExp(`id="${obsolete}"`), `Alter Schmiede-Renderanker ${obsolete} darf nicht mehr verwendet werden.`);
+}
+assert.match(forgeMarkup, /Die Waffenform ist ein Bauplan/);
+assert.match(forgeMarkup, /Materialmenge bestimmt die Herstellungskosten/);
+assert.match(forgeMarkup, /Parier/);
+
 const indexMarkup = getAngularOwnedPageMarkup('index') ?? '';
 for (const heading of ['Waffenslots & Funktion', 'Klassen', 'Aktuelle Schadensberechnungen', 'Gebäude-Upgrades', 'Versionshinweise']) assert.ok(indexMarkup.includes(`<h2>${heading}</h2>`), `Index-Abschnitt ${heading} fehlt.`);
 
@@ -36,7 +45,8 @@ const composed = composePageMarkup(APP_SHELL_PAGE_IDS);
 for (const pageId of APP_SHELL_PAGE_IDS) assert.equal((composed.match(new RegExp(`id="${pageId}"`, 'g')) ?? []).length, 1, `Seite ${pageId} ist im zusammengesetzten Markup nicht genau einmal vorhanden.`);
 assert.throws(() => composePageMarkup(['unknown-page']), /Unbekannte Angular-Seite: unknown-page/, 'Der Seiten-Composer soll unbekannte Seiten nicht stillschweigend akzeptieren.');
 assert.match(appComponent, /composePageMarkup\(APP_SHELL_PAGE_IDS\)/, 'Der App-Component verwendet nicht ausschließlich Angular-eigenes Seitenmarkup.');
-assert.doesNotMatch(appComponent, /main > section#|DOMParser|querySelector<HTMLScriptElement>/, 'Der App-Component verwendet weiterhin eine Legacy-Markupquelle.');
 assert.match(appComponent, /composeAppShell\(pageMarkup\)/, 'Das Angular-eigene Seitenmarkup wird nicht in die Angular-Shell eingesetzt.');
-assert.match(appComponent, /const APP_VERSION = '0\.12\.83';/, 'Die App-Version wurde nicht auf v0.12.83 gesetzt.');
-console.log('Seiten-Markup: Alle acht sichtbaren Seiten liegen vollständig in Angular; die Legacy-HTML bleibt nur Referenz für Darstellungsparität.');
+assert.doesNotMatch(appComponent, /adaptLegacyWeaponMarkup/, 'Angular-eigenes Seitenmarkup darf nicht mehr durch den Legacy-Waffen-Markupadapter verändert werden.');
+assert.match(appComponent, /const APP_VERSION = '0\.12\.84';/, 'Die App-Version wurde nicht auf v0.12.84 gesetzt.');
+
+console.log('Seiten-Markup: Die Schmiede verwendet den neuen Angular-Bauplan; alle übrigen Seiten bleiben zur Legacy-Referenz darstellungsidentisch.');
