@@ -38,13 +38,22 @@ const LEGACY_MIGRATE_WEAPON_AFTER_RENAME = `function migrateWeaponToCurrentRules
   };
 }`;
 
-const CURRENT_MIGRATE_WEAPON = `function migrateWeaponToCurrentRules(w){
+const CURRENT_MIGRATE_WEAPON = `function normalizeWeaponBlueprintSlots(slots,weaponForm){
+  const normalized=normalizeWeaponSlots(slots),active=window.NoBrainerGameCore.getWeaponCraftingSlots(weaponForm);
+  return active.map(slot=>{
+    let material=normalized.find(entry=>entry.slot===slot)?.material||null;
+    if(!material&&slot==="parry")material=normalized.find(entry=>entry.slot==="back")?.material||null;
+    return {slot,material};
+  });
+}
+
+function migrateWeaponToCurrentRules(w){
   if(!w || w.starter || w.id===0)return cloneStarterWeapon();
   const cleanWeapon={...w};
   const weaponForm=cleanWeapon.weaponForm||cleanWeapon["${LEGACY_WEAPON_FORM_KEY}"]||"sword";
   delete cleanWeapon["${LEGACY_WEAPON_FORM_KEY}"];
-  const slots=normalizeWeaponSlots(cleanWeapon.slots);
-  if(slots.length!==6)return {...cleanWeapon,weaponForm,slots};
+  const slots=normalizeWeaponBlueprintSlots(cleanWeapon.slots,weaponForm);
+  if(!window.NoBrainerGameCore.isWeaponSelectionComplete(slots,weaponForm))return {...cleanWeapon,weaponForm,slots};
   const stats=calculateWeaponStats(slots,weaponForm);
   const factor=rarityFactor(slots);
   const form=CONFIG.forge.weaponForms[weaponForm]||CONFIG.forge.weaponForms.sword;
@@ -76,8 +85,8 @@ const CURRENT_MIGRATE_FORGE_JOB = `function migrateForgeJobToCurrentRules(j){
   const cleanJob={...j};
   const weaponForm=cleanJob.weaponForm||cleanJob["${LEGACY_WEAPON_FORM_KEY}"]||"sword";
   delete cleanJob["${LEGACY_WEAPON_FORM_KEY}"];
-  const slots=normalizeWeaponSlots(cleanJob.slots);
-  if(slots.length!==6)return {...cleanJob,weaponForm,slots};
+  const slots=normalizeWeaponBlueprintSlots(cleanJob.slots,weaponForm);
+  if(!window.NoBrainerGameCore.isWeaponSelectionComplete(slots,weaponForm))return {...cleanJob,weaponForm,slots};
   const stats=calculateWeaponStats(slots,weaponForm);
   const factor=rarityFactor(slots);
   const form=CONFIG.forge.weaponForms[weaponForm]||CONFIG.forge.weaponForms.sword;
@@ -93,49 +102,27 @@ function migrateMarketJobToCurrentRules(job){
 }`;
 
 const CURRENT_FIND_WEAKEST_STARTER = `function findWeakestStarterSlots(){
-  const namesFor=categories=>Object.entries(MATERIALS)
-    .filter(([,m])=>categories.includes(m.category))
-    .map(([name])=>name);
-
-  const baseMaterials=namesFor(["Holz","Metall"]);
-  const bladeMaterials=namesFor(["Metall"]);
-  const backMaterials=bladeMaterials;
-  const gripShapeMaterials=namesFor(["Holz"]);
-  const gripMaterials=namesFor(["Leder"]);
-  const reinforcementMaterials=Object.keys(MATERIALS);
-
+  const weaponForm="sword",form=CONFIG.forge.weaponForms[weaponForm],slotIds=window.NoBrainerGameCore.getWeaponCraftingSlots(weaponForm);
+  const materialOptions=slotIds.map(slot=>{
+    const part=form.parts.find(entry=>entry.materialSlot===slot),categories=part?.categories||[];
+    return Object.entries(MATERIALS).filter(([,material])=>categories.includes(material.category)).map(([name])=>name);
+  });
   let weakest=null;
-
-  for(const baseMaterial of baseMaterials)
-  for(const blade of bladeMaterials)
-  for(const back of backMaterials)
-  for(const gripShape of gripShapeMaterials)
-  for(const gripMaterial of gripMaterials)
-  for(const reinforcementMaterial of reinforcementMaterials){
-    const slots=[
-      {slot:"baseMaterial",material:baseMaterial},
-      {slot:"blade",material:blade},
-      {slot:"back",material:back},
-      {slot:"gripShape",material:gripShape},
-      {slot:"gripMaterial",material:gripMaterial},
-      {slot:"reinforcementMaterial",material:reinforcementMaterial}
-    ];
-    const stats=calculateWeaponStats(slots,"sword");
-    const score=[stats.expectedRaw,stats.penetration,stats.damagePerHit,stats.attackSpeed,stats.hitChance];
-
-    if(!weakest){
-      weakest={slots,stats,score};
-      continue;
+  function visit(index,slots){
+    if(index<slotIds.length){
+      materialOptions[index].forEach(material=>visit(index+1,[...slots,{slot:slotIds[index],material}]));
+      return;
     }
-
-    let better=false;
+    const stats=calculateWeaponStats(slots,weaponForm),m=stats.characterModifiers||{};
+    const score=[stats.expectedRaw,stats.penetration,m.armor||0,m.dodge||0,m.strengthFactor||0,m.precision||0,m.critChance||0,m.critDamage||0];
+    if(!weakest){weakest={slots,stats,score};return;}
     for(let i=0;i<score.length;i++){
       if(Math.abs(score[i]-weakest.score[i])<1e-9)continue;
-      better=score[i]<weakest.score[i];
-      break;
+      if(score[i]<weakest.score[i])weakest={slots,stats,score};
+      return;
     }
-    if(better)weakest={slots,stats,score};
   }
+  visit(0,[]);
   return weakest;
 }`;
 
@@ -143,21 +130,19 @@ const CURRENT_GET_FORGE_SELECTION = `function getForgeSelection(){
   return {
     weaponForm:document.getElementById("weaponForm")?.value||"dagger",
     slots:[
-      {slot:"baseMaterial",material:document.getElementById("slotBaseMaterial")?.value},
-      {slot:"blade",material:document.getElementById("slotBlade")?.value},
+      {slot:"workingPart",material:document.getElementById("slotWorkingPart")?.value},
       {slot:"back",material:document.getElementById("slotBack")?.value},
-      {slot:"gripShape",material:document.getElementById("slotGripShape")?.value},
-      {slot:"gripMaterial",material:document.getElementById("slotGripMaterial")?.value},
-      {slot:"reinforcementMaterial",material:document.getElementById("slotReinforcementMaterial")?.value}
+      {slot:"gripCore",material:document.getElementById("slotGripCore")?.value},
+      {slot:"gripWrap",material:document.getElementById("slotGripWrap")?.value},
+      {slot:"special",material:document.getElementById("slotSpecial")?.value},
+      {slot:"parry",material:document.getElementById("slotParry")?.value}
     ]
   };
 }`;
 
 const CURRENT_FORGE_PREVIEW = `function forgePreview(){
-  const x=getForgeSelection(),
-        form=CONFIG.forge.weaponForms[x.weaponForm];
-
-  const complete=x.slots.every(s=>s.material);
+  const x=getForgeSelection(),form=CONFIG.forge.weaponForms[x.weaponForm];
+  const complete=window.NoBrainerGameCore.isWeaponSelectionComplete(x.slots,x.weaponForm);
   if(!complete){
     return {
       ...x,
@@ -165,27 +150,17 @@ const CURRENT_FORGE_PREVIEW = `function forgePreview(){
       factor:1,
       valueNickel:100,
       seconds:Math.round(CONFIG.forge.baseSeconds*form.timeFactor),
-      stats:{baseDamage:0,baseSpeed:0,bladeMultiplier:1,gripMultiplier:1,reinforcementSpeedFactor:1,reinforcementHitChanceAdd:0,reinforcementPenetrationAdd:0,hitChance:0,penetration:0,damagePerHit:0,attackSpeed:0,expectedRaw:0}
+      stats:window.NoBrainerForgeCompatibility?.preview?.(x.weaponForm,x.slots)?.stats||{damagePerHit:0,attackSpeed:0,hitChance:0,penetration:0,expectedRaw:0}
     };
   }
-
-  const factor=rarityFactor(x.slots),
-        stats=calculateWeaponStats(x.slots,x.weaponForm);
-
-  return {
-    ...x,
-    form,
-    factor,
-    valueNickel:Math.round(100*factor),
-    seconds:Math.round(CONFIG.forge.baseSeconds*form.timeFactor*factor),
-    stats
-  };
+  const factor=rarityFactor(x.slots),stats=calculateWeaponStats(x.slots,x.weaponForm);
+  return {...x,form,factor,valueNickel:Math.round(100*factor),seconds:Math.round(CONFIG.forge.baseSeconds*form.timeFactor*factor),stats};
 }`;
 
 const CURRENT_START_FORGE_JOB = `function startForgeJob(){
   if(state.forgeJobs.length+state.forgeQueue.length>=state.upgrades.forgeSlots+state.upgrades.forgeQueue){alert("Alle Herstellungs- und Warteschlangenplätze sind belegt.");return;}
-  const preview=forgePreview();if(!preview.slots.every(x=>x.material)){alert("Bitte für alle sechs Slots ein Material auswählen.");return;}
-  const required=requirements(preview.slots),invalid=Object.entries(required).find(([name,qty])=>(state.inventory[name]?.qty||0)<qty);
+  const preview=forgePreview();if(!window.NoBrainerGameCore.isWeaponSelectionComplete(preview.slots,preview.weaponForm)){alert("Bitte für alle benötigten Bauteile ein Material auswählen.");return;}
+  const required=requirements(preview.weaponForm,preview.slots),invalid=Object.entries(required).find(([name,qty])=>(state.inventory[name]?.qty||0)<qty);
   if(invalid){const [name,qty]=invalid;alert(\`Nicht genügend \${name} vorhanden. Benötigt: \${qty}, Lager: \${state.inventory[name]?.qty||0}.\`);return;}
   Object.entries(required).forEach(([name,qty])=>{state.inventory[name].qty-=qty;if(state.inventory[name].qty<=0)delete state.inventory[name];});
   const finalName=(document.getElementById("forgeWeaponName")?.value||"").trim()||preview.form.name;
@@ -266,7 +241,7 @@ export function adaptLegacyWeaponScript(source: string): string {
   adapted = replaceOnce(
     adapted,
     'function weaponCardHtml(w,o={}){const s=w.stats||{},c=o.compare?.stats||null,type=CONFIG.forge.weaponForms[w.weaponForm]?.name||(w.starter?"Einhänder":"Waffe"),',
-    'function weaponCardHtml(w,o={}){const s=w.stats||{},c=o.compare?.stats||null,formName=CONFIG.forge.weaponForms[w.weaponForm]?.name||(w.starter?"Einhänder":"Waffe"),',
+    'function weaponCardHtml(w,o={}){const s=w.stats||{},c=o.compare?.stats||null,formName=CONFIG.forge.weaponForms[w.weaponForm]?.name||(w.starter?"1H Schwert":"Waffe"),',
     'Waffenkarten-Formname'
   );
   adapted = replaceOnce(adapted, '<div class="weapon-card-sub">${type} · ', '<div class="weapon-card-sub">${formName} · ', 'Waffenkarten-Anzeige');
