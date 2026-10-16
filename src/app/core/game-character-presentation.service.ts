@@ -1,7 +1,9 @@
 import { Injectable } from '@angular/core';
 import {
   CHARACTER_CLASSES,
-  weaponDamageAfterArmor
+  calculateCharacterStats,
+  weaponDamageAfterArmor,
+  type ResolvedCharacterStats
 } from '../game/game-core';
 import { type CharacterState } from '../game/character-core';
 import {
@@ -54,10 +56,12 @@ export class GameCharacterPresentationService {
 
   private renderCharacterCard(character: CharacterState): string {
     const characterClass = CHARACTER_CLASSES[character.classId] ?? CHARACTER_CLASSES.recruit;
+    const effectiveStats = this.effectiveStats(character);
     const presentation = getCharacterCardPresentation(
       character,
       characterClass,
-      this.effectiveOffense(character),
+      effectiveStats,
+      this.effectiveOffense(character, effectiveStats),
       this.openWeaponPickerHand
     );
     const stats = presentation.stats
@@ -68,7 +72,7 @@ export class GameCharacterPresentationService {
       .join('');
 
     return `<div class="roster-character"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><strong>${presentation.name}</strong><span class="tag fixed">${presentation.classTag}</span></div>
-      <div class="statrow">${stats}</div>${hands}</div>`;
+      <div class="statrow" style="grid-template-columns:repeat(2,minmax(0,1fr))">${stats}</div>${hands}</div>`;
   }
 
   private renderHand(character: CharacterState, handPresentation: CharacterHandPresentation): string {
@@ -95,14 +99,23 @@ export class GameCharacterPresentationService {
     return `<div class="weapon-picker"><div class="weapon-picker-title">Klammerwerte = Änderung zur aktuell ausgerüsteten Waffe.</div><div class="weapon-card-actions"><button class="btn" data-roster-action="clear-hand" data-character-id="${character.id}" data-hand="${handPresentation.hand}">Hand leeren</button></div><div class="weapon-card-list">${cards}</div></div>`;
   }
 
-  private effectiveOffense(character: CharacterState): number {
-    const weapons = [character.equipment.leftHand, character.equipment.rightHand]
+  private effectiveStats(character: CharacterState): ResolvedCharacterStats {
+    return calculateCharacterStats(character.classId, this.getEquippedWeapons(character));
+  }
+
+  private effectiveOffense(character: CharacterState, stats: ResolvedCharacterStats): number {
+    const weapons = this.getEquippedWeapons(character);
+    if (weapons.length) {
+      return weapons.reduce((sum, weapon) => sum + weaponDamageAfterArmor(weapon, 0, stats).raw, 0);
+    }
+    const fistRaw = 1 * stats.strengthFactor * 1 * Math.min(1, 0.5 * stats.precision);
+    return fistRaw * (1 + stats.critChance * (stats.critDamage - 1));
+  }
+
+  private getEquippedWeapons(character: CharacterState): RuntimeWeaponPresentation[] {
+    return [character.equipment.leftHand, character.equipment.rightHand]
       .map(weaponId => this.getWeaponById(weaponId))
       .filter((weapon): weapon is RuntimeWeaponPresentation => Boolean(weapon));
-    if (weapons.length) {
-      return weapons.reduce((sum, weapon) => sum + weaponDamageAfterArmor(weapon, 0, character).raw, 0);
-    }
-    return character.strengthFactor * 0.5 * character.precision;
   }
 
   private getWeaponById(weaponId: number | null): RuntimeWeaponPresentation | null {
