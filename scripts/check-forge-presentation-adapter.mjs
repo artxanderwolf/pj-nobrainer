@@ -30,28 +30,38 @@ function replaceRangeOnce(input, startMarker, endMarker, replacement) {
 }
 
 let source = match[1];
+source = replaceRangeOnce(source, 'function getMaterialsForCategories(', 'function getForgeSelection(){', '');
 source = replaceRangeOnce(source, 'function renderForgePreview(){', 'function recruitCost(', previewReplacement);
 source = replaceRangeOnce(source, 'function renderForgeJob(){', 'function getWeaponEquipLocation(', jobsReplacement);
-new vm.Script(source, { filename: 'NoBrainer_GitHub_v0.12.79.forge-presentation.js' });
+new vm.Script(source, { filename: 'NoBrainer_GitHub_v0.12.80.forge-presentation.js' });
 
-assert.ok(source.includes('window.NoBrainerForgePresentationCore.getForgePreviewPresentation'));
+assert.ok(source.includes('window.NoBrainerForgePreviewPresentationCompatibility'));
 assert.ok(source.includes('window.NoBrainerForgeJobPresentationCompatibility'));
 assert.equal(source.split('function renderForgePreview(){').length - 1, 1);
 assert.equal(source.split('function renderForgeJob(){').length - 1, 1);
+assert.equal(source.includes('function populateForgeSelects(){'), false, 'Alte Forge-Select-Präsentation bleibt im adaptierten Runtime-Code erhalten.');
+assert.equal(source.includes('function getMaterialsForCategories(categories){'), false, 'Alter Forge-Materialfilter bleibt im adaptierten Runtime-Code erhalten.');
+assert.ok(source.includes('function getForgeSelection(){'), 'Legacy-Auswahllesefunktion für startForgeJob wurde versehentlich entfernt.');
 assert.ok(source.includes('function recruitCost(){'));
 assert.ok(source.includes('function getWeaponEquipLocation(weaponId){'));
+assert.doesNotMatch(previewReplacement, /NoBrainerForgePresentationCore|getForgePreviewPresentation|populateForgeSelects|forgePreview\(\)|state\.forgeJobs|state\.forgeQueue|innerHTML/, 'Legacy-renderForgePreview enthält weiterhin Präsentations- oder State-Logik.');
 assert.doesNotMatch(jobsReplacement, /state\.forgeJobs|state\.forgeQueue|getActiveForgeJobPresentation|getQueuedForgeJobPresentation|innerHTML|renderUpgradeCards/, 'Legacy-renderForgeJob enthält weiterhin Präsentationslogik.');
 
-let bridgeCalls = 0;
+let previewBridgeCalls = 0;
+let jobBridgeCalls = 0;
 const context = {
   window: {
+    NoBrainerForgePreviewPresentationCompatibility: {
+      render() { previewBridgeCalls += 1; }
+    },
     NoBrainerForgeJobPresentationCompatibility: {
-      render() { bridgeCalls += 1; }
+      render() { jobBridgeCalls += 1; }
     }
   }
 };
 vm.createContext(context);
-new vm.Script(`${jobsReplacement}\nrenderForgeJob();`).runInContext(context);
-assert.equal(bridgeCalls, 1, 'Legacy-renderForgeJob delegiert nicht genau einmal an Angular.');
+new vm.Script(`${previewReplacement}\n${jobsReplacement}\nrenderForgePreview();\nrenderForgeJob();`).runInContext(context);
+assert.equal(previewBridgeCalls, 1, 'Legacy-renderForgePreview delegiert nicht genau einmal an Angular.');
+assert.equal(jobBridgeCalls, 1, 'Legacy-renderForgeJob delegiert nicht genau einmal an Angular.');
 
-console.log('Forge-Presentation-Adapter: Schmiedevorschau bleibt am bestehenden Presentation-Core; renderForgeJob ist nur noch eine dünne Angular-Brücke und die Legacy-Anker bleiben stabil.');
+console.log('Forge-Presentation-Adapter: Schmiedevorschau und Aufträge delegieren nur noch an Angular; alte Materialauswahl-Präsentation ist aus dem laufenden Legacy-Code entfernt und die Startpfad-Auswahllesefunktion bleibt erhalten.');

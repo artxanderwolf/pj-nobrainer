@@ -47,5 +47,5 @@ assert.ok(openStateIndex >= 0 && openRuntimeIndex > openStateIndex, 'Der State-B
 assert.ok(installIndex > openRuntimeIndex, 'Das Runtime-Script wird vor den Angular-Bootstraps installiert.');
 assert.ok(assertStateIndex > installIndex, 'Die State-Initialisierung wird nach der Script-Installation nicht verifiziert.');
 assert.ok(closeRuntimeIndex > assertStateIndex && closeStateIndex > closeRuntimeIndex, 'Die temporären Bootstraps werden nicht in sicherer Reihenfolge geschlossen.');
-assert.match(appComponent, /const APP_VERSION = '0\.12\.79';/, 'Die App-Version wurde nicht auf v0.12.79 gesetzt.');
+assert.match(appComponent, /const APP_VERSION = '0\.12\.80';/, 'Die App-Version wurde nicht auf v0.12.80 gesetzt.');
 console.log('State-Eigentümerschaft: Angular besitzt die stabile Root-State-Referenz; Fachservices können denselben Container typisiert verwenden, Laden und Reset ersetzen nur dessen Inhalt.');

@@ -8,6 +8,7 @@ import { GameDungeonService, type DungeonActionResult } from './game-dungeon.ser
 import { GameDungeonPresentationService } from './game-dungeon-presentation.service';
 import { GameEnergyService } from './game-energy.service';
 import { GameForgeJobPresentationService } from './game-forge-job-presentation.service';
+import { GameForgePreviewPresentationService } from './game-forge-preview-presentation.service';
 import { GameForgeService } from './game-forge.service';
 import { GameMarketService } from './game-market.service';
 import { GameResourcePresentationService } from './game-resource-presentation.service';
@@ -23,7 +24,6 @@ export interface GameRuntimeApi {
   configureSaveStorage(adapter: GameSaveStorageAdapter): void;
   prepare(): void;
   renderMarketJob(): void;
-  renderForgePreview(): void;
   renderMarketMaterials(): void;
   renderMarketWeapons(): void;
   renderInventoryState(): void;
@@ -57,6 +57,7 @@ export class GameRuntimeService {
     private readonly weaponInventoryPresentation: GameWeaponInventoryPresentationService,
     private readonly resourcePresentation: GameResourcePresentationService,
     private readonly forgeJobPresentation: GameForgeJobPresentationService,
+    private readonly forgePreviewPresentation: GameForgePreviewPresentationService,
     private readonly combatLog: GameCombatLogService,
     private readonly gameEnergy: GameEnergyService,
     private readonly gameForge: GameForgeService,
@@ -124,6 +125,7 @@ export class GameRuntimeService {
   renderInitial(): void {
     this.getRuntime().renderInitial();
     this.resourcePresentation.render();
+    this.forgePreviewPresentation.render();
     this.forgeJobPresentation.render();
     this.characterPresentation.render();
     this.weaponInventoryPresentation.render();
@@ -147,7 +149,6 @@ export class GameRuntimeService {
       'configureSaveStorage',
       'prepare',
       'renderMarketJob',
-      'renderForgePreview',
       'renderMarketMaterials',
       'renderMarketWeapons',
       'renderInventoryState',
@@ -190,7 +191,7 @@ export class GameRuntimeService {
     this.dungeonPresentation.render();
 
     if (forgeCompleted) {
-      runtime.renderForgePreview();
+      this.forgePreviewPresentation.render();
       this.weaponInventoryPresentation.render();
     }
 
@@ -226,6 +227,7 @@ export class GameRuntimeService {
     }
     if (inventoryChanged) {
       this.resourcePresentation.render();
+      this.forgePreviewPresentation.render();
       runtime.renderInventoryState();
     }
     if (result.saveRequested || inventoryChanged) runtime.save(false);
