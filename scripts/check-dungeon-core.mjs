@@ -61,6 +61,13 @@ try {
   assert.equal(points[1].nextAt, 3000);
   assert.equal(points[0].nextAt, 3750);
 
+  const twoHandedPoints = createDungeonAttackPoints([character], [], 1000, () => [
+    { kind: 'weapon', weaponId: 77, speed: 0.8, label: '2H Schwert' },
+    { kind: 'weapon', weaponId: 77, speed: 0.8, label: '2H Schwert' }
+  ]);
+  assert.equal(twoHandedPoints.length, 1, 'Dieselbe 2H-Waffe darf trotz Belegung beider Handplätze nur einen Angriffspunkt erzeugen.');
+  assert.equal(twoHandedPoints[0].weaponId, 77);
+
   const staleTimeline = [
     { side: 'enemy', ownerId: 'e1', kind: 'enemy', nextAt: 1000 },
     { side: 'enemy', ownerId: 'e2', kind: 'enemy', nextAt: 1100 },
@@ -81,7 +88,7 @@ try {
   assert.equal(character.hp, 30);
   assert.equal(character.alive, true);
 
-  console.log('Dungeon-Core: Suche, Energie, Gegner, Timeline, aktive Kampfteilnehmer, Phasen und Niederlagen-Reset sind konsistent.');
+  console.log('Dungeon-Core: Suche, Energie, Gegner, 2H-Angriffspunkte, Timeline, Phasen und Niederlagen-Reset sind konsistent.');
 } finally {
   unlinkSync(temporaryUrl);
 }
