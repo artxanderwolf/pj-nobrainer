@@ -8,7 +8,8 @@ const FORGE_SELECTION = `function getForgeSelection(){
       {slot:"back",material:document.getElementById("slotBack")?.value},
       {slot:"gripCore",material:document.getElementById("slotGripCore")?.value},
       {slot:"gripWrap",material:document.getElementById("slotGripWrap")?.value},
-      {slot:"special",material:document.getElementById("slotSpecial")?.value}
+      {slot:"special",material:document.getElementById("slotSpecial")?.value},
+      {slot:"parry",material:document.getElementById("slotParry")?.value}
     ]
   };
 }`;
