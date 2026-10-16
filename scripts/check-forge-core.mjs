@@ -17,42 +17,33 @@ try {
     advanceForgeJobs
   } = await import(`${temporaryUrl.href}?check=${Date.now()}`);
 
-  const slots = [
+  const daggerSlots = [
     { slot: 'workingPart', material: 'Zinn' },
     { slot: 'back', material: 'Zinn' },
     { slot: 'gripCore', material: 'Fichte' },
     { slot: 'gripWrap', material: 'Lederfetzen' },
     { slot: 'special', material: 'Fichte' }
   ];
+  const swordSlots = [...daggerSlots, { slot: 'parry', material: 'Fichte' }];
 
   assert.deepEqual(getForgeSelectionQuantities('dagger'), { workingPart: 1, back: 1, gripCore: 1, gripWrap: 1, special: 1 });
-  assert.deepEqual(getForgeSelectionQuantities('sword'), { workingPart: 3, back: 2, gripCore: 2, gripWrap: 1, special: 1 });
-  assert.deepEqual(forgeRequirements(slots, 'dagger'), { Zinn: 2, Fichte: 2, Lederfetzen: 1 }, 'Dolch muss genau fünf Materialeinheiten benötigen.');
-  assert.deepEqual(forgeRequirements(slots, 'sword'), { Zinn: 5, Fichte: 3, Lederfetzen: 1 }, 'Einhänder muss genau neun Materialeinheiten benötigen.');
+  assert.deepEqual(getForgeSelectionQuantities('sword'), { workingPart: 2, back: 2, gripCore: 1, gripWrap: 1, special: 1, parry: 1 });
+  assert.deepEqual(forgeRequirements(daggerSlots, 'dagger'), { Zinn: 2, Fichte: 2, Lederfetzen: 1 }, 'Dolch muss genau fünf Materialeinheiten benötigen.');
+  assert.deepEqual(forgeRequirements(swordSlots, 'sword'), { Zinn: 4, Fichte: 3, Lederfetzen: 1 }, '1H Schwert muss genau acht Materialeinheiten benötigen.');
 
-  const inventory = { Zinn: { category: 'Metall', qty: 5 }, Fichte: { category: 'Holz', qty: 4 }, Lederfetzen: { category: 'Leder', qty: 1 } };
-  const swordRequirements = forgeRequirements(slots, 'sword');
+  const inventory = { Zinn: { category: 'Metall', qty: 4 }, Fichte: { category: 'Holz', qty: 3 }, Lederfetzen: { category: 'Leder', qty: 1 } };
+  const swordRequirements = forgeRequirements(swordSlots, 'sword');
   assert.equal(hasForgeMaterials(inventory, swordRequirements), true);
   assert.equal(reserveForgeMaterials(inventory, swordRequirements), true);
   assert.equal(inventory.Zinn, undefined);
-  assert.equal(inventory.Fichte.qty, 1);
+  assert.equal(inventory.Fichte, undefined);
   assert.equal(inventory.Lederfetzen, undefined);
 
-  const legacySlots = [
-    { slot: 'baseMaterial', material: 'Aluminium' },
-    { slot: 'blade', material: 'Zinn' },
-    { slot: 'back', material: 'Zinn' },
-    { slot: 'gripShape', material: 'Fichte' },
-    { slot: 'gripMaterial', material: 'Lederfetzen' },
-    { slot: 'reinforcementMaterial', material: 'Fichte' }
-  ];
-  assert.deepEqual(forgeRequirements(legacySlots, 'sword'), swordRequirements, 'Altes Grundmaterial darf keinen Materialbedarf mehr erzeugen.');
-
-  const job = createForgeJob('sword', '', legacySlots);
-  assert.equal(job.weaponName, 'Einhänder');
+  const job = createForgeJob('sword', '', swordSlots);
+  assert.equal(job.weaponName, '1H Schwert');
   assert.equal(job.totalSeconds, 30);
   assert.equal(job.valueNickel, 100);
-  assert.deepEqual(job.slots.map(slot => slot.slot), ['workingPart', 'back', 'gripCore', 'gripWrap', 'special'], 'Neue Waffen speichern nur die fünf semantischen Materialauswahlen.');
+  assert.deepEqual(job.slots.map(slot => slot.slot), ['workingPart', 'back', 'gripCore', 'gripWrap', 'special', 'parry'], 'Neue 1H-Schwerter speichern sechs eigenständige Bauteilauswahlen.');
   assert.equal(job.slots.some(slot => slot.slot === 'baseMaterial'), false);
 
   const state = { forgeJobs: [], forgeQueue: [] };
@@ -69,7 +60,7 @@ try {
   assert.equal(state.forgeJobs.length, 0);
   assert.equal(state.forgeQueue.length, 0);
 
-  console.log('Forge-Core: Blueprint-Materialmengen, Reservierung, Aufträge, Queue und Offline-Catch-up sind konsistent.');
+  console.log('Forge-Core: 5-/8-Einheiten-Baupläne, eigenständige Parierstange, Reservierung, Queue und Offline-Catch-up sind konsistent.');
 } finally {
   unlinkSync(temporaryUrl);
 }
