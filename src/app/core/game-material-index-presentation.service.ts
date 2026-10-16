@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import {
-  DUNGEON_LOOT_TABLES,
   MATERIALS,
+  getDungeonMaterialDropWeight,
   reinforcementEffectText
 } from '../game/game-core';
 import { getMaterialIndexRowPresentation } from '../game/material-presentation-core';
@@ -14,12 +14,6 @@ declare global {
   interface Window {
     NoBrainerMaterialIndexPresentationCompatibility?: MaterialIndexPresentationCompatibilityBridge;
   }
-}
-
-interface DungeonLootTableLike {
-  categories: Array<{
-    items: Array<{ name: string; chance: number }>;
-  }>;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -36,7 +30,7 @@ export class GameMaterialIndexPresentationService {
         name,
         material,
         reinforcementEffectText(name),
-        this.getDungeonMaterialChance(1, name)
+        getDungeonMaterialDropWeight(1, name)
       );
       const row = document.createElement('tr');
       row.innerHTML = `<td>${presentation.category}</td><td><strong>${presentation.name}</strong></td><td class="rarity">${presentation.rarityText}</td><td>${presentation.hpText}</td><td>${presentation.energyText}</td><td>${presentation.armorText}</td><td>${presentation.dodgeText}</td><td>${presentation.strengthFactorText}</td><td>${presentation.precisionText}</td><td>${presentation.threatText}</td><td>${presentation.critChanceText}</td><td>${presentation.critDamageText}</td><td>${presentation.hpRegenText}</td><td>${presentation.energyRegenText}</td><td>${presentation.experienceText}</td><td>${presentation.lifeStealText}</td><td>${presentation.penetrationText}</td><td>${presentation.specialStatText}</td><td>${presentation.specialPercentText}</td><td>${presentation.dungeonChanceText}</td>`;
@@ -54,17 +48,6 @@ export class GameMaterialIndexPresentationService {
 
   closeLegacyCompatibilityBridge(): void {
     delete window.NoBrainerMaterialIndexPresentationCompatibility;
-  }
-
-  private getDungeonMaterialChance(dungeonId: number, name: string): number | null {
-    const tables = DUNGEON_LOOT_TABLES as Record<number, DungeonLootTableLike | undefined>;
-    const table = tables[dungeonId];
-    if (!table) return null;
-    for (const category of table.categories) {
-      const item = category.items.find(entry => entry.name === name);
-      if (item) return item.chance;
-    }
-    return null;
   }
 
   private applyMobileLabels(body: HTMLTableSectionElement, row: HTMLTableRowElement): void {
