@@ -2,7 +2,7 @@ export interface CombatTargetLike {
   hp: number;
   alive: boolean;
   armor?: number | null;
-  distance?: number | null;
+  threat?: number | null;
   dodge?: number | null;
 }
 
@@ -15,35 +15,45 @@ export interface WeightedTargetEntry<TTarget extends CombatTargetLike> {
   weight: number;
 }
 
+export interface AttackResolutionOptions {
+  armor?: number | null;
+  dodge?: number | null;
+  critChance?: number | null;
+  critDamage?: number | null;
+  critRoll?: number | null;
+}
+
 export type AttackResolution =
   | { outcome: 'miss' }
   | { outcome: 'dodge' }
-  | { outcome: 'hit'; dealt: number };
+  | { outcome: 'hit'; dealt: number; critical: boolean };
 
-export function targetWeight(distance: number | null | undefined, fallbackDistance = 2): number {
-  const resolved = Number.isFinite(Number(distance)) ? Number(distance) : fallbackDistance;
-  return 1 / Math.max(0.01, resolved);
+export function targetWeight(threat: number | null | undefined, fallbackThreat = 50): number {
+  const resolved = Number.isFinite(Number(threat)) ? Number(threat) : fallbackThreat;
+  return Math.max(0.01, resolved);
 }
 
 export function buildWeightedTargets<TTarget extends CombatTargetLike>(
   targets: readonly TTarget[],
-  getFallbackDistance: (target: TTarget) => number = () => 2
+  getFallbackThreat: (target: TTarget) => number = () => 50
 ): WeightedTargetEntry<TTarget>[] {
   return targets
     .filter(target => target.alive && target.hp > 0)
     .map(target => ({
       target,
-      weight: targetWeight(target.distance, getFallbackDistance(target))
+      weight: targetWeight(target.threat, getFallbackThreat(target))
     }));
 }
 
 export function applyAttackDamage<TTarget extends CombatTargetLike>(
   target: TTarget,
   damage: number,
-  penetration: number
+  penetration: number,
+  armorOverride?: number | null
 ): number {
   const clampedPenetration = Math.max(0, Math.min(1, Number(penetration) || 0));
-  const effectiveArmor = Math.max(0, (Number(target.armor) || 0) * (1 - clampedPenetration));
+  const armor = armorOverride === null || armorOverride === undefined ? target.armor : armorOverride;
+  const effectiveArmor = Math.max(0, (Number(armor) || 0) * (1 - clampedPenetration));
   const dealt = Math.max(0, (Number(damage) || 0) - effectiveArmor);
   target.hp = Math.max(0, target.hp - dealt);
   target.alive = target.hp > 0;
@@ -56,15 +66,26 @@ export function resolveAttack<TTarget extends CombatTargetLike>(
   hitChance: number,
   penetration: number,
   hitRoll: number,
-  dodgeRoll: number
+  dodgeRoll: number,
+  options: AttackResolutionOptions = {}
 ): AttackResolution {
   const clampedHitChance = Math.max(0, Math.min(1, Number(hitChance) || 0));
   if (hitRoll >= clampedHitChance) return { outcome: 'miss' };
 
-  const clampedDodge = Math.max(0, Math.min(1, Number(target.dodge) || 0));
+  const dodge = options.dodge === null || options.dodge === undefined ? target.dodge : options.dodge;
+  const clampedDodge = Math.max(0, Math.min(1, Number(dodge) || 0));
   if (dodgeRoll < clampedDodge) return { outcome: 'dodge' };
 
-  return { outcome: 'hit', dealt: applyAttackDamage(target, damage, penetration) };
+  const critChance = Math.max(0, Math.min(1, Number(options.critChance) || 0));
+  const critDamage = Math.max(1, Number(options.critDamage) || 1);
+  const critRoll = Number.isFinite(Number(options.critRoll)) ? Number(options.critRoll) : 1;
+  const critical = critRoll < critChance;
+  const resolvedDamage = (Number(damage) || 0) * (critical ? critDamage : 1);
+  return {
+    outcome: 'hit',
+    dealt: applyAttackDamage(target, resolvedDamage, penetration, options.armor),
+    critical
+  };
 }
 
 export function enforceGlobalActionCooldown<TPoint extends CombatActionPointLike>(
