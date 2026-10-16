@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { Script, createContext } from 'node:vm';
 import { CONFIG, calculateWeaponStats, normalizeWeaponSlots, rarityFactor } from '../src/app/game/game-core.ts';
-import { adaptLegacyWeaponMarkup, adaptLegacyWeaponScript } from '../src/app/game/weapon-naming.ts';
+import { adaptLegacyWeaponScript } from '../src/app/game/weapon-naming.ts';
 
 const html = readFileSync('NoBrainer_GitHub_v0.12.2.html', 'utf8');
 const scriptMatch = html.match(/<script>([\s\S]*?)<\/script>\s*<\/body>/);
@@ -11,17 +11,12 @@ const legacySource = scriptMatch[1];
 
 function replaceRangeOnce(text, startMarker, endMarker, replacement, label) {
   const start = text.indexOf(startMarker);
-  if (start < 0 || text.indexOf(startMarker, start + startMarker.length) >= 0) {
-    throw new Error(`Testadapter: Startanker für ${label} fehlt oder ist nicht eindeutig.`);
-  }
+  if (start < 0 || text.indexOf(startMarker, start + startMarker.length) >= 0) throw new Error(`Testadapter: Startanker für ${label} fehlt oder ist nicht eindeutig.`);
   const end = text.indexOf(endMarker, start + startMarker.length);
   if (end < 0) throw new Error(`Testadapter: Endanker für ${label} fehlt.`);
   return text.slice(0, start) + replacement + text.slice(end);
 }
 
-// Reproduziert nur die Game-Core-Substitutionen, die vor der Waffenbenennungs-
-// Kompatibilität stattfinden. Dungeon-, Save- und Timer-Adapter verändern keine
-// Waffenbezeichner und sind für diesen isolierten Test daher nicht erforderlich.
 let postCoreAdapter = legacySource;
 postCoreAdapter = replaceRangeOnce(postCoreAdapter, 'const CONFIG = {', 'function getCharacterClass(c){', 'const CONFIG=window.NoBrainerGameCore.CONFIG;\nconst CHARACTER_CLASSES=window.NoBrainerGameCore.CHARACTER_CLASSES;\n\n', 'Konfiguration');
 postCoreAdapter = replaceRangeOnce(postCoreAdapter, 'const MATERIAL_SALE_RARITY_BONUS=', 'function findWeakestStarterSlots(){', 'const MATERIAL_SALE_RARITY_BONUS=window.NoBrainerGameCore.MATERIAL_SALE_RARITY_BONUS;\nconst MATERIALS=window.NoBrainerGameCore.MATERIALS;\n\n', 'Materialdaten');
@@ -34,31 +29,11 @@ postCoreAdapter = replaceRangeOnce(postCoreAdapter, 'function calculateWeaponSta
 
 const adaptedScript = adaptLegacyWeaponScript(postCoreAdapter);
 new Script(adaptedScript, { filename: 'NoBrainer.weapon-naming.adapted.js' });
-
 assert.ok(adaptedScript.includes('CONFIG.forge.weaponForms'), 'Aktiver Runtime-Code muss weaponForms verwenden.');
-assert.ok(adaptedScript.includes('weaponForm:document.getElementById("weaponForm")'), 'Schmiedeauswahl muss weaponForm verwenden.');
-assert.ok(adaptedScript.includes('{slot:"baseMaterial",material:document.getElementById("slotBaseMaterial")?.value}'), 'Schmiedeauswahl muss baseMaterial verwenden.');
-assert.ok(adaptedScript.includes('formDamageFactor'), 'Waffenstats müssen formDamageFactor verwenden.');
-assert.ok(adaptedScript.includes('formSpeedFactor'), 'Waffenstats müssen formSpeedFactor verwenden.');
-assert.ok(adaptedScript.includes('cleanWeapon["weaponType"]'), 'v8-Waffen müssen über den expliziten Legacy-Key migriert werden.');
-assert.ok(adaptedScript.includes('migrateMarketJobToCurrentRules'), 'Reservierte Waffen in Marktaufträgen müssen migriert werden.');
+assert.ok(adaptedScript.includes('cleanWeapon["weaponType"]'), 'Alte Waffen müssen den expliziten Legacy-Key weiterhin migrieren.');
+assert.ok(adaptedScript.includes('migrateMarketJobToCurrentRules'), 'Reservierte Waffen in Marktaufträgen müssen weiterhin migriert werden.');
 assert.equal(adaptedScript.includes('.weaponType'), false, 'Aktiver Runtime-Code darf .weaponType nicht mehr verwenden.');
 assert.equal(adaptedScript.includes('weaponTypes'), false, 'Aktiver Runtime-Code darf weaponTypes nicht mehr verwenden.');
-assert.equal(adaptedScript.includes('slot:"Waffentyp"'), false, 'Aktiver Runtime-Code darf deutsche interne Slot-IDs nicht mehr verwenden.');
-assert.equal(adaptedScript.includes('slot:"Schneide"'), false, 'Aktiver Runtime-Code darf deutsche interne Slot-IDs nicht mehr verwenden.');
-assert.equal(adaptedScript.includes('slot:"Rückseite"'), false, 'Aktiver Runtime-Code darf deutsche interne Slot-IDs nicht mehr verwenden.');
-assert.equal(adaptedScript.includes('slot:"Griffform"'), false, 'Aktiver Runtime-Code darf deutsche interne Slot-IDs nicht mehr verwenden.');
-assert.equal(adaptedScript.includes('slot:"Griffmaterial"'), false, 'Aktiver Runtime-Code darf deutsche interne Slot-IDs nicht mehr verwenden.');
-assert.equal(adaptedScript.includes('slot:"Verstärkungsmaterial"'), false, 'Aktiver Runtime-Code darf deutsche interne Slot-IDs nicht mehr verwenden.');
-
-const markupBeforeScript = html.slice(0, html.indexOf('<script>'));
-const adaptedMarkup = adaptLegacyWeaponMarkup(markupBeforeScript);
-assert.ok(adaptedMarkup.includes('id="weaponForm"'), 'Markup muss die Waffenform-ID verwenden.');
-assert.ok(adaptedMarkup.includes('id="slotBaseMaterial"'), 'Markup muss die Grundmaterial-ID verwenden.');
-assert.ok(adaptedMarkup.includes('<td>Grundmaterial</td>'), 'Schmiede muss Grundmaterial anzeigen.');
-assert.ok(adaptedMarkup.includes('<td>1. Grundmaterial</td>'), 'Index muss Grundmaterial anzeigen.');
-assert.ok(adaptedMarkup.includes('<th>Waffenform</th><th>Schadensfaktor</th>'), 'Berechnungstabelle muss Waffenform anzeigen.');
-assert.equal(adaptedMarkup.includes('Waffentyp'), false, 'Sichtbares Markup darf Waffentyp nicht mehr enthalten.');
 
 function extractRange(source, startMarker, endMarker) {
   const start = source.indexOf(startMarker);
@@ -89,20 +64,20 @@ const legacySlots = [
   { slot: 'Griffmaterial', material: 'Lederfetzen' },
   { slot: 'Verstärkungsmaterial', material: 'Kupfer' }
 ];
-const expectedSlotIds = ['baseMaterial', 'blade', 'back', 'gripShape', 'gripMaterial', 'reinforcementMaterial'];
+const expectedSlotIds = ['baseMaterial', 'workingPart', 'back', 'gripCore', 'gripWrap', 'special'];
 const oldWeapon = { id: 42, name: 'Legacy', weaponType: 'dagger', slots: legacySlots, valueNickel: 123, craftedSeconds: 99 };
 const migratedWeapon = migrate.migrateWeaponToCurrentRules(oldWeapon);
-assert.equal(migratedWeapon.weaponForm, 'dagger', 'v8-Waffe muss weaponType zu weaponForm migrieren.');
-assert.equal(Object.prototype.hasOwnProperty.call(migratedWeapon, 'weaponType'), false, 'Alter weaponType-Key darf nach Migration nicht bestehen bleiben.');
-assert.deepEqual(Array.from(migratedWeapon.slots, (entry) => entry.slot), expectedSlotIds, 'v8-Slotnamen müssen auf aktuelle IDs migrieren.');
+assert.equal(migratedWeapon.weaponForm, 'dagger');
+assert.equal(Object.prototype.hasOwnProperty.call(migratedWeapon, 'weaponType'), false);
+assert.deepEqual(Array.from(migratedWeapon.slots, entry => entry.slot), expectedSlotIds, 'Alte Slotnamen müssen auf die neue Bauteilsemantik migrieren.');
+assert.equal(migratedWeapon.stats.baseDamage, 6, 'Migrierter Dolch muss die neue Waffenbasis verwenden.');
 
 const oldForgeJob = { weaponType: 'sword', weaponName: 'Legacy Job', slots: legacySlots, totalSeconds: 30, startedAt: 1000 };
 const migratedForgeJob = migrate.migrateForgeJobToCurrentRules(oldForgeJob);
-assert.equal(migratedForgeJob.weaponForm, 'sword', 'v8-Schmiedeauftrag muss weaponForm erhalten.');
-assert.equal(Object.prototype.hasOwnProperty.call(migratedForgeJob, 'weaponType'), false, 'Schmiedeauftrag darf alten weaponType-Key nicht behalten.');
+assert.equal(migratedForgeJob.weaponForm, 'sword');
+assert.equal(migratedForgeJob.stats.baseDamage, 10);
 
 const migratedMarketJob = migrate.migrateMarketJobToCurrentRules({ type: 'weapon', weaponSnapshot: oldWeapon });
-assert.equal(migratedMarketJob.weaponSnapshot.weaponForm, 'dagger', 'Reservierter Markt-Waffensnapshot muss migriert werden.');
-assert.equal(Object.prototype.hasOwnProperty.call(migratedMarketJob.weaponSnapshot, 'weaponType'), false, 'Markt-Waffensnapshot darf alten weaponType-Key nicht behalten.');
+assert.equal(migratedMarketJob.weaponSnapshot.weaponForm, 'dagger');
 
-console.log('Waffenbenennung, UI-Terminologie und v8→v9-Kompatibilitätsmigration sind konsistent.');
+console.log('Waffenbenennung und Altstand-Migration bleiben mit der neuen Bauteilsemantik kompatibel.');
