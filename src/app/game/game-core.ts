@@ -1,7 +1,7 @@
 export type CharacterClassId = 'recruit' | 'fighter' | 'archer' | 'scholar';
 export type MaterialCategory = 'Holz' | 'Metall' | 'Leder';
-export type WeaponSlotId = 'baseMaterial' | 'workingPart' | 'back' | 'gripCore' | 'gripWrap' | 'special' | 'parry';
-export type WeaponPartId = 'workingPart' | 'back' | 'gripCore' | 'gripWrap' | 'special' | 'parry';
+export type WeaponSlotId = 'baseMaterial' | 'workingPart' | 'back' | 'gripCore' | 'gripWrap' | 'special' | 'parry' | 'bowstring';
+export type WeaponPartId = 'workingPart' | 'back' | 'gripCore' | 'gripWrap' | 'special' | 'parry' | 'bowstring';
 export type WeaponCraftingSlotId = Exclude<WeaponSlotId, 'baseMaterial'>;
 export type SpecialEffectStat = 'GES' | 'P' | 'DS';
 
@@ -87,6 +87,8 @@ export interface WeaponPartRequirement {
 
 export interface WeaponFormDefinition {
   name: string;
+  /** Metadatum aus Bau_Logik: true = eine Hand, false = beide Hände. Kein Bauslot. */
+  oneHanded: boolean;
   timeFactor: number;
   baseDamage: number;
   baseSpeed: number;
@@ -135,6 +137,7 @@ export interface WeaponStats {
 }
 
 export interface WeaponLike {
+  weaponForm?: string | null;
   stats?: Partial<WeaponStats> | null;
 }
 
@@ -226,22 +229,47 @@ function addModifiers(target: CharacterStatModifiers, source: Partial<CharacterS
   });
 }
 
-const DAGGER_PARTS: readonly WeaponPartRequirement[] = [
-  { id: 'workingPart', label: 'Schneide', materialSlot: 'workingPart', categories: ['Metall'], quantity: 1, statKeys: ['strengthFactor'] },
-  { id: 'back', label: 'Kern', materialSlot: 'back', categories: ['Metall', 'Holz'], quantity: 1, statKeys: ['armor'] },
-  { id: 'gripCore', label: 'Griff', materialSlot: 'gripCore', categories: ['Holz'], quantity: 1, statKeys: ['precision'] },
-  { id: 'gripWrap', label: 'Wicklung', materialSlot: 'gripWrap', categories: ['Leder'], quantity: 1, statKeys: ['critChance'] },
-  { id: 'special', label: 'Spezial', materialSlot: 'special', categories: ['Metall', 'Holz', 'Leder'], quantity: 1, statKeys: [] }
+const WEAPON_PART_ORDER: readonly WeaponPartId[] = [
+  'workingPart',
+  'back',
+  'gripCore',
+  'gripWrap',
+  'special',
+  'parry',
+  'bowstring'
 ];
 
-const SWORD_PARTS: readonly WeaponPartRequirement[] = [
-  { id: 'workingPart', label: 'Schneide', materialSlot: 'workingPart', categories: ['Metall'], quantity: 2, statKeys: ['strengthFactor'] },
-  { id: 'back', label: 'Kern', materialSlot: 'back', categories: ['Metall', 'Holz'], quantity: 2, statKeys: ['armor'] },
-  { id: 'gripCore', label: 'Griff', materialSlot: 'gripCore', categories: ['Holz'], quantity: 1, statKeys: ['precision'] },
-  { id: 'gripWrap', label: 'Wicklung', materialSlot: 'gripWrap', categories: ['Leder'], quantity: 1, statKeys: ['critChance'] },
-  { id: 'special', label: 'Spezial', materialSlot: 'special', categories: ['Metall', 'Holz', 'Leder'], quantity: 1, statKeys: [] },
-  { id: 'parry', label: 'Parierstange', materialSlot: 'parry', categories: ['Metall', 'Holz'], quantity: 1, statKeys: ['armor', 'dodge'] }
-];
+const WEAPON_PART_TEMPLATES: Record<WeaponPartId, Omit<WeaponPartRequirement, 'quantity'>> = {
+  workingPart: {
+    id: 'workingPart', label: 'Schneide', materialSlot: 'workingPart', categories: ['Metall'], statKeys: ['strengthFactor']
+  },
+  back: {
+    id: 'back', label: 'Kern', materialSlot: 'back', categories: ['Metall', 'Holz'], statKeys: ['armor']
+  },
+  gripCore: {
+    id: 'gripCore', label: 'Griff', materialSlot: 'gripCore', categories: ['Holz'], statKeys: ['precision']
+  },
+  gripWrap: {
+    id: 'gripWrap', label: 'Wicklung', materialSlot: 'gripWrap', categories: ['Leder'], statKeys: ['critChance']
+  },
+  special: {
+    id: 'special', label: 'Spezial', materialSlot: 'special', categories: ['Metall', 'Holz', 'Leder'], statKeys: []
+  },
+  parry: {
+    id: 'parry', label: 'Parierstange', materialSlot: 'parry', categories: ['Metall', 'Holz'], statKeys: ['armor', 'dodge']
+  },
+  bowstring: {
+    id: 'bowstring', label: 'Sehne', materialSlot: 'bowstring', categories: ['Leder'], statKeys: ['strengthFactor', 'penetration']
+  }
+};
+
+type WeaponRecipe = Partial<Record<WeaponPartId, number>>;
+
+function buildWeaponParts(recipe: WeaponRecipe): readonly WeaponPartRequirement[] {
+  return WEAPON_PART_ORDER
+    .map(id => ({ ...WEAPON_PART_TEMPLATES[id], quantity: Math.max(0, Number(recipe[id]) || 0) }))
+    .filter(part => part.quantity > 0);
+}
 
 export const CONFIG = {
   dungeon: {
@@ -274,16 +302,53 @@ export const CONFIG = {
     baseSeconds: 30,
     weaponForms: {
       dagger: {
-        name: 'Dolch', timeFactor: 0.5,
+        name: 'Dolch', oneHanded: true, timeFactor: 0.5,
         baseDamage: 6, baseSpeed: 1.4, baseHitChance: 0.60, basePenetration: 0,
         characterModifiers: createStatModifiers({ dodge: 0.02, precision: 0.05, critChance: 0.03 }),
-        damageFactor: 1, speedFactor: 1, parts: DAGGER_PARTS
+        damageFactor: 1, speedFactor: 1,
+        parts: buildWeaponParts({ workingPart: 1, back: 1, gripCore: 1, gripWrap: 1, special: 1 })
       },
       sword: {
-        name: '1H Schwert', timeFactor: 1.0,
+        name: '1H Schwert', oneHanded: true, timeFactor: 1.0,
         baseDamage: 10, baseSpeed: 1.0, baseHitChance: 0.55, basePenetration: 0,
         characterModifiers: createStatModifiers({ armor: 1, strengthFactor: 0.05, critDamage: 0.10 }),
-        damageFactor: 1, speedFactor: 1, parts: SWORD_PARTS
+        damageFactor: 1, speedFactor: 1,
+        parts: buildWeaponParts({ workingPart: 2, back: 2, gripCore: 1, gripWrap: 1, special: 1, parry: 1 })
+      },
+      axe1h: {
+        name: '1H Axt', oneHanded: true, timeFactor: 1.0,
+        baseDamage: 12, baseSpeed: 0.85, baseHitChance: 0.52, basePenetration: 0,
+        characterModifiers: createStatModifiers({ strengthFactor: 0.08, critDamage: 0.15, penetration: 0.05 }),
+        damageFactor: 1, speedFactor: 1,
+        parts: buildWeaponParts({ workingPart: 1, back: 1, gripCore: 3, gripWrap: 2, special: 1 })
+      },
+      sword2h: {
+        name: '2H Schwert', oneHanded: false, timeFactor: 1.75,
+        baseDamage: 16, baseSpeed: 0.80, baseHitChance: 0.55, basePenetration: 0,
+        characterModifiers: createStatModifiers({ armor: 2, strengthFactor: 0.10, critDamage: 0.15 }),
+        damageFactor: 1, speedFactor: 1,
+        parts: buildWeaponParts({ workingPart: 4, back: 4, gripCore: 2, gripWrap: 1, special: 1, parry: 2 })
+      },
+      axe2h: {
+        name: '2H Axt', oneHanded: false, timeFactor: 1.75,
+        baseDamage: 20, baseSpeed: 0.70, baseHitChance: 0.50, basePenetration: 0,
+        characterModifiers: createStatModifiers({ strengthFactor: 0.15, precision: -0.05, critDamage: 0.25, penetration: 0.10 }),
+        damageFactor: 1, speedFactor: 1,
+        parts: buildWeaponParts({ workingPart: 2, back: 2, gripCore: 6, gripWrap: 3, special: 1 })
+      },
+      bow: {
+        name: 'Bogen', oneHanded: false, timeFactor: 2.0,
+        baseDamage: 11, baseSpeed: 0.90, baseHitChance: 0.65, basePenetration: 0,
+        characterModifiers: createStatModifiers({ dodge: 0.02, precision: 0.10, critChance: 0.08 }),
+        damageFactor: 1, speedFactor: 1,
+        parts: buildWeaponParts({ back: 1, gripCore: 5, gripWrap: 6, special: 1, bowstring: 3 })
+      },
+      staff: {
+        name: 'Stab', oneHanded: false, timeFactor: 1.10,
+        baseDamage: 10, baseSpeed: 1.00, baseHitChance: 0.60, basePenetration: 0,
+        characterModifiers: createStatModifiers({ energy: 10, strengthFactor: 0.05, precision: 0.10, critDamage: 0.15 }),
+        damageFactor: 1, speedFactor: 1,
+        parts: buildWeaponParts({ back: 1, gripCore: 5, gripWrap: 2, special: 1 })
       }
     } as Record<string, WeaponFormDefinition>
   }
@@ -361,9 +426,9 @@ export const MATERIALS: Record<string, MaterialDefinition> = {
   Zinn: material('Metall', 1, { hp: 6, armor: 1 }, null),
   Kupfer: material('Metall', 1, { hp: 8, armor: 2, strengthFactor: 0.05 }, { stat: 'DS', amount: 0.10 }),
   Aluminium: material('Metall', 2, { hp: 9, armor: 2, dodge: 0.02, strengthFactor: 0.10 }, { stat: 'GES', amount: 0.10 }),
-  'Hasen-Leder': material('Leder', 1, { hp: 1, critChance: 0.02 }, { stat: 'P', amount: 0.05 }),
-  'Fuchs-Leder': material('Leder', 2, { hp: 2, critChance: 0.04 }, { stat: 'P', amount: 0.10 }),
-  Lederfetzen: material('Leder', 1, { hp: 3, critChance: 0.01 }, null)
+  'Hasen-Leder': material('Leder', 1, { hp: 1, strengthFactor: 0.03, critChance: 0.02, penetration: 0.02 }, { stat: 'P', amount: 0.05 }),
+  'Fuchs-Leder': material('Leder', 2, { hp: 2, strengthFactor: 0.05, critChance: 0.04, penetration: 0.04 }, { stat: 'P', amount: 0.10 }),
+  Lederfetzen: material('Leder', 1, { hp: 3, strengthFactor: 0.01, critChance: 0.01, penetration: 0.01 }, null)
 };
 
 export const DUNGEON_LOOT_TABLES = {
@@ -411,7 +476,9 @@ const LEGACY_WEAPON_SLOT_IDS: Record<string, WeaponSlotId> = {
   reinforcementMaterial: 'special',
   special: 'special',
   Parierstange: 'parry',
-  parry: 'parry'
+  parry: 'parry',
+  Sehne: 'bowstring',
+  bowstring: 'bowstring'
 };
 
 export function normalizeWeaponSlots(slots: readonly WeaponSlot[] | null | undefined): WeaponSlot[] {
@@ -422,8 +489,12 @@ export function normalizeWeaponSlots(slots: readonly WeaponSlot[] | null | undef
   }));
 }
 
-export function getWeaponForm(weaponForm: string): WeaponFormDefinition {
-  return CONFIG.forge.weaponForms[weaponForm] ?? CONFIG.forge.weaponForms['sword'];
+export function getWeaponForm(weaponForm: string | null | undefined): WeaponFormDefinition {
+  return CONFIG.forge.weaponForms[weaponForm ?? ''] ?? CONFIG.forge.weaponForms['sword'];
+}
+
+export function getWeaponHandCount(weaponForm: string | null | undefined): 1 | 2 {
+  return getWeaponForm(weaponForm).oneHanded ? 1 : 2;
 }
 
 export function getWeaponCraftingSlots(weaponForm: string): WeaponCraftingSlotId[] {
@@ -618,6 +689,7 @@ export const GAME_CORE_BRIDGE = {
   createStatModifiers,
   normalizeWeaponSlots,
   getWeaponForm,
+  getWeaponHandCount,
   getWeaponCraftingSlots,
   getWeaponSelectionQuantity,
   isWeaponSelectionComplete,
