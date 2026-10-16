@@ -2,10 +2,11 @@ import { Injectable } from '@angular/core';
 import { formatCurrencyNickel } from '../game/economy-core';
 import {
   MATERIALS,
+  getWeaponForm,
   reinforcementEffectText,
   type MaterialCategory,
-  type WeaponSlot,
-  type WeaponSlotId
+  type WeaponCraftingSlotId,
+  type WeaponSlot
 } from '../game/game-core';
 import { getForgePreviewPresentation } from '../game/forge-presentation-core';
 import { GameForgeService } from './game-forge.service';
@@ -35,13 +36,12 @@ declare global {
   }
 }
 
-const FORGE_SLOT_BINDINGS: readonly { id: string; slot: WeaponSlotId }[] = [
-  { id: 'slotBaseMaterial', slot: 'baseMaterial' },
-  { id: 'slotBlade', slot: 'blade' },
+const FORGE_SLOT_BINDINGS: readonly { id: string; slot: WeaponCraftingSlotId }[] = [
+  { id: 'slotWorkingPart', slot: 'workingPart' },
   { id: 'slotBack', slot: 'back' },
-  { id: 'slotGripShape', slot: 'gripShape' },
-  { id: 'slotGripMaterial', slot: 'gripMaterial' },
-  { id: 'slotReinforcementMaterial', slot: 'reinforcementMaterial' }
+  { id: 'slotGripCore', slot: 'gripCore' },
+  { id: 'slotGripWrap', slot: 'gripWrap' },
+  { id: 'slotSpecial', slot: 'special' }
 ];
 
 @Injectable({ providedIn: 'root' })
@@ -55,12 +55,13 @@ export class GameForgePreviewPresentationService {
     const startButton = document.getElementById('forgeStartBtn') as HTMLButtonElement | null;
     if (!startButton) return;
 
-    this.populateForgeSelects();
-
     const weaponForm = (document.getElementById('weaponForm') as HTMLSelectElement | null)?.value || 'dagger';
-    const preview = this.gameForge.preview(weaponForm, this.getForgeSelection());
-    const complete = preview.slots.every(slot => slot.material);
-    const requirements = this.gameForge.requirements(preview.slots);
+    this.populateForgeSelects(weaponForm);
+
+    const slots = this.getForgeSelection();
+    const preview = this.gameForge.preview(weaponForm, slots);
+    const complete = this.gameForge.isComplete(weaponForm, preview.slots);
+    const requirements = this.gameForge.requirements(weaponForm, preview.slots);
     const state = this.state();
     const presentation = getForgePreviewPresentation(
       {
@@ -73,8 +74,7 @@ export class GameForgePreviewPresentationService {
         valueNickel: preview.valueNickel,
         factor: preview.factor,
         stats: preview.stats,
-        reinforcementMaterial:
-          preview.slots.find(slot => slot.slot === 'reinforcementMaterial')?.material || null
+        reinforcementMaterial: preview.slots.find(slot => slot.slot === 'special')?.material || null
       },
       formatCurrencyNickel,
       reinforcementEffectText
@@ -91,6 +91,8 @@ export class GameForgePreviewPresentationService {
     this.setText('forgePenPreview', presentation.penetrationText);
     this.setText('forgeRarityPreview', presentation.rarityText);
     this.setText('forgeReinforcementPreview', presentation.reinforcementText);
+    this.setText('forgeMaterialTotalPreview', `${Object.values(requirements).reduce((sum, qty) => sum + qty, 0)} Materialeinheiten`);
+    this.renderParryInfo(weaponForm);
     startButton.disabled = presentation.startDisabled;
     startButton.dataset['forgePreviewPresentationOwner'] = 'angular';
   }
@@ -106,31 +108,37 @@ export class GameForgePreviewPresentationService {
     delete window.NoBrainerForgePreviewPresentationCompatibility;
   }
 
-  private populateForgeSelects(): void {
+  private populateForgeSelects(weaponForm: string): void {
     const state = this.state();
-    const selects = FORGE_SLOT_BINDINGS
-      .map(binding => document.getElementById(binding.id) as HTMLSelectElement | null)
-      .filter((select): select is HTMLSelectElement => !!select);
-    const selections = new Map(selects.map(select => [select.id, select.value || '']));
+    const quantities = this.gameForge.selectionQuantities(weaponForm);
+    const form = getWeaponForm(weaponForm);
+    const categoriesBySlot = new Map<WeaponCraftingSlotId, readonly MaterialCategory[]>();
+    for (const part of form.parts) {
+      if (!categoriesBySlot.has(part.materialSlot)) categoriesBySlot.set(part.materialSlot, part.categories);
+    }
 
-    for (const select of selects) {
-      const categories = (select.dataset['categories'] || '')
-        .split(',')
-        .map(value => value.trim())
-        .filter((value): value is MaterialCategory => value === 'Holz' || value === 'Metall' || value === 'Leder');
-      const previous = selections.get(select.id) || '';
+    const bindings = FORGE_SLOT_BINDINGS.filter(binding => (quantities[binding.slot] ?? 0) > 0);
+    const selections = new Map(bindings.map(binding => [binding.id, (document.getElementById(binding.id) as HTMLSelectElement | null)?.value || '']));
+
+    for (const binding of bindings) {
+      const select = document.getElementById(binding.id) as HTMLSelectElement | null;
+      if (!select) continue;
+      const categories = categoriesBySlot.get(binding.slot) ?? [];
+      const previous = selections.get(binding.id) || '';
+      const needed = quantities[binding.slot] ?? 0;
       const reservedByOthers = new Map<string, number>();
 
-      for (const other of selects) {
-        if (other.id === select.id) continue;
+      for (const other of bindings) {
+        if (other.id === binding.id) continue;
         const material = selections.get(other.id) || '';
-        if (material) reservedByOthers.set(material, (reservedByOthers.get(material) || 0) + 1);
+        if (!material) continue;
+        reservedByOthers.set(material, (reservedByOthers.get(material) || 0) + (quantities[other.slot] ?? 0));
       }
 
       select.innerHTML = '';
       const placeholder = document.createElement('option');
       placeholder.value = '';
-      placeholder.textContent = 'Material auswählen';
+      placeholder.textContent = `Material auswählen · benötigt ${needed}`;
       placeholder.selected = !previous;
       select.appendChild(placeholder);
 
@@ -140,7 +148,7 @@ export class GameForgePreviewPresentationService {
         .filter(([name]) => {
           const stock = Number(state.inventory[name]?.qty) || 0;
           const reserved = reservedByOthers.get(name) || 0;
-          return stock - reserved > 0;
+          return stock - reserved >= needed;
         });
 
       for (const [name, material] of available) {
@@ -149,8 +157,8 @@ export class GameForgePreviewPresentationService {
         const remaining = stock - reserved;
         const option = document.createElement('option');
         option.value = name;
-        option.textContent = `${name} · S${material.rarity} · verfügbar ${remaining}${
-          select.id === 'slotReinforcementMaterial' ? ` · ${reinforcementEffectText(name)}` : ''
+        option.textContent = `${name} · S${material.rarity} · benötigt ${needed} · verfügbar ${remaining}${
+          binding.slot === 'special' ? ` · ${reinforcementEffectText(name)}` : ''
         }`;
         select.appendChild(option);
       }
@@ -164,6 +172,16 @@ export class GameForgePreviewPresentationService {
       slot: binding.slot,
       material: (document.getElementById(binding.id) as HTMLSelectElement | null)?.value || null
     }));
+  }
+
+  private renderParryInfo(weaponForm: string): void {
+    const parry = getWeaponForm(weaponForm).parts.find(part => part.id === 'parry');
+    this.setText(
+      'forgeParryInfo',
+      parry
+        ? `${parry.quantity}× Parierstange · verwendet das gewählte Rückenmaterial`
+        : 'Keine Parierstange bei dieser Waffenform'
+    );
   }
 
   private setText(id: string, value: string): void {
