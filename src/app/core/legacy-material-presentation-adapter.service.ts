@@ -1,39 +1,9 @@
 import { Injectable } from '@angular/core';
-import {
-  MATERIAL_PRESENTATION_CORE_BRIDGE,
-  type MaterialPresentationCoreBridge
-} from '../game/material-presentation-core';
-
-declare global {
-  interface Window {
-    NoBrainerMaterialPresentationCore?: MaterialPresentationCoreBridge;
-  }
-}
-
-const DISPLAY_VALUE_BRIDGE = `function displayVal(v,kind="number"){
-  return window.NoBrainerMaterialPresentationCore.formatMaterialValue(v,kind);
-}`;
 
 const MATERIAL_INDEX_BRIDGE = `function renderMaterialIndex(){
-  const body=document.getElementById("materialIndexRows");
-  if(!body)return;
-  body.innerHTML="";
-  Object.entries(MATERIALS).forEach(([name,m])=>{
-    const presentation=window.NoBrainerMaterialPresentationCore.getMaterialIndexRowPresentation(name,m,reinforcementEffectText(name),getDungeonMaterialChance(1,name));
-    const tr=document.createElement("tr");
-    tr.innerHTML="<td>"+presentation.category+"</td>"+
-      "<td><strong>"+presentation.name+"</strong></td>"+
-      "<td class='rarity'>"+presentation.rarityText+"</td>"+
-      "<td>"+presentation.baseDamageText+"</td>"+
-      "<td>"+presentation.baseSpeedText+"</td>"+
-      "<td>"+presentation.bladeText+"</td>"+
-      "<td>"+presentation.penetrationText+"</td>"+
-      "<td>"+presentation.gripSpeedText+"</td>"+
-      "<td>"+presentation.hitChanceText+"</td>"+
-      "<td>"+presentation.reinforcementText+"</td>"+
-      "<td>"+presentation.dungeonChanceText+"</td>";
-    body.appendChild(tr);
-  });
+  const presentation=window.NoBrainerMaterialIndexPresentationCompatibility;
+  if(!presentation||typeof presentation.render!=="function")throw new Error("NoBrainer-Materialindex-Präsentationsbrücke wurde nicht registriert.");
+  presentation.render();
 }`;
 
 const MATERIAL_STORAGE_BRIDGE = `function renderMaterialStorage(){
@@ -45,18 +15,9 @@ const MATERIAL_STORAGE_BRIDGE = `function renderMaterialStorage(){
 @Injectable({ providedIn: 'root' })
 export class LegacyMaterialPresentationAdapterService {
   adapt(source: string): string {
-    window.NoBrainerMaterialPresentationCore = MATERIAL_PRESENTATION_CORE_BRIDGE;
-
     let adapted = this.replaceRangeOnce(
       source,
       'function displayVal(',
-      'function renderMaterialIndex(',
-      DISPLAY_VALUE_BRIDGE,
-      'Materialwert-Formatierung'
-    );
-    adapted = this.replaceRangeOnce(
-      adapted,
-      'function renderMaterialIndex(',
       'function rarityFactorFromRarity(',
       MATERIAL_INDEX_BRIDGE,
       'Materialindex-Präsentation'
