@@ -14,16 +14,18 @@ assert.match(service, /this\.gameForge\.preview\(weaponForm, slots\)/, 'Angular-
 assert.match(service, /this\.gameForge\.requirements\(weaponForm, preview\.slots\)/, 'Angular-Schmiedevorschau verwendet nicht den Bauplan-Materialbedarf.');
 assert.match(service, /this\.gameForge\.selectionQuantities\(weaponForm\)/, 'Angular-Schmiedevorschau verwendet nicht die Bauplan-Materialmengen.');
 assert.match(service, /Object\.entries\(MATERIALS\)/, 'Angular-Schmiedevorschau baut die Materialauswahl nicht aus der gemeinsamen Materialdefinition.');
-assert.match(service, /reinforcementEffectText\(name\)/, 'Spezialeffekt fehlt in der Angular-Materialauswahl.');
+assert.match(service, /reinforcementEffectText\(name\)/, 'SPE-Text fehlt in der Angular-Materialauswahl.');
 for (const binding of [
-  "{ id: 'slotWorkingPart', slot: 'workingPart' }",
-  "{ id: 'slotBack', slot: 'back' }",
-  "{ id: 'slotGripCore', slot: 'gripCore' }",
-  "{ id: 'slotGripWrap', slot: 'gripWrap' }",
-  "{ id: 'slotSpecial', slot: 'special' }"
+  "{ id: 'slotWorkingPart', rowId: 'forgeWorkingPartRow', slot: 'workingPart' }",
+  "{ id: 'slotBack', rowId: 'forgeBackRow', slot: 'back' }",
+  "{ id: 'slotGripCore', rowId: 'forgeGripCoreRow', slot: 'gripCore' }",
+  "{ id: 'slotGripWrap', rowId: 'forgeGripWrapRow', slot: 'gripWrap' }",
+  "{ id: 'slotSpecial', rowId: 'forgeSpecialRow', slot: 'special' }",
+  "{ id: 'slotParry', rowId: 'forgeParryRow', slot: 'parry' }"
 ]) assert.ok(service.includes(binding), `Neue Schmiedebindung fehlt: ${binding}`);
 assert.match(service, /document\.getElementById\('weaponForm'\)/, 'Angular-Schmiedevorschau liest die aktuelle Waffenform-DOM-ID nicht.');
 assert.doesNotMatch(service, /slotBaseMaterial|slotBlade|slotGripShape|slotGripMaterial|slotReinforcementMaterial/, 'Angular-Schmiedevorschau verwendet weiterhin alte Schmiede-DOM-IDs.');
+assert.match(service, /row\.hidden = !active/, 'Optionale Bauplanzeilen werden nicht dynamisch ein-/ausgeblendet.');
 for (const id of [
   'forgeTimePreview', 'forgeValuePreview', 'forgeDamagePreview', 'forgeDamageBaseInfo',
   'forgeSpeedPreview', 'forgeSpeedBaseInfo', 'forgeHitPreview', 'forgeRawPreview',
@@ -51,4 +53,4 @@ assert.ok(bridgeOpen >= 0 && stateBootstrap > bridgeOpen, 'Schmiedevorschau-Prä
 assert.match(app, /private readonly gameForgePreviewPresentation: GameForgePreviewPresentationService/);
 assert.match(app, /const APP_VERSION = '0\.12\.84';/);
 
-console.log('Forge-Preview-Presentation: Angular rendert die fünf Bauplan-Materialwahlen, Mengen, Parierinfo und Vorschauwerte.');
+console.log('Forge-Preview-Presentation: Angular rendert fünf Dolch- bzw. sechs 1H-Schwert-Materialwahlen inklusive eigenständiger Parierstange und Bauplanmengen.');
