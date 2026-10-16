@@ -18,10 +18,10 @@ assert.ok(shell.includes(probePage), 'Seitenmarkup wird nicht in die Angular-She
 for (const pageId of APP_SHELL_PAGE_IDS) assert.match(shell, new RegExp(`data-page="${pageId}"`), `Navigationsziel ${pageId} fehlt in der Angular-Shell.`);
 assert.match(appComponent, /composePageMarkup\(APP_SHELL_PAGE_IDS\)/, 'Der App-Component bezieht die Seiten nicht mehr vollständig aus dem Angular-eigenen Seiten-Composer.');
 assert.match(appComponent, /composeAppShell\(pageMarkup\)/, 'Der App-Component baut die Oberfläche nicht mehr über die Angular-eigene Shell auf.');
-assert.doesNotMatch(appComponent, /adaptLegacyWeaponMarkup\(app\.outerHTML\)/, 'Der App-Component übernimmt weiterhin den kompletten Legacy-App-Rahmen.');
+assert.doesNotMatch(appComponent, /adaptLegacyWeaponMarkup/, 'Der App-Component darf Angular-eigenes Markup nicht mehr über den Legacy-Waffen-Markupadapter verändern.');
 assert.doesNotMatch(appComponent, /main > section#/, 'Der App-Component enthält weiterhin einen Legacy-Seiten-Fallback.');
 assert.doesNotMatch(appComponent, /DOMParser/, 'Der App-Component parst weiterhin die Legacy-HTML.');
 assert.doesNotMatch(appComponent, /querySelector<HTMLScriptElement>/, 'Der App-Component liest weiterhin ein Script aus der Legacy-HTML.');
 assert.match(appComponent, /const LEGACY_RUNTIME_PATH = 'legacy\/NoBrainer_GitHub_v0\.12\.2\.runtime\.js';/, 'Der App-Component verweist nicht auf das eigenständige Runtime-Asset.');
-assert.match(appComponent, /const APP_VERSION = '0\.12\.83';/, 'Die App-Version wurde nicht auf v0.12.83 gesetzt.');
+assert.match(appComponent, /const APP_VERSION = '0\.12\.84';/, 'Die App-Version wurde nicht auf v0.12.84 gesetzt.');
 console.log('App-Shell-Präsentation: Navigation, Topbar, Ressourcenrahmen und alle Seiten sind Angular-eigen; die Legacy-Runtime kommt als eigenständiges Asset.');
