@@ -1,9 +1,22 @@
 import { Injectable } from '@angular/core';
 
-const FORGE_REQUIREMENTS = `function requirements(slots){
+const FORGE_SELECTION = `function getForgeSelection(){
+  return {
+    weaponForm:document.getElementById("weaponForm")?.value||"dagger",
+    slots:[
+      {slot:"workingPart",material:document.getElementById("slotWorkingPart")?.value},
+      {slot:"back",material:document.getElementById("slotBack")?.value},
+      {slot:"gripCore",material:document.getElementById("slotGripCore")?.value},
+      {slot:"gripWrap",material:document.getElementById("slotGripWrap")?.value},
+      {slot:"special",material:document.getElementById("slotSpecial")?.value}
+    ]
+  };
+}`;
+
+const FORGE_REQUIREMENTS = `function requirements(weaponForm,slots){
   const forgeCompatibility=window.NoBrainerForgeCompatibility;
   if(!forgeCompatibility)throw new Error("NoBrainer-Schmiede-Kompatibilitätsbrücke wurde nicht registriert.");
-  return forgeCompatibility.requirements(slots);
+  return forgeCompatibility.requirements(weaponForm,slots);
 }
 
 function hasMaterials(required){
@@ -26,7 +39,7 @@ const FORGE_START = `function startForgeJob(){
   if(!forgeCompatibility)throw new Error("NoBrainer-Schmiede-Kompatibilitätsbrücke wurde nicht registriert.");
   const result=forgeCompatibility.start(preview.weaponForm,finalName,preview.slots,Date.now());
   if(result.status==="full"){alert("Alle Herstellungs- und Warteschlangenplätze sind belegt.");return;}
-  if(result.status==="incomplete"){alert("Bitte für alle sechs Slots ein Material auswählen.");return;}
+  if(result.status==="incomplete"){alert("Bitte für alle benötigten Bauteile ein Material auswählen.");return;}
   if(result.status==="missing-material"){alert(\`Nicht genügend \${result.material} vorhanden. Benötigt: \${result.required}, Lager: \${result.available}.\`);return;}
   addLog(result.status==="started"?\`Schmiedeauftrag gestartet: \${result.weaponName}.\`:\`Schmiedeauftrag eingereiht: \${result.weaponName}.\`,"good");
   const nameInput=document.getElementById("forgeWeaponName");if(nameInput)nameInput.value="";render();
@@ -35,7 +48,8 @@ const FORGE_START = `function startForgeJob(){
 @Injectable({ providedIn: 'root' })
 export class LegacyForgeAdapterService {
   adapt(source: string): string {
-    let adapted = this.replaceRange(source, 'function requirements(slots){', 'function formatCurrencyNickel(', FORGE_REQUIREMENTS + '\n\n', 'Materialbedarf');
+    let adapted = this.replaceRange(source, 'function getForgeSelection(){', 'function normalizeWeaponSlots(', FORGE_SELECTION + '\n\n', 'Schmiedeauswahl');
+    adapted = this.replaceRange(adapted, 'function requirements(', 'function formatCurrencyNickel(', FORGE_REQUIREMENTS + '\n\n', 'Materialbedarf');
     adapted = this.replaceRange(adapted, 'function forgePreview(){', 'function renderForgePreview(){', FORGE_PREVIEW + '\n\n', 'Schmiedevorschau');
     adapted = this.replaceRange(adapted, 'function startForgeQueuedJob(', 'function startForgeJob(){', '', 'Schmiede-Slots');
     adapted = this.replaceRange(adapted, 'function startForgeJob(){', 'function finishForgeJob(', FORGE_START + '\n', 'Schmiedeauftrag');
