@@ -1,6 +1,8 @@
 export type CharacterClassId = 'recruit' | 'fighter' | 'archer' | 'scholar';
 export type MaterialCategory = 'Holz' | 'Metall' | 'Leder';
-export type WeaponSlotId = 'baseMaterial' | 'blade' | 'back' | 'gripShape' | 'gripMaterial' | 'reinforcementMaterial';
+export type WeaponSlotId = 'baseMaterial' | 'workingPart' | 'back' | 'gripCore' | 'gripWrap' | 'special';
+export type WeaponPartId = 'workingPart' | 'back' | 'parry' | 'gripCore' | 'gripWrap' | 'special';
+export type WeaponCraftingSlotId = Exclude<WeaponSlotId, 'baseMaterial'>;
 
 export interface CharacterClassDefinition {
   id: CharacterClassId;
@@ -34,11 +36,24 @@ export interface MaterialDefinition {
   reinforcement: ReinforcementEffect | null;
 }
 
+export interface WeaponPartRequirement {
+  id: WeaponPartId;
+  label: string;
+  materialSlot: WeaponCraftingSlotId;
+  categories: readonly MaterialCategory[];
+  quantity: number;
+}
+
 export interface WeaponFormDefinition {
   name: string;
   timeFactor: number;
-  damageFactor: number;
-  speedFactor: number;
+  baseDamage: number;
+  baseSpeed: number;
+  parts: readonly WeaponPartRequirement[];
+  /** Legacy compatibility only. New weapon stats use baseDamage directly. */
+  damageFactor?: number;
+  /** Legacy compatibility only. New weapon stats use baseSpeed directly. */
+  speedFactor?: number;
 }
 
 export interface WeaponSlot {
@@ -48,14 +63,13 @@ export interface WeaponSlot {
 }
 
 export interface WeaponStats {
-  materialBaseDamage: number;
-  materialBaseSpeed: number;
-  formDamageFactor: number;
-  formSpeedFactor: number;
+  weaponBaseDamage: number;
+  weaponBaseSpeed: number;
   baseDamage: number;
   baseSpeed: number;
   bladeMultiplier: number;
   gripMultiplier: number;
+  specialMaterial: string | null;
   reinforcementMaterial: string | null;
   reinforcementSpeedFactor: number;
   reinforcementHitChanceAdd: number;
@@ -65,6 +79,11 @@ export interface WeaponStats {
   damagePerHit: number;
   attackSpeed: number;
   expectedRaw: number;
+  /** Transitional aliases for older Angular presentation code and persisted snapshots. */
+  materialBaseDamage: number;
+  materialBaseSpeed: number;
+  formDamageFactor: number;
+  formSpeedFactor: number;
 }
 
 export interface WeaponLike {
@@ -86,6 +105,23 @@ export interface WeaponDamageResult {
   attackSpeed: number;
   hitChance: number;
 }
+
+const DAGGER_PARTS: readonly WeaponPartRequirement[] = [
+  { id: 'workingPart', label: 'Wirkpart / Schneide', materialSlot: 'workingPart', categories: ['Metall'], quantity: 1 },
+  { id: 'back', label: 'Rücken / Kern', materialSlot: 'back', categories: ['Metall'], quantity: 1 },
+  { id: 'gripCore', label: 'Griffkern', materialSlot: 'gripCore', categories: ['Holz'], quantity: 1 },
+  { id: 'gripWrap', label: 'Griffwicklung', materialSlot: 'gripWrap', categories: ['Leder'], quantity: 1 },
+  { id: 'special', label: 'Spezialteil', materialSlot: 'special', categories: ['Holz', 'Metall', 'Leder'], quantity: 1 }
+];
+
+const SWORD_PARTS: readonly WeaponPartRequirement[] = [
+  { id: 'workingPart', label: 'Wirkpart / Schneide', materialSlot: 'workingPart', categories: ['Metall'], quantity: 3 },
+  { id: 'back', label: 'Rücken / Kern', materialSlot: 'back', categories: ['Metall'], quantity: 1 },
+  { id: 'parry', label: 'Parierstange', materialSlot: 'back', categories: ['Metall'], quantity: 1 },
+  { id: 'gripCore', label: 'Griffkern', materialSlot: 'gripCore', categories: ['Holz'], quantity: 2 },
+  { id: 'gripWrap', label: 'Griffwicklung', materialSlot: 'gripWrap', categories: ['Leder'], quantity: 1 },
+  { id: 'special', label: 'Spezialteil', materialSlot: 'special', categories: ['Holz', 'Metall', 'Leder'], quantity: 1 }
+];
 
 export const CONFIG = {
   dungeon: {
@@ -117,8 +153,8 @@ export const CONFIG = {
   forge: {
     baseSeconds: 30,
     weaponForms: {
-      dagger: { name: 'Dolch', timeFactor: 0.5, damageFactor: 0.6, speedFactor: 1.4 },
-      sword: { name: 'Einhänder', timeFactor: 1.0, damageFactor: 1.0, speedFactor: 1.0 }
+      dagger: { name: 'Dolch', timeFactor: 0.5, baseDamage: 6, baseSpeed: 1.4, damageFactor: 1, speedFactor: 1, parts: DAGGER_PARTS },
+      sword: { name: 'Einhänder', timeFactor: 1.0, baseDamage: 10, baseSpeed: 1.0, damageFactor: 1, speedFactor: 1, parts: SWORD_PARTS }
     } as Record<string, WeaponFormDefinition>
   }
 };
@@ -220,26 +256,58 @@ export const DUNGEON_LOOT_TABLES = {
 
 const LEGACY_WEAPON_SLOT_IDS: Record<string, WeaponSlotId> = {
   Waffentyp: 'baseMaterial',
-  Schneide: 'blade',
+  baseMaterial: 'baseMaterial',
+  Schneide: 'workingPart',
+  blade: 'workingPart',
+  workingPart: 'workingPart',
   Rückseite: 'back',
-  Griffform: 'gripShape',
-  Griffmaterial: 'gripMaterial',
-  Verstärkungsmaterial: 'reinforcementMaterial',
-  Hauptmaterial: 'reinforcementMaterial'
+  back: 'back',
+  Griffform: 'gripCore',
+  gripShape: 'gripCore',
+  gripCore: 'gripCore',
+  Griffmaterial: 'gripWrap',
+  gripMaterial: 'gripWrap',
+  gripWrap: 'gripWrap',
+  Verstärkungsmaterial: 'special',
+  Hauptmaterial: 'special',
+  reinforcementMaterial: 'special',
+  special: 'special'
 };
 
 export function normalizeWeaponSlots(slots: readonly WeaponSlot[] | null | undefined): WeaponSlot[] {
-  if (!Array.isArray(slots)) {
-    return [];
-  }
+  if (!Array.isArray(slots)) return [];
   return slots.map((entry) => ({
     ...entry,
     slot: LEGACY_WEAPON_SLOT_IDS[String(entry?.slot ?? '')] ?? entry?.slot
   }));
 }
 
+export function getWeaponForm(weaponForm: string): WeaponFormDefinition {
+  return CONFIG.forge.weaponForms[weaponForm] ?? CONFIG.forge.weaponForms['sword'];
+}
+
+export function getWeaponCraftingSlots(weaponForm: string): WeaponCraftingSlotId[] {
+  const slots: WeaponCraftingSlotId[] = [];
+  for (const part of getWeaponForm(weaponForm).parts) {
+    if (part.quantity > 0 && !slots.includes(part.materialSlot)) slots.push(part.materialSlot);
+  }
+  return slots;
+}
+
+export function getWeaponSelectionQuantity(weaponForm: string, slot: WeaponCraftingSlotId): number {
+  return getWeaponForm(weaponForm).parts
+    .filter((part) => part.materialSlot === slot)
+    .reduce((sum, part) => sum + Math.max(0, Number(part.quantity) || 0), 0);
+}
+
+export function isWeaponSelectionComplete(slots: readonly WeaponSlot[] | null | undefined, weaponForm: string): boolean {
+  const bySlot = new Map(normalizeWeaponSlots(slots).map((entry) => [entry.slot, entry.material]));
+  return getWeaponCraftingSlots(weaponForm).every((slot) => Boolean(bySlot.get(slot)));
+}
+
 export function rarityFactor(slots: readonly WeaponSlot[] | null | undefined): number {
   const rarities = normalizeWeaponSlots(slots)
+    .filter((entry) => entry.slot !== 'baseMaterial')
     .map((entry) => MATERIALS[entry.material ?? '']?.rarity)
     .filter((value): value is number => Number.isFinite(value));
   return rarities.length ? Math.min(...rarities) : 1;
@@ -247,9 +315,7 @@ export function rarityFactor(slots: readonly WeaponSlot[] | null | undefined): n
 
 export function reinforcementEffectText(materialName: string | null | undefined): string {
   const effect = MATERIALS[materialName ?? '']?.reinforcement;
-  if (!effect) {
-    return 'Kein Zusatzeffekt';
-  }
+  if (!effect) return 'Kein Zusatzeffekt';
 
   const parts: string[] = [];
   if (effect.speedFactor && Math.abs(effect.speedFactor - 1) > 1e-9) {
@@ -268,40 +334,37 @@ export function calculateWeaponStats(slots: readonly WeaponSlot[] | null | undef
   const normalized = normalizeWeaponSlots(slots);
   const bySlot = Object.fromEntries(normalized.map((entry) => [entry.slot, MATERIALS[entry.material ?? '']]));
   const materialBySlot = Object.fromEntries(normalized.map((entry) => [entry.slot, entry.material]));
-  const baseMaterial = bySlot['baseMaterial'] ?? {};
-  const blade = bySlot['blade'] ?? {};
+  const workingPart = bySlot['workingPart'] ?? {};
   const back = bySlot['back'] ?? {};
-  const gripShape = bySlot['gripShape'] ?? {};
-  const gripMaterial = bySlot['gripMaterial'] ?? {};
-  const reinforcementMaterial = bySlot['reinforcementMaterial'] ?? {};
-  const reinforcementEffect = reinforcementMaterial.reinforcement ?? {};
-  const form = CONFIG.forge.weaponForms[weaponForm] ?? CONFIG.forge.weaponForms['sword'];
+  const gripCore = bySlot['gripCore'] ?? {};
+  const gripWrap = bySlot['gripWrap'] ?? {};
+  const special = bySlot['special'] ?? {};
+  const specialEffect = special.reinforcement ?? {};
+  const form = getWeaponForm(weaponForm);
 
-  const materialBaseDamage = baseMaterial.baseDamage ?? 0;
-  const materialBaseSpeed = baseMaterial.baseSpeed ?? 0;
-  const baseDamage = materialBaseDamage * (form.damageFactor ?? 1);
-  const baseSpeed = materialBaseSpeed * (form.speedFactor ?? 1);
-  const bladeMultiplier = blade.blade ?? 1;
-  const gripMultiplier = gripShape.gripSpeed ?? 1;
-  const reinforcementSpeedFactor = reinforcementEffect.speedFactor ?? 1;
-  const reinforcementHitChanceAdd = reinforcementEffect.hitChanceAdd ?? 0;
-  const reinforcementPenetrationAdd = reinforcementEffect.penetrationAdd ?? 0;
+  const baseDamage = form.baseDamage;
+  const baseSpeed = form.baseSpeed;
+  const bladeMultiplier = workingPart.blade ?? 1;
+  const gripMultiplier = gripCore.gripSpeed ?? 1;
+  const reinforcementSpeedFactor = specialEffect.speedFactor ?? 1;
+  const reinforcementHitChanceAdd = specialEffect.hitChanceAdd ?? 0;
+  const reinforcementPenetrationAdd = specialEffect.penetrationAdd ?? 0;
   const damagePerHit = baseDamage * bladeMultiplier;
   const attackSpeed = baseSpeed * gripMultiplier * reinforcementSpeedFactor;
-  const hitChance = Math.max(0, Math.min(1, (gripMaterial.hitChance ?? 0) + reinforcementHitChanceAdd));
+  const hitChance = Math.max(0, Math.min(1, (gripWrap.hitChance ?? 0) + reinforcementHitChanceAdd));
   const penetration = Math.max(0, Math.min(1, (back.penetration ?? 0) + reinforcementPenetrationAdd));
   const expectedRaw = damagePerHit * attackSpeed * hitChance;
+  const specialMaterial = typeof materialBySlot['special'] === 'string' ? materialBySlot['special'] : null;
 
   return {
-    materialBaseDamage,
-    materialBaseSpeed,
-    formDamageFactor: form.damageFactor ?? 1,
-    formSpeedFactor: form.speedFactor ?? 1,
+    weaponBaseDamage: baseDamage,
+    weaponBaseSpeed: baseSpeed,
     baseDamage,
     baseSpeed,
     bladeMultiplier,
     gripMultiplier,
-    reinforcementMaterial: typeof materialBySlot['reinforcementMaterial'] === 'string' ? materialBySlot['reinforcementMaterial'] : null,
+    specialMaterial,
+    reinforcementMaterial: specialMaterial,
     reinforcementSpeedFactor,
     reinforcementHitChanceAdd,
     reinforcementPenetrationAdd,
@@ -309,7 +372,11 @@ export function calculateWeaponStats(slots: readonly WeaponSlot[] | null | undef
     penetration,
     damagePerHit,
     attackSpeed,
-    expectedRaw
+    expectedRaw,
+    materialBaseDamage: baseDamage,
+    materialBaseSpeed: baseSpeed,
+    formDamageFactor: 1,
+    formSpeedFactor: 1
   };
 }
 
@@ -352,6 +419,10 @@ export const GAME_CORE_BRIDGE = {
   MATERIALS,
   DUNGEON_LOOT_TABLES,
   normalizeWeaponSlots,
+  getWeaponForm,
+  getWeaponCraftingSlots,
+  getWeaponSelectionQuantity,
+  isWeaponSelectionComplete,
   rarityFactor,
   reinforcementEffectText,
   calculateWeaponStats,
