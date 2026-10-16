@@ -33,6 +33,10 @@ export function normalizeCharacterXp(xp: number | null | undefined): number {
   return Math.max(0, Number(xp) || 0);
 }
 
+export function characterStatLevelMultiplier(level: number | null | undefined): number {
+  return Math.pow(CHARACTER_XP_GROWTH, normalizeCharacterLevel(level) - 1);
+}
+
 export function experienceRequiredForNextLevel(level: number): number {
   const normalizedLevel = normalizeCharacterLevel(level);
   if (normalizedLevel >= CHARACTER_LEVEL_MAX) return 0;
@@ -92,6 +96,7 @@ export const CHARACTER_PROGRESSION_CORE_BRIDGE = {
   CHARACTER_XP_GROWTH,
   normalizeCharacterLevel,
   normalizeCharacterXp,
+  characterStatLevelMultiplier,
   experienceRequiredForNextLevel,
   getCharacterProgression,
   grantCharacterExperience
