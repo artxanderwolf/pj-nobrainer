@@ -11,22 +11,9 @@ declare global {
 }
 
 const ADAPTED_MARKET_PRESENTATION = `function renderMarketJob(){
-  const b=document.getElementById("marketJobCard"),q=document.getElementById("marketQueueCard"),now=Date.now();
-  if(b){
-    b.className=state.marketJobs.length?"":"empty";
-    b.innerHTML=state.marketJobs.length?state.marketJobs.map((j,i)=>{
-      const presentation=window.NoBrainerMarketPresentationCore.getActiveMarketJobPresentation(j,i,now,formatCurrencyNickel,formatDuration);
-      return \`<div class="sell-row"><div style="width:100%"><strong>\${presentation.title}</strong><div class="bar energy"><i style="width:\${presentation.progressPercent}%"></i></div><p>\${presentation.remainingText} · Ertrag <b>\${presentation.revenueValueText}</b></p></div><button class="btn smallbtn" onclick="cancelMarketSale('active',\${i})">Abbrechen</button></div>\`;
-    }).join(""):"Kein aktiver Verkauf.";
-  }
-  if(q){
-    q.className=state.marketQueue.length?"":"empty";
-    q.innerHTML=state.marketQueue.length?state.marketQueue.map((j,i)=>{
-      const presentation=window.NoBrainerMarketPresentationCore.getQueuedMarketJobPresentation(j,i,formatCurrencyNickel,formatDuration);
-      return \`<div class="sell-row"><div><strong>\${presentation.title}</strong><div class="sell-meta">\${presentation.metaText}</div></div><button class="btn smallbtn" onclick="cancelMarketSale('queue',\${i})">Entfernen</button></div>\`;
-    }).join(""):"Warteschlange leer.";
-  }
-  renderUpgradeCards();
+  const marketJobPresentation=window.NoBrainerMarketJobPresentationCompatibility;
+  if(!marketJobPresentation)throw new Error("NoBrainer-Marktauftrags-Präsentationsbrücke wurde nicht registriert.");
+  marketJobPresentation.render();
 }
 
 function setMarketQty(inputId,delta,max){
