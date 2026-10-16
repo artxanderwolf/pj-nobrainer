@@ -44,22 +44,9 @@ const materialIndexBridge = `function renderMaterialIndex(){
 }`;
 
 const materialStorageBridge = `function renderMaterialStorage(){
-  const body=document.getElementById("inventoryRows"),empty=document.getElementById("inventoryEmpty");
-  if(!body||!empty)return;
-  const entries=window.NoBrainerMaterialPresentationCore.sortMaterialStorageEntries(Object.entries(state.inventory));
-  body.innerHTML="";
-  empty.style.display=entries.length?"none":"block";
-  entries.forEach(([name,item])=>{
-    const sell=materialSellData(name);
-    if(!sell)throw new Error("Material-Verkaufsdaten fehlen: "+name);
-    const presentation=window.NoBrainerMaterialPresentationCore.getMaterialStorageRowPresentation(name,item,sell.valueNickel,formatCurrencyNickel);
-    const tr=document.createElement("tr");
-    tr.innerHTML="<td title='"+presentation.tooltip+"'>"+presentation.name+"</td>"+
-      "<td>"+presentation.category+"</td>"+
-      "<td>"+presentation.quantityText+"</td>"+
-      "<td>"+presentation.valueText+"</td>";
-    body.appendChild(tr);
-  });
+  const presentation=window.NoBrainerMaterialStoragePresentationCompatibility;
+  if(!presentation||typeof presentation.render!=="function")throw new Error("NoBrainer-Materiallager-Präsentationsbrücke wurde nicht registriert.");
+  presentation.render();
 }`;
 
 source = replaceRangeOnce(source, 'function displayVal(', 'function renderMaterialIndex(', displayValueBridge, 'Materialwert-Formatierung');
@@ -87,11 +74,11 @@ source = replaceRangeOnce(
   'Materiallager-Renderfunktion'
 );
 
-new vm.Script(source, { filename: 'NoBrainer_GitHub_v0.12.68.material-presentation.js' });
+new vm.Script(source, { filename: 'NoBrainer_GitHub_v0.12.81.material-presentation.js' });
 assert.ok(source.includes('window.NoBrainerMaterialPresentationCore.formatMaterialValue'));
 assert.ok(source.includes('window.NoBrainerMaterialPresentationCore.getMaterialIndexRowPresentation'));
-assert.ok(source.includes('window.NoBrainerMaterialPresentationCore.sortMaterialStorageEntries'));
-assert.ok(source.includes('window.NoBrainerMaterialPresentationCore.getMaterialStorageRowPresentation'));
+assert.ok(source.includes('window.NoBrainerMaterialStoragePresentationCompatibility'));
+assert.ok(source.includes('presentation.render();'));
 assert.ok(source.includes('reinforcementEffectText(name)'));
 assert.ok(source.includes('getDungeonMaterialChance(1,name)'));
 assert.ok(source.includes('function rarityFactorFromRarity(rarity)'));
@@ -100,9 +87,17 @@ assert.ok(source.includes('  renderMaterialStorage();\n\n  renderForgePreview();
 assert.equal((source.match(/function renderMaterialIndex\(/g) || []).length, 1);
 assert.equal((source.match(/function renderMaterialStorage\(/g) || []).length, 1);
 assert.equal(source.includes('const tbody=document.getElementById("inventoryRows");tbody.innerHTML="";'), false);
+const storageStart = source.indexOf('function renderMaterialStorage(){');
+const storageEnd = source.indexOf('function render(){', storageStart);
+assert.ok(storageStart >= 0 && storageEnd > storageStart, 'Materiallager-Wrapper konnte nicht isoliert werden.');
+const storageWrapper = source.slice(storageStart, storageEnd);
+assert.equal(storageWrapper.includes('state.inventory'), false);
+assert.equal(storageWrapper.includes('sortMaterialStorageEntries'), false);
+assert.equal(storageWrapper.includes('getMaterialStorageRowPresentation'), false);
+assert.equal(storageWrapper.includes('materialSellData'), false);
 const masterRenderStart = source.indexOf('function render(){');
 const masterRenderEnd = source.indexOf('function gameTick(){', masterRenderStart);
 assert.ok(masterRenderStart >= 0 && masterRenderEnd > masterRenderStart, 'Der Legacy-Gesamtrender konnte nicht isoliert werden.');
 assert.equal(source.slice(masterRenderStart, masterRenderEnd).includes('renderDungeonStatus();'), false);
 
-console.log('Material-Presentation-Adapter: Materialindex und Materiallager bleiben nach dem Dungeon-Präsentations-Cutover stabil und nutzen den Presentation Core.');
+console.log('Material-Presentation-Adapter: Materialindex bleibt stabil; das Materiallager delegiert nach dem Cutover nur noch an die Angular-Präsentation.');
