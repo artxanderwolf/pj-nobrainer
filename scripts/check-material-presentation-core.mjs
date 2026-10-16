@@ -11,18 +11,32 @@ assert.equal(formatMaterialValue(undefined), '–');
 assert.equal(formatMaterialValue(1), '1');
 assert.equal(formatMaterialValue(1.234), '1,23');
 assert.equal(formatMaterialValue(0.2, 'percent'), '20 %');
+assert.equal(formatMaterialValue(0.05, 'factor'), '0,05');
+
+const zeroStats = {
+  hp: 0,
+  energy: 0,
+  armor: 0,
+  dodge: 0,
+  strengthFactor: 0,
+  precision: 0,
+  threat: 0,
+  critChance: 0,
+  critDamage: 0,
+  hpRegenPerMinute: 0,
+  energyRegenPerMinute: 0,
+  experienceFactor: 0,
+  lifeSteal: 0,
+  penetration: 0
+};
 
 const row = getMaterialIndexRowPresentation(
   'Kupfer',
   {
     category: 'Metall',
     rarity: 1,
-    baseDamage: 10,
-    baseSpeed: 1,
-    blade: 1.2,
-    penetration: 0.2,
-    gripSpeed: null,
-    hitChance: null
+    stats: { ...zeroStats, hp: 8, armor: 2, strengthFactor: 0.05 },
+    specialEffect: { stat: 'DS', amount: 0.10 }
   },
   '+10 Prozentpunkte DS',
   11
@@ -32,13 +46,22 @@ assert.deepEqual(row, {
   category: 'Metall',
   name: 'Kupfer',
   rarityText: 'S1',
-  baseDamageText: '10',
-  baseSpeedText: '1',
-  bladeText: '1,2',
-  penetrationText: '20 %',
-  gripSpeedText: '–',
-  hitChanceText: '–',
-  reinforcementText: '+10 Prozentpunkte DS',
+  hpText: '8',
+  energyText: '0',
+  armorText: '2',
+  dodgeText: '0 %',
+  strengthFactorText: '0,05',
+  precisionText: '0',
+  threatText: '0',
+  critChanceText: '0 %',
+  critDamageText: '0 %',
+  hpRegenText: '0',
+  energyRegenText: '0',
+  experienceText: '0 %',
+  lifeStealText: '0 %',
+  penetrationText: '0 %',
+  specialStatText: 'DS',
+  specialPercentText: '10 %',
   dungeonChanceText: '11 %'
 });
 
@@ -47,18 +70,16 @@ const unavailable = getMaterialIndexRowPresentation(
   {
     category: 'Holz',
     rarity: 3,
-    baseDamage: null,
-    baseSpeed: null,
-    blade: null,
-    penetration: null,
-    gripSpeed: null,
-    hitChance: null
+    stats: zeroStats,
+    specialEffect: null
   },
-  'Kein Zusatzeffekt',
+  'Kein Spezialeffekt',
   null
 );
 assert.equal(unavailable.dungeonChanceText, '– %');
 assert.equal(unavailable.rarityText, 'S3');
+assert.equal(unavailable.specialStatText, '–');
+assert.equal(unavailable.specialPercentText, '–');
 
 const sortedStorage = sortMaterialStorageEntries([
   ['Zinn', { category: 'Metall', qty: 2 }],
@@ -81,4 +102,4 @@ assert.deepEqual(storageRow, {
   tooltip: 'Verkaufswert: 10 Nickel'
 });
 
-console.log('Material-Presentation-Core: Index- und Lagerdarstellung, Sortierung, Prozentformatierung, Seltenheit und Dungeonchance sind konsistent.');
+console.log('Material-Presentation-Core: gemeinsame Statmatrix, SPE/SPE%, Sortierung, Seltenheit und Dungeonchance sind konsistent.');
