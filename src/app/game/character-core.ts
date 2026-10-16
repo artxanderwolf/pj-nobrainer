@@ -9,6 +9,8 @@ export interface CharacterState {
   id: number;
   name: string;
   classId: CharacterClassId;
+  level: number;
+  xp: number;
   maxHp: number;
   hp: number;
   maxEnergy: number;
@@ -32,6 +34,8 @@ export function createCharacter(id: number, name: string, classId = 'recruit', w
     id,
     name,
     classId: characterClass.id,
+    level: 1,
+    xp: 0,
     maxHp: characterClass.maxHp,
     hp: characterClass.maxHp,
     maxEnergy: characterClass.maxEnergy,
