@@ -113,7 +113,8 @@ export class GameCharacterPresentationService {
   }
 
   private getEquippedWeapons(character: CharacterState): RuntimeWeaponPresentation[] {
-    return [character.equipment.leftHand, character.equipment.rightHand]
+    const ids = [...new Set([character.equipment.leftHand, character.equipment.rightHand].filter((id): id is number => id !== null))];
+    return ids
       .map(weaponId => this.getWeaponById(weaponId))
       .filter((weapon): weapon is RuntimeWeaponPresentation => Boolean(weapon));
   }
@@ -159,6 +160,8 @@ export class GameCharacterPresentationService {
       if (!result.ok) {
         if (result.reason === 'weapon-in-use') {
           alert('Diese konkrete Waffe ist bereits bei einem anderen Charakter ausgerüstet.');
+        } else if (result.reason === 'both-hands-required') {
+          alert('Diese 2H-Waffe benötigt beide Hände. Leere zuerst die andere Hand.');
         }
         return;
       }
