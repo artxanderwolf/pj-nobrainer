@@ -1,7 +1,14 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { Script, createContext } from 'node:vm';
-import { CONFIG, calculateWeaponStats, normalizeWeaponSlots, rarityFactor } from '../src/app/game/game-core.ts';
+import {
+  CONFIG,
+  calculateWeaponStats,
+  getWeaponCraftingSlots,
+  isWeaponSelectionComplete,
+  normalizeWeaponSlots,
+  rarityFactor
+} from '../src/app/game/game-core.ts';
 import { adaptLegacyWeaponScript } from '../src/app/game/weapon-naming.ts';
 
 const html = readFileSync('NoBrainer_GitHub_v0.12.2.html', 'utf8');
@@ -42,9 +49,11 @@ function extractRange(source, startMarker, endMarker) {
   return source.slice(start, end);
 }
 
-const migrationSource = extractRange(adaptedScript, 'function migrateWeaponToCurrentRules(w){', 'function normalizeLoadedState(raw){');
+const migrationSource = extractRange(adaptedScript, 'function normalizeWeaponBlueprintSlots(slots,weaponForm){', 'function normalizeLoadedState(raw){');
+const noBrainerGameCore = { getWeaponCraftingSlots, isWeaponSelectionComplete };
 const migrationContext = createContext({
   console,
+  window: { NoBrainerGameCore: noBrainerGameCore },
   CONFIG,
   calculateWeaponStats,
   normalizeWeaponSlots,
@@ -53,7 +62,7 @@ const migrationContext = createContext({
   Number,
   Math
 });
-new Script(`${migrationSource}\nglobalThis.__migrate={migrateWeaponToCurrentRules,migrateForgeJobToCurrentRules,migrateMarketJobToCurrentRules};`).runInContext(migrationContext);
+new Script(`${migrationSource}\nglobalThis.__migrate={normalizeWeaponBlueprintSlots,migrateWeaponToCurrentRules,migrateForgeJobToCurrentRules,migrateMarketJobToCurrentRules};`).runInContext(migrationContext);
 const migrate = migrationContext.__migrate;
 
 const legacySlots = [
@@ -64,20 +73,21 @@ const legacySlots = [
   { slot: 'Griffmaterial', material: 'Lederfetzen' },
   { slot: 'Verstärkungsmaterial', material: 'Kupfer' }
 ];
-const expectedSlotIds = ['baseMaterial', 'workingPart', 'back', 'gripCore', 'gripWrap', 'special'];
 const oldWeapon = { id: 42, name: 'Legacy', weaponType: 'dagger', slots: legacySlots, valueNickel: 123, craftedSeconds: 99 };
 const migratedWeapon = migrate.migrateWeaponToCurrentRules(oldWeapon);
 assert.equal(migratedWeapon.weaponForm, 'dagger');
 assert.equal(Object.prototype.hasOwnProperty.call(migratedWeapon, 'weaponType'), false);
-assert.deepEqual(Array.from(migratedWeapon.slots, entry => entry.slot), expectedSlotIds, 'Alte Slotnamen müssen auf die neue Bauteilsemantik migrieren.');
+assert.deepEqual(Array.from(migratedWeapon.slots, entry => entry.slot), ['workingPart', 'back', 'gripCore', 'gripWrap', 'special'], 'Alter Dolch muss nur auf seine fünf aktuellen Bauteile migrieren.');
 assert.equal(migratedWeapon.stats.baseDamage, 6, 'Migrierter Dolch muss die neue Waffenbasis verwenden.');
 
 const oldForgeJob = { weaponType: 'sword', weaponName: 'Legacy Job', slots: legacySlots, totalSeconds: 30, startedAt: 1000 };
 const migratedForgeJob = migrate.migrateForgeJobToCurrentRules(oldForgeJob);
 assert.equal(migratedForgeJob.weaponForm, 'sword');
 assert.equal(migratedForgeJob.stats.baseDamage, 10);
+assert.deepEqual(Array.from(migratedForgeJob.slots, entry => entry.slot), ['workingPart', 'back', 'gripCore', 'gripWrap', 'special', 'parry']);
+assert.equal(migratedForgeJob.slots.find(entry => entry.slot === 'parry')?.material, 'Kupfer', 'Alte 1H-Schwerter übernehmen das bisherige Kernmaterial als Parierstangen-Fallback.');
 
 const migratedMarketJob = migrate.migrateMarketJobToCurrentRules({ type: 'weapon', weaponSnapshot: oldWeapon });
 assert.equal(migratedMarketJob.weaponSnapshot.weaponForm, 'dagger');
 
-console.log('Waffenbenennung und Altstand-Migration bleiben mit der neuen Bauteilsemantik kompatibel.');
+console.log('Waffenbenennung und Altstand-Migration bleiben mit aktuellen Bauplänen und Parierstangen-Fallback kompatibel.');
