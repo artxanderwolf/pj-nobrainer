@@ -26,19 +26,20 @@ assert.match(adapter, /const LEGACY_RESOURCE_HEADER = `/, 'Der reine Legacy-Such
 assert.match(runtime, /private readonly resourcePresentation: GameResourcePresentationService/);
 assert.match(runtime, /renderInitial\(\): void \{[\s\S]*this\.resourcePresentation\.render\(\);/, 'Initialer Angular-Render enthält die Ressourcen-Kopfzeile nicht.');
 assert.match(runtime, /if \(marketCompleted\) \{[\s\S]*this\.resourcePresentation\.render\(\);/, 'Marktabschlüsse aktualisieren die Angular-Ressourcen-Kopfzeile nicht.');
-assert.match(runtime, /if \(inventoryChanged\) \{[\s\S]*this\.resourcePresentation\.render\(\);[\s\S]*runtime\.renderInventoryState\(\);/, 'Dungeon-Inventaränderungen aktualisieren die Angular-Ressourcen-Kopfzeile nicht gezielt.');
+assert.match(runtime, /if \(inventoryChanged\) \{[\s\S]*this\.resourcePresentation\.render\(\);[\s\S]*this\.forgePreviewPresentation\.render\(\);[\s\S]*runtime\.renderInventoryState\(\);/, 'Dungeon-Inventaränderungen aktualisieren Ressourcen und Angular-Schmiedevorschau nicht gezielt.');
 assert.doesNotMatch(runtime, /refreshGold\(\): void;|runtime\.refreshGold\(\)/, 'GameRuntimeApi besitzt weiterhin den Legacy-Gold-Refresh.');
 
 const registrationMatch = registration.match(/const ANGULAR_RUNTIME_REGISTRATION = `([\s\S]*?)`;/);
 assert.ok(registrationMatch, 'Angular-Runtime-Registrierung konnte nicht gelesen werden.');
 assert.doesNotMatch(registrationMatch[1], /refreshGold|renderResourceHeader\(\)/, 'Legacy-Runtime-Registrierung aktualisiert weiterhin die Ressourcen-Kopfzeile.');
-assert.match(registrationMatch[1], /renderInventoryState:\(\)=>\{[\s\S]*renderMaterialStorage\(\);[\s\S]*renderForgePreview\(\);[\s\S]*renderMarketMaterials\(\);[\s\S]*\}/, 'Gezielter Legacy-Inventar-Refresh verliert Materiallager, Schmiede oder Markt.');
+assert.match(registrationMatch[1], /renderInventoryState:\(\)=>\{[\s\S]*renderMaterialStorage\(\);[\s\S]*renderMarketMaterials\(\);[\s\S]*\}/, 'Gezielter Legacy-Inventar-Refresh verliert Materiallager oder Markt.');
+assert.doesNotMatch(registrationMatch[1], /renderForgePreview\(\)/, 'Gezielter Legacy-Inventar-Refresh rendert weiterhin die Angular-eigene Schmiedevorschau.');
 
 const bridgeOpen = app.indexOf('this.gameResourcePresentation.openLegacyCompatibilityBridge();');
 const stateBootstrap = app.indexOf('this.gameState.openBootstrapRegistration();');
 assert.ok(bridgeOpen >= 0 && stateBootstrap > bridgeOpen, 'Ressourcen-Präsentationsbrücke muss vor dem State-/Legacy-Bootstrap geöffnet werden.');
 assert.match(app, /private readonly gameResourcePresentation: GameResourcePresentationService/);
 assert.match(app, /ngOnDestroy\(\): void \{[\s\S]*this\.gameResourcePresentation\.closeLegacyCompatibilityBridge\(\);/);
-assert.match(app, /const APP_VERSION = '0\.12\.79';/);
+assert.match(app, /const APP_VERSION = '0\.12\.80';/);
 
 console.log('Ressourcen-Präsentations-Eigentümerschaft: Gold und Materialgesamtzahl werden direkt durch Angular aus dem Angular-State gerendert; Legacy besitzt nur noch einen dünnen Renderwrapper.');
