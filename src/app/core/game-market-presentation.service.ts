@@ -8,6 +8,7 @@ import {
   getQueuedMarketJobPresentation,
   type MarketPresentationJobLike
 } from '../game/market-presentation-core';
+import { GameCombatLogService } from './game-combat-log.service';
 import { GameMarketService } from './game-market.service';
 import { GameProgressionPresentationService } from './game-progression-presentation.service';
 import { GameStateService, type MutableGameState } from './game-state.service';
@@ -37,6 +38,7 @@ export class GameMarketPresentationService {
   constructor(
     private readonly gameState: GameStateService,
     private readonly gameMarket: GameMarketService,
+    private readonly combatLog: GameCombatLogService,
     private readonly progressionPresentation: GameProgressionPresentationService
   ) {}
 
@@ -94,7 +96,7 @@ export class GameMarketPresentationService {
       };
       buttons[0]?.addEventListener('click', () => update(-1));
       buttons[1]?.addEventListener('click', () => update(1));
-      buttons[2]?.addEventListener('click', () => { this.gameMarket.startMaterial(name, Number(input.value), Date.now()); this.renderAll(); });
+      buttons[2]?.addEventListener('click', () => this.startMaterial(name, Number(input.value)));
       input.addEventListener('input', () => update());
       box.appendChild(row);
     });
@@ -117,7 +119,7 @@ export class GameMarketPresentationService {
       row.className = 'sell-row';
       row.title = presentation.tooltip;
       row.innerHTML = `<div><strong>${presentation.title}</strong></div><button class="btn smallbtn" ${presentation.sellDisabled ? 'disabled' : ''}>Verkaufen</button>`;
-      row.querySelector('button')?.addEventListener('click', () => { this.gameMarket.startWeapon(weapon.id, Date.now()); this.renderAll(); });
+      row.querySelector('button')?.addEventListener('click', () => this.startWeapon(weapon.id));
       box.appendChild(row);
     }
   }
@@ -135,10 +137,30 @@ export class GameMarketPresentationService {
 
   closeLegacyCompatibilityBridge(): void { delete window.NoBrainerMarketPresentationCompatibility; }
 
+  private startMaterial(name: string, quantity: number): void {
+    const result = this.gameMarket.startMaterial(name, quantity, Date.now());
+    if (result.status === 'full') { alert('Alle Verkaufs- und Warteschlangenplätze sind belegt.'); return; }
+    if (result.status === 'no-stock' || result.status === 'unknown-material') return;
+    this.combatLog.add(`Verkauf eingestellt: ${result.quantity}× ${result.name} für ${formatCurrencyNickel(result.valueNickel)}.`, 'good');
+    this.renderAll();
+  }
+
+  private startWeapon(weaponId: number): void {
+    const result = this.gameMarket.startWeapon(weaponId, Date.now());
+    if (result.status === 'starter') { alert('Die Startwaffe kann nicht verkauft werden.'); return; }
+    if (result.status === 'equipped') { alert('Ausgerüstete Waffen können nicht verkauft werden.'); return; }
+    if (result.status === 'full') { alert('Alle Verkaufs- und Warteschlangenplätze sind belegt.'); return; }
+    if (result.status === 'not-found') return;
+    this.combatLog.add(`Verkauf eingestellt: ${result.name}.`, 'good');
+    this.renderAll();
+  }
+
   private bindCancelActions(container: HTMLElement): void {
     container.querySelectorAll<HTMLButtonElement>('[data-market-cancel]').forEach(button => button.addEventListener('click', () => {
       const kind = button.dataset['marketCancel'] === 'queue' ? 'queue' : 'active';
-      this.gameMarket.cancel(kind, Number(button.dataset['marketIndex']) || 0, Date.now());
+      const result = this.gameMarket.cancel(kind, Number(button.dataset['marketIndex']) || 0, Date.now());
+      if (!result) return;
+      this.combatLog.add(`Verkauf abgebrochen: ${result.name} wurde zurückgegeben.`, 'muted');
       this.renderAll();
     }));
   }
