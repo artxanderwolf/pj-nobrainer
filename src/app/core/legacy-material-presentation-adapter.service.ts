@@ -3,7 +3,6 @@ import {
   MATERIAL_PRESENTATION_CORE_BRIDGE,
   type MaterialPresentationCoreBridge
 } from '../game/material-presentation-core';
-import { GameMaterialStoragePresentationService } from './game-material-storage-presentation.service';
 
 declare global {
   interface Window {
@@ -45,11 +44,8 @@ const MATERIAL_STORAGE_BRIDGE = `function renderMaterialStorage(){
 
 @Injectable({ providedIn: 'root' })
 export class LegacyMaterialPresentationAdapterService {
-  constructor(private readonly materialStoragePresentation: GameMaterialStoragePresentationService) {}
-
   adapt(source: string): string {
     window.NoBrainerMaterialPresentationCore = MATERIAL_PRESENTATION_CORE_BRIDGE;
-    this.materialStoragePresentation.openLegacyCompatibilityBridge();
 
     let adapted = this.replaceRangeOnce(
       source,
