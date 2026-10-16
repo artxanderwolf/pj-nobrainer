@@ -6,6 +6,7 @@ import { GameForgeJobPresentationService } from './core/game-forge-job-presentat
 import { GameForgePreviewPresentationService } from './core/game-forge-preview-presentation.service';
 import { GameForgeService } from './core/game-forge.service';
 import { GameMarketService } from './core/game-market.service';
+import { GameMaterialStoragePresentationService } from './core/game-material-storage-presentation.service';
 import { GameProgressionPresentationService } from './core/game-progression-presentation.service';
 import { GameProgressionService } from './core/game-progression.service';
 import { GameResourcePresentationService } from './core/game-resource-presentation.service';
@@ -42,7 +43,7 @@ import { APP_SHELL_PAGE_IDS, composeAppShell } from './game/app-shell-presentati
 import { composePageMarkup } from './game/page-markup-presentation-core';
 import { adaptLegacyWeaponMarkup, adaptLegacyWeaponScript } from './game/weapon-naming';
 
-const APP_VERSION = '0.12.80';
+const APP_VERSION = '0.12.81';
 const LEGACY_RUNTIME_PATH = 'legacy/NoBrainer_GitHub_v0.12.2.runtime.js';
 const LEGACY_SCRIPT_ID = 'nobrainer-legacy-script';
 
@@ -60,6 +61,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     private readonly gameForgeJobPresentation: GameForgeJobPresentationService,
     private readonly gameForgePreviewPresentation: GameForgePreviewPresentationService,
     private readonly gameMarket: GameMarketService,
+    private readonly gameMaterialStoragePresentation: GameMaterialStoragePresentationService,
     private readonly gameProgression: GameProgressionService,
     private readonly gameProgressionPresentation: GameProgressionPresentationService,
     private readonly gameResourcePresentation: GameResourcePresentationService,
@@ -102,6 +104,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
       this.gameRuntime.stopTick();
       this.gameWeaponInventoryPresentation.closeLegacyCompatibilityBridge();
       this.gameTavernPresentation.closeLegacyCompatibilityBridge();
+      this.gameMaterialStoragePresentation.closeLegacyCompatibilityBridge();
       this.gameResourcePresentation.closeLegacyCompatibilityBridge();
       this.gameForgePreviewPresentation.closeLegacyCompatibilityBridge();
       this.gameForgeJobPresentation.closeLegacyCompatibilityBridge();
@@ -122,6 +125,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     this.gameRuntime.stopTick();
     this.gameWeaponInventoryPresentation.closeLegacyCompatibilityBridge();
     this.gameTavernPresentation.closeLegacyCompatibilityBridge();
+    this.gameMaterialStoragePresentation.closeLegacyCompatibilityBridge();
     this.gameResourcePresentation.closeLegacyCompatibilityBridge();
     this.gameForgePreviewPresentation.closeLegacyCompatibilityBridge();
     this.gameForgeJobPresentation.closeLegacyCompatibilityBridge();
@@ -181,6 +185,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     this.gameForgeJobPresentation.openLegacyCompatibilityBridge();
     this.gameForgePreviewPresentation.openLegacyCompatibilityBridge();
     this.gameResourcePresentation.openLegacyCompatibilityBridge();
+    this.gameMaterialStoragePresentation.openLegacyCompatibilityBridge();
     this.gameTavernPresentation.openLegacyCompatibilityBridge();
     this.gameWeaponInventoryPresentation.openLegacyCompatibilityBridge();
     this.gameState.openBootstrapRegistration();
