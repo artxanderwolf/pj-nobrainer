@@ -27,6 +27,6 @@ const stateBootstrap = app.indexOf('this.gameState.openBootstrapRegistration();'
 assert.ok(bridgeOpen >= 0 && stateBootstrap > bridgeOpen, 'Tavernen-Präsentationsbrücke muss vor dem State-/Legacy-Bootstrap geöffnet werden.');
 assert.match(app, /private readonly gameTavernPresentation: GameTavernPresentationService/);
 assert.match(app, /ngOnDestroy\(\): void \{[\s\S]*this\.gameTavernPresentation\.closeLegacyCompatibilityBridge\(\);/);
-assert.match(app, /const APP_VERSION = '0\.12\.79';/);
+assert.match(app, /const APP_VERSION = '0\.12\.80';/);
 
 console.log('Tavernen-Präsentations-Eigentümerschaft: Zusammenfassung, Angebote und Kapazität werden direkt durch Angular aus Angular-State und Progression gerendert; Legacy besitzt nur noch einen dünnen Renderwrapper.');
