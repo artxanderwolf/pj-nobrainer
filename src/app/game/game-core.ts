@@ -137,6 +137,7 @@ export interface WeaponStats {
 }
 
 export interface WeaponLike {
+  id?: number | null;
   weaponForm?: string | null;
   stats?: Partial<WeaponStats> | null;
 }
@@ -620,7 +621,19 @@ export function calculateCharacterStats(
     : 'recruit';
   const base = CHARACTER_CLASSES[resolvedId];
   const equipment = createStatModifiers();
-  for (const weapon of weapons) addModifiers(equipment, weapon.stats?.characterModifiers ?? {});
+  const seenIds = new Set<number>();
+  const seenWeapons = new Set<WeaponLike>();
+  for (const weapon of weapons) {
+    const id = Number(weapon.id);
+    if (Number.isFinite(id)) {
+      if (seenIds.has(id)) continue;
+      seenIds.add(id);
+    } else {
+      if (seenWeapons.has(weapon)) continue;
+      seenWeapons.add(weapon);
+    }
+    addModifiers(equipment, weapon.stats?.characterModifiers ?? {});
+  }
 
   return {
     maxHp: Math.max(1, base.maxHp + equipment.hp),
