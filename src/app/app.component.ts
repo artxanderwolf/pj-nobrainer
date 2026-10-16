@@ -42,9 +42,9 @@ import { LegacyTavernPresentationAdapterService } from './core/legacy-tavern-pre
 import { LegacyWeaponPresentationAdapterService } from './core/legacy-weapon-presentation-adapter.service';
 import { APP_SHELL_PAGE_IDS, composeAppShell } from './game/app-shell-presentation-core';
 import { composePageMarkup } from './game/page-markup-presentation-core';
-import { adaptLegacyWeaponMarkup, adaptLegacyWeaponScript } from './game/weapon-naming';
+import { adaptLegacyWeaponScript } from './game/weapon-naming';
 
-const APP_VERSION = '0.12.83';
+const APP_VERSION = '0.12.84';
 const LEGACY_RUNTIME_PATH = 'legacy/NoBrainer_GitHub_v0.12.2.runtime.js';
 const LEGACY_SCRIPT_ID = 'nobrainer-legacy-script';
 
@@ -175,8 +175,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     adaptedScript = this.legacyProgressionAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyProgressionPresentationAdapter.adapt(adaptedScript);
     adaptedScript = this.legacyEnergyAdapter.adapt(adaptedScript);
-    const adaptedMarkup = adaptLegacyWeaponMarkup(composeAppShell(pageMarkup));
-    this.legacyHost.nativeElement.innerHTML = adaptedMarkup;
+    this.legacyHost.nativeElement.innerHTML = composeAppShell(pageMarkup);
     this.applyVersionMarker();
 
     this.gameCombatLog.openLegacyCompatibilityBridge();
@@ -215,7 +214,9 @@ export class AppComponent implements AfterViewInit, OnDestroy {
 
   private installLegacyScript(source: string): void {
     if (document.getElementById(LEGACY_SCRIPT_ID)) return;
-    const script = document.createElement('script'); script.id = LEGACY_SCRIPT_ID;
-    script.textContent = `${source}\n//# sourceURL=NoBrainer_GitHub_v${APP_VERSION}.legacy.js`; document.body.appendChild(script);
+    const script = document.createElement('script');
+    script.id = LEGACY_SCRIPT_ID;
+    script.textContent = `${source}\n//# sourceURL=NoBrainer_GitHub_v${APP_VERSION}.legacy.js`;
+    document.body.appendChild(script);
   }
 }
