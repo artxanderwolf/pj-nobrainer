@@ -51,6 +51,6 @@ const stateBootstrap = app.indexOf('this.gameState.openBootstrapRegistration();'
 assert.ok(bridgeOpen >= 0 && stateBootstrap > bridgeOpen, 'Schmiedevorschau-Präsentationsbrücke muss vor dem State-/Legacy-Bootstrap geöffnet werden.');
 assert.match(app, /private readonly gameForgePreviewPresentation: GameForgePreviewPresentationService/);
 assert.match(app, /ngOnDestroy\(\): void \{[\s\S]*this\.gameForgePreviewPresentation\.closeLegacyCompatibilityBridge\(\);/);
-assert.match(app, /const APP_VERSION = '0\.12\.81';/);
+assert.match(app, /const APP_VERSION = '0\.12\.82';/);
 
 console.log('Forge-Preview-Presentation-Eigentümerschaft: Materialauswahl, Vorschauwerte und Startbutton-Zustand werden direkt durch Angular aus Angular-State und GameForgeService gerendert; Legacy delegiert nur noch den Renderaufruf und die Adapterreihenfolge schützt bestehende Legacy-Anker.');

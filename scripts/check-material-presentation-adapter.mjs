@@ -17,30 +17,10 @@ function replaceRangeOnce(text, startMarker, endMarker, replacement, label) {
   return text.slice(0, start) + replacement + '\n\n' + text.slice(end);
 }
 
-const displayValueBridge = `function displayVal(v,kind="number"){
-  return window.NoBrainerMaterialPresentationCore.formatMaterialValue(v,kind);
-}`;
-
 const materialIndexBridge = `function renderMaterialIndex(){
-  const body=document.getElementById("materialIndexRows");
-  if(!body)return;
-  body.innerHTML="";
-  Object.entries(MATERIALS).forEach(([name,m])=>{
-    const presentation=window.NoBrainerMaterialPresentationCore.getMaterialIndexRowPresentation(name,m,reinforcementEffectText(name),getDungeonMaterialChance(1,name));
-    const tr=document.createElement("tr");
-    tr.innerHTML="<td>"+presentation.category+"</td>"+
-      "<td><strong>"+presentation.name+"</strong></td>"+
-      "<td class='rarity'>"+presentation.rarityText+"</td>"+
-      "<td>"+presentation.baseDamageText+"</td>"+
-      "<td>"+presentation.baseSpeedText+"</td>"+
-      "<td>"+presentation.bladeText+"</td>"+
-      "<td>"+presentation.penetrationText+"</td>"+
-      "<td>"+presentation.gripSpeedText+"</td>"+
-      "<td>"+presentation.hitChanceText+"</td>"+
-      "<td>"+presentation.reinforcementText+"</td>"+
-      "<td>"+presentation.dungeonChanceText+"</td>";
-    body.appendChild(tr);
-  });
+  const presentation=window.NoBrainerMaterialIndexPresentationCompatibility;
+  if(!presentation||typeof presentation.render!=="function")throw new Error("NoBrainer-Materialindex-Präsentationsbrücke wurde nicht registriert.");
+  presentation.render();
 }`;
 
 const materialStorageBridge = `function renderMaterialStorage(){
@@ -49,8 +29,7 @@ const materialStorageBridge = `function renderMaterialStorage(){
   presentation.render();
 }`;
 
-source = replaceRangeOnce(source, 'function displayVal(', 'function renderMaterialIndex(', displayValueBridge, 'Materialwert-Formatierung');
-source = replaceRangeOnce(source, 'function renderMaterialIndex(', 'function rarityFactorFromRarity(', materialIndexBridge, 'Materialindex-Präsentation');
+source = replaceRangeOnce(source, 'function displayVal(', 'function rarityFactorFromRarity(', materialIndexBridge, 'Materialindex-Präsentation');
 source = replaceRangeOnce(
   source,
   'function renderDungeonStatus(){',
@@ -74,19 +53,30 @@ source = replaceRangeOnce(
   'Materiallager-Renderfunktion'
 );
 
-new vm.Script(source, { filename: 'NoBrainer_GitHub_v0.12.81.material-presentation.js' });
-assert.ok(source.includes('window.NoBrainerMaterialPresentationCore.formatMaterialValue'));
-assert.ok(source.includes('window.NoBrainerMaterialPresentationCore.getMaterialIndexRowPresentation'));
+new vm.Script(source, { filename: 'NoBrainer_GitHub_v0.12.82.material-presentation.js' });
+assert.ok(source.includes('window.NoBrainerMaterialIndexPresentationCompatibility'));
 assert.ok(source.includes('window.NoBrainerMaterialStoragePresentationCompatibility'));
 assert.ok(source.includes('presentation.render();'));
-assert.ok(source.includes('reinforcementEffectText(name)'));
-assert.ok(source.includes('getDungeonMaterialChance(1,name)'));
+assert.equal(source.includes('window.NoBrainerMaterialPresentationCore'), false);
+assert.equal(source.includes('function displayVal('), false);
 assert.ok(source.includes('function rarityFactorFromRarity(rarity)'));
+assert.ok(source.includes('function renderMaterialIndex(){'));
 assert.ok(source.includes('function renderMaterialStorage(){'));
 assert.ok(source.includes('  renderMaterialStorage();\n\n  renderForgePreview();'));
 assert.equal((source.match(/function renderMaterialIndex\(/g) || []).length, 1);
 assert.equal((source.match(/function renderMaterialStorage\(/g) || []).length, 1);
 assert.equal(source.includes('const tbody=document.getElementById("inventoryRows");tbody.innerHTML="";'), false);
+
+const indexStart = source.indexOf('function renderMaterialIndex(){');
+const indexEnd = source.indexOf('function rarityFactorFromRarity(', indexStart);
+assert.ok(indexStart >= 0 && indexEnd > indexStart, 'Materialindex-Wrapper konnte nicht isoliert werden.');
+const indexWrapper = source.slice(indexStart, indexEnd);
+assert.equal(indexWrapper.includes('MATERIALS'), false);
+assert.equal(indexWrapper.includes('reinforcementEffectText'), false);
+assert.equal(indexWrapper.includes('getDungeonMaterialChance'), false);
+assert.equal(indexWrapper.includes('getMaterialIndexRowPresentation'), false);
+assert.equal(indexWrapper.includes('document.getElementById'), false);
+
 const storageStart = source.indexOf('function renderMaterialStorage(){');
 const storageEnd = source.indexOf('function render(){', storageStart);
 assert.ok(storageStart >= 0 && storageEnd > storageStart, 'Materiallager-Wrapper konnte nicht isoliert werden.');
@@ -95,9 +85,10 @@ assert.equal(storageWrapper.includes('state.inventory'), false);
 assert.equal(storageWrapper.includes('sortMaterialStorageEntries'), false);
 assert.equal(storageWrapper.includes('getMaterialStorageRowPresentation'), false);
 assert.equal(storageWrapper.includes('materialSellData'), false);
+
 const masterRenderStart = source.indexOf('function render(){');
 const masterRenderEnd = source.indexOf('function gameTick(){', masterRenderStart);
 assert.ok(masterRenderStart >= 0 && masterRenderEnd > masterRenderStart, 'Der Legacy-Gesamtrender konnte nicht isoliert werden.');
 assert.equal(source.slice(masterRenderStart, masterRenderEnd).includes('renderDungeonStatus();'), false);
 
-console.log('Material-Presentation-Adapter: Materialindex bleibt stabil; das Materiallager delegiert nach dem Cutover nur noch an die Angular-Präsentation.');
+console.log('Material-Presentation-Adapter: Materialindex und Materiallager delegieren ausschließlich an Angular; der alte globale Material-Presentation-Core ist aus dem Legacy-Laufzeitpfad entfernt.');
