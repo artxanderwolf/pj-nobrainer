@@ -65,16 +65,16 @@ const FORGE_PAGE_MARKUP = `<section class="page" id="forge">
       <div class="grid">
         <div class="card span-7">
           <h2>Schmiede <span class="tag fixed">AKTIV</span></h2>
-          <p class="muted">Eine vollständige Waffe wird aus sechs Slots hergestellt. Es werden nur Materialien angezeigt, die aktuell im Lager vorhanden sind.</p>
+          <p class="muted">Die Waffenform ist ein Bauplan. Sie legt Grundwerte, Bauteile und Materialmengen fest. Materialmenge bestimmt die Herstellungskosten; die Materialwahl bestimmt die Waffenwerte.</p>
 
           <div style="margin:14px 0">
             <label class="field-label" for="forgeWeaponName">Waffenname</label>
-            <input id="forgeWeaponName" class="text-input" type="text" maxlength="40" placeholder="Leer = Standardname des Waffentyps">
+            <input id="forgeWeaponName" class="text-input" type="text" maxlength="40" placeholder="Leer = Standardname der Waffenform">
           </div>
 
           <div class="statrow">
             <div class="stat"><span>Waffenform</span>
-              <select id="weaponType" class="btn" style="width:100%;margin-top:6px" onchange="renderForgePreview()">
+              <select id="weaponForm" class="btn" style="width:100%;margin-top:6px" onchange="renderForgePreview()">
                 <option value="dagger">Dolch</option>
                 <option value="sword">Einhänder</option>
               </select>
@@ -85,17 +85,18 @@ const FORGE_PAGE_MARKUP = `<section class="page" id="forge">
 
           <div style="margin-top:16px" class="forge-slot-wrap">
             <table>
-              <thead><tr><th>Slot</th><th>Material</th></tr></thead>
+              <thead><tr><th>Bauteil</th><th>Material</th></tr></thead>
               <tbody>
-                <tr><td>Waffentyp</td><td><select id="slotWeaponType" class="btn forge-select" data-categories="Holz,Metall" onchange="renderForgePreview()"></select></td></tr>
-                <tr><td>Schneide</td><td><select id="slotBlade" class="btn forge-select" data-categories="Metall" onchange="renderForgePreview()"></select></td></tr>
-                <tr><td>Rückseite</td><td><select id="slotBack" class="btn forge-select" data-categories="Metall" onchange="renderForgePreview()"></select></td></tr>
-                <tr><td>Griffform</td><td><select id="slotGripShape" class="btn forge-select" data-categories="Holz" onchange="renderForgePreview()"></select></td></tr>
-                <tr><td>Griffmaterial</td><td><select id="slotGripMaterial" class="btn forge-select" data-categories="Leder" onchange="renderForgePreview()"></select></td></tr>
-                <tr><td>Verstärkungsmaterial</td><td><select id="slotReinforcementMaterial" class="btn forge-select" data-categories="Holz,Metall,Leder" onchange="renderForgePreview()"></select></td></tr>
+                <tr><td>Wirkpart / Schneide</td><td><select id="slotWorkingPart" class="btn forge-select" onchange="renderForgePreview()"></select></td></tr>
+                <tr><td>Rücken / Kern</td><td><select id="slotBack" class="btn forge-select" onchange="renderForgePreview()"></select></td></tr>
+                <tr><td>Griffkern</td><td><select id="slotGripCore" class="btn forge-select" onchange="renderForgePreview()"></select></td></tr>
+                <tr><td>Griffwicklung</td><td><select id="slotGripWrap" class="btn forge-select" onchange="renderForgePreview()"></select></td></tr>
+                <tr><td>Spezialteil</td><td><select id="slotSpecial" class="btn forge-select" onchange="renderForgePreview()"></select></td></tr>
               </tbody>
             </table>
           </div>
+          <p id="forgeParryInfo" class="status-line">–</p>
+          <p class="status-line"><strong>Materialbedarf:</strong> <span id="forgeMaterialTotalPreview">–</span></p>
 
           <div class="preview-grid">
             <div class="stat"><span>Schaden / Treffer</span><b id="forgeDamagePreview">–</b><span id="forgeDamageBaseInfo" class="small muted"></span></div>
@@ -105,7 +106,7 @@ const FORGE_PAGE_MARKUP = `<section class="page" id="forge">
             <div class="stat"><span>Durchschlag</span><b id="forgePenPreview">–</b></div>
             <div class="stat"><span>Seltenheitsfaktor</span><b id="forgeRarityPreview">–</b></div>
           </div>
-          <p id="forgeReinforcementPreview" class="status-line">Verstärkungseffekt: –</p>
+          <p id="forgeReinforcementPreview" class="status-line">Spezialeffekt: –</p>
 
           <div class="actions">
             <button id="forgeStartBtn" class="btn primary" onclick="startForgeJob()">Waffe herstellen</button>
