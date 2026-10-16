@@ -1,9 +1,12 @@
 import type { EquipmentHand } from './equipment-core';
+import { getCharacterProgression } from './character-progression-core';
 import type { ResolvedCharacterStats } from './game-core';
 
 export interface CharacterPresentationCharacterLike {
   id: number;
   name: string;
+  level?: number | null;
+  xp?: number | null;
   hp: number;
   energy: number;
   equipment: Record<EquipmentHand, number | null>;
@@ -14,7 +17,7 @@ export interface CharacterPresentationClassLike {
 }
 
 export interface CharacterStatPresentation {
-  label: 'HP' | 'EN' | 'RÜS' | 'AUS' | 'SF' | 'PRÄ' | 'BED' | 'K-C' | 'K-S' | 'HP-Reg.' | 'EN-Reg.' | 'ERF' | 'LR' | 'DS' | 'Offensive gg. Dungeon 1';
+  label: 'LVL' | 'XP' | 'HP' | 'EN' | 'RÜS' | 'AUS' | 'SF' | 'PRÄ' | 'BED' | 'K-C' | 'K-S' | 'HP-Reg.' | 'EN-Reg.' | 'ERF' | 'LR' | 'DS' | 'Offensive gg. Dungeon 1';
   value: string;
 }
 
@@ -98,7 +101,10 @@ export function getCharacterCardPresentation(
   effectiveOffense: number,
   openWeaponPickerHand: string | null
 ): CharacterCardPresentation {
+  const progression = getCharacterProgression(character);
   const stats: CharacterStatPresentation[] = [
+    { label: 'LVL', value: `${progression.level} / ${progression.maxLevel}` },
+    { label: 'XP', value: progression.atMaxLevel ? 'MAX' : `${progression.xp} / ${progression.xpToNext}` },
     { label: 'HP', value: `${character.hp.toFixed(1)} / ${effectiveStats.maxHp}` },
     { label: 'EN', value: `${character.energy.toFixed(1)} / ${effectiveStats.maxEnergy}` },
     { label: 'RÜS', value: effectiveStats.armor.toFixed(2).replace(/\.00$/, '') },
