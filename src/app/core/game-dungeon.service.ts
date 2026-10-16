@@ -25,7 +25,10 @@ import {
   CONFIG,
   DUNGEON_LOOT_TABLES,
   MATERIALS,
-  type CharacterClassId
+  calculateCharacterStats,
+  type CharacterClassId,
+  type ResolvedCharacterStats,
+  type WeaponStats
 } from '../game/game-core';
 import { GameStateService, type MutableGameState } from './game-state.service';
 
@@ -49,17 +52,10 @@ interface RuntimeDungeonEquipment {
   rightHand?: number | null;
 }
 
-interface RuntimeDungeonWeaponStats {
-  damagePerHit?: number | null;
-  attackSpeed?: number | null;
-  hitChance?: number | null;
-  penetration?: number | null;
-}
-
 interface RuntimeDungeonWeapon {
   id: number;
   name: string;
-  stats?: RuntimeDungeonWeaponStats | null;
+  stats?: Partial<WeaponStats> | null;
 }
 
 interface RuntimeDungeonCharacter extends DungeonCharacterLike, CombatTargetLike {
@@ -319,7 +315,7 @@ export class GameDungeonService {
       check.participants,
       enemies,
       at,
-      character => this.getCharacterAttackPoints(state, character)
+      character => this.getCharacterAttackPoints(state, character as RuntimeDungeonCharacter)
     );
 
     state.expeditionActive = true;
@@ -423,26 +419,41 @@ export class GameDungeonService {
     const target = this.weightedTarget(run.enemies);
     if (!target) return;
 
+    const characterStats = this.getCharacterStats(state, character);
     let damage: number;
     let hitChance: number;
     let penetration: number;
     let label: string;
 
     if (point.kind === 'fist') {
-      damage = 1 * character.strengthFactor;
-      hitChance = Math.min(1, 0.5 * character.precision);
-      penetration = 0;
+      damage = 1 * characterStats.strengthFactor;
+      hitChance = Math.min(1, 0.5 * characterStats.precision);
+      penetration = characterStats.penetration;
       label = 'Faust';
     } else {
       const weapon = this.getWeaponById(state, point.weaponId);
       if (!weapon) return;
-      damage = (Number(weapon.stats?.damagePerHit) || 0) * character.strengthFactor;
-      hitChance = Math.min(1, (Number(weapon.stats?.hitChance) || 0) * character.precision);
-      penetration = Number(weapon.stats?.penetration) || 0;
+      const baseDamage = Number(weapon.stats?.weaponBaseDamage ?? weapon.stats?.damagePerHit) || 0;
+      const baseHitChance = Number(weapon.stats?.weaponBaseHitChance ?? weapon.stats?.hitChance) || 0;
+      damage = baseDamage * characterStats.strengthFactor;
+      hitChance = Math.min(1, baseHitChance * characterStats.precision);
+      penetration = characterStats.penetration;
       label = weapon.name;
     }
 
-    const result = resolveAttack(target, damage, hitChance, penetration, Math.random(), Math.random());
+    const result = resolveAttack(
+      target,
+      damage,
+      hitChance,
+      penetration,
+      Math.random(),
+      Math.random(),
+      {
+        critChance: characterStats.critChance,
+        critDamage: characterStats.critDamage,
+        critRoll: Math.random()
+      }
+    );
     if (result.outcome === 'miss') {
       this.addCombatEvent(outcome, `${character.name} · ${label}: verfehlt ${target.name}.`, 'muted');
       return;
@@ -451,9 +462,14 @@ export class GameDungeonService {
       this.addCombatEvent(outcome, `${target.name} weicht ${character.name} · ${label} aus.`, 'muted');
       return;
     }
+
+    if (characterStats.lifeSteal > 0 && result.dealt > 0) {
+      const maxHp = characterStats.maxHp;
+      character.hp = Math.min(maxHp, character.hp + result.dealt * characterStats.lifeSteal);
+    }
     this.addCombatEvent(
       outcome,
-      `${character.name} · ${label} trifft ${target.name} für ${result.dealt.toFixed(2)} Schaden${target.alive ? ` (${target.hp.toFixed(1)} HP)` : ' – besiegt'}.`,
+      `${character.name} · ${label}${result.critical ? ' · KRIT' : ''} trifft ${target.name} für ${result.dealt.toFixed(2)} Schaden${target.alive ? ` (${target.hp.toFixed(1)} HP)` : ' – besiegt'}.`,
       target.alive ? '' : 'good'
     );
   }
@@ -475,13 +491,15 @@ export class GameDungeonService {
 
     const enemyName = this.enemyDisplayName(enemy);
     const hitChance = Math.min(1, enemy.hitChance * enemy.precision);
+    const targetStats = this.getCharacterStats(state, target);
     const result = resolveAttack(
       target,
       enemy.damage * enemy.strengthFactor,
       hitChance,
       enemy.penetration,
       Math.random(),
-      Math.random()
+      Math.random(),
+      { armor: targetStats.armor, dodge: targetStats.dodge }
     );
     if (result.outcome === 'miss') {
       this.addCombatEvent(outcome, `${enemyName} verfehlt ${target.name}.`, 'muted');
@@ -546,8 +564,15 @@ export class GameDungeonService {
     return Math.max(0.01, Number(this.getWeaponById(state, point.weaponId)?.stats?.attackSpeed) || 1);
   }
 
+  private getCharacterStats(state: RuntimeDungeonState, character: RuntimeDungeonCharacter): ResolvedCharacterStats {
+    const weapons = [character.equipment?.leftHand, character.equipment?.rightHand]
+      .map(id => this.getWeaponById(state, id))
+      .filter((weapon): weapon is RuntimeDungeonWeapon => Boolean(weapon));
+    return calculateCharacterStats(character.classId, weapons);
+  }
+
   private weightedTarget<TTarget extends CombatTargetLike & { classId?: string | null }>(targets: readonly TTarget[]): TTarget | null {
-    const weighted = buildWeightedTargets(targets, target => CHARACTER_CLASSES[this.resolveClassId(target.classId)]?.distance ?? 2);
+    const weighted = buildWeightedTargets(targets, target => CHARACTER_CLASSES[this.resolveClassId(target.classId)]?.threat ?? 50);
     if (!weighted.length) return null;
     return weighted[rollWeightedIndex(weighted.map(entry => entry.weight), Math.random())]?.target ?? null;
   }
