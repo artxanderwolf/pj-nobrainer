@@ -32,7 +32,7 @@ const TAVERN_PAGE_MARKUP = `<section class="page" id="tavern">
         <div class="card span-5">
           <h2>Rekrutierung & Inn</h2>
           <div id="tavernCapacity"></div>
-          <p class="status-line">Neue Charaktere starten mit vollen HP und voller Energie, aber ohne Waffe. Klassenabhängige Waffenfreigaben werden später separat umgesetzt.</p>
+          <p class="status-line">Neue Charaktere starten auf Level 1 mit 0 XP, vollen HP und voller Energie, aber ohne Waffe. Klassenabhängige Waffenfreigaben werden später separat umgesetzt.</p>
         </div>
       </div>
     </section>`;
@@ -40,7 +40,7 @@ const TAVERN_PAGE_MARKUP = `<section class="page" id="tavern">
 const ROSTER_PAGE_MARKUP = `<section class="page" id="roster">
       <div class="card">
         <h2>Kader</h2>
-        <p class="muted">Klassenbasis plus Boni der ausgerüsteten Waffen. Bedrohung bleibt ausschließlich von der Klasse abhängig.</p>
+        <p class="muted">Level/XP, Klassenbasis plus Boni der ausgerüsteten Waffen. Bedrohung bleibt ausschließlich von der Klasse abhängig.</p>
         <div id="rosterCard"></div>
       </div>
     </section>`;
@@ -65,7 +65,7 @@ const FORGE_PAGE_MARKUP = `<section class="page" id="forge">
       <div class="grid">
         <div class="card span-7">
           <h2>Schmiede <span class="tag fixed">AKTIV</span></h2>
-          <p class="muted">Die Waffenform ist ein Bauplan. Materialmenge bestimmt ausschließlich den Verbrauch; das Bauteil bestimmt, welcher Stat des gewählten Materials auf die Waffe bzw. ihren Träger wirkt.</p>
+          <p class="muted">Die Waffenform ist ein Bauplan. Materialmenge bestimmt ausschließlich den Verbrauch; das Bauteil bestimmt, welcher Stat des gewählten Materials auf die Waffe bzw. ihren Träger wirkt. 1H/2H ist reine Ausrüstungsmetadaten und kein Bauslot.</p>
 
           <div style="margin:14px 0">
             <label class="field-label" for="forgeWeaponName">Waffenname</label>
@@ -77,6 +77,11 @@ const FORGE_PAGE_MARKUP = `<section class="page" id="forge">
               <select id="weaponForm" class="btn" style="width:100%;margin-top:6px" onchange="renderForgePreview()">
                 <option value="dagger">Dolch</option>
                 <option value="sword">1H Schwert</option>
+                <option value="axe1h">1H Axt</option>
+                <option value="sword2h">2H Schwert</option>
+                <option value="axe2h">2H Axt</option>
+                <option value="bow">Bogen</option>
+                <option value="staff">Stab</option>
               </select>
             </div>
             <div class="stat"><span>Herstellungszeit</span><b id="forgeTimePreview">–</b></div>
@@ -93,6 +98,7 @@ const FORGE_PAGE_MARKUP = `<section class="page" id="forge">
                 <tr id="forgeGripWrapRow"><td>Wicklung</td><td><select id="slotGripWrap" class="btn forge-select" onchange="renderForgePreview()"></select></td></tr>
                 <tr id="forgeSpecialRow"><td>Spezial</td><td><select id="slotSpecial" class="btn forge-select" onchange="renderForgePreview()"></select></td></tr>
                 <tr id="forgeParryRow"><td>Parierstange</td><td><select id="slotParry" class="btn forge-select" onchange="renderForgePreview()"></select></td></tr>
+                <tr id="forgeBowstringRow"><td>Sehne</td><td><select id="slotBowstring" class="btn forge-select" onchange="renderForgePreview()"></select></td></tr>
               </tbody>
             </table>
           </div>
