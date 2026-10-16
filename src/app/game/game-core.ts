@@ -63,6 +63,8 @@ export interface ReinforcementEffect {
 }
 
 export interface MaterialDefinition {
+  materialId: number;
+  dungeonDropWeight: number;
   category: MaterialCategory;
   rarity: number;
   stats: CharacterStatModifiers;
@@ -74,6 +76,12 @@ export interface MaterialDefinition {
   gripSpeed: number | null;
   hitChance: number | null;
   reinforcement: ReinforcementEffect | null;
+}
+
+export interface DungeonEnemyDefinition {
+  name: string;
+  lootMaterialIds: readonly number[];
+  xpDrop: number;
 }
 
 export interface WeaponPartRequirement {
@@ -400,12 +408,16 @@ function legacyReinforcement(effect: SpecialEffectDefinition | null): Reinforcem
 }
 
 function material(
+  materialId: number,
   category: MaterialCategory,
   rarity: number,
   stats: Partial<CharacterStatModifiers>,
-  specialEffect: SpecialEffectDefinition | null
+  specialEffect: SpecialEffectDefinition | null,
+  dungeonDropWeight: number
 ): MaterialDefinition {
   return {
+    materialId,
+    dungeonDropWeight,
     category,
     rarity,
     stats: createStatModifiers(stats),
@@ -421,38 +433,69 @@ function material(
 }
 
 export const MATERIALS: Record<string, MaterialDefinition> = {
-  'Morsche Fichte': material('Holz', 1, { hp: 4 }, { stat: 'GES', amount: 0.05 }),
-  Fichte: material('Holz', 1, { hp: 5, armor: 1, dodge: 0.01, precision: 0.05 }, null),
-  Tanne: material('Holz', 2, { hp: 7, armor: 1, dodge: 0.02, precision: 0.10 }, { stat: 'GES', amount: 0.15 }),
-  Zinn: material('Metall', 1, { hp: 6, armor: 1 }, null),
-  Kupfer: material('Metall', 1, { hp: 8, armor: 2, strengthFactor: 0.05 }, { stat: 'DS', amount: 0.10 }),
-  Aluminium: material('Metall', 2, { hp: 9, armor: 2, dodge: 0.02, strengthFactor: 0.10 }, { stat: 'GES', amount: 0.10 }),
-  'Hasen-Leder': material('Leder', 1, { hp: 1, strengthFactor: 0.03, critChance: 0.02, penetration: 0.02 }, { stat: 'P', amount: 0.05 }),
-  'Fuchs-Leder': material('Leder', 2, { hp: 2, strengthFactor: 0.05, critChance: 0.04, penetration: 0.04 }, { stat: 'P', amount: 0.10 }),
-  Lederfetzen: material('Leder', 1, { hp: 3, strengthFactor: 0.01, critChance: 0.01, penetration: 0.01 }, null)
+  'Morsche Fichte': material(1, 'Holz', 1, { hp: 4 }, { stat: 'GES', amount: 0.05 }, 81),
+  Fichte: material(2, 'Holz', 1, { hp: 5, armor: 1, dodge: 0.01, precision: 0.05 }, null, 8),
+  Tanne: material(3, 'Holz', 2, { hp: 7, armor: 1, dodge: 0.02, precision: 0.10 }, { stat: 'GES', amount: 0.15 }, 2),
+  Zinn: material(4, 'Metall', 1, { hp: 6, armor: 1 }, null, 81),
+  Kupfer: material(5, 'Metall', 1, { hp: 8, armor: 2, strengthFactor: 0.05 }, { stat: 'DS', amount: 0.10 }, 8),
+  Aluminium: material(6, 'Metall', 2, { hp: 9, armor: 2, dodge: 0.02, strengthFactor: 0.10 }, { stat: 'GES', amount: 0.10 }, 2),
+  'Hasen-Leder': material(7, 'Leder', 1, { hp: 1, strengthFactor: 0.03, critChance: 0.02, penetration: 0.02 }, { stat: 'P', amount: 0.05 }, 8),
+  'Fuchs-Leder': material(8, 'Leder', 2, { hp: 2, strengthFactor: 0.05, critChance: 0.04, penetration: 0.04 }, { stat: 'P', amount: 0.10 }, 2),
+  Lederfetzen: material(9, 'Leder', 1, { hp: 3, strengthFactor: 0.01, critChance: 0.01, penetration: 0.01 }, null, 81)
 };
 
+export const DUNGEON_ENEMY_DEFINITIONS: Record<number, Record<CharacterClassId, DungeonEnemyDefinition>> = {
+  1: {
+    recruit: { name: 'Neuling', lootMaterialIds: [9, 5, 3], xpDrop: 10 },
+    fighter: { name: 'Tank', lootMaterialIds: [9, 4, 6], xpDrop: 10 },
+    archer: { name: 'Jäger', lootMaterialIds: [9, 8, 7], xpDrop: 10 },
+    scholar: { name: 'Lehrling', lootMaterialIds: [9, 2, 1], xpDrop: 10 }
+  }
+};
+
+/** Legacy-kompatible Übersicht. Aktive Dungeon-Drops verwenden die gegnerspezifischen Material-IDs. */
 export const DUNGEON_LOOT_TABLES = {
   1: {
     categories: [
       { name: 'Holz', weight: 1, items: [
         { name: 'Morsche Fichte', chance: 81 },
-        { name: 'Fichte', chance: 11 },
-        { name: 'Tanne', chance: 8 }
+        { name: 'Fichte', chance: 8 },
+        { name: 'Tanne', chance: 2 }
       ] },
       { name: 'Metall', weight: 1, items: [
         { name: 'Zinn', chance: 81 },
-        { name: 'Kupfer', chance: 11 },
-        { name: 'Aluminium', chance: 8 }
+        { name: 'Kupfer', chance: 8 },
+        { name: 'Aluminium', chance: 2 }
       ] },
       { name: 'Leder', weight: 1, items: [
-        { name: 'Lederfetzen', chance: 80 },
-        { name: 'Hasen-Leder', chance: 12 },
-        { name: 'Fuchs-Leder', chance: 8 }
+        { name: 'Lederfetzen', chance: 81 },
+        { name: 'Hasen-Leder', chance: 8 },
+        { name: 'Fuchs-Leder', chance: 2 }
       ] }
     ]
   }
 };
+
+export function getMaterialById(materialId: number | null | undefined): [string, MaterialDefinition] | null {
+  const resolved = Number(materialId);
+  if (!Number.isFinite(resolved)) return null;
+  return Object.entries(MATERIALS).find(([, definition]) => definition.materialId === resolved) ?? null;
+}
+
+export function getDungeonEnemyDefinition(
+  dungeonId: number,
+  classId: CharacterClassId
+): DungeonEnemyDefinition | null {
+  return DUNGEON_ENEMY_DEFINITIONS[Number(dungeonId)]?.[classId] ?? null;
+}
+
+export function getDungeonMaterialDropWeight(dungeonId: number, materialName: string): number | null {
+  const materialDefinition = MATERIALS[materialName];
+  const dungeon = DUNGEON_ENEMY_DEFINITIONS[Number(dungeonId)];
+  if (!materialDefinition || !dungeon) return null;
+  const used = Object.values(dungeon).some(enemy => enemy.lootMaterialIds.includes(materialDefinition.materialId));
+  return used ? materialDefinition.dungeonDropWeight : null;
+}
 
 const LEGACY_WEAPON_SLOT_IDS: Record<string, WeaponSlotId> = {
   Waffentyp: 'baseMaterial',
@@ -614,12 +657,16 @@ export function calculateWeaponStats(slots: readonly WeaponSlot[] | null | undef
 
 export function calculateCharacterStats(
   classId: string | null | undefined,
-  weapons: readonly WeaponLike[] = []
+  weapons: readonly WeaponLike[] = [],
+  baseStatMultiplier = 1
 ): ResolvedCharacterStats {
   const resolvedId = classId && Object.prototype.hasOwnProperty.call(CHARACTER_CLASSES, classId)
     ? classId as CharacterClassId
     : 'recruit';
   const base = CHARACTER_CLASSES[resolvedId];
+  const numericMultiplier = Number(baseStatMultiplier);
+  const multiplier = Number.isFinite(numericMultiplier) && numericMultiplier > 0 ? numericMultiplier : 1;
+  const scaled = (value: number): number => value === 0 ? 0 : value * multiplier;
   const equipment = createStatModifiers();
   const seenIds = new Set<number>();
   const seenWeapons = new Set<WeaponLike>();
@@ -636,20 +683,20 @@ export function calculateCharacterStats(
   }
 
   return {
-    maxHp: Math.max(1, base.maxHp + equipment.hp),
-    maxEnergy: Math.max(0, base.maxEnergy + equipment.energy),
-    armor: Math.max(0, base.armor + equipment.armor),
-    dodge: Math.max(0, Math.min(0.95, base.dodge + equipment.dodge)),
-    strengthFactor: Math.max(0, base.strengthFactor + equipment.strengthFactor),
-    precision: Math.max(0, base.precision + equipment.precision),
-    threat: Math.max(0.01, base.threat),
-    critChance: Math.max(0, Math.min(1, base.critChance + equipment.critChance)),
-    critDamage: Math.max(1, base.critDamage + equipment.critDamage),
-    hpRegenPerMinute: Math.max(0, base.hpRegenPerMinute + equipment.hpRegenPerMinute),
-    energyRegenPerMinute: Math.max(0, base.energyRegenPerMinute + equipment.energyRegenPerMinute),
-    experienceFactor: Math.max(0, base.experienceFactor + equipment.experienceFactor),
-    lifeSteal: Math.max(0, Math.min(1, base.lifeSteal + equipment.lifeSteal)),
-    penetration: Math.max(0, Math.min(1, base.penetration + equipment.penetration))
+    maxHp: Math.max(1, scaled(base.maxHp) + equipment.hp),
+    maxEnergy: Math.max(0, scaled(base.maxEnergy) + equipment.energy),
+    armor: Math.max(0, scaled(base.armor) + equipment.armor),
+    dodge: Math.max(0, Math.min(0.95, scaled(base.dodge) + equipment.dodge)),
+    strengthFactor: Math.max(0, scaled(base.strengthFactor) + equipment.strengthFactor),
+    precision: Math.max(0, scaled(base.precision) + equipment.precision),
+    threat: Math.max(0.01, scaled(base.threat)),
+    critChance: Math.max(0, Math.min(1, scaled(base.critChance) + equipment.critChance)),
+    critDamage: Math.max(1, scaled(base.critDamage) + equipment.critDamage),
+    hpRegenPerMinute: Math.max(0, scaled(base.hpRegenPerMinute) + equipment.hpRegenPerMinute),
+    energyRegenPerMinute: Math.max(0, scaled(base.energyRegenPerMinute) + equipment.energyRegenPerMinute),
+    experienceFactor: Math.max(0, scaled(base.experienceFactor) + equipment.experienceFactor),
+    lifeSteal: Math.max(0, Math.min(1, scaled(base.lifeSteal) + equipment.lifeSteal)),
+    penetration: Math.max(0, Math.min(1, scaled(base.penetration) + equipment.penetration))
   };
 }
 
@@ -698,8 +745,12 @@ export const GAME_CORE_BRIDGE = {
   STAT_DEFINITIONS,
   MATERIAL_SALE_RARITY_BONUS,
   MATERIALS,
+  DUNGEON_ENEMY_DEFINITIONS,
   DUNGEON_LOOT_TABLES,
   createStatModifiers,
+  getMaterialById,
+  getDungeonEnemyDefinition,
+  getDungeonMaterialDropWeight,
   normalizeWeaponSlots,
   getWeaponForm,
   getWeaponHandCount,
