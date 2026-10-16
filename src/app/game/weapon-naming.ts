@@ -135,7 +135,8 @@ const CURRENT_GET_FORGE_SELECTION = `function getForgeSelection(){
       {slot:"gripCore",material:document.getElementById("slotGripCore")?.value},
       {slot:"gripWrap",material:document.getElementById("slotGripWrap")?.value},
       {slot:"special",material:document.getElementById("slotSpecial")?.value},
-      {slot:"parry",material:document.getElementById("slotParry")?.value}
+      {slot:"parry",material:document.getElementById("slotParry")?.value},
+      {slot:"bowstring",material:document.getElementById("slotBowstring")?.value}
     ]
   };
 }`;
