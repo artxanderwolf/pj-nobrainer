@@ -43,6 +43,9 @@ assert.ok(registrationMatch, 'Angular-Runtime-Registrierung konnte nicht gelesen
 assert.doesNotMatch(registrationMatch[1], /renderForgePreview/, 'Legacy-Runtime-Registrierung exportiert oder ruft weiterhin renderForgePreview auf.');
 assert.match(registrationMatch[1], /renderInventoryState:\(\)=>\{[\s\S]*renderMaterialStorage\(\);[\s\S]*renderMarketMaterials\(\);[\s\S]*\}/, 'Gezielter Legacy-Inventar-Refresh verliert Materiallager oder Markt.');
 
+const characterCutover = app.indexOf('adaptedScript = this.legacyCharacterPresentationAdapter.adapt(adaptedScript);');
+const forgePreviewCutover = app.indexOf('adaptedScript = this.legacyForgePresentationAdapter.adapt(adaptedScript);');
+assert.ok(characterCutover >= 0 && forgePreviewCutover > characterCutover, 'Der Character-Cutover muss seinen getMaterialsForCategories-Endanker verarbeiten, bevor der Forge-Cutover diesen alten Helper entfernt.');
 const bridgeOpen = app.indexOf('this.gameForgePreviewPresentation.openLegacyCompatibilityBridge();');
 const stateBootstrap = app.indexOf('this.gameState.openBootstrapRegistration();');
 assert.ok(bridgeOpen >= 0 && stateBootstrap > bridgeOpen, 'Schmiedevorschau-Präsentationsbrücke muss vor dem State-/Legacy-Bootstrap geöffnet werden.');
@@ -50,4 +53,4 @@ assert.match(app, /private readonly gameForgePreviewPresentation: GameForgePrevi
 assert.match(app, /ngOnDestroy\(\): void \{[\s\S]*this\.gameForgePreviewPresentation\.closeLegacyCompatibilityBridge\(\);/);
 assert.match(app, /const APP_VERSION = '0\.12\.80';/);
 
-console.log('Forge-Preview-Presentation-Eigentümerschaft: Materialauswahl, Vorschauwerte und Startbutton-Zustand werden direkt durch Angular aus Angular-State und GameForgeService gerendert; Legacy delegiert nur noch den Renderaufruf.');
+console.log('Forge-Preview-Presentation-Eigentümerschaft: Materialauswahl, Vorschauwerte und Startbutton-Zustand werden direkt durch Angular aus Angular-State und GameForgeService gerendert; Legacy delegiert nur noch den Renderaufruf und die Adapterreihenfolge schützt bestehende Legacy-Anker.');
