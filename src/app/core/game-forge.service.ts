@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import {
   CONFIG,
+  createStatModifiers,
   getWeaponForm,
   isWeaponSelectionComplete,
   type WeaponFormDefinition,
@@ -220,6 +221,10 @@ export class GameForgeService {
     return {
       weaponBaseDamage: form.baseDamage,
       weaponBaseSpeed: form.baseSpeed,
+      weaponBaseHitChance: form.baseHitChance,
+      weaponBasePenetration: form.basePenetration,
+      characterModifiers: createStatModifiers(),
+      specialSpeedFactor: 1,
       materialBaseDamage: form.baseDamage,
       materialBaseSpeed: form.baseSpeed,
       formDamageFactor: 1,
