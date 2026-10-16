@@ -32,7 +32,7 @@ const TAVERN_PAGE_MARKUP = `<section class="page" id="tavern">
         <div class="card span-5">
           <h2>Rekrutierung & Inn</h2>
           <div id="tavernCapacity"></div>
-          <p class="status-line">Neue Charaktere starten mit vollen HP und voller Energie, aber ohne Waffe. Alle Klassen dürfen aktuell alle vorhandenen Waffen verwenden.</p>
+          <p class="status-line">Neue Charaktere starten mit vollen HP und voller Energie, aber ohne Waffe. Klassenabhängige Waffenfreigaben werden später separat umgesetzt.</p>
         </div>
       </div>
     </section>`;
@@ -40,7 +40,7 @@ const TAVERN_PAGE_MARKUP = `<section class="page" id="tavern">
 const ROSTER_PAGE_MARKUP = `<section class="page" id="roster">
       <div class="card">
         <h2>Kader</h2>
-        <p class="muted">Alle angeworbenen Charaktere und ihre persönliche Ausrüstung.</p>
+        <p class="muted">Klassenbasis plus Boni der ausgerüsteten Waffen. Bedrohung bleibt ausschließlich von der Klasse abhängig.</p>
         <div id="rosterCard"></div>
       </div>
     </section>`;
@@ -56,7 +56,7 @@ const STORAGE_PAGE_MARKUP = `<section class="page" id="storage">
           <div id="inventoryEmpty" class="empty">Noch keine Materialien gesammelt.</div>
         </div>
 
-        <div class="card span-12"><h2>Waffenlager</h2><p class="muted">Kompakte Waffenkarten. Kürzel werden im Index erklärt.</p><div id="weaponInventory" class="weapon-card-list"></div><div id="weaponInventoryEmpty" class="empty">Noch keine Waffen vorhanden.</div>
+        <div class="card span-12"><h2>Waffenlager</h2><p class="muted">Kompakte Waffenkarten. Kürzel und Berechnungen werden im Index erklärt.</p><div id="weaponInventory" class="weapon-card-list"></div><div id="weaponInventoryEmpty" class="empty">Noch keine Waffen vorhanden.</div>
         </div>
       </div>
     </section>`;
@@ -65,7 +65,7 @@ const FORGE_PAGE_MARKUP = `<section class="page" id="forge">
       <div class="grid">
         <div class="card span-7">
           <h2>Schmiede <span class="tag fixed">AKTIV</span></h2>
-          <p class="muted">Die Waffenform ist ein Bauplan. Sie legt Grundwerte, Bauteile und Materialmengen fest. Materialmenge bestimmt die Herstellungskosten; die Materialwahl bestimmt die Waffenwerte.</p>
+          <p class="muted">Die Waffenform ist ein Bauplan. Materialmenge bestimmt ausschließlich den Verbrauch; das Bauteil bestimmt, welcher Stat des gewählten Materials auf die Waffe bzw. ihren Träger wirkt.</p>
 
           <div style="margin:14px 0">
             <label class="field-label" for="forgeWeaponName">Waffenname</label>
@@ -76,7 +76,7 @@ const FORGE_PAGE_MARKUP = `<section class="page" id="forge">
             <div class="stat"><span>Waffenform</span>
               <select id="weaponForm" class="btn" style="width:100%;margin-top:6px" onchange="renderForgePreview()">
                 <option value="dagger">Dolch</option>
-                <option value="sword">Einhänder</option>
+                <option value="sword">1H Schwert</option>
               </select>
             </div>
             <div class="stat"><span>Herstellungszeit</span><b id="forgeTimePreview">–</b></div>
@@ -87,11 +87,12 @@ const FORGE_PAGE_MARKUP = `<section class="page" id="forge">
             <table>
               <thead><tr><th>Bauteil</th><th>Material</th></tr></thead>
               <tbody>
-                <tr><td>Wirkpart / Schneide</td><td><select id="slotWorkingPart" class="btn forge-select" onchange="renderForgePreview()"></select></td></tr>
-                <tr><td>Rücken / Kern</td><td><select id="slotBack" class="btn forge-select" onchange="renderForgePreview()"></select></td></tr>
-                <tr><td>Griffkern</td><td><select id="slotGripCore" class="btn forge-select" onchange="renderForgePreview()"></select></td></tr>
-                <tr><td>Griffwicklung</td><td><select id="slotGripWrap" class="btn forge-select" onchange="renderForgePreview()"></select></td></tr>
-                <tr><td>Spezialteil</td><td><select id="slotSpecial" class="btn forge-select" onchange="renderForgePreview()"></select></td></tr>
+                <tr id="forgeWorkingPartRow"><td>Schneide</td><td><select id="slotWorkingPart" class="btn forge-select" onchange="renderForgePreview()"></select></td></tr>
+                <tr id="forgeBackRow"><td>Kern</td><td><select id="slotBack" class="btn forge-select" onchange="renderForgePreview()"></select></td></tr>
+                <tr id="forgeGripCoreRow"><td>Griff</td><td><select id="slotGripCore" class="btn forge-select" onchange="renderForgePreview()"></select></td></tr>
+                <tr id="forgeGripWrapRow"><td>Wicklung</td><td><select id="slotGripWrap" class="btn forge-select" onchange="renderForgePreview()"></select></td></tr>
+                <tr id="forgeSpecialRow"><td>Spezial</td><td><select id="slotSpecial" class="btn forge-select" onchange="renderForgePreview()"></select></td></tr>
+                <tr id="forgeParryRow"><td>Parierstange</td><td><select id="slotParry" class="btn forge-select" onchange="renderForgePreview()"></select></td></tr>
               </tbody>
             </table>
           </div>
