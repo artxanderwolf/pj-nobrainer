@@ -12,6 +12,8 @@ import {
   weaponDamageAfterArmor
 } from '../src/app/game/game-core.ts';
 
+const closeTo = (actual, expected, message) => assert.ok(Math.abs(actual - expected) < 1e-12, message ?? `${actual} ≈ ${expected}`);
+
 const materialNames = Object.keys(MATERIALS).sort();
 assert.deepEqual(materialNames, [
   'Aluminium', 'Fichte', 'Fuchs-Leder', 'Hasen-Leder', 'Kupfer', 'Lederfetzen', 'Morsche Fichte', 'Tanne', 'Zinn'
@@ -47,18 +49,18 @@ assert.equal(isWeaponSelectionComplete(slots, 'dagger'), true);
 assert.equal(isWeaponSelectionComplete(slots.slice(0, 4), 'dagger'), false);
 
 const dagger = calculateWeaponStats(slots, 'dagger');
-assert.equal(dagger.damagePerHit, 7.2);
-assert.ok(Math.abs(dagger.attackSpeed - 1.68) < 1e-12);
-assert.equal(dagger.hitChance, 0.55);
-assert.equal(dagger.penetration, 0.20);
-assert.ok(Math.abs(dagger.expectedRaw - 6.6528) < 1e-12);
+closeTo(dagger.damagePerHit, 7.2);
+closeTo(dagger.attackSpeed, 1.68);
+closeTo(dagger.hitChance, 0.55);
+closeTo(dagger.penetration, 0.20);
+closeTo(dagger.expectedRaw, 6.6528);
 
 const sword = calculateWeaponStats(slots, 'sword');
-assert.equal(sword.damagePerHit, 12);
-assert.equal(sword.attackSpeed, 1.2);
-assert.equal(sword.hitChance, 0.55);
-assert.equal(sword.penetration, 0.20);
-assert.ok(Math.abs(sword.expectedRaw - 7.92) < 1e-12);
+closeTo(sword.damagePerHit, 12);
+closeTo(sword.attackSpeed, 1.2);
+closeTo(sword.hitChance, 0.55);
+closeTo(sword.penetration, 0.20);
+closeTo(sword.expectedRaw, 7.92);
 
 const legacySlots = [
   { slot: 'Waffentyp', material: 'Aluminium' },
@@ -80,9 +82,9 @@ assert.equal(reinforcementEffectText('Kupfer'), '+10 Prozentpunkte DS');
 assert.equal(reinforcementEffectText('Fichte'), 'Kein Zusatzeffekt');
 
 const armored = weaponDamageAfterArmor({ stats: sword }, 100, { strengthFactor: 1, precision: 1 });
-assert.ok(Math.abs(armored.raw - sword.expectedRaw) < 1e-12);
-assert.equal(armored.penetration, 0.20);
-assert.equal(armored.effectiveArmor, 80);
+closeTo(armored.raw, sword.expectedRaw);
+closeTo(armored.penetration, 0.20);
+closeTo(armored.effectiveArmor, 80);
 assert.ok(armored.afterArmor > 0 && armored.afterArmor < armored.raw);
 
 console.log('Game-Core: Waffenbaupläne, Materialeigenschaften, Alt-Slot-Normalisierung und Kampfübergabe sind konsistent.');
