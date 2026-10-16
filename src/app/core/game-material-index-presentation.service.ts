@@ -39,7 +39,7 @@ export class GameMaterialIndexPresentationService {
         this.getDungeonMaterialChance(1, name)
       );
       const row = document.createElement('tr');
-      row.innerHTML = `<td>${presentation.category}</td><td><strong>${presentation.name}</strong></td><td class="rarity">${presentation.rarityText}</td><td>${presentation.baseDamageText}</td><td>${presentation.baseSpeedText}</td><td>${presentation.bladeText}</td><td>${presentation.penetrationText}</td><td>${presentation.gripSpeedText}</td><td>${presentation.hitChanceText}</td><td>${presentation.reinforcementText}</td><td>${presentation.dungeonChanceText}</td>`;
+      row.innerHTML = `<td>${presentation.category}</td><td><strong>${presentation.name}</strong></td><td class="rarity">${presentation.rarityText}</td><td>${presentation.hpText}</td><td>${presentation.energyText}</td><td>${presentation.armorText}</td><td>${presentation.dodgeText}</td><td>${presentation.strengthFactorText}</td><td>${presentation.precisionText}</td><td>${presentation.threatText}</td><td>${presentation.critChanceText}</td><td>${presentation.critDamageText}</td><td>${presentation.hpRegenText}</td><td>${presentation.energyRegenText}</td><td>${presentation.experienceText}</td><td>${presentation.lifeStealText}</td><td>${presentation.penetrationText}</td><td>${presentation.specialStatText}</td><td>${presentation.specialPercentText}</td><td>${presentation.dungeonChanceText}</td>`;
       this.applyMobileLabels(body, row);
       body.appendChild(row);
     }
