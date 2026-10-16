@@ -118,7 +118,7 @@ export function createDungeonEnemy(index: number, classId: CharacterClassId): Du
     dodge: Math.min(0.95, cls.dodge * multipliers.dodge),
     strengthFactor: cls.strengthFactor,
     precision: cls.precision,
-    distance: cls.distance,
+    distance: cls.distance ?? 2,
     alive: true,
     damage: base.damage * multipliers.damage,
     speed: base.speed * multipliers.speed,
