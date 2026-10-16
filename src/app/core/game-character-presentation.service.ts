@@ -6,6 +6,7 @@ import {
   type ResolvedCharacterStats
 } from '../game/game-core';
 import { type CharacterState } from '../game/character-core';
+import { characterStatLevelMultiplier } from '../game/character-progression-core';
 import {
   getCharacterCardPresentation,
   getWeaponPickerKey,
@@ -100,7 +101,11 @@ export class GameCharacterPresentationService {
   }
 
   private effectiveStats(character: CharacterState): ResolvedCharacterStats {
-    return calculateCharacterStats(character.classId, this.getEquippedWeapons(character));
+    return calculateCharacterStats(
+      character.classId,
+      this.getEquippedWeapons(character),
+      characterStatLevelMultiplier(character.level)
+    );
   }
 
   private effectiveOffense(character: CharacterState, stats: ResolvedCharacterStats): number {
