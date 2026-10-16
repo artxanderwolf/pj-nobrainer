@@ -65,7 +65,7 @@ try {
         { slot: 'workingPart', material: 'Aluminium' },
         { slot: 'back', material: 'Aluminium' },
         { slot: 'gripCore', material: 'Tanne' },
-        { slot: 'gripWrap', material: 'Hasen-Leder' },
+        { slot: 'gripWrap', material: 'Fuchs-Leder' },
         { slot: 'special', material: 'Aluminium' }
       ]
     }),
