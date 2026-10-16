@@ -80,7 +80,7 @@ export function getForgePreviewPresentation(
       rawText: '–',
       penetrationText: '–',
       rarityText: '–',
-      reinforcementText: 'Verstärkungseffekt: –',
+      reinforcementText: 'Spezialeffekt: –',
       startDisabled: true
     };
   }
@@ -90,14 +90,14 @@ export function getForgePreviewPresentation(
     timeText: `${input.seconds} s`,
     valueText: formatCurrency(input.valueNickel),
     damageText: stats.damagePerHit.toFixed(2),
-    damageBaseInfo: `Materialbasis ${stats.materialBaseDamage.toFixed(2)} × Waffenform ${stats.formDamageFactor.toFixed(1)}`,
+    damageBaseInfo: `Waffenbasis ${stats.materialBaseDamage.toFixed(2)}`,
     speedText: stats.attackSpeed.toFixed(2),
-    speedBaseInfo: `Materialbasis ${stats.materialBaseSpeed.toFixed(2)} × Waffenform ${stats.formSpeedFactor.toFixed(1)}`,
+    speedBaseInfo: `Waffenbasis ${stats.materialBaseSpeed.toFixed(2)}`,
     hitText: `${Math.round(stats.hitChance * 100)} %`,
     rawText: stats.expectedRaw.toFixed(2),
     penetrationText: `${Math.round(stats.penetration * 100)} %`,
     rarityText: `× ${input.factor}`,
-    reinforcementText: `Verstärkungseffekt: ${formatReinforcement(input.reinforcementMaterial)}`,
+    reinforcementText: `Spezialeffekt: ${formatReinforcement(input.reinforcementMaterial)}`,
     startDisabled: !input.hasCapacity || !input.hasMaterials
   };
 }
