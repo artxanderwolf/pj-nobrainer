@@ -7,6 +7,7 @@ import { GameCombatLogService } from './game-combat-log.service';
 import { GameDungeonService, type DungeonActionResult } from './game-dungeon.service';
 import { GameDungeonPresentationService } from './game-dungeon-presentation.service';
 import { GameEnergyService } from './game-energy.service';
+import { GameForgeJobPresentationService } from './game-forge-job-presentation.service';
 import { GameForgeService } from './game-forge.service';
 import { GameMarketService } from './game-market.service';
 import { GameResourcePresentationService } from './game-resource-presentation.service';
@@ -21,7 +22,6 @@ interface GameSaveStorageAdapter {
 export interface GameRuntimeApi {
   configureSaveStorage(adapter: GameSaveStorageAdapter): void;
   prepare(): void;
-  renderForgeJob(): void;
   renderMarketJob(): void;
   renderForgePreview(): void;
   renderMarketMaterials(): void;
@@ -56,6 +56,7 @@ export class GameRuntimeService {
     private readonly characterPresentation: GameCharacterPresentationService,
     private readonly weaponInventoryPresentation: GameWeaponInventoryPresentationService,
     private readonly resourcePresentation: GameResourcePresentationService,
+    private readonly forgeJobPresentation: GameForgeJobPresentationService,
     private readonly combatLog: GameCombatLogService,
     private readonly gameEnergy: GameEnergyService,
     private readonly gameForge: GameForgeService,
@@ -123,6 +124,7 @@ export class GameRuntimeService {
   renderInitial(): void {
     this.getRuntime().renderInitial();
     this.resourcePresentation.render();
+    this.forgeJobPresentation.render();
     this.characterPresentation.render();
     this.weaponInventoryPresentation.render();
     this.dungeonPresentation.render();
@@ -144,7 +146,6 @@ export class GameRuntimeService {
     const required: Array<keyof GameRuntimeApi> = [
       'configureSaveStorage',
       'prepare',
-      'renderForgeJob',
       'renderMarketJob',
       'renderForgePreview',
       'renderMarketMaterials',
@@ -183,7 +184,7 @@ export class GameRuntimeService {
     const dungeonUpdate = this.gameDungeon.update();
     this.applyDungeonResult(runtime, dungeonUpdate);
 
-    runtime.renderForgeJob();
+    this.forgeJobPresentation.render();
     runtime.renderMarketJob();
     this.characterPresentation.renderIfIdle();
     this.dungeonPresentation.render();
