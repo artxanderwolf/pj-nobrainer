@@ -1,26 +1,20 @@
 import type { EquipmentHand } from './equipment-core';
+import type { ResolvedCharacterStats } from './game-core';
 
 export interface CharacterPresentationCharacterLike {
   id: number;
   name: string;
   hp: number;
-  maxHp: number;
   energy: number;
-  maxEnergy: number;
-  armor: number;
-  dodge: number;
-  strengthFactor: number;
-  precision: number;
   equipment: Record<EquipmentHand, number | null>;
 }
 
 export interface CharacterPresentationClassLike {
   name: string;
-  energyRegenPerMinute: number;
 }
 
 export interface CharacterStatPresentation {
-  label: 'HP' | 'EN' | 'RÜS' | 'AUS' | 'STÄ' | 'PRÄ' | 'EN-Reg.' | 'Offensive gg. Dungeon 1';
+  label: 'HP' | 'EN' | 'RÜS' | 'AUS' | 'SF' | 'PRÄ' | 'BED' | 'K-C' | 'K-S' | 'HP-Reg.' | 'EN-Reg.' | 'ERF' | 'LR' | 'DS' | 'Offensive gg. Dungeon 1';
   value: string;
 }
 
@@ -100,17 +94,25 @@ export function getWeaponPickerKey(characterId: number, hand: EquipmentHand): st
 export function getCharacterCardPresentation(
   character: CharacterPresentationCharacterLike,
   characterClass: CharacterPresentationClassLike,
+  effectiveStats: ResolvedCharacterStats,
   effectiveOffense: number,
   openWeaponPickerHand: string | null
 ): CharacterCardPresentation {
   const stats: CharacterStatPresentation[] = [
-    { label: 'HP', value: `${character.hp.toFixed(1)} / ${character.maxHp}` },
-    { label: 'EN', value: `${character.energy.toFixed(1)} / ${character.maxEnergy}` },
-    { label: 'RÜS', value: String(character.armor) },
-    { label: 'AUS', value: `${Math.round(character.dodge * 100)} %` },
-    { label: 'STÄ', value: character.strengthFactor.toFixed(2) },
-    { label: 'PRÄ', value: character.precision.toFixed(2) },
-    { label: 'EN-Reg.', value: `${characterClass.energyRegenPerMinute}/Min.` },
+    { label: 'HP', value: `${character.hp.toFixed(1)} / ${effectiveStats.maxHp}` },
+    { label: 'EN', value: `${character.energy.toFixed(1)} / ${effectiveStats.maxEnergy}` },
+    { label: 'RÜS', value: effectiveStats.armor.toFixed(2).replace(/\.00$/, '') },
+    { label: 'AUS', value: `${Math.round(effectiveStats.dodge * 100)} %` },
+    { label: 'SF', value: effectiveStats.strengthFactor.toFixed(2) },
+    { label: 'K-C', value: `${Math.round(effectiveStats.critChance * 100)} %` },
+    { label: 'PRÄ', value: effectiveStats.precision.toFixed(2) },
+    { label: 'K-S', value: `${Math.round(effectiveStats.critDamage * 100)} %` },
+    { label: 'BED', value: Math.round(effectiveStats.threat).toString() },
+    { label: 'DS', value: `${Math.round(effectiveStats.penetration * 100)} %` },
+    { label: 'HP-Reg.', value: `${effectiveStats.hpRegenPerMinute.toFixed(1).replace(/\.0$/, '')}/Min.` },
+    { label: 'EN-Reg.', value: `${effectiveStats.energyRegenPerMinute.toFixed(1).replace(/\.0$/, '')}/Min.` },
+    { label: 'LR', value: `${Math.round(effectiveStats.lifeSteal * 100)} %` },
+    { label: 'ERF', value: `${Math.round(effectiveStats.experienceFactor * 100)} %` },
     { label: 'Offensive gg. Dungeon 1', value: effectiveOffense.toFixed(2) }
   ];
 
