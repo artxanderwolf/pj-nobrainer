@@ -13,7 +13,7 @@ const extractLegacyPage = pageId => {
 const normalizeMarkup = markup => markup.replace(/\r\n/g, '\n').split('\n').map(line => line.trim()).filter(Boolean).join('\n');
 
 assert.deepEqual([...ANGULAR_OWNED_PAGE_IDS], ['base', 'tavern', 'roster', 'storage', 'forge', 'market', 'dungeon', 'index'], 'Alle acht sichtbaren Seiten müssen Angular-eigenes Seitenmarkup besitzen.');
-for (const pageId of ['base', 'storage', 'market', 'dungeon']) {
+for (const pageId of ['base', 'market', 'dungeon']) {
   assert.equal(normalizeMarkup(getAngularOwnedPageMarkup(pageId)), normalizeMarkup(extractLegacyPage(pageId)), `Das Angular-Markup für ${pageId} weicht unerwartet von der bisherigen Referenzdarstellung ab.`);
 }
 
@@ -55,4 +55,4 @@ assert.match(appComponent, /composeAppShell\(pageMarkup\)/, 'Das Angular-eigene 
 assert.doesNotMatch(appComponent, /adaptLegacyWeaponMarkup/, 'Angular-eigenes Seitenmarkup darf nicht mehr durch den Legacy-Waffen-Markupadapter verändert werden.');
 assert.match(appComponent, /const APP_VERSION = '0\.12\.84';/, 'Die App-Version wurde nicht auf v0.12.84 gesetzt.');
 
-console.log('Seiten-Markup: Schmiede, Kaderhinweis und Index bilden das gemeinsame Stat-/Bauplansystem ab; übrige Fachseiten bleiben referenzgleich.');
+console.log('Seiten-Markup: Stat-/Bauplansystem ist in Kaderhinweisen, Lager, Schmiede und Index abgebildet; unveränderte Fachseiten bleiben referenzgleich.');
