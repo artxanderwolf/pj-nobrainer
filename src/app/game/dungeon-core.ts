@@ -118,7 +118,7 @@ export function createDungeonEnemy(index: number, classId: CharacterClassId): Du
     dodge: Math.min(0.95, cls.dodge * multipliers.dodge),
     strengthFactor: cls.strengthFactor,
     precision: cls.precision,
-    distance: cls.distance ?? 2,
+    distance: cls.distance ?? 1,
     alive: true,
     damage: base.damage * multipliers.damage,
     speed: base.speed * multipliers.speed,
@@ -138,10 +138,19 @@ export function createDungeonAttackPoints<TCharacter extends DungeonCharacterLik
   getAttackPoints: (character: TCharacter) => readonly CharacterAttackPointSource[]
 ): DungeonAttackPoint[] {
   const result: DungeonAttackPoint[] = [];
-  participants.forEach(character => getAttackPoints(character).forEach(point => result.push({
-    side: 'player', ownerId: character.id, kind: point.kind, weaponId: point.weaponId ?? null, label: point.label,
-    nextAt: at + 1000 / Math.max(0.01, Number(point.speed) || 0)
-  })));
+  participants.forEach(character => {
+    const seenWeaponIds = new Set<number>();
+    for (const point of getAttackPoints(character)) {
+      if (typeof point.weaponId === 'number') {
+        if (seenWeaponIds.has(point.weaponId)) continue;
+        seenWeaponIds.add(point.weaponId);
+      }
+      result.push({
+        side: 'player', ownerId: character.id, kind: point.kind, weaponId: point.weaponId ?? null, label: point.label,
+        nextAt: at + 1000 / Math.max(0.01, Number(point.speed) || 0)
+      });
+    }
+  });
   enemies.forEach(enemy => result.push({ side: 'enemy', ownerId: enemy.id, kind: 'enemy', nextAt: at + 1000 / Math.max(0.01, enemy.speed) }));
   return result;
 }
