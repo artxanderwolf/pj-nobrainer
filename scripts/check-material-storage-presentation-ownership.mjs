@@ -23,15 +23,16 @@ assert.match(storageBridge[1], /presentation\.render\(\)/);
 assert.doesNotMatch(storageBridge[1], /state\.inventory|materialSellData|getMaterialStorageRowPresentation|sortMaterialStorageEntries|document\.getElementById/, 'Legacy-Materiallagerwrapper enthält weiterhin State- oder DOM-Präsentationslogik.');
 
 const indexBridge = adapter.match(/const MATERIAL_INDEX_BRIDGE = `([\s\S]*?)`;/);
-assert.ok(indexBridge, 'Materialindex-Bridge fehlt.');
-assert.match(indexBridge[1], /getMaterialIndexRowPresentation/, 'Materialindex wurde unbeabsichtigt aus diesem Cut entfernt.');
-assert.match(adapter, /window\.NoBrainerMaterialPresentationCore = MATERIAL_PRESENTATION_CORE_BRIDGE;/, 'Materialindex-/Formatierungs-Core muss für den verbleibenden Legacy-Index erhalten bleiben.');
+assert.ok(indexBridge, 'Materialindex-Kompatibilitätswrapper fehlt.');
+assert.match(indexBridge[1], /NoBrainerMaterialIndexPresentationCompatibility/);
+assert.match(indexBridge[1], /presentation\.render\(\)/);
+assert.doesNotMatch(adapter, /MATERIAL_PRESENTATION_CORE_BRIDGE|NoBrainerMaterialPresentationCore/, 'Legacy-Materialadapter registriert weiterhin den alten Material-Presentation-Core.');
 
 const bridgeOpen = app.indexOf('this.gameMaterialStoragePresentation.openLegacyCompatibilityBridge();');
 const stateBootstrap = app.indexOf('this.gameState.openBootstrapRegistration();');
 assert.ok(bridgeOpen >= 0 && stateBootstrap > bridgeOpen, 'Materiallager-Präsentationsbrücke muss vor dem State-/Legacy-Bootstrap geöffnet werden.');
 assert.match(app, /private readonly gameMaterialStoragePresentation: GameMaterialStoragePresentationService/);
 assert.match(app, /ngOnDestroy\(\): void \{[\s\S]*this\.gameMaterialStoragePresentation\.closeLegacyCompatibilityBridge\(\);/);
-assert.match(app, /const APP_VERSION = '0\.12\.81';/);
+assert.match(app, /const APP_VERSION = '0\.12\.82';/);
 
-console.log('Materiallager-Präsentations-Eigentümerschaft: Lagerzeilen und Leerzustand werden direkt durch Angular aus dem Angular-State gerendert; der Legacy-Adapter delegiert nur noch, während der Materialindex unverändert bleibt.');
+console.log('Materiallager-Präsentations-Eigentümerschaft: Lagerzeilen und Leerzustand werden direkt durch Angular aus dem Angular-State gerendert; der Legacy-Materialadapter enthält nur noch dünne Renderdelegationen.');
