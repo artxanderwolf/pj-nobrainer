@@ -33,7 +33,7 @@ assert.doesNotMatch(appComponent, /querySelector<HTMLElement>\('body > \.app'\)/
 assert.doesNotMatch(appComponent, /DOMParser/, 'Der App-Component parst weiterhin die Legacy-HTML zur Laufzeit.');
 assert.doesNotMatch(appComponent, /querySelector<HTMLScriptElement>/, 'Der App-Component extrahiert weiterhin ein Script aus der Legacy-HTML.');
 assert.match(appComponent, /LEGACY_RUNTIME_PATH/, 'Der App-Component verwendet nicht das eigenständige Runtime-Asset.');
-assert.match(appComponent, /legacyHost\.nativeElement\.innerHTML = adaptedMarkup;/, 'Das zusammengesetzte Angular-Markup wird nicht mehr in den Angular-Host eingebunden.');
+assert.match(appComponent, /legacyHost\.nativeElement\.innerHTML = composeAppShell\(pageMarkup\);/, 'Das zusammengesetzte Angular-Markup wird nicht mehr direkt in den Angular-Host eingebunden.');
 
 const buildStyles = angularConfig.projects?.nobrainer?.architect?.build?.options?.styles ?? [];
 assert.ok(buildStyles.includes('src/styles.css'), 'src/styles.css ist nicht als Angular-Build-Stylesheet registriert.');
