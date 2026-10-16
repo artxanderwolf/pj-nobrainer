@@ -36,12 +36,13 @@ declare global {
   }
 }
 
-const FORGE_SLOT_BINDINGS: readonly { id: string; slot: WeaponCraftingSlotId }[] = [
-  { id: 'slotWorkingPart', slot: 'workingPart' },
-  { id: 'slotBack', slot: 'back' },
-  { id: 'slotGripCore', slot: 'gripCore' },
-  { id: 'slotGripWrap', slot: 'gripWrap' },
-  { id: 'slotSpecial', slot: 'special' }
+const FORGE_SLOT_BINDINGS: readonly { id: string; rowId: string; slot: WeaponCraftingSlotId }[] = [
+  { id: 'slotWorkingPart', rowId: 'forgeWorkingPartRow', slot: 'workingPart' },
+  { id: 'slotBack', rowId: 'forgeBackRow', slot: 'back' },
+  { id: 'slotGripCore', rowId: 'forgeGripCoreRow', slot: 'gripCore' },
+  { id: 'slotGripWrap', rowId: 'forgeGripWrapRow', slot: 'gripWrap' },
+  { id: 'slotSpecial', rowId: 'forgeSpecialRow', slot: 'special' },
+  { id: 'slotParry', rowId: 'forgeParryRow', slot: 'parry' }
 ];
 
 @Injectable({ providedIn: 'root' })
@@ -113,26 +114,42 @@ export class GameForgePreviewPresentationService {
     const quantities = this.gameForge.selectionQuantities(weaponForm);
     const form = getWeaponForm(weaponForm);
     const categoriesBySlot = new Map<WeaponCraftingSlotId, readonly MaterialCategory[]>();
-    for (const part of form.parts) {
-      if (!categoriesBySlot.has(part.materialSlot)) categoriesBySlot.set(part.materialSlot, part.categories);
-    }
+    for (const part of form.parts) categoriesBySlot.set(part.materialSlot, part.categories);
 
-    const bindings = FORGE_SLOT_BINDINGS.filter(binding => (quantities[binding.slot] ?? 0) > 0);
-    const selections = new Map(bindings.map(binding => [binding.id, (document.getElementById(binding.id) as HTMLSelectElement | null)?.value || '']));
+    const activeBindings = FORGE_SLOT_BINDINGS.filter(binding => (quantities[binding.slot] ?? 0) > 0);
+    const selections = new Map(
+      FORGE_SLOT_BINDINGS.map(binding => [
+        binding.id,
+        (document.getElementById(binding.id) as HTMLSelectElement | null)?.value || ''
+      ])
+    );
 
-    for (const binding of bindings) {
+    for (const binding of FORGE_SLOT_BINDINGS) {
       const select = document.getElementById(binding.id) as HTMLSelectElement | null;
+      const row = document.getElementById(binding.rowId) as HTMLTableRowElement | null;
       if (!select) continue;
+      const needed = quantities[binding.slot] ?? 0;
+      const active = needed > 0;
+      if (row) row.hidden = !active;
+      select.disabled = !active;
+      if (!active) {
+        select.innerHTML = '';
+        select.value = '';
+        continue;
+      }
+
       const categories = categoriesBySlot.get(binding.slot) ?? [];
       const previous = selections.get(binding.id) || '';
-      const needed = quantities[binding.slot] ?? 0;
       const reservedByOthers = new Map<string, number>();
 
-      for (const other of bindings) {
+      for (const other of activeBindings) {
         if (other.id === binding.id) continue;
-        const material = selections.get(other.id) || '';
-        if (!material) continue;
-        reservedByOthers.set(material, (reservedByOthers.get(material) || 0) + (quantities[other.slot] ?? 0));
+        const selectedMaterial = selections.get(other.id) || '';
+        if (!selectedMaterial) continue;
+        reservedByOthers.set(
+          selectedMaterial,
+          (reservedByOthers.get(selectedMaterial) || 0) + (quantities[other.slot] ?? 0)
+        );
       }
 
       select.innerHTML = '';
@@ -151,13 +168,13 @@ export class GameForgePreviewPresentationService {
           return stock - reserved >= needed;
         });
 
-      for (const [name, material] of available) {
+      for (const [name, materialDefinition] of available) {
         const stock = Number(state.inventory[name]?.qty) || 0;
         const reserved = reservedByOthers.get(name) || 0;
         const remaining = stock - reserved;
         const option = document.createElement('option');
         option.value = name;
-        option.textContent = `${name} · S${material.rarity} · benötigt ${needed} · verfügbar ${remaining}${
+        option.textContent = `${name} · S${materialDefinition.rarity} · benötigt ${needed} · verfügbar ${remaining}${
           binding.slot === 'special' ? ` · ${reinforcementEffectText(name)}` : ''
         }`;
         select.appendChild(option);
@@ -179,7 +196,7 @@ export class GameForgePreviewPresentationService {
     this.setText(
       'forgeParryInfo',
       parry
-        ? `${parry.quantity}× Parierstange · verwendet das gewählte Rückenmaterial`
+        ? `${parry.quantity}× Parierstange · eigene Materialwahl · Wirkung: R + AW`
         : 'Keine Parierstange bei dieser Waffenform'
     );
   }
