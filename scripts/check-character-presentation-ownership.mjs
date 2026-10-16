@@ -11,9 +11,10 @@ const equipmentAdapter = readFileSync('src/app/core/legacy-equipment-adapter.ser
 
 assert.match(service, /constructor\([\s\S]*private readonly gameState: GameStateService,[\s\S]*private readonly gameEquipment: GameEquipmentService,[\s\S]*private readonly weaponPresentation: GameWeaponPresentationService/);
 assert.match(service, /getCharacterCardPresentation\(/, 'Angular-Kaderdarstellung nutzt den Character-Presentation-Core nicht.');
+assert.match(service, /calculateCharacterStats\(character\.classId, this\.getEquippedWeapons\(character\)\)/, 'Angular-Kader löst Klassen- und Waffenboni nicht über das gemeinsame Statmodell auf.');
 assert.match(weaponPresentationService, /createWeaponPresentationCore\(/, 'Gemeinsame Angular-Waffenpräsentation nutzt den Weapon-Presentation-Core nicht.');
 assert.match(service, /weaponPresentation\.renderCard\(/, 'Angular-Kader nutzt die gemeinsame Waffenkarten-Präsentation nicht.');
-assert.match(service, /weaponDamageAfterArmor\(weapon, 0, character\)\.raw/, 'Die bestehende Waffen-/Charakter-Offensivberechnung wird im Kader nicht wiederverwendet.');
+assert.match(service, /weaponDamageAfterArmor\(weapon, 0, stats\)\.raw/, 'Die gemeinsame Waffen-/Charakter-Offensivberechnung wird im Kader nicht wiederverwendet.');
 assert.match(service, /gameEquipment\.getWeaponPickerPresentation\(/, 'Waffenpicker liest Equipment-Zustand nicht über den Angular-Service.');
 assert.match(service, /gameEquipment\.equipWeapon\(/, 'Waffenpicker rüstet nicht über den Angular-Equipment-Service aus.');
 assert.match(service, /gameEquipment\.unequipHand\(/, 'Waffenpicker legt nicht über den Angular-Equipment-Service ab.');
@@ -35,4 +36,4 @@ assert.doesNotMatch(characterAdapter, /NoBrainerCharacterPresentationCore|CHARAC
 assert.doesNotMatch(equipmentAdapter, /getWeaponPickerPresentation/, 'Legacy-Equipment-Adapter enthält weiterhin die Kader-Waffenpicker-Präsentation.');
 assert.match(app, /const APP_VERSION = '0\.12\.84';/);
 
-console.log('Character-Präsentations-Eigentümerschaft: Kader und Waffenpicker laufen direkt durch Angular und teilen die Waffenkarten-Präsentation mit dem Angular-Waffenlager.');
+console.log('Character-Präsentations-Eigentümerschaft: Kader zeigt den aufgelösten Klassen-/Waffen-Statblock; Waffenpicker und Equipment-Aktionen bleiben Angular-eigen.');
