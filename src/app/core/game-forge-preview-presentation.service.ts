@@ -42,7 +42,8 @@ const FORGE_SLOT_BINDINGS: readonly { id: string; rowId: string; slot: WeaponCra
   { id: 'slotGripCore', rowId: 'forgeGripCoreRow', slot: 'gripCore' },
   { id: 'slotGripWrap', rowId: 'forgeGripWrapRow', slot: 'gripWrap' },
   { id: 'slotSpecial', rowId: 'forgeSpecialRow', slot: 'special' },
-  { id: 'slotParry', rowId: 'forgeParryRow', slot: 'parry' }
+  { id: 'slotParry', rowId: 'forgeParryRow', slot: 'parry' },
+  { id: 'slotBowstring', rowId: 'forgeBowstringRow', slot: 'bowstring' }
 ];
 
 @Injectable({ providedIn: 'root' })
@@ -93,7 +94,7 @@ export class GameForgePreviewPresentationService {
     this.setText('forgeRarityPreview', presentation.rarityText);
     this.setText('forgeReinforcementPreview', presentation.reinforcementText);
     this.setText('forgeMaterialTotalPreview', `${Object.values(requirements).reduce((sum, qty) => sum + qty, 0)} Materialeinheiten`);
-    this.renderParryInfo(weaponForm);
+    this.renderConstructionInfo(weaponForm);
     startButton.disabled = presentation.startDisabled;
     startButton.dataset['forgePreviewPresentationOwner'] = 'angular';
   }
@@ -191,14 +192,16 @@ export class GameForgePreviewPresentationService {
     }));
   }
 
-  private renderParryInfo(weaponForm: string): void {
-    const parry = getWeaponForm(weaponForm).parts.find(part => part.id === 'parry');
-    this.setText(
-      'forgeParryInfo',
-      parry
-        ? `${parry.quantity}× Parierstange · eigene Materialwahl · Wirkung: R + AW`
-        : 'Keine Parierstange bei dieser Waffenform'
-    );
+  private renderConstructionInfo(weaponForm: string): void {
+    const form = getWeaponForm(weaponForm);
+    const parry = form.parts.find(part => part.id === 'parry');
+    const bowstring = form.parts.find(part => part.id === 'bowstring');
+    const details = [
+      form.oneHanded ? '1H · belegt eine Hand' : '2H · belegt beide Hände',
+      parry ? `${parry.quantity}× Parierstange · Wirkung R + AW` : '',
+      bowstring ? `${bowstring.quantity}× Sehne · Leder · Wirkung SF + DS` : ''
+    ].filter(Boolean);
+    this.setText('forgeParryInfo', details.join(' · '));
   }
 
   private setText(id: string, value: string): void {
