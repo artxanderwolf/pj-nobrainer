@@ -21,9 +21,9 @@ const fixture = JSON.stringify({
   savedAt: Date.now(),
   state: {
     inventory: {
-      Fichte: { category: 'Holz', qty: 10 },
-      Zinn: { category: 'Metall', qty: 10 },
-      Lederfetzen: { category: 'Leder', qty: 10 }
+      Fichte: { category: 'Holz', qty: 20 },
+      Zinn: { category: 'Metall', qty: 20 },
+      Lederfetzen: { category: 'Leder', qty: 20 }
     }
   }
 });
@@ -59,19 +59,18 @@ const probeScript = `<script>
 
   const started = Date.now();
   const timer = setInterval(() => {
-    const workingPart = document.getElementById('slotWorkingPart');
     const form = document.getElementById('weaponForm');
-    if (workingPart instanceof HTMLSelectElement && form instanceof HTMLSelectElement && workingPart.options.length > 1) {
+    const back = document.getElementById('slotBack');
+    if (form instanceof HTMLSelectElement && back instanceof HTMLSelectElement && back.options.length > 1) {
       clearInterval(timer);
-      const formChosen = choose('weaponForm', 'sword');
+      const formChosen = choose('weaponForm', 'bow');
       setTimeout(() => {
         const selected = {
-          workingPart: choose('slotWorkingPart', 'Zinn'),
-          back: choose('slotBack', 'Zinn'),
+          back: choose('slotBack', 'Fichte'),
           gripCore: choose('slotGripCore', 'Fichte'),
           gripWrap: choose('slotGripWrap', 'Lederfetzen'),
           special: choose('slotSpecial', 'Fichte'),
-          parry: choose('slotParry', 'Fichte'),
+          bowstring: choose('slotBowstring', 'Lederfetzen'),
           form: formChosen
         };
         setTimeout(() => {
@@ -81,14 +80,17 @@ const probeScript = `<script>
             finalForm: document.getElementById('weaponForm')?.value || '',
             timeText: document.getElementById('forgeTimePreview')?.textContent || '',
             materialTotalText: document.getElementById('forgeMaterialTotalPreview')?.textContent || '',
-            parryText: document.getElementById('forgeParryInfo')?.textContent || '',
+            constructionText: document.getElementById('forgeParryInfo')?.textContent || '',
             damageText: document.getElementById('forgeDamagePreview')?.textContent || '',
             speedText: document.getElementById('forgeSpeedPreview')?.textContent || '',
             startDisabled: document.getElementById('forgeStartBtn')?.disabled ?? null,
+            workingPartHidden: document.getElementById('forgeWorkingPartRow')?.hidden ?? false,
+            parryHidden: document.getElementById('forgeParryRow')?.hidden ?? false,
+            bowstringHidden: document.getElementById('forgeBowstringRow')?.hidden ?? true,
             oldBaseMaterialPresent: Boolean(document.getElementById('slotBaseMaterial'))
           });
-        }, 150);
-      }, 100);
+        }, 180);
+      }, 120);
       return;
     }
 
@@ -148,17 +150,21 @@ try {
   assert.equal(result.status, 'tested', `Die Schmiedeauswahl wurde nicht testbereit: ${JSON.stringify(result)}`);
   assert.equal(result.browserErrors.length, 0, `Bei der Schmiedeauswahl trat ein Browserfehler auf: ${JSON.stringify(result)}`);
   assert.equal(result.runtimeError, '', `Die Runtime meldet bei der Schmiedeauswahl einen Fehler: ${JSON.stringify(result)}`);
-  assert.deepEqual(result.selected, { workingPart: true, back: true, gripCore: true, gripWrap: true, special: true, parry: true, form: true }, `Mindestens eine Bauplan-Auswahl ließ sich nicht setzen: ${JSON.stringify(result)}`);
-  assert.equal(result.finalForm, 'sword');
-  assert.equal(result.timeText, '30 s');
-  assert.equal(result.materialTotalText, '8 Materialeinheiten');
-  assert.match(result.parryText, /eigene Materialwahl/);
-  assert.equal(result.damageText, '10.50');
-  assert.equal(result.speedText, '1.00');
+  assert.deepEqual(result.selected, { back: true, gripCore: true, gripWrap: true, special: true, bowstring: true, form: true });
+  assert.equal(result.finalForm, 'bow');
+  assert.equal(result.timeText, '1:00');
+  assert.equal(result.materialTotalText, '16 Materialeinheiten');
+  assert.match(result.constructionText, /2H · belegt beide Hände/);
+  assert.match(result.constructionText, /3× Sehne/);
+  assert.equal(result.damageText, '11.11');
+  assert.equal(result.speedText, '0.90');
   assert.equal(result.startDisabled, false);
-  assert.equal(result.oldBaseMaterialPresent, false, 'Der alte Grundmaterial-Slot darf im Angular-Markup nicht mehr existieren.');
+  assert.equal(result.workingPartHidden, true);
+  assert.equal(result.parryHidden, true);
+  assert.equal(result.bowstringHidden, false);
+  assert.equal(result.oldBaseMaterialPresent, false);
 
-  console.log('Schmiedeauswahl-Browserregression: 1H-Schwert-Bauplan nutzt sechs Materialwahlen, acht Einheiten und eine eigenständige Parierstange.');
+  console.log('Schmiedeauswahl-Browserregression: Bogen nutzt fünf Materialwahlen, 16 Einheiten, drei Sehnen-Einheiten und 2H-Metadaten.');
 } finally {
   if (child) await stopBrowser(child);
   rmSync(browserProfile, { recursive: true, force: true });
