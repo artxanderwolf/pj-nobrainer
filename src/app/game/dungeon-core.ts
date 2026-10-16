@@ -1,4 +1,4 @@
-import { CHARACTER_CLASSES, CONFIG, type CharacterClassId } from './game-core';
+import { CHARACTER_CLASSES, CONFIG, getDungeonEnemyDefinition, type CharacterClassId } from './game-core';
 import { enforceGlobalActionCooldown, type CombatActionPointLike } from './combat-core';
 import { healParticipantsAfterSearchMiss, resolveDungeonSearch, type SearchParticipantLike } from './dungeon-search-core';
 
@@ -24,6 +24,8 @@ export interface DungeonEnemy {
   speed: number;
   hitChance: number;
   penetration: number;
+  lootMaterialIds: number[];
+  xpDrop: number;
 }
 
 export interface DungeonAttackPoint extends CombatActionPointLike {
@@ -108,9 +110,10 @@ export function createDungeonEnemy(index: number, classId: CharacterClassId): Du
   const cls = CHARACTER_CLASSES[classId];
   const multipliers = CONFIG.dungeon.enemyMultipliers;
   const base = CONFIG.dungeon.enemyBase;
+  const definition = getDungeonEnemyDefinition(CONFIG.dungeon.id, classId);
   return {
     id: `e${index}`,
-    name: `G ${cls.name} ${index}`,
+    name: `${definition?.name ?? cls.name} ${index}`,
     classId,
     maxHp: cls.maxHp * multipliers.hp,
     hp: cls.maxHp * multipliers.hp,
@@ -123,7 +126,9 @@ export function createDungeonEnemy(index: number, classId: CharacterClassId): Du
     damage: base.damage * multipliers.damage,
     speed: base.speed * multipliers.speed,
     hitChance: Math.min(1, base.hitChance * multipliers.hitChance),
-    penetration: Math.max(0, Math.min(1, base.penetration * multipliers.penetration))
+    penetration: Math.max(0, Math.min(1, base.penetration * multipliers.penetration)),
+    lootMaterialIds: [...(definition?.lootMaterialIds ?? [])],
+    xpDrop: Math.max(0, Number(definition?.xpDrop) || 0)
   };
 }
 
