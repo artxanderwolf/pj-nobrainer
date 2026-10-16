@@ -9,13 +9,21 @@ import {
   type EquipmentCharacterLike,
   type EquipWeaponResult,
   type WeaponEquipLocation,
+  type WeaponHandCount,
   type WeaponInventoryPresentation,
   type WeaponPickerPresentation
 } from '../game/equipment-core';
+import { getWeaponHandCount } from '../game/game-core';
 import { GameStateService, type MutableGameState } from './game-state.service';
+
+interface RuntimeEquipmentWeapon {
+  id: number;
+  weaponForm?: string | null;
+}
 
 type RuntimeEquipmentState = MutableGameState & {
   characters: EquipmentCharacterLike[];
+  weaponInventory: RuntimeEquipmentWeapon[];
 };
 
 interface EquipmentCompatibilityBridge {
@@ -40,16 +48,28 @@ export class GameEquipmentService {
   }
 
   getWeaponInventoryPresentation(weaponId: number): WeaponInventoryPresentation {
-    return getWeaponInventoryPresentation(this.characters(), Number(weaponId));
+    return getWeaponInventoryPresentation(this.characters(), Number(weaponId), id => this.weaponHandCount(id));
   }
 
   getWeaponPickerPresentation(weaponId: number, characterId: number, hand: string): WeaponPickerPresentation {
     if (!isEquipmentHand(hand)) return { status: '', disabled: false };
-    return getWeaponPickerPresentation(this.characters(), Number(weaponId), Number(characterId), hand);
+    return getWeaponPickerPresentation(
+      this.characters(),
+      Number(weaponId),
+      Number(characterId),
+      hand,
+      id => this.weaponHandCount(id)
+    );
   }
 
   equipWeapon(weaponId: number, hand: string, characterId: number): EquipWeaponResult {
-    return equipWeapon(this.characters(), Number(weaponId), hand, Number(characterId));
+    return equipWeapon(
+      this.characters(),
+      Number(weaponId),
+      hand,
+      Number(characterId),
+      id => this.weaponHandCount(id)
+    );
   }
 
   unequipHand(characterId: number, hand: string): boolean {
@@ -73,7 +93,16 @@ export class GameEquipmentService {
     delete window.NoBrainerEquipmentCompatibility;
   }
 
+  private weaponHandCount(weaponId: number): WeaponHandCount {
+    const weapon = this.state().weaponInventory.find(entry => Number(entry.id) === Number(weaponId));
+    return getWeaponHandCount(weapon?.weaponForm);
+  }
+
   private characters(): EquipmentCharacterLike[] {
-    return this.gameState.getState<RuntimeEquipmentState>().characters;
+    return this.state().characters;
+  }
+
+  private state(): RuntimeEquipmentState {
+    return this.gameState.getState<RuntimeEquipmentState>();
   }
 }
