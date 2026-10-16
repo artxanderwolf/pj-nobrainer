@@ -15,6 +15,9 @@ assert.match(service, /this\.gameForge\.requirements\(preview\.slots\)/, 'Angula
 assert.match(service, /this\.gameForge\.hasMaterials\(requirements\)/, 'Angular-Schmiedevorschau prüft Materialverfügbarkeit nicht über GameForgeService.');
 assert.match(service, /Object\.entries\(MATERIALS\)/, 'Angular-Schmiedevorschau baut die Materialauswahl nicht aus der gemeinsamen Materialdefinition.');
 assert.match(service, /reinforcementEffectText\(name\)/, 'Verstärkungseffekt fehlt in der Angular-Materialauswahl.');
+assert.match(service, /\{ id: 'slotBaseMaterial', slot: 'baseMaterial' \}/, 'Angular-Schmiedevorschau bindet das aktuelle Grundmaterial-DOM-Feld nicht.');
+assert.match(service, /document\.getElementById\('weaponForm'\)/, 'Angular-Schmiedevorschau liest die aktuelle Waffenform-DOM-ID nicht.');
+assert.doesNotMatch(service, /slotWeaponType|document\.getElementById\('weaponType'\)/, 'Angular-Schmiedevorschau verwendet weiterhin alte Waffen-DOM-IDs.');
 for (const id of [
   'forgeTimePreview', 'forgeValuePreview', 'forgeDamagePreview', 'forgeDamageBaseInfo',
   'forgeSpeedPreview', 'forgeSpeedBaseInfo', 'forgeHitPreview', 'forgeRawPreview',
@@ -51,6 +54,6 @@ const stateBootstrap = app.indexOf('this.gameState.openBootstrapRegistration();'
 assert.ok(bridgeOpen >= 0 && stateBootstrap > bridgeOpen, 'Schmiedevorschau-Präsentationsbrücke muss vor dem State-/Legacy-Bootstrap geöffnet werden.');
 assert.match(app, /private readonly gameForgePreviewPresentation: GameForgePreviewPresentationService/);
 assert.match(app, /ngOnDestroy\(\): void \{[\s\S]*this\.gameForgePreviewPresentation\.closeLegacyCompatibilityBridge\(\);/);
-assert.match(app, /const APP_VERSION = '0\.12\.82';/);
+assert.match(app, /const APP_VERSION = '0\.12\.83';/);
 
-console.log('Forge-Preview-Presentation-Eigentümerschaft: Materialauswahl, Vorschauwerte und Startbutton-Zustand werden direkt durch Angular aus Angular-State und GameForgeService gerendert; Legacy delegiert nur noch den Renderaufruf und die Adapterreihenfolge schützt bestehende Legacy-Anker.');
+console.log('Forge-Preview-Presentation-Eigentümerschaft: Materialauswahl, Vorschauwerte und Startbutton-Zustand werden direkt durch Angular aus Angular-State und GameForgeService gerendert; Grundmaterial und Waffenform verwenden die aktuellen DOM-IDs.');

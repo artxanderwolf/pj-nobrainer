@@ -53,7 +53,7 @@ source = replaceRangeOnce(
   'Materiallager-Renderfunktion'
 );
 
-new vm.Script(source, { filename: 'NoBrainer_GitHub_v0.12.82.material-presentation.js' });
+new vm.Script(source, { filename: 'NoBrainer_GitHub_v0.12.83.material-presentation.js' });
 assert.ok(source.includes('window.NoBrainerMaterialIndexPresentationCompatibility'));
 assert.ok(source.includes('window.NoBrainerMaterialStoragePresentationCompatibility'));
 assert.ok(source.includes('presentation.render();'));

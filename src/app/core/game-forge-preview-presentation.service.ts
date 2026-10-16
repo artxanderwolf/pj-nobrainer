@@ -36,7 +36,7 @@ declare global {
 }
 
 const FORGE_SLOT_BINDINGS: readonly { id: string; slot: WeaponSlotId }[] = [
-  { id: 'slotWeaponType', slot: 'baseMaterial' },
+  { id: 'slotBaseMaterial', slot: 'baseMaterial' },
   { id: 'slotBlade', slot: 'blade' },
   { id: 'slotBack', slot: 'back' },
   { id: 'slotGripShape', slot: 'gripShape' },
@@ -57,7 +57,7 @@ export class GameForgePreviewPresentationService {
 
     this.populateForgeSelects();
 
-    const weaponForm = (document.getElementById('weaponType') as HTMLSelectElement | null)?.value || 'dagger';
+    const weaponForm = (document.getElementById('weaponForm') as HTMLSelectElement | null)?.value || 'dagger';
     const preview = this.gameForge.preview(weaponForm, this.getForgeSelection());
     const complete = preview.slots.every(slot => slot.material);
     const requirements = this.gameForge.requirements(preview.slots);
