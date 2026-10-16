@@ -10,6 +10,7 @@ import { GameEnergyService } from './game-energy.service';
 import { GameForgeJobPresentationService } from './game-forge-job-presentation.service';
 import { GameForgePreviewPresentationService } from './game-forge-preview-presentation.service';
 import { GameForgeService } from './game-forge.service';
+import { GameMarketJobPresentationService } from './game-market-job-presentation.service';
 import { GameMarketService } from './game-market.service';
 import { GameResourcePresentationService } from './game-resource-presentation.service';
 import { GameWeaponInventoryPresentationService } from './game-weapon-inventory-presentation.service';
@@ -23,7 +24,6 @@ interface GameSaveStorageAdapter {
 export interface GameRuntimeApi {
   configureSaveStorage(adapter: GameSaveStorageAdapter): void;
   prepare(): void;
-  renderMarketJob(): void;
   renderMarketMaterials(): void;
   renderMarketWeapons(): void;
   renderInventoryState(): void;
@@ -58,6 +58,7 @@ export class GameRuntimeService {
     private readonly resourcePresentation: GameResourcePresentationService,
     private readonly forgeJobPresentation: GameForgeJobPresentationService,
     private readonly forgePreviewPresentation: GameForgePreviewPresentationService,
+    private readonly marketJobPresentation: GameMarketJobPresentationService,
     private readonly combatLog: GameCombatLogService,
     private readonly gameEnergy: GameEnergyService,
     private readonly gameForge: GameForgeService,
@@ -127,6 +128,7 @@ export class GameRuntimeService {
     this.resourcePresentation.render();
     this.forgePreviewPresentation.render();
     this.forgeJobPresentation.render();
+    this.marketJobPresentation.render();
     this.characterPresentation.render();
     this.weaponInventoryPresentation.render();
     this.dungeonPresentation.render();
@@ -148,7 +150,6 @@ export class GameRuntimeService {
     const required: Array<keyof GameRuntimeApi> = [
       'configureSaveStorage',
       'prepare',
-      'renderMarketJob',
       'renderMarketMaterials',
       'renderMarketWeapons',
       'renderInventoryState',
@@ -186,7 +187,7 @@ export class GameRuntimeService {
     this.applyDungeonResult(runtime, dungeonUpdate);
 
     this.forgeJobPresentation.render();
-    runtime.renderMarketJob();
+    this.marketJobPresentation.render();
     this.characterPresentation.renderIfIdle();
     this.dungeonPresentation.render();
 
