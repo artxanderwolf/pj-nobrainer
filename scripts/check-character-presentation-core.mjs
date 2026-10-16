@@ -11,21 +11,31 @@ const character = {
   id: 7,
   name: 'Kämpfer 07',
   hp: 31.25,
-  maxHp: 35,
   energy: 87.75,
+  equipment: { leftHand: 9, rightHand: null }
+};
+const characterClass = { name: 'Kämpfer' };
+const effectiveStats = {
+  maxHp: 35,
   maxEnergy: 100,
   armor: 3,
   dodge: 0.08,
   strengthFactor: 1.1,
   precision: 0.95,
-  equipment: { leftHand: 9, rightHand: null }
+  threat: 100,
+  critChance: 0.04,
+  critDamage: 1.6,
+  hpRegenPerMinute: 0,
+  energyRegenPerMinute: 5,
+  experienceFactor: 1,
+  lifeSteal: 0,
+  penetration: 0
 };
-const characterClass = { name: 'Kämpfer', energyRegenPerMinute: 5 };
 
 assert.equal(getWeaponPickerKey(7, 'leftHand'), '7:leftHand');
 assert.equal(getWeaponPickerKey(7, 'rightHand'), '7:rightHand');
 
-const presentation = getCharacterCardPresentation(character, characterClass, 12.3456, '7:leftHand');
+const presentation = getCharacterCardPresentation(character, characterClass, effectiveStats, 12.3456, '7:leftHand');
 assert.equal(presentation.name, 'Kämpfer 07');
 assert.equal(presentation.classTag, 'Klasse: Kämpfer');
 assert.deepEqual(presentation.stats, [
@@ -33,9 +43,16 @@ assert.deepEqual(presentation.stats, [
   { label: 'EN', value: '87.8 / 100' },
   { label: 'RÜS', value: '3' },
   { label: 'AUS', value: '8 %' },
-  { label: 'STÄ', value: '1.10' },
+  { label: 'SF', value: '1.10' },
+  { label: 'K-C', value: '4 %' },
   { label: 'PRÄ', value: '0.95' },
+  { label: 'K-S', value: '160 %' },
+  { label: 'BED', value: '100' },
+  { label: 'DS', value: '0 %' },
+  { label: 'HP-Reg.', value: '0/Min.' },
   { label: 'EN-Reg.', value: '5/Min.' },
+  { label: 'LR', value: '0 %' },
+  { label: 'ERF', value: '100 %' },
   { label: 'Offensive gg. Dungeon 1', value: '12.35' }
 ]);
 assert.deepEqual(presentation.hands, [
@@ -61,7 +78,7 @@ assert.deepEqual(presentation.hands, [
   }
 ]);
 
-const closedPresentation = getCharacterCardPresentation(character, characterClass, 0, null);
+const closedPresentation = getCharacterCardPresentation(character, characterClass, effectiveStats, 0, null);
 assert.equal(closedPresentation.hands.every(hand => !hand.pickerOpen), true);
 assert.equal(closedPresentation.hands.every(hand => hand.toggleLabel === 'Waffe wechseln'), true);
 
@@ -119,4 +136,4 @@ assert.equal(legacy.split('function dungeonTeamPickerHtml(slot)').length - 1, 1)
 assert.equal(legacy.split('function renderDungeonTeam(root)').length - 1, 1);
 assert.equal(legacy.split('function renderCharacter(target)').length - 1, 1);
 
-console.log('Character-Presentation-Core: Kaderwerte, Handsektionen, Dungeon-Team-Slots, Pickerzustände und Legacy-Anker sind konsistent.');
+console.log('Character-Presentation-Core: gemeinsamer Statblock, Handsektionen, Dungeon-Team-Slots, Pickerzustände und Legacy-Anker sind konsistent.');
