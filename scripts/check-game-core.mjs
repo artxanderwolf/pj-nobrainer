@@ -6,6 +6,7 @@ import {
   calculateCharacterStats,
   calculateWeaponStats,
   getWeaponCraftingSlots,
+  getWeaponHandCount,
   getWeaponSelectionQuantity,
   isWeaponSelectionComplete,
   normalizeWeaponSlots,
@@ -19,30 +20,55 @@ const closeTo = (actual, expected, message) => assert.ok(Math.abs(actual - expec
 const materialNames = Object.keys(MATERIALS).sort();
 assert.deepEqual(materialNames, [
   'Aluminium', 'Fichte', 'Fuchs-Leder', 'Hasen-Leder', 'Kupfer', 'Lederfetzen', 'Morsche Fichte', 'Tanne', 'Zinn'
-].sort(), 'Die Stat-Umstellung darf keine Materialien hinzufügen oder entfernen.');
+].sort(), 'Die Erweiterung darf keine Materialien hinzufügen oder entfernen.');
 
-assert.deepEqual(
-  { name: CONFIG.forge.weaponForms.dagger.name, baseDamage: CONFIG.forge.weaponForms.dagger.baseDamage, baseSpeed: CONFIG.forge.weaponForms.dagger.baseSpeed, baseHitChance: CONFIG.forge.weaponForms.dagger.baseHitChance },
-  { name: 'Dolch', baseDamage: 6, baseSpeed: 1.4, baseHitChance: 0.60 }
-);
-assert.deepEqual(
-  { name: CONFIG.forge.weaponForms.sword.name, baseDamage: CONFIG.forge.weaponForms.sword.baseDamage, baseSpeed: CONFIG.forge.weaponForms.sword.baseSpeed, baseHitChance: CONFIG.forge.weaponForms.sword.baseHitChance },
-  { name: '1H Schwert', baseDamage: 10, baseSpeed: 1.0, baseHitChance: 0.55 }
-);
-assert.deepEqual(getWeaponCraftingSlots('dagger'), ['workingPart', 'back', 'gripCore', 'gripWrap', 'special']);
-assert.deepEqual(getWeaponCraftingSlots('sword'), ['workingPart', 'back', 'gripCore', 'gripWrap', 'special', 'parry']);
+const expectedForms = {
+  dagger: ['Dolch', 1, 6, 1.4, 0.60, 0.5],
+  sword: ['1H Schwert', 1, 10, 1.0, 0.55, 1.0],
+  axe1h: ['1H Axt', 1, 12, 0.85, 0.52, 1.0],
+  sword2h: ['2H Schwert', 2, 16, 0.80, 0.55, 1.75],
+  axe2h: ['2H Axt', 2, 20, 0.70, 0.50, 1.75],
+  bow: ['Bogen', 2, 11, 0.90, 0.65, 2.0],
+  staff: ['Stab', 2, 10, 1.00, 0.60, 1.10]
+};
+assert.deepEqual(Object.keys(CONFIG.forge.weaponForms), Object.keys(expectedForms));
+for (const [id, [name, hands, baseDamage, baseSpeed, baseHitChance, timeFactor]] of Object.entries(expectedForms)) {
+  const form = CONFIG.forge.weaponForms[id];
+  assert.equal(form.name, name);
+  assert.equal(getWeaponHandCount(id), hands, `${name}: Handbelegung`);
+  closeTo(form.baseDamage, baseDamage);
+  closeTo(form.baseSpeed, baseSpeed);
+  closeTo(form.baseHitChance, baseHitChance);
+  closeTo(form.timeFactor, timeFactor);
+}
 
 const quantities = form => Object.fromEntries(getWeaponCraftingSlots(form).map(slot => [slot, getWeaponSelectionQuantity(form, slot)]));
 assert.deepEqual(quantities('dagger'), { workingPart: 1, back: 1, gripCore: 1, gripWrap: 1, special: 1 });
 assert.deepEqual(quantities('sword'), { workingPart: 2, back: 2, gripCore: 1, gripWrap: 1, special: 1, parry: 1 });
-assert.equal(Object.values(quantities('dagger')).reduce((a, b) => a + b, 0), 5);
-assert.equal(Object.values(quantities('sword')).reduce((a, b) => a + b, 0), 8);
-assert.equal(CONFIG.forge.weaponForms.dagger.parts.some(part => part.id === 'parry'), false, 'Dolch darf keine Parierstange besitzen.');
-assert.equal(CONFIG.forge.weaponForms.sword.parts.find(part => part.id === 'parry')?.materialSlot, 'parry', 'Parierstange muss eine eigene Materialauswahl besitzen.');
+assert.deepEqual(quantities('axe1h'), { workingPart: 1, back: 1, gripCore: 3, gripWrap: 2, special: 1 });
+assert.deepEqual(quantities('sword2h'), { workingPart: 4, back: 4, gripCore: 2, gripWrap: 1, special: 1, parry: 2 });
+assert.deepEqual(quantities('axe2h'), { workingPart: 2, back: 2, gripCore: 6, gripWrap: 3, special: 1 });
+assert.deepEqual(quantities('bow'), { back: 1, gripCore: 5, gripWrap: 6, special: 1, bowstring: 3 });
+assert.deepEqual(quantities('staff'), { back: 1, gripCore: 5, gripWrap: 2, special: 1 });
+assert.deepEqual(
+  Object.fromEntries(Object.keys(expectedForms).map(id => [id, Object.values(quantities(id)).reduce((a, b) => a + b, 0)])),
+  { dagger: 5, sword: 8, axe1h: 8, sword2h: 14, axe2h: 14, bow: 16, staff: 9 }
+);
+assert.equal(CONFIG.forge.weaponForms.dagger.parts.some(part => part.id === 'parry'), false);
+assert.equal(CONFIG.forge.weaponForms.sword.parts.find(part => part.id === 'parry')?.materialSlot, 'parry');
+assert.equal(CONFIG.forge.weaponForms.bow.parts.find(part => part.id === 'bowstring')?.quantity, 3);
+assert.deepEqual(CONFIG.forge.weaponForms.bow.parts.find(part => part.id === 'bowstring')?.statKeys, ['strengthFactor', 'penetration']);
+assert.equal(CONFIG.forge.weaponForms.bow.parts.some(part => part.id === 'workingPart'), false, 'Einhändig/2H darf keinen künstlichen Bauslot erzeugen.');
 
-assert.equal(MATERIALS['Hasen-Leder'].rarity, 1, 'Hasen-Leder folgt der aktuellen Materialliste und ist S1.');
+assert.equal(MATERIALS['Hasen-Leder'].rarity, 1);
 closeTo(MATERIALS.Tanne.stats.precision, 0.10);
 closeTo(MATERIALS.Aluminium.stats.strengthFactor, 0.10);
+closeTo(MATERIALS['Lederfetzen'].stats.strengthFactor, 0.01);
+closeTo(MATERIALS['Lederfetzen'].stats.penetration, 0.01);
+closeTo(MATERIALS['Hasen-Leder'].stats.strengthFactor, 0.03);
+closeTo(MATERIALS['Hasen-Leder'].stats.penetration, 0.02);
+closeTo(MATERIALS['Fuchs-Leder'].stats.strengthFactor, 0.05);
+closeTo(MATERIALS['Fuchs-Leder'].stats.penetration, 0.04);
 closeTo(MATERIALS['Fuchs-Leder'].stats.critChance, 0.04);
 assert.deepEqual(MATERIALS.Kupfer.specialEffect, { stat: 'DS', amount: 0.10 });
 assert.deepEqual(MATERIALS['Morsche Fichte'].specialEffect, { stat: 'GES', amount: 0.05 });
@@ -84,6 +110,27 @@ closeTo(sword.hitChance, 0.5775);
 closeTo(sword.penetration, 0.10);
 closeTo(sword.expectedRaw, 6.3525);
 
+const bowSlots = [
+  { slot: 'back', material: 'Fichte' },
+  { slot: 'gripCore', material: 'Tanne' },
+  { slot: 'gripWrap', material: 'Fuchs-Leder' },
+  { slot: 'special', material: 'Fichte' },
+  { slot: 'bowstring', material: 'Fuchs-Leder' }
+];
+assert.equal(isWeaponSelectionComplete(bowSlots, 'bow'), true);
+const bow = calculateWeaponStats(bowSlots, 'bow');
+closeTo(bow.characterModifiers.armor, 1);
+closeTo(bow.characterModifiers.dodge, 0.02);
+closeTo(bow.characterModifiers.strengthFactor, 0.05);
+closeTo(bow.characterModifiers.precision, 0.20);
+closeTo(bow.characterModifiers.critChance, 0.12);
+closeTo(bow.characterModifiers.penetration, 0.04);
+closeTo(bow.damagePerHit, 11.55);
+closeTo(bow.attackSpeed, 0.9);
+closeTo(bow.hitChance, 0.78);
+closeTo(bow.penetration, 0.04);
+closeTo(bow.expectedRaw, 8.1081);
+
 const legacySlots = [
   { slot: 'Waffentyp', material: 'Aluminium' },
   { slot: 'Schneide', material: 'Kupfer' },
@@ -91,14 +138,14 @@ const legacySlots = [
   { slot: 'Griffform', material: 'Fichte' },
   { slot: 'Griffmaterial', material: 'Hasen-Leder' },
   { slot: 'Verstärkungsmaterial', material: 'Kupfer' },
-  { slot: 'Parierstange', material: 'Aluminium' }
+  { slot: 'Parierstange', material: 'Aluminium' },
+  { slot: 'Sehne', material: 'Fuchs-Leder' }
 ];
 assert.deepEqual(
   normalizeWeaponSlots(legacySlots).map(entry => entry.slot),
-  ['baseMaterial', 'workingPart', 'back', 'gripCore', 'gripWrap', 'special', 'parry'],
-  'Alte Slotnamen müssen auf die neue Bauteilsemantik normalisiert werden.'
+  ['baseMaterial', 'workingPart', 'back', 'gripCore', 'gripWrap', 'special', 'parry', 'bowstring']
 );
-assert.equal(rarityFactor(legacySlots), 1, 'Das alte Grundmaterial darf die neue Waffenseltenheit nicht bestimmen.');
+assert.equal(rarityFactor(legacySlots), 1);
 
 assert.equal(reinforcementEffectText('Kupfer'), '+10 Prozentpunkte DS');
 assert.equal(reinforcementEffectText('Fichte'), 'Kein Spezialeffekt');
@@ -124,4 +171,4 @@ closeTo(armored.penetration, 0.10);
 closeTo(armored.effectiveArmor, 90);
 assert.ok(armored.afterArmor > 0 && armored.afterArmor < armored.raw);
 
-console.log('Game-Core: ODS-Materialwerte, Baupläne, Charakterboni, feste Bedrohung und Kampfübergabe sind konsistent.');
+console.log('Game-Core: sieben Waffenformen, Sehne, Materialwerte, Charakterboni, Handmetadaten und Kampfübergabe sind konsistent.');
