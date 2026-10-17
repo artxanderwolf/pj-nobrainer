@@ -4,6 +4,7 @@ import fs from 'node:fs';
 const sourceUrl = new URL('../src/app/game/character-presentation-core.ts', import.meta.url);
 const temporaryUrl = new URL('../src/app/game/character-presentation-core.node-check.ts', import.meta.url);
 const source = fs.readFileSync(sourceUrl, 'utf8')
+  .replace("from './armor-core';", "from './armor-core.ts';")
   .replace("from './character-progression-core';", "from './character-progression-core.ts';");
 fs.writeFileSync(temporaryUrl, source, 'utf8');
 
@@ -53,7 +54,7 @@ try {
     { label: 'XP', value: '21 / 196' },
     { label: 'HP', value: '31.3 / 43.9' },
     { label: 'EN', value: '87.8 / 156.4' },
-    { label: 'RÜS', value: '3' },
+    { label: 'RÜS', value: '3 %' },
     { label: 'AUS', value: '8 %' },
     { label: 'SF', value: '1.10' },
     { label: 'K-C', value: '4 %' },
@@ -89,6 +90,15 @@ try {
       emptyText: 'Hand ist leer.'
     }
   ]);
+
+  const cappedPresentation = getCharacterCardPresentation(
+    character,
+    characterClass,
+    { ...effectiveStats, armor: 120 },
+    0,
+    null
+  );
+  assert.equal(cappedPresentation.stats.find(stat => stat.label === 'RÜS')?.value, '80 %');
 
   const legacyCharacter = { ...character };
   delete legacyCharacter.level;
@@ -157,7 +167,7 @@ try {
   assert.equal(legacy.split('function renderDungeonTeam(root)').length - 1, 1);
   assert.equal(legacy.split('function renderCharacter(target)').length - 1, 1);
 
-  console.log('Character-Presentation-Core: HP/EN mit maximal einer Nachkommastelle, XP/Level, gemeinsamer Statblock, Handsektionen, Dungeon-Team-Slots und Legacy-Anker sind konsistent.');
+  console.log('Character-Presentation-Core: HP/EN kompakt, Rüstung als Prozentwert mit 80%-Cap, XP/Level, Handsektionen und Dungeon-Team-Slots sind konsistent.');
 } finally {
   fs.rmSync(temporaryUrl, { force: true });
 }
