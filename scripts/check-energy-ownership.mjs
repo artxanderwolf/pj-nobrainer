@@ -28,6 +28,6 @@ assert.ok(registrationMatch);
 assert.doesNotMatch(registrationMatch[1], /\n  updateEnergy,/);
 assert.ok(appComponent.indexOf('this.gameEnergy.openLegacyCompatibilityBridge();') >= 0);
 assert.match(appComponent, /ngOnDestroy\(\): void \{[\s\S]*this\.gameEnergy\.closeLegacyCompatibilityBridge\(\);/);
-assert.match(appComponent, /const APP_VERSION = '0\.12\.87';/);
+assert.match(appComponent, /const APP_VERSION = '0\.12\.88';/);
 
 console.log('Energie-Eigentümerschaft: Level-/Waffenboni auf HP, E und E-R liegen im Angular-Service; Legacy besitzt nur die kontrollierte Kompatibilitätsbrücke.');
