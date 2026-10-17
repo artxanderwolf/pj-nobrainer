@@ -51,6 +51,15 @@ function isTwoHandedPair(character: EquipmentCharacterLike, weaponId: number): b
   return character.equipment.leftHand === weaponId && character.equipment.rightHand === weaponId;
 }
 
+function getEquippedTwoHandedWeapon(
+  character: EquipmentCharacterLike,
+  resolveHandCount: WeaponHandCountResolver
+): number | null {
+  const weaponId = character.equipment.leftHand;
+  if (weaponId === null || character.equipment.rightHand !== weaponId) return null;
+  return resolveHandCount(weaponId) === 2 ? weaponId : null;
+}
+
 export function getWeaponEquipLocation(
   characters: EquipmentCharacterLike[],
   weaponId: number
@@ -71,7 +80,9 @@ export function getFreeWeaponEquipTargets(
   const handCount = weaponId === undefined ? 1 : resolveHandCount(weaponId);
   for (const character of characters) {
     if (handCount === 2) {
-      if (character.equipment.leftHand === null && character.equipment.rightHand === null) {
+      const bothHandsEmpty = character.equipment.leftHand === null && character.equipment.rightHand === null;
+      const replaceableTwoHandedWeapon = getEquippedTwoHandedWeapon(character, resolveHandCount) !== null;
+      if (bothHandsEmpty || replaceableTwoHandedWeapon) {
         targets.push({ characterId: character.id, hand: 'leftHand', label: 'Beide Hände' });
       }
       continue;
@@ -124,6 +135,9 @@ export function getWeaponPickerPresentation(
   }
 
   if (handCount === 2) {
+    if (getEquippedTwoHandedWeapon(character, resolveHandCount) !== null) {
+      return { status: '', disabled: false };
+    }
     const oppositeWeapon = character.equipment[opposite];
     if (oppositeWeapon !== null) return { status: 'BEIDE HÄNDE BENÖTIGT', disabled: true };
   }
@@ -147,6 +161,13 @@ export function equipWeapon(
   const opposite = otherHand(hand);
   const handCount = resolveHandCount(weaponId);
   if (handCount === 2) {
+    const currentTwoHandedWeapon = getEquippedTwoHandedWeapon(character, resolveHandCount);
+    if (currentTwoHandedWeapon !== null) {
+      character.equipment.leftHand = weaponId;
+      character.equipment.rightHand = weaponId;
+      return { ok: true, location: { characterId: character.id, hand: 'leftHand' } };
+    }
+
     const oppositeWeapon = character.equipment[opposite];
     if (oppositeWeapon !== null && oppositeWeapon !== weaponId) return { ok: false, reason: 'both-hands-required' };
     character.equipment.leftHand = weaponId;
