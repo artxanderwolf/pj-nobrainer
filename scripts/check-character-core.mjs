@@ -9,6 +9,7 @@ const tempPath = path.join(tempDir, 'character-core.node-check.ts');
 const progressionPath = path.join(tempDir, 'character-progression-core.ts');
 const source = fs.readFileSync(path.resolve('src/app/game/character-core.ts'), 'utf8')
   .replace("from './game-core';", "from './game-core.ts';");
+fs.copyFileSync(path.resolve('src/app/game/armor-core.ts'), path.join(tempDir, 'armor-core.ts'));
 fs.copyFileSync(path.resolve('src/app/game/game-core.ts'), path.join(tempDir, 'game-core.ts'));
 fs.copyFileSync(path.resolve('src/app/game/character-progression-core.ts'), progressionPath);
 fs.writeFileSync(tempPath, source);
