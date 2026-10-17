@@ -1,6 +1,7 @@
 export const CHARACTER_LEVEL_MAX = 20;
 export const CHARACTER_XP_BASE = 100;
-export const CHARACTER_XP_GROWTH = 1.1;
+export const CHARACTER_XP_GROWTH = 1.4;
+export const CHARACTER_STAT_GROWTH = 1.1;
 
 export interface CharacterProgressionLike {
   level?: number | null;
@@ -34,7 +35,7 @@ export function normalizeCharacterXp(xp: number | null | undefined): number {
 }
 
 export function characterStatLevelMultiplier(level: number | null | undefined): number {
-  return Math.pow(CHARACTER_XP_GROWTH, normalizeCharacterLevel(level) - 1);
+  return Math.pow(CHARACTER_STAT_GROWTH, normalizeCharacterLevel(level) - 1);
 }
 
 export function experienceRequiredForNextLevel(level: number): number {
@@ -94,6 +95,7 @@ export const CHARACTER_PROGRESSION_CORE_BRIDGE = {
   CHARACTER_LEVEL_MAX,
   CHARACTER_XP_BASE,
   CHARACTER_XP_GROWTH,
+  CHARACTER_STAT_GROWTH,
   normalizeCharacterLevel,
   normalizeCharacterXp,
   characterStatLevelMultiplier,
