@@ -1,4 +1,4 @@
-import { resolveArmor } from './armor-core';
+import { resolveArmor } from './armor-core.ts';
 
 export interface CombatTargetLike {
   hp: number;
