@@ -35,6 +35,6 @@ const bridgeOpen = appComponent.indexOf('this.gameEquipment.openLegacyCompatibil
 const stateBootstrap = appComponent.indexOf('this.gameState.openBootstrapRegistration();');
 assert.ok(bridgeOpen >= 0 && stateBootstrap > bridgeOpen, 'Equipment-Bridge muss vor dem State-/Legacy-Bootstrap geöffnet werden.');
 assert.match(appComponent, /ngOnDestroy\(\): void \{[\s\S]*this\.gameEquipment\.closeLegacyCompatibilityBridge\(\);/);
-assert.match(appComponent, /const APP_VERSION = '0\.12\.84';/);
+assert.match(appComponent, /const APP_VERSION = '0\.12\.85';/);
 
 console.log('Equipment-Eigentümerschaft: 1H-/2H-Auflösung, Ausrüsten und Ablegen laufen über Angular; Kader und Waffenlager greifen direkt auf den Service zu.');
