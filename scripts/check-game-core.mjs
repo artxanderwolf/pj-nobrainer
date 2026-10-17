@@ -187,7 +187,7 @@ closeTo(levelTwoRecruit.armor, 6.2);
 closeTo(levelTwoRecruit.dodge, 0.13);
 closeTo(levelTwoRecruit.strengthFactor, 1.20);
 closeTo(levelTwoRecruit.precision, 1.15);
-closeTo(levelTwoRecruit.threat, 55);
+closeTo(levelTwoRecruit.threat, 50, 'Bedrohung bleibt unabhängig vom Level auf dem Klassen-Grundwert.');
 closeTo(levelTwoRecruit.critChance, 0.075);
 closeTo(levelTwoRecruit.critDamage, 1.75);
 closeTo(levelTwoRecruit.hpRegenPerMinute, 0, 'Null-Grundwerte dürfen durch Levelanstieg nicht entstehen.');
@@ -206,4 +206,4 @@ closeTo(armored.penetration, 0.10);
 closeTo(armored.effectiveArmor, 90);
 assert.ok(armored.afterArmor > 0 && armored.afterArmor < armored.raw);
 
-console.log('Game-Core: Waffenbau, aktuelle Material-/Dungeonwerte, 2H-Deduplizierung, Levelskalierung und Kampfübergabe sind konsistent.');
+console.log('Game-Core: Waffenbau, aktuelle Material-/Dungeonwerte, 2H-Deduplizierung, Levelskalierung mit fixer Bedrohung und Kampfübergabe sind konsistent.');
