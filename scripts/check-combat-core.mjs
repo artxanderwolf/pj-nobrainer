@@ -1,5 +1,10 @@
 import assert from 'node:assert/strict';
+import { MAX_ARMOR_PERCENT, resolveArmor } from '../src/app/game/armor-core.ts';
 import { applyAttackDamage, buildWeightedTargets, enforceGlobalActionCooldown, resolveAttack, targetWeight } from '../src/app/game/combat-core.ts';
+
+assert.equal(MAX_ARMOR_PERCENT, 80);
+assert.deepEqual(resolveArmor(100, 0), { armor: 80, penetration: 0, effectiveArmor: 80, reduction: 0.8 });
+assert.deepEqual(resolveArmor(80, 0.25), { armor: 80, penetration: 0.25, effectiveArmor: 60, reduction: 0.6 });
 
 assert.equal(targetWeight(100), 100);
 assert.equal(targetWeight(50), 50);
@@ -22,26 +27,30 @@ const fallbackWeighted = buildWeightedTargets([{ id: 'unknown', hp: 1, alive: tr
 assert.equal(fallbackWeighted[0].weight, 33);
 
 const armored = { hp: 30, alive: true, armor: 10 };
-assert.equal(applyAttackDamage(armored, 20, 0), 10);
-assert.equal(armored.hp, 20);
+assert.equal(applyAttackDamage(armored, 20, 0), 18);
+assert.equal(armored.hp, 12);
 assert.equal(armored.alive, true);
 
 const penetrated = { hp: 30, alive: true, armor: 10 };
-assert.equal(applyAttackDamage(penetrated, 20, 0.5), 15);
-assert.equal(penetrated.hp, 15);
+assert.equal(applyAttackDamage(penetrated, 20, 0.5), 19);
+assert.equal(penetrated.hp, 11);
 
 const overriddenArmor = { hp: 30, alive: true, armor: 20 };
-assert.equal(applyAttackDamage(overriddenArmor, 20, 0, 5), 15);
-assert.equal(overriddenArmor.hp, 15);
+assert.equal(applyAttackDamage(overriddenArmor, 20, 0, 5), 19);
+assert.equal(overriddenArmor.hp, 11);
 
 const defeated = { hp: 5, alive: true, armor: 0 };
 assert.equal(applyAttackDamage(defeated, 8, 0), 8);
 assert.equal(defeated.hp, 0);
 assert.equal(defeated.alive, false);
 
-const blocked = { hp: 10, alive: true, armor: 20 };
-assert.equal(applyAttackDamage(blocked, 5, 0), 0);
-assert.equal(blocked.hp, 10);
+const capped = { hp: 20, alive: true, armor: 100 };
+assert.equal(applyAttackDamage(capped, 10, 0), 2);
+assert.equal(capped.hp, 18);
+
+const capWithPenetration = { hp: 20, alive: true, armor: 100 };
+assert.equal(applyAttackDamage(capWithPenetration, 10, 0.25), 4);
+assert.equal(capWithPenetration.hp, 16);
 
 const missed = { hp: 20, alive: true, armor: 0, dodge: 0.25 };
 assert.deepEqual(resolveAttack(missed, 10, 0.5, 0, 0.5, 0.9), { outcome: 'miss' });
@@ -52,8 +61,8 @@ assert.deepEqual(resolveAttack(dodged, 10, 0.5, 0, 0.49, 0.24), { outcome: 'dodg
 assert.equal(dodged.hp, 20);
 
 const hit = { hp: 20, alive: true, armor: 2, dodge: 0.25 };
-assert.deepEqual(resolveAttack(hit, 10, 0.5, 0, 0.49, 0.25), { outcome: 'hit', dealt: 8, critical: false });
-assert.equal(hit.hp, 12);
+assert.deepEqual(resolveAttack(hit, 10, 0.5, 0, 0.49, 0.25), { outcome: 'hit', dealt: 9.8, critical: false });
+assert.equal(hit.hp, 10.2);
 
 const criticalTarget = { hp: 30, alive: true, armor: 0, dodge: 0 };
 assert.deepEqual(
@@ -82,4 +91,4 @@ enforceGlobalActionCooldown(fairness, 900);
 assert.deepEqual(fairness.map(point => point.nextAt), [2550, 1900]);
 assert.equal([...fairness].sort((a, b) => a.nextAt - b.nextAt)[0].id, 'enemy');
 
-console.log('Combat-Core: Bedrohungsgewichtung, Treffer/Ausweichen/Rüstung, Krits und globales 1-Sekunden-Intervall sind konsistent.');
+console.log('Combat-Core: Bedrohungsgewichtung, Treffer/Ausweichen, prozentuale Rüstung mit 80%-Cap, DS, Krits und globales 1-Sekunden-Intervall sind konsistent.');
