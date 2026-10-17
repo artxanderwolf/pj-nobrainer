@@ -44,6 +44,6 @@ const bridgeOpen = app.indexOf('this.gameWeaponInventoryPresentation.openLegacyC
 const stateBootstrap = app.indexOf('this.gameState.openBootstrapRegistration();');
 assert.ok(bridgeOpen >= 0 && stateBootstrap > bridgeOpen, 'Waffenlager-Präsentationsbrücke muss vor dem Legacy-Bootstrap geöffnet werden.');
 assert.match(app, /ngOnDestroy\(\): void \{[\s\S]*this\.gameWeaponInventoryPresentation\.closeLegacyCompatibilityBridge\(\);/);
-assert.match(app, /const APP_VERSION = '0\.12\.85';/);
+assert.match(app, /const APP_VERSION = '0\.12\.86';/);
 
 console.log('Waffenlager-Präsentations-Eigentümerschaft: Karten, Sortierung, Belegungsstatus sowie Ausrüsten/Ablegen laufen in Angular; Legacy-Vollrender delegiert nur noch über eine dünne Renderbrücke.');
