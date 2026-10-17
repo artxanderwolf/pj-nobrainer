@@ -48,7 +48,7 @@ assert.deepEqual(row, {
   rarityText: 'S1',
   hpText: '8',
   energyText: '0',
-  armorText: '2',
+  armorText: '2 %',
   dodgeText: '0 %',
   strengthFactorText: '0,05',
   precisionText: '0',
@@ -80,6 +80,7 @@ assert.equal(unavailable.dungeonChanceText, '– %');
 assert.equal(unavailable.rarityText, 'S3');
 assert.equal(unavailable.specialStatText, '–');
 assert.equal(unavailable.specialPercentText, '–');
+assert.equal(unavailable.armorText, '0 %');
 
 const sortedStorage = sortMaterialStorageEntries([
   ['Zinn', { category: 'Metall', qty: 2 }],
@@ -102,4 +103,4 @@ assert.deepEqual(storageRow, {
   tooltip: 'Verkaufswert: 10 Nickel'
 });
 
-console.log('Material-Presentation-Core: gemeinsame Statmatrix, SPE/SPE%, Sortierung, Seltenheit und Dungeonchance sind konsistent.');
+console.log('Material-Presentation-Core: gemeinsame Statmatrix mit Rüstung in Prozent, SPE/SPE%, Sortierung, Seltenheit und Dungeonchance sind konsistent.');
