@@ -18,6 +18,7 @@ try {
     getDungeonPhase,
     getNextDueAttack,
     payDungeonEnergy,
+    refreshCharacterAttackPoints,
     resetDungeonCycle,
     resolveSearchStep,
     rollEnemyClass,
@@ -70,6 +71,35 @@ try {
   assert.equal(twoHandedPoints.length, 1, 'Dieselbe 2H-Waffe darf trotz Belegung beider Handplätze nur einen Angriffspunkt erzeugen.');
   assert.equal(twoHandedPoints[0].weaponId, 77);
 
+  const equipmentTimeline = [
+    { side: 'enemy', ownerId: 'e1', kind: 'enemy', nextAt: 1050 },
+    { side: 'player', ownerId: 1, kind: 'fist', weaponId: null, label: 'Faust', nextAt: 1200 }
+  ];
+  const switchedToStaff = refreshCharacterAttackPoints(
+    equipmentTimeline,
+    1,
+    [
+      { kind: 'weapon', weaponId: 77, speed: 1, label: 'Linke Hand' },
+      { kind: 'weapon', weaponId: 77, speed: 1, label: 'Rechte Hand' }
+    ],
+    1100
+  );
+  assert.equal(switchedToStaff.filter(point => point.side === 'player').length, 1, 'Eine 2H-Waffe darf nach dem Wechsel nur einen Angriffspunkt besitzen.');
+  assert.equal(switchedToStaff.find(point => point.side === 'player')?.weaponId, 77, 'Ein vorhandener Faust-Angriffspunkt muss sofort durch die ausgerüstete Waffe ersetzt werden.');
+  assert.equal(switchedToStaff.find(point => point.side === 'player')?.nextAt, 1200, 'Ein Waffenwechsel darf den bereits laufenden Angriffstimer nicht zurücksetzen.');
+
+  const switchedStaffAgain = refreshCharacterAttackPoints(
+    switchedToStaff,
+    1,
+    [
+      { kind: 'weapon', weaponId: 78, speed: 0.9, label: 'Linke Hand' },
+      { kind: 'weapon', weaponId: 78, speed: 0.9, label: 'Rechte Hand' }
+    ],
+    1150
+  );
+  assert.equal(switchedStaffAgain.find(point => point.side === 'player')?.weaponId, 78, '2H-gegen-2H muss auch in einer laufenden Welle auf die neue Waffe wechseln.');
+  assert.equal(switchedStaffAgain.find(point => point.side === 'player')?.nextAt, 1200, '2H-gegen-2H muss den laufenden Angriffstimer erhalten.');
+
   const staleTimeline = [
     { side: 'enemy', ownerId: 'e1', kind: 'enemy', nextAt: 1000 },
     { side: 'enemy', ownerId: 'e2', kind: 'enemy', nextAt: 1100 },
@@ -90,7 +120,7 @@ try {
   assert.equal(character.hp, 30);
   assert.equal(character.alive, true);
 
-  console.log('Dungeon-Core: Suche, Energie, Gegnerprofile, 2H-Angriffspunkte, Timeline, Phasen und Niederlagen-Reset sind konsistent.');
+  console.log('Dungeon-Core: Suche, Energie, Gegnerprofile, 2H-Angriffspunkte, Waffenwechsel-Timeline, Phasen und Niederlagen-Reset sind konsistent.');
 } finally {
   unlinkSync(temporaryUrl);
 }
