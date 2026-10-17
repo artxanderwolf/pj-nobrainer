@@ -1,4 +1,5 @@
 import type { EquipmentHand } from './equipment-core';
+import { clampArmorPercent } from './armor-core';
 import { getCharacterProgression } from './character-progression-core';
 import type { ResolvedCharacterStats } from './game-core';
 
@@ -94,6 +95,10 @@ function formatResourceValue(value: number): string {
   return value.toFixed(1).replace(/\.0$/, '');
 }
 
+function formatArmorPercent(value: number): string {
+  return `${clampArmorPercent(value).toFixed(1).replace(/\.0$/, '')} %`;
+}
+
 export function getWeaponPickerKey(characterId: number, hand: EquipmentHand): string {
   return `${characterId}:${hand}`;
 }
@@ -111,7 +116,7 @@ export function getCharacterCardPresentation(
     { label: 'XP', value: progression.atMaxLevel ? 'MAX' : `${progression.xp} / ${progression.xpToNext}` },
     { label: 'HP', value: `${formatResourceValue(character.hp)} / ${formatResourceValue(effectiveStats.maxHp)}` },
     { label: 'EN', value: `${formatResourceValue(character.energy)} / ${formatResourceValue(effectiveStats.maxEnergy)}` },
-    { label: 'RÜS', value: effectiveStats.armor.toFixed(2).replace(/\.00$/, '') },
+    { label: 'RÜS', value: formatArmorPercent(effectiveStats.armor) },
     { label: 'AUS', value: `${Math.round(effectiveStats.dodge * 100)} %` },
     { label: 'SF', value: effectiveStats.strengthFactor.toFixed(2) },
     { label: 'K-C', value: `${Math.round(effectiveStats.critChance * 100)} %` },
