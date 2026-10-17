@@ -17,6 +17,8 @@ try {
   const { createCharacter, createRecruit } = await import(`${pathToFileURL(tempPath).href}?t=${Date.now()}`);
   const {
     CHARACTER_LEVEL_MAX,
+    CHARACTER_XP_GROWTH,
+    CHARACTER_STAT_GROWTH,
     characterStatLevelMultiplier,
     experienceRequiredForNextLevel,
     getCharacterProgression,
@@ -32,12 +34,14 @@ try {
   });
 
   assert.equal(CHARACTER_LEVEL_MAX, 20);
+  assert.equal(CHARACTER_XP_GROWTH, 1.4);
+  assert.equal(CHARACTER_STAT_GROWTH, 1.1);
   assert.equal(characterStatLevelMultiplier(1), 1);
   assert.ok(Math.abs(characterStatLevelMultiplier(2) - 1.1) < 1e-12);
   assert.ok(Math.abs(characterStatLevelMultiplier(3) - 1.21) < 1e-12);
   assert.equal(experienceRequiredForNextLevel(1), 100);
-  assert.equal(experienceRequiredForNextLevel(2), 110);
-  assert.equal(experienceRequiredForNextLevel(3), 121);
+  assert.equal(experienceRequiredForNextLevel(2), 140);
+  assert.equal(experienceRequiredForNextLevel(3), 196);
   assert.deepEqual(getCharacterProgression({}), {
     level: 1, xp: 0, xpToNext: 100, maxLevel: 20, atMaxLevel: false, progress: 0
   });
@@ -49,8 +53,8 @@ try {
   assert.deepEqual(progressionCharacter, { level: 2, xp: 100 });
   const boosted = grantCharacterExperience(progressionCharacter, 10, 1.5);
   assert.equal(boosted.gainedXp, 15, 'ERF-Faktor muss bei einer späteren XP-Vergabe als Multiplikator anwendbar sein.');
-  assert.equal(boosted.level, 3);
-  assert.equal(boosted.xp, 5);
+  assert.equal(boosted.level, 2);
+  assert.equal(boosted.xp, 115);
 
   const fighter = createCharacter(2, 'Kämpfer 01', 'fighter', false);
   assert.equal(fighter.classId, 'fighter');
@@ -79,7 +83,7 @@ try {
   assert.equal(fallback.classId, 'recruit');
   assert.equal(fallback.maxHp, 30);
 
-  console.log('Character-Core: Klassenwerte, Level/XP, Statwachstum, volle Startressourcen, Starterwaffe und Legacy-Fallback sind konsistent.');
+  console.log('Character-Core: Klassenwerte, getrennte XP-/Stat-Steigung, Level/XP, volle Startressourcen, Starterwaffe und Legacy-Fallback sind konsistent.');
 } finally {
   fs.rmSync(tempDir, { recursive: true, force: true });
 }
