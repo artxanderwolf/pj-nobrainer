@@ -1,3 +1,5 @@
+import { clampArmorPercent, resolveArmor } from './armor-core';
+
 export type CharacterClassId = 'recruit' | 'fighter' | 'archer' | 'scholar';
 export type MaterialCategory = 'Holz' | 'Metall' | 'Leder';
 export type WeaponSlotId = 'baseMaterial' | 'workingPart' | 'back' | 'gripCore' | 'gripWrap' | 'special' | 'parry' | 'bowstring';
@@ -198,7 +200,7 @@ export interface StatDefinition {
 export const STAT_DEFINITIONS: readonly StatDefinition[] = [
   { id: 'HP', key: 'maxHp', name: 'Lebenspunkte', position: 'S1L1' },
   { id: 'E', key: 'maxEnergy', name: 'Energie', position: 'S1R1' },
-  { id: 'R', key: 'armor', name: 'Rüstung', position: 'S1L2' },
+  { id: 'R', key: 'armor', name: 'Rüstung (%)', position: 'S1L2' },
   { id: 'AW', key: 'dodge', name: 'Ausweichen', position: 'S1R2' },
   { id: 'SF', key: 'strengthFactor', name: 'Schadensfaktor', position: 'S1L3' },
   { id: 'P', key: 'precision', name: 'Präzision', position: 'S1L4' },
@@ -685,7 +687,7 @@ export function calculateCharacterStats(
   return {
     maxHp: Math.max(1, scaled(base.maxHp) + equipment.hp),
     maxEnergy: Math.max(0, scaled(base.maxEnergy) + equipment.energy),
-    armor: Math.max(0, scaled(base.armor) + equipment.armor),
+    armor: clampArmorPercent(scaled(base.armor) + equipment.armor),
     dodge: Math.max(0, Math.min(0.95, scaled(base.dodge) + equipment.dodge)),
     strengthFactor: Math.max(0, scaled(base.strengthFactor) + equipment.strengthFactor),
     precision: Math.max(0, scaled(base.precision) + equipment.precision),
@@ -707,11 +709,12 @@ export function weaponDamageAfterArmor(
 ): WeaponDamageResult {
   const numericArmor = Number(enemyArmor);
   if (!weapon) {
+    const armorResolution = resolveArmor(numericArmor, 0);
     return {
       raw: 0,
       penetration: 0,
-      effectiveArmor: enemyArmor,
-      reduction: numericArmor / (numericArmor + 100),
+      effectiveArmor: armorResolution.effectiveArmor,
+      reduction: armorResolution.reduction,
       afterArmor: 0,
       damagePerHit: 0,
       attackSpeed: 0,
@@ -733,8 +736,9 @@ export function weaponDamageAfterArmor(
   const rawWithoutCrit = damagePerHit * attackSpeed * hitChance;
   const raw = rawWithoutCrit * (1 + critChance * (critDamage - 1));
   const penetration = Math.max(0, Math.min(1, Number(character?.penetration ?? weapon.stats?.penetration) || 0));
-  const effectiveArmor = numericArmor * (1 - penetration);
-  const reduction = effectiveArmor / (effectiveArmor + 100);
+  const armorResolution = resolveArmor(numericArmor, penetration);
+  const effectiveArmor = armorResolution.effectiveArmor;
+  const reduction = armorResolution.reduction;
   const afterArmor = raw * (1 - reduction);
   return { raw, penetration, effectiveArmor, reduction, afterArmor, damagePerHit, attackSpeed, hitChance, critChance, critDamage };
 }
