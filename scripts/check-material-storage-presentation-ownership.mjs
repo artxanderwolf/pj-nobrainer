@@ -33,6 +33,6 @@ const stateBootstrap = app.indexOf('this.gameState.openBootstrapRegistration();'
 assert.ok(bridgeOpen >= 0 && stateBootstrap > bridgeOpen, 'Materiallager-Präsentationsbrücke muss vor dem State-/Legacy-Bootstrap geöffnet werden.');
 assert.match(app, /private readonly gameMaterialStoragePresentation: GameMaterialStoragePresentationService/);
 assert.match(app, /ngOnDestroy\(\): void \{[\s\S]*this\.gameMaterialStoragePresentation\.closeLegacyCompatibilityBridge\(\);/);
-assert.match(app, /const APP_VERSION = '0\.12\.85';/);
+assert.match(app, /const APP_VERSION = '0\.12\.86';/);
 
 console.log('Materiallager-Präsentations-Eigentümerschaft: Lagerzeilen und Leerzustand werden direkt durch Angular aus dem Angular-State gerendert; der Legacy-Materialadapter enthält nur noch dünne Renderdelegationen.');
