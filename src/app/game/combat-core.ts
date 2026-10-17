@@ -1,3 +1,5 @@
+import { resolveArmor } from './armor-core';
+
 export interface CombatTargetLike {
   hp: number;
   alive: boolean;
@@ -51,10 +53,9 @@ export function applyAttackDamage<TTarget extends CombatTargetLike>(
   penetration: number,
   armorOverride?: number | null
 ): number {
-  const clampedPenetration = Math.max(0, Math.min(1, Number(penetration) || 0));
   const armor = armorOverride === null || armorOverride === undefined ? target.armor : armorOverride;
-  const effectiveArmor = Math.max(0, (Number(armor) || 0) * (1 - clampedPenetration));
-  const dealt = Math.max(0, (Number(damage) || 0) - effectiveArmor);
+  const armorResolution = resolveArmor(armor, penetration);
+  const dealt = Math.max(0, (Number(damage) || 0) * (1 - armorResolution.reduction));
   target.hp = Math.max(0, target.hp - dealt);
   target.alive = target.hp > 0;
   return dealt;
