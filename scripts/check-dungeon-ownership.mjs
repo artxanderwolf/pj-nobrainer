@@ -3,7 +3,6 @@ import { readFileSync } from 'node:fs';
 
 const appComponent = readFileSync('src/app/app.component.ts', 'utf8');
 const dungeonService = readFileSync('src/app/core/game-dungeon.service.ts', 'utf8');
-const dungeonEquipmentSyncService = readFileSync('src/app/core/game-dungeon-equipment-sync.service.ts', 'utf8');
 const presentationService = readFileSync('src/app/core/game-dungeon-presentation.service.ts', 'utf8');
 const runtimeService = readFileSync('src/app/core/game-runtime.service.ts', 'utf8');
 const dungeonAdapter = readFileSync('src/app/core/legacy-dungeon-domain-adapter.service.ts', 'utf8');
@@ -16,10 +15,6 @@ for (const pattern of [/getDungeonPhase\(state\)/, /resolveSearchStep\(/, /check
 }
 assert.doesNotMatch(dungeonService, /DUNGEON_LOOT_TABLES/, 'Aktive Dungeon-Drops hängen weiterhin an der alten globalen Loot-Tabelle.');
 assert.doesNotMatch(dungeonService, /NoBrainerDungeonCompatibility|openLegacyCompatibilityBridge|closeLegacyCompatibilityBridge/, 'GameDungeonService enthält weiterhin die alte Dungeon-Kompatibilitätsbrücke.');
-
-assert.match(dungeonEquipmentSyncService, /refreshCharacterAttackPoints\(/, 'Equipmentwechsel synchronisieren die laufenden Spieler-Angriffspunkte nicht.');
-assert.match(dungeonEquipmentSyncService, /filterActiveDungeonAttackPoints\(/, 'Equipment-Synchronisierung erhält keine gültige aktive Dungeon-Timeline.');
-assert.match(dungeonEquipmentSyncService, /return \[\{ kind: 'fist', weaponId: null, label: 'Faust', speed: 1 \}\];/, 'Faust-Fallback der Equipment-Synchronisierung fehlt.');
 
 assert.match(presentationService, /private renderOverview\(\): void/, 'Die Dungeon-Basiswerte werden nicht durch die Angular-Präsentation gerendert.');
 assert.match(presentationService, /this\.gameEnergy\.costPerCharacter\(displayedCount\)/, 'Die Angular-Dungeon-Präsentation verwendet für Energiekosten nicht den bestehenden Energy-Service.');
@@ -40,9 +35,6 @@ assert.match(presentationAdapter, /'renderDungeonStatus\(\);renderDungeonLoot\(\
 assert.doesNotMatch(characterPresentationAdapter, /ADAPTED_DUNGEON_TEAM|ADAPTED_DUNGEON_TEAM_PICKER/, 'Der Charakter-Präsentationsadapter erzeugt weiterhin eine zweite Dungeon-Team-Präsentation.');
 
 assert.match(runtimeService, /private readonly gameDungeon: GameDungeonService/, 'GameRuntimeService besitzt keinen Angular-Dungeon-Service.');
-assert.match(runtimeService, /private readonly dungeonEquipmentSync: GameDungeonEquipmentSyncService/, 'GameRuntimeService besitzt keine Equipment-Dungeon-Synchronisierung.');
-assert.match(runtimeService, /this\.characterPresentation\.bindActions\(\(\) => \{[\s\S]*this\.dungeonEquipmentSync\.refresh\(\);[\s\S]*this\.weaponInventoryPresentation\.render\(\);/, 'Kader-Waffenwechsel aktualisieren laufende Dungeon-Angriffe nicht.');
-assert.match(runtimeService, /this\.weaponInventoryPresentation\.bindActions\(\(\) => \{[\s\S]*this\.dungeonEquipmentSync\.refresh\(\);[\s\S]*this\.characterPresentation\.render\(\);/, 'Waffenlager-Wechsel aktualisieren laufende Dungeon-Angriffe nicht.');
 assert.match(runtimeService, /private readonly dungeonPresentation: GameDungeonPresentationService/, 'GameRuntimeService besitzt keine Angular-Dungeon-Präsentation.');
 assert.match(runtimeService, /private readonly forgePreviewPresentation: GameForgePreviewPresentationService/, 'GameRuntimeService besitzt keine Angular-Schmiedevorschau für Inventaränderungen.');
 assert.match(runtimeService, /const dungeonUpdate = this\.gameDungeon\.update\(\);[\s\S]*this\.applyDungeonResult\(runtime, dungeonUpdate\);/, 'Der Angular-Tick aktualisiert den Dungeon nicht direkt.');
@@ -58,6 +50,6 @@ assert.match(registrationMatch[1], /renderInventoryState:\(\)=>\{[\s\S]*renderMa
 assert.doesNotMatch(registrationMatch[1], /renderForgePreview\(\)/, 'Schmiedevorschau hängt weiterhin am Legacy-Inventar-Refresh.');
 assert.doesNotMatch(registrationMatch[1], /renderResourceHeader\(\)/, 'Ressourcen-Kopfzeile hängt weiterhin am Legacy-Inventar-Refresh.');
 assert.doesNotMatch(appComponent, /GameDungeonService|NoBrainerDungeonCompatibility|gameDungeon\.openLegacyCompatibilityBridge|gameDungeon\.closeLegacyCompatibilityBridge/, 'AppComponent verwaltet weiterhin die alte Dungeon-Kompatibilitätsbrücke.');
-assert.match(appComponent, /const APP_VERSION = '0\.12\.87';/, 'Die App-Version wurde nicht auf v0.12.87 gesetzt.');
+assert.match(appComponent, /const APP_VERSION = '0\.12\.88';/, 'Die App-Version wurde nicht auf v0.12.88 gesetzt.');
 
-console.log('Dungeon-Eigentümerschaft: Gegnerprofile, Loot, XP/Level, Kampf, Equipment-Synchronisierung, Status und Team laufen ausschließlich über Angular.');
+console.log('Dungeon-Eigentümerschaft: Gegnerprofile, Loot, XP/Level, Kampf, Status und Team laufen ausschließlich über Angular.');
