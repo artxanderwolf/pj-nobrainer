@@ -689,7 +689,7 @@ export function calculateCharacterStats(
     dodge: Math.max(0, Math.min(0.95, scaled(base.dodge) + equipment.dodge)),
     strengthFactor: Math.max(0, scaled(base.strengthFactor) + equipment.strengthFactor),
     precision: Math.max(0, scaled(base.precision) + equipment.precision),
-    threat: Math.max(0.01, scaled(base.threat)),
+    threat: Math.max(0.01, base.threat),
     critChance: Math.max(0, Math.min(1, scaled(base.critChance) + equipment.critChance)),
     critDamage: Math.max(1, scaled(base.critDamage) + equipment.critDamage),
     hpRegenPerMinute: Math.max(0, scaled(base.hpRegenPerMinute) + equipment.hpRegenPerMinute),
