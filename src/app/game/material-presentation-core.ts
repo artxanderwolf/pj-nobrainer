@@ -127,7 +127,8 @@ export function getMaterialStorageRowPresentation(
 export const MATERIAL_PRESENTATION_CORE_BRIDGE = {
   formatMaterialValue,
   getMaterialIndexRowPresentation,
-  sortMaterialStorageEntries
+  sortMaterialStorageEntries,
+  getMaterialStorageRowPresentation
 };
 
-export type MaterialPresentationCoreBridge = ReturnType<typeof createMaterialPresentationCore>;
+export type MaterialPresentationCoreBridge = typeof MATERIAL_PRESENTATION_CORE_BRIDGE;
