@@ -136,6 +136,18 @@ export function createDungeonEnemies(count: number, classRoll: () => number): Du
   return Array.from({ length: Math.max(0, Math.floor(count)) }, (_, index) => createDungeonEnemy(index + 1, rollEnemyClass(classRoll())));
 }
 
+function uniqueCharacterAttackPointSources(
+  sources: readonly CharacterAttackPointSource[]
+): CharacterAttackPointSource[] {
+  const seenWeaponIds = new Set<number>();
+  return sources.filter(source => {
+    if (typeof source.weaponId !== 'number') return true;
+    if (seenWeaponIds.has(source.weaponId)) return false;
+    seenWeaponIds.add(source.weaponId);
+    return true;
+  });
+}
+
 export function createDungeonAttackPoints<TCharacter extends DungeonCharacterLike>(
   participants: readonly TCharacter[],
   enemies: readonly DungeonEnemy[],
@@ -144,12 +156,7 @@ export function createDungeonAttackPoints<TCharacter extends DungeonCharacterLik
 ): DungeonAttackPoint[] {
   const result: DungeonAttackPoint[] = [];
   participants.forEach(character => {
-    const seenWeaponIds = new Set<number>();
-    for (const point of getAttackPoints(character)) {
-      if (typeof point.weaponId === 'number') {
-        if (seenWeaponIds.has(point.weaponId)) continue;
-        seenWeaponIds.add(point.weaponId);
-      }
+    for (const point of uniqueCharacterAttackPointSources(getAttackPoints(character))) {
       result.push({
         side: 'player', ownerId: character.id, kind: point.kind, weaponId: point.weaponId ?? null, label: point.label,
         nextAt: at + 1000 / Math.max(0.01, Number(point.speed) || 0)
@@ -158,6 +165,38 @@ export function createDungeonAttackPoints<TCharacter extends DungeonCharacterLik
   });
   enemies.forEach(enemy => result.push({ side: 'enemy', ownerId: enemy.id, kind: 'enemy', nextAt: at + 1000 / Math.max(0.01, enemy.speed) }));
   return result;
+}
+
+export function refreshCharacterAttackPoints(
+  points: readonly DungeonAttackPoint[],
+  characterId: number,
+  sources: readonly CharacterAttackPointSource[],
+  at: number
+): DungeonAttackPoint[] {
+  const existing = points
+    .filter(point => point.side === 'player' && point.ownerId === characterId)
+    .sort((left, right) => left.nextAt - right.nextAt);
+  const untouched = points.filter(point => !(point.side === 'player' && point.ownerId === characterId));
+  const unusedExisting = [...existing];
+
+  const refreshed = uniqueCharacterAttackPointSources(sources).map(source => {
+    const exactMatch = unusedExisting.findIndex(point => {
+      if (typeof source.weaponId === 'number') return point.weaponId === source.weaponId;
+      return point.kind === source.kind && (point.weaponId ?? null) === (source.weaponId ?? null);
+    });
+    const matchIndex = exactMatch >= 0 ? exactMatch : (unusedExisting.length ? 0 : -1);
+    const previous = matchIndex >= 0 ? unusedExisting.splice(matchIndex, 1)[0] : undefined;
+    return {
+      side: 'player' as const,
+      ownerId: characterId,
+      kind: source.kind,
+      weaponId: source.weaponId ?? null,
+      label: source.label,
+      nextAt: previous?.nextAt ?? at + 1000 / Math.max(0.01, Number(source.speed) || 0)
+    };
+  });
+
+  return [...untouched, ...refreshed];
 }
 
 export function createDungeonRun<TCharacter extends DungeonCharacterLike>(
@@ -222,6 +261,7 @@ export const DUNGEON_CORE_BRIDGE = {
   createDungeonEnemy,
   createDungeonEnemies,
   createDungeonAttackPoints,
+  refreshCharacterAttackPoints,
   createDungeonRun,
   getNextDueAttack,
   filterActiveDungeonAttackPoints,
