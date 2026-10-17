@@ -49,7 +49,9 @@ for (const heading of ['Materialindex – gemeinsames Stat-System', 'Bauteile & 
   assert.ok(indexMarkup.includes(`<h2>${heading}</h2>`), `Index-Abschnitt ${heading} fehlt.`);
 }
 assert.match(indexMarkup, /Bedrohung = unveränderter Klassen-Grundwert/);
-assert.match(indexMarkup, /Skalierbarer Nicht-null-Klassenwert auf Level L/);
+assert.ok(indexMarkup.includes('XP für Level L → L+1 = gerundet(100 × 1,4^(L−1))'), 'Index dokumentiert die neue XP-Steigung 1,4 nicht.');
+assert.ok(indexMarkup.includes('Skalierbarer Nicht-null-Klassenwert auf Level L = Level-1-Grundwert × 1,1^(L−1)'), 'Index muss die getrennte Stat-Steigung 1,1 beibehalten.');
+assert.match(indexMarkup, /XP-Anforderung und Statwachstum sind bewusst getrennt/);
 assert.match(indexMarkup, /Bedrohung \(B\) ist die bewusste Ausnahme/);
 assert.match(indexMarkup, /10 Basis-XP/);
 assert.match(indexMarkup, /Neuling/);
@@ -60,7 +62,6 @@ assert.match(indexMarkup, /relative Gewichte/);
 assert.match(indexMarkup, /Sehne/);
 assert.match(indexMarkup, /Bogen/);
 assert.match(indexMarkup, /2H Axt/);
-assert.match(indexMarkup, /XP für Level L/);
 assert.match(indexMarkup, /1H-Waffe → belegt genau eine/);
 assert.match(indexMarkup, /2H-Waffe → benötigt beide Hände/);
 assert.match(indexMarkup, /A = alle, S = nur schwer, M = nur mittel, L = nur leicht/);
@@ -71,6 +72,6 @@ assert.throws(() => composePageMarkup(['unknown-page']), /Unbekannte Angular-Sei
 assert.match(appComponent, /composePageMarkup\(APP_SHELL_PAGE_IDS\)/, 'Der App-Component verwendet nicht ausschließlich Angular-eigenes Seitenmarkup.');
 assert.match(appComponent, /composeAppShell\(pageMarkup\)/, 'Das Angular-eigene Seitenmarkup wird nicht in die Angular-Shell eingesetzt.');
 assert.doesNotMatch(appComponent, /adaptLegacyWeaponMarkup/, 'Angular-eigenes Seitenmarkup darf nicht mehr durch den Legacy-Waffen-Markupadapter verändert werden.');
-assert.match(appComponent, /const APP_VERSION = '0\.12\.87';/, 'Die App-Version wurde nicht auf v0.12.87 gesetzt.');
+assert.match(appComponent, /const APP_VERSION = '0\.12\.88';/, 'Die App-Version wurde nicht auf v0.12.88 gesetzt.');
 
-console.log('Seiten-Markup: Waffen, Dungeon-Gegner/XP, Levelskalierung mit fixer Bedrohung und aktuelles Stat-/Bauplansystem sind in Angular dokumentiert.');
+console.log('Seiten-Markup: Waffen, Dungeon-Gegner/XP, getrennte XP-/Stat-Steigung, fixe Bedrohung und aktuelles Stat-/Bauplansystem sind in Angular dokumentiert.');
