@@ -10,7 +10,7 @@ const registration = readFileSync('src/app/core/legacy-runtime-registration-adap
 assert.match(service, /private readonly gameState: GameStateService/, 'Schmiedeauftrags-Präsentation liest nicht aus dem Angular-State.');
 assert.match(service, /private readonly progressionPresentation: GameProgressionPresentationService/, 'Schmiedeauftrags-Präsentation aktualisiert die Ausbaukarten nicht über Angular.');
 assert.match(service, /getActiveForgeJobPresentation\(job, index, now, formatCurrencyNickel, formatDuration\)/, 'Aktive Schmiedeaufträge verwenden den bestehenden Presentation-Core nicht.');
-assert.match(service, /getQueuedForgeJobPresentation\(job, index, formatDuration\)/, 'Schmiede-Warteschlange verwendet nicht den bestehenden Presentation-Core.');
+assert.match(service, /getQueuedForgeJobPresentation\(job, index, formatDuration\)/, 'Schmiede-Warteschlange verwendet den bestehenden Presentation-Core nicht.');
 assert.match(service, /document\.getElementById\('forgeJobCard'\)/);
 assert.match(service, /document\.getElementById\('forgeQueueCard'\)/);
 assert.match(service, /forgeJobPresentationOwner'\] = 'angular'/, 'Browser-nachweisbarer Angular-Ownership-Marker fehlt.');
@@ -42,6 +42,6 @@ const stateBootstrap = app.indexOf('this.gameState.openBootstrapRegistration();'
 assert.ok(bridgeOpen >= 0 && stateBootstrap > bridgeOpen, 'Schmiedeauftrags-Präsentationsbrücke muss vor dem State-/Legacy-Bootstrap geöffnet werden.');
 assert.match(app, /private readonly gameForgeJobPresentation: GameForgeJobPresentationService/);
 assert.match(app, /ngOnDestroy\(\): void \{[\s\S]*this\.gameForgeJobPresentation\.closeLegacyCompatibilityBridge\(\);/);
-assert.match(app, /const APP_VERSION = '0\.12\.87';/);
+assert.match(app, /const APP_VERSION = '0\.12\.88';/);
 
 console.log('Schmiedeauftrags-Präsentations-Eigentümerschaft: aktive Aufträge und Warteschlange werden direkt durch Angular aus dem Angular-State gerendert; Legacy besitzt nur noch einen dünnen renderForgeJob-Wrapper.');
