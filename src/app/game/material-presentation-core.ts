@@ -82,7 +82,7 @@ export function getMaterialIndexRowPresentation(
     rarityText: `S${material.rarity}`,
     hpText: formatMaterialValue(stats.hp),
     energyText: formatMaterialValue(stats.energy),
-    armorText: formatMaterialValue(stats.armor),
+    armorText: `${formatMaterialValue(stats.armor)} %`,
     dodgeText: formatMaterialValue(stats.dodge, 'percent'),
     strengthFactorText: formatMaterialValue(stats.strengthFactor, 'factor'),
     precisionText: formatMaterialValue(stats.precision, 'factor'),
@@ -127,8 +127,7 @@ export function getMaterialStorageRowPresentation(
 export const MATERIAL_PRESENTATION_CORE_BRIDGE = {
   formatMaterialValue,
   getMaterialIndexRowPresentation,
-  sortMaterialStorageEntries,
-  getMaterialStorageRowPresentation
+  sortMaterialStorageEntries
 };
 
-export type MaterialPresentationCoreBridge = typeof MATERIAL_PRESENTATION_CORE_BRIDGE;
+export type MaterialPresentationCoreBridge = ReturnType<typeof createMaterialPresentationCore>;
