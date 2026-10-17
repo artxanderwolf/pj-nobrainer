@@ -34,6 +34,6 @@ assert.ok(registrationMatch, 'Angular-Runtime-Registrierung konnte nicht gelesen
 assert.doesNotMatch(registrationMatch[1], /renderRosterIfIdle|openWeaponPickerHand|renderCharacter\(/, 'Legacy-Runtime-Registrierung besitzt weiterhin Kader-Präsentationslogik.');
 assert.doesNotMatch(characterAdapter, /NoBrainerCharacterPresentationCore|CHARACTER_PRESENTATION_CORE_BRIDGE/, 'Legacy-Character-Adapter registriert weiterhin Presentation-Logik.');
 assert.doesNotMatch(equipmentAdapter, /getWeaponPickerPresentation/, 'Legacy-Equipment-Adapter enthält weiterhin die Kader-Waffenpicker-Präsentation.');
-assert.match(app, /const APP_VERSION = '0\.12\.85';/);
+assert.match(app, /const APP_VERSION = '0\.12\.86';/);
 
 console.log('Character-Präsentations-Eigentümerschaft: Kader zeigt Levelskalierung sowie aufgelöste Klassen-/Waffenstats; Waffenpicker und Equipment-Aktionen bleiben Angular-eigen.');
