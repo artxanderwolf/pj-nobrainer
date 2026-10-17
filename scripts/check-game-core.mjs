@@ -5,6 +5,9 @@ import {
   MATERIALS,
   calculateCharacterStats,
   calculateWeaponStats,
+  getDungeonEnemyDefinition,
+  getDungeonMaterialDropWeight,
+  getMaterialById,
   getWeaponCraftingSlots,
   getWeaponHandCount,
   getWeaponSelectionQuantity,
@@ -72,6 +75,16 @@ closeTo(MATERIALS['Fuchs-Leder'].stats.penetration, 0.04);
 closeTo(MATERIALS['Fuchs-Leder'].stats.critChance, 0.04);
 assert.deepEqual(MATERIALS.Kupfer.specialEffect, { stat: 'DS', amount: 0.10 });
 assert.deepEqual(MATERIALS['Morsche Fichte'].specialEffect, { stat: 'GES', amount: 0.05 });
+assert.equal(MATERIALS['Morsche Fichte'].materialId, 1);
+assert.equal(MATERIALS['Morsche Fichte'].dungeonDropWeight, 81);
+assert.equal(MATERIALS.Fichte.dungeonDropWeight, 8);
+assert.equal(MATERIALS.Tanne.dungeonDropWeight, 2);
+assert.equal(getMaterialById(9)?.[0], 'Lederfetzen');
+assert.equal(getDungeonMaterialDropWeight(1, 'Kupfer'), 8);
+assert.deepEqual(getDungeonEnemyDefinition(1, 'recruit'), { name: 'Neuling', lootMaterialIds: [9, 5, 3], xpDrop: 10 });
+assert.deepEqual(getDungeonEnemyDefinition(1, 'fighter'), { name: 'Tank', lootMaterialIds: [9, 4, 6], xpDrop: 10 });
+assert.deepEqual(getDungeonEnemyDefinition(1, 'archer'), { name: 'Jäger', lootMaterialIds: [9, 8, 7], xpDrop: 10 });
+assert.deepEqual(getDungeonEnemyDefinition(1, 'scholar'), { name: 'Lehrling', lootMaterialIds: [9, 2, 1], xpDrop: 10 });
 
 const daggerSlots = [
   { slot: 'workingPart', material: 'Kupfer' },
@@ -166,6 +179,23 @@ const sameTwoHandedWeaponTwice = calculateCharacterStats('recruit', [swordWeapon
 assert.deepEqual(sameTwoHandedWeaponTwice, recruit, 'Eine 2H-Waffe in beiden Handplätzen darf ihre Charakterboni nur einmal beitragen.');
 const clonedSameId = calculateCharacterStats('recruit', [swordWeapon, { id: 77, stats: sword }]);
 assert.deepEqual(clonedSameId, recruit, 'Auch dieselbe Waffen-ID aus zwei Zustandsreferenzen darf nur einmal beitragen.');
+
+const levelTwoRecruit = calculateCharacterStats('recruit', [swordWeapon], 1.1);
+closeTo(levelTwoRecruit.maxHp, 33);
+closeTo(levelTwoRecruit.maxEnergy, 110);
+closeTo(levelTwoRecruit.armor, 6.2);
+closeTo(levelTwoRecruit.dodge, 0.13);
+closeTo(levelTwoRecruit.strengthFactor, 1.20);
+closeTo(levelTwoRecruit.precision, 1.15);
+closeTo(levelTwoRecruit.threat, 55);
+closeTo(levelTwoRecruit.critChance, 0.075);
+closeTo(levelTwoRecruit.critDamage, 1.75);
+closeTo(levelTwoRecruit.hpRegenPerMinute, 0, 'Null-Grundwerte dürfen durch Levelanstieg nicht entstehen.');
+closeTo(levelTwoRecruit.energyRegenPerMinute, 5.5);
+closeTo(levelTwoRecruit.experienceFactor, 1.1);
+closeTo(levelTwoRecruit.lifeSteal, 0);
+closeTo(levelTwoRecruit.penetration, 0.10, 'Ausrüstungsbonus wird erst nach der Grundwertskalierung addiert.');
+
 assert.equal(CHARACTER_CLASSES.fighter.threat, 100);
 assert.equal(CHARACTER_CLASSES.archer.threat, 33);
 assert.equal(CHARACTER_CLASSES.scholar.threat, 25);
@@ -176,4 +206,4 @@ closeTo(armored.penetration, 0.10);
 closeTo(armored.effectiveArmor, 90);
 assert.ok(armored.afterArmor > 0 && armored.afterArmor < armored.raw);
 
-console.log('Game-Core: sieben Waffenformen, Sehne, Materialwerte, 2H-Statdeduplizierung, Handmetadaten und Kampfübergabe sind konsistent.');
+console.log('Game-Core: Waffenbau, aktuelle Material-/Dungeonwerte, 2H-Deduplizierung, Levelskalierung und Kampfübergabe sind konsistent.');
