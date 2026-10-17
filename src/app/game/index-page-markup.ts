@@ -6,14 +6,14 @@ export const INDEX_PAGE_MARKUP = `<section class="page" id="index">
           <div class="table-wrap mobile-stack">
             <table>
               <thead><tr>
-                <th>Typ</th><th>Material</th><th>S</th><th>HP</th><th>E</th><th>R</th><th>AW</th><th>SF</th><th>P</th><th>B</th><th>K-C</th><th>K-S</th><th>HP-R</th><th>E-R</th><th>ERF</th><th>LR</th><th>DS</th><th>SPE</th><th>SPE%</th><th>Dungeon 1</th>
+                <th>Typ</th><th>Material</th><th>S</th><th>HP</th><th>E</th><th>R</th><th>AW</th><th>SF</th><th>P</th><th>B</th><th>K-C</th><th>K-S</th><th>HP-R</th><th>E-R</th><th>ERF</th><th>LR</th><th>DS</th><th>SPE</th><th>SPE%</th><th>Dungeon 1 Gewicht</th>
               </tr></thead>
               <tbody id="materialIndexRows"></tbody>
             </table>
           </div>
           <p class="index-note">Bedrohung (B) ist eine reine Klasseneigenschaft. Ausrüstung verändert die Bedrohung nicht.</p>
-          <p class="index-note">Für Sehnen besitzen die Leder nun zusätzlich SF/DS: Lederfetzen +0,01 SF / +1 %-Pkt. DS · Hasen-Leder +0,03 / +2 %-Pkt. · Fuchs-Leder +0,05 / +4 %-Pkt. Diese Werte wirken nur an Bauteilen, die SF bzw. DS aktivieren.</p>
-          <div class="formula">Dungeon 1: Materialkategorie Holz / Metall / Leder je 33,33 % → Materialchance innerhalb der gewählten Kategorie</div>
+          <p class="index-note">Für Sehnen besitzen die Leder vorerst weiterhin die zuletzt vereinbarten SF/DS-Werte: Lederfetzen +0,01 SF / +1 %-Pkt. DS · Hasen-Leder +0,03 / +2 %-Pkt. · Fuchs-Leder +0,05 / +4 %-Pkt. Diese Werte wirken nur an Bauteilen, die SF bzw. DS aktivieren.</p>
+          <div class="formula">Dungeon 1: Jeder Gegner besitzt drei Material-IDs. Pro besiegtem Gegner wird genau ein Material aus diesem Pool gezogen; Drop% dient innerhalb dieses Gegnerpools als relatives Gewicht.</div>
         </div>
 
         <div class="card span-12">
@@ -93,13 +93,30 @@ export const INDEX_PAGE_MARKUP = `<section class="page" id="index">
           <h2>Level & Erfahrung</h2>
           <div class="formula">Start: Level 1 · 0 XP · Maximallevel 20</div>
           <div class="formula">XP für Level L → L+1 = gerundet(100 × 1,1^(L−1))</div>
-          <p class="index-note">Beispiele: 1→2 = 100 XP · 2→3 = 110 XP · 3→4 = 121 XP. Der ERF-Stat ist als Multiplikator für spätere XP-Vergaben vorbereitet. Eine konkrete XP-Belohnung pro Dungeon/Gegner ist noch nicht definiert und wird deshalb aktuell nicht erfunden oder automatisch vergeben.</p>
+          <div class="formula">Nicht-null Klassen-Grundwert auf Level L = Level-1-Grundwert × 1,1^(L−1)</div>
+          <div class="formula">Finaler Stat = skalierter Klassen-Grundwert + Ausrüstungsboni</div>
+          <p class="index-note">Null-Grundwerte bleiben auch beim Levelaufstieg 0. Der Faktor gilt für alle nicht-null Klassen-Grundwerte, also unter anderem HP, E, R, AW, SF, P, B, K-C, K-S, E-R und ERF. Ausrüstungsboni selbst werden nicht mit dem Level multipliziert.</p>
+          <p class="index-note">Dungeon-XP: Jeder Gegner in Dungeon 1 besitzt aktuell 10 Basis-XP. Die Summe der besiegten Gegner-XP wird möglichst gleichmäßig auf alle Teilnehmer der gewonnenen Welle verteilt und anschließend mit dem jeweiligen ERF-Faktor des Charakters multipliziert. 10 XP bleiben vorerst der Test-/Vergleichswert.</p>
+        </div>
+
+        <div class="card span-12">
+          <h2>Dungeon 1 – Gegner & Belohnungen</h2>
+          <div class="table-wrap mobile-stack"><table>
+            <thead><tr><th>Klasse</th><th>Name</th><th>Lootdrop 1</th><th>Lootdrop 2</th><th>Lootdrop 3</th><th>Basis-XP</th></tr></thead>
+            <tbody>
+              <tr><td>Rekrut</td><td>Neuling</td><td>ID 9 · Lederfetzen</td><td>ID 5 · Kupfer</td><td>ID 3 · Tanne</td><td>10</td></tr>
+              <tr><td>Kämpfer</td><td>Tank</td><td>ID 9 · Lederfetzen</td><td>ID 4 · Zinn</td><td>ID 6 · Aluminium</td><td>10</td></tr>
+              <tr><td>Bogner</td><td>Jäger</td><td>ID 9 · Lederfetzen</td><td>ID 8 · Fuchs-Leder</td><td>ID 7 · Hasen-Leder</td><td>10</td></tr>
+              <tr><td>Gelehrter</td><td>Lehrling</td><td>ID 9 · Lederfetzen</td><td>ID 2 · Fichte</td><td>ID 1 · Morsche Fichte</td><td>10</td></tr>
+            </tbody>
+          </table></div>
+          <p class="index-note">Die drei IDs definieren den Materialpool des Gegners. Pro Gegner bleibt es bei einem Materialwurf; die Drop%-Werte der gelisteten Materialien werden als relative Gewichte dieses Pools verwendet.</p>
         </div>
 
         <div class="card span-7">
           <h2>Kampfberechnung</h2>
-          <div class="formula">Finaler Charakterstat = Klassenbasis + Waffenform-Boni + wirksame Bauteilwerte aller ausgerüsteten Waffen</div>
-          <div class="formula">Bedrohung = ausschließlich Klassenbasis; Ausrüstung wird für B ignoriert</div>
+          <div class="formula">Finaler Charakterstat = skalierte Klassenbasis + Waffenform-Boni + wirksame Bauteilwerte aller ausgerüsteten Waffen</div>
+          <div class="formula">Bedrohung = skalierte Klassenbasis; Ausrüstung wird für B ignoriert</div>
           <div class="formula">Schaden pro Treffer = Waffen-Grund-SCH × finaler SF</div>
           <div class="formula">Angriffsgeschwindigkeit = Waffen-Grund-GES × eigener SPE-GES-Faktor</div>
           <div class="formula">Trefferchance = Waffen-Grund-TRF × finale P, begrenzt auf 0–100 %</div>
