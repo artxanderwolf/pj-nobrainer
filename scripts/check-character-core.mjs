@@ -17,6 +17,7 @@ try {
   const { createCharacter, createRecruit } = await import(`${pathToFileURL(tempPath).href}?t=${Date.now()}`);
   const {
     CHARACTER_LEVEL_MAX,
+    characterStatLevelMultiplier,
     experienceRequiredForNextLevel,
     getCharacterProgression,
     grantCharacterExperience
@@ -31,6 +32,9 @@ try {
   });
 
   assert.equal(CHARACTER_LEVEL_MAX, 20);
+  assert.equal(characterStatLevelMultiplier(1), 1);
+  assert.ok(Math.abs(characterStatLevelMultiplier(2) - 1.1) < 1e-12);
+  assert.ok(Math.abs(characterStatLevelMultiplier(3) - 1.21) < 1e-12);
   assert.equal(experienceRequiredForNextLevel(1), 100);
   assert.equal(experienceRequiredForNextLevel(2), 110);
   assert.equal(experienceRequiredForNextLevel(3), 121);
@@ -75,7 +79,7 @@ try {
   assert.equal(fallback.classId, 'recruit');
   assert.equal(fallback.maxHp, 30);
 
-  console.log('Character-Core: Klassenwerte, Level/XP, volle Startressourcen, Starterwaffe und Legacy-Fallback sind konsistent.');
+  console.log('Character-Core: Klassenwerte, Level/XP, Statwachstum, volle Startressourcen, Starterwaffe und Legacy-Fallback sind konsistent.');
 } finally {
   fs.rmSync(tempDir, { recursive: true, force: true });
 }
