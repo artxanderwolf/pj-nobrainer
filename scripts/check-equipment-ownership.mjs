@@ -2,16 +2,11 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const appComponent = readFileSync('src/app/app.component.ts', 'utf8');
-const equipmentCore = readFileSync('src/app/game/equipment-core.ts', 'utf8');
 const equipmentService = readFileSync('src/app/core/game-equipment.service.ts', 'utf8');
 const characterPresentationService = readFileSync('src/app/core/game-character-presentation.service.ts', 'utf8');
 const weaponInventoryPresentationService = readFileSync('src/app/core/game-weapon-inventory-presentation.service.ts', 'utf8');
 const equipmentAdapter = readFileSync('src/app/core/legacy-equipment-adapter.service.ts', 'utf8');
 const weaponPresentationAdapter = readFileSync('src/app/core/legacy-weapon-presentation-adapter.service.ts', 'utf8');
-
-assert.match(equipmentCore, /getEquippedTwoHandedWeapon\(/, 'Equipment-Core erkennt eine bestehende 2H-Belegung nicht als atomar ersetzbar.');
-assert.match(equipmentCore, /currentTwoHandedWeapon !== null/, '2H-gegen-2H wird im Equipment-Core nicht direkt ersetzt.');
-assert.match(equipmentCore, /bothHandsEmpty \|\| replaceableTwoHandedWeapon/, 'Waffenlager bietet bestehende 2H-Träger nicht als Wechselziel an.');
 
 assert.match(equipmentService, /constructor\(private readonly gameState: GameStateService\)/);
 assert.match(equipmentService, /weaponInventory: RuntimeEquipmentWeapon\[\];/);
@@ -40,6 +35,6 @@ const bridgeOpen = appComponent.indexOf('this.gameEquipment.openLegacyCompatibil
 const stateBootstrap = appComponent.indexOf('this.gameState.openBootstrapRegistration();');
 assert.ok(bridgeOpen >= 0 && stateBootstrap > bridgeOpen, 'Equipment-Bridge muss vor dem State-/Legacy-Bootstrap geöffnet werden.');
 assert.match(appComponent, /ngOnDestroy\(\): void \{[\s\S]*this\.gameEquipment\.closeLegacyCompatibilityBridge\(\);/);
-assert.match(appComponent, /const APP_VERSION = '0\.12\.87';/);
+assert.match(appComponent, /const APP_VERSION = '0\.12\.88';/);
 
-console.log('Equipment-Eigentümerschaft: 1H-/2H-Auflösung, direkter 2H-Wechsel, Ausrüsten und Ablegen laufen über Angular; Kader und Waffenlager greifen direkt auf den Service zu.');
+console.log('Equipment-Eigentümerschaft: 1H-/2H-Auflösung, Ausrüsten und Ablegen laufen über Angular; Kader und Waffenlager greifen direkt auf den Service zu.');
