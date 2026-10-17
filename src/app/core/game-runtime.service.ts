@@ -4,6 +4,7 @@ import { OfflineProgressService, SaveSnapshot } from './offline-progress.service
 import { SaveStorageService } from './save-storage.service';
 import { GameCharacterPresentationService } from './game-character-presentation.service';
 import { GameCombatLogService } from './game-combat-log.service';
+import { GameDungeonEquipmentSyncService } from './game-dungeon-equipment-sync.service';
 import { GameDungeonService, type DungeonActionResult } from './game-dungeon.service';
 import { GameDungeonPresentationService } from './game-dungeon-presentation.service';
 import { GameEnergyService } from './game-energy.service';
@@ -63,6 +64,7 @@ export class GameRuntimeService {
     private readonly gameForge: GameForgeService,
     private readonly gameMarket: GameMarketService,
     private readonly gameDungeon: GameDungeonService,
+    private readonly dungeonEquipmentSync: GameDungeonEquipmentSyncService,
     private readonly dungeonPresentation: GameDungeonPresentationService
   ) {}
 
@@ -91,10 +93,12 @@ export class GameRuntimeService {
     const before = this.saveStorage.readSnapshot();
     runtime.prepare();
     this.characterPresentation.bindActions(() => {
+      this.dungeonEquipmentSync.refresh();
       this.weaponInventoryPresentation.render();
       runtime.renderMarketWeapons();
     });
     this.weaponInventoryPresentation.bindActions(() => {
+      this.dungeonEquipmentSync.refresh();
       this.characterPresentation.render();
       runtime.renderMarketWeapons();
     });
