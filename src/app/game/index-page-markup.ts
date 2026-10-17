@@ -66,7 +66,6 @@ export const INDEX_PAGE_MARKUP = `<section class="page" id="index">
           </table></div>
           <p class="index-note">Waffenform-Boni und wirksame Bauteilwerte werden beim Ausrüsten auf den Charakter addiert. Bei zwei verschiedenen 1H-Waffen wirken die Charakterboni beider Waffen gemeinsam. Eine 2H-Waffe belegt beide Hände, wird aber für Stats und Angriffe nur einmal ausgewertet.</p>
         </div>
-
         <div class="card span-12">
           <h2>Waffen-Handverteilung</h2>
           <div class="formula">1H-Waffe → belegt genau eine gewählte Hand</div>
@@ -92,10 +91,10 @@ export const INDEX_PAGE_MARKUP = `<section class="page" id="index">
         <div class="card span-12">
           <h2>Level & Erfahrung</h2>
           <div class="formula">Start: Level 1 · 0 XP · Maximallevel 20</div>
-          <div class="formula">XP für Level L → L+1 = gerundet(100 × 1,1^(L−1))</div>
+          <div class="formula">XP für Level L → L+1 = gerundet(100 × 1,4^(L−1))</div>
           <div class="formula">Skalierbarer Nicht-null-Klassenwert auf Level L = Level-1-Grundwert × 1,1^(L−1)</div>
           <div class="formula">Finaler Stat = skalierter Klassen-Grundwert + Ausrüstungsboni</div>
-          <p class="index-note">Null-Grundwerte bleiben auch beim Levelaufstieg 0. Der Faktor gilt für die nicht-null Klassen-Grundwerte HP, E, R, AW, SF, P, K-C, K-S, E-R und ERF. Bedrohung (B) ist die bewusste Ausnahme und bleibt auf ihrem Klassen-Grundwert konstant. Ausrüstungsboni selbst werden nicht mit dem Level multipliziert.</p>
+          <p class="index-note">XP-Anforderung und Statwachstum sind bewusst getrennt: Die benötigten XP steigen pro Level mit Faktor 1,4, die nicht-null Klassen-Grundwerte weiterhin nur mit Faktor 1,1. Null-Grundwerte bleiben auch beim Levelaufstieg 0. Bedrohung (B) ist die bewusste Ausnahme und bleibt auf ihrem Klassen-Grundwert konstant. Ausrüstungsboni selbst werden nicht mit dem Level multipliziert.</p>
           <p class="index-note">Dungeon-XP: Jeder Gegner in Dungeon 1 besitzt aktuell 10 Basis-XP. Die Summe der besiegten Gegner-XP wird möglichst gleichmäßig auf alle Teilnehmer der gewonnenen Welle verteilt und anschließend mit dem jeweiligen ERF-Faktor des Charakters multipliziert. 10 XP bleiben vorerst der Test-/Vergleichswert.</p>
         </div>
 
