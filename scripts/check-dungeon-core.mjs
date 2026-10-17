@@ -47,9 +47,11 @@ try {
   assert.equal(rollEnemyClass(0.56), 'fighter');
 
   const enemy = createDungeonEnemy(1, 'recruit');
-  assert.equal(enemy.name, 'G Rekrut 1');
+  assert.equal(enemy.name, 'Neuling 1');
   assert.equal(enemy.maxHp, 60);
   assert.equal(enemy.hitChance, 0.5);
+  assert.deepEqual(enemy.lootMaterialIds, [9, 5, 3]);
+  assert.equal(enemy.xpDrop, 10);
 
   const points = createDungeonAttackPoints([character], [enemy], 1000, () => [{ kind: 'fist', speed: 1 }]);
   assert.equal(points.length, 2);
@@ -88,7 +90,7 @@ try {
   assert.equal(character.hp, 30);
   assert.equal(character.alive, true);
 
-  console.log('Dungeon-Core: Suche, Energie, Gegner, 2H-Angriffspunkte, Timeline, Phasen und Niederlagen-Reset sind konsistent.');
+  console.log('Dungeon-Core: Suche, Energie, Gegnerprofile, 2H-Angriffspunkte, Timeline, Phasen und Niederlagen-Reset sind konsistent.');
 } finally {
   unlinkSync(temporaryUrl);
 }
