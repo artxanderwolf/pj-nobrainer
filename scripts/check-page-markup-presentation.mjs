@@ -48,8 +48,9 @@ const indexMarkup = getAngularOwnedPageMarkup('index') ?? '';
 for (const heading of ['Materialindex – gemeinsames Stat-System', 'Bauteile & Materialwirkung', 'Waffenbaupläne', 'Waffen-Grundwerte & Formboni', 'Waffen-Handverteilung', 'Klassen-Grundwerte', 'Level & Erfahrung', 'Dungeon 1 – Gegner & Belohnungen', 'Kampfberechnung', 'Stat-Legende & Displayposition', 'Seltenheit, Herstellung & aktueller Umfang']) {
   assert.ok(indexMarkup.includes(`<h2>${heading}</h2>`), `Index-Abschnitt ${heading} fehlt.`);
 }
-assert.match(indexMarkup, /Bedrohung = skalierte Klassenbasis/);
-assert.match(indexMarkup, /Nicht-null Klassen-Grundwert auf Level L/);
+assert.match(indexMarkup, /Bedrohung = unveränderter Klassen-Grundwert/);
+assert.match(indexMarkup, /Skalierbarer Nicht-null-Klassenwert auf Level L/);
+assert.match(indexMarkup, /Bedrohung \(B\) ist die bewusste Ausnahme/);
 assert.match(indexMarkup, /10 Basis-XP/);
 assert.match(indexMarkup, /Neuling/);
 assert.match(indexMarkup, /Tank/);
@@ -70,6 +71,6 @@ assert.throws(() => composePageMarkup(['unknown-page']), /Unbekannte Angular-Sei
 assert.match(appComponent, /composePageMarkup\(APP_SHELL_PAGE_IDS\)/, 'Der App-Component verwendet nicht ausschließlich Angular-eigenes Seitenmarkup.');
 assert.match(appComponent, /composeAppShell\(pageMarkup\)/, 'Das Angular-eigene Seitenmarkup wird nicht in die Angular-Shell eingesetzt.');
 assert.doesNotMatch(appComponent, /adaptLegacyWeaponMarkup/, 'Angular-eigenes Seitenmarkup darf nicht mehr durch den Legacy-Waffen-Markupadapter verändert werden.');
-assert.match(appComponent, /const APP_VERSION = '0\.12\.84';/, 'Die App-Version wurde nicht auf v0.12.84 gesetzt.');
+assert.match(appComponent, /const APP_VERSION = '0\.12\.85';/, 'Die App-Version wurde nicht auf v0.12.85 gesetzt.');
 
-console.log('Seiten-Markup: Waffen, Dungeon-Gegner/XP, Levelskalierung und aktuelles Stat-/Bauplansystem sind in Angular dokumentiert.');
+console.log('Seiten-Markup: Waffen, Dungeon-Gegner/XP, Levelskalierung mit fixer Bedrohung und aktuelles Stat-/Bauplansystem sind in Angular dokumentiert.');
