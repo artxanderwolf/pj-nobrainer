@@ -51,6 +51,6 @@ const bridgeOpen = app.indexOf('this.gameForgePreviewPresentation.openLegacyComp
 const stateBootstrap = app.indexOf('this.gameState.openBootstrapRegistration();');
 assert.ok(bridgeOpen >= 0 && stateBootstrap > bridgeOpen, 'Schmiedevorschau-Präsentationsbrücke muss vor dem State-/Legacy-Bootstrap geöffnet werden.');
 assert.match(app, /private readonly gameForgePreviewPresentation: GameForgePreviewPresentationService/);
-assert.match(app, /const APP_VERSION = '0\.12\.86';/);
+assert.match(app, /const APP_VERSION = '0\.12\.87';/);
 
 console.log('Forge-Preview-Presentation: Angular rendert fünf Dolch- bzw. sechs 1H-Schwert-Materialwahlen inklusive eigenständiger Parierstange und Bauplanmengen.');
