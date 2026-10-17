@@ -1,4 +1,4 @@
-import { clampArmorPercent, resolveArmor } from './armor-core';
+import { clampArmorPercent, resolveArmor } from './armor-core.ts';
 
 export type CharacterClassId = 'recruit' | 'fighter' | 'archer' | 'scholar';
 export type MaterialCategory = 'Holz' | 'Metall' | 'Leder';
