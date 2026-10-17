@@ -23,13 +23,17 @@ import {
 import {
   CHARACTER_CLASSES,
   CONFIG,
-  DUNGEON_LOOT_TABLES,
   MATERIALS,
   calculateCharacterStats,
+  getMaterialById,
   type CharacterClassId,
   type ResolvedCharacterStats,
   type WeaponStats
 } from '../game/game-core';
+import {
+  characterStatLevelMultiplier,
+  grantCharacterExperience
+} from '../game/character-progression-core';
 import { GameStateService, type MutableGameState } from './game-state.service';
 
 export interface DungeonRuntimeEvent {
@@ -61,7 +65,10 @@ interface RuntimeDungeonWeapon {
 interface RuntimeDungeonCharacter extends DungeonCharacterLike, CombatTargetLike {
   name: string;
   classId?: string | null;
+  level?: number | null;
+  xp?: number | null;
   maxHp: number;
+  maxEnergy: number;
   armor?: number | null;
   dodge?: number | null;
   strengthFactor: number;
@@ -87,14 +94,6 @@ interface RuntimeDungeonLootCollect {
 interface RuntimeDungeonInventoryEntry {
   category?: string;
   qty?: number | null;
-}
-
-interface DungeonLootTable {
-  categories: Array<{
-    name: string;
-    weight: number;
-    items: Array<{ name: string; chance: number }>;
-  }>;
 }
 
 type RuntimeDungeonState = MutableGameState & {
@@ -345,7 +344,8 @@ export class GameDungeonService {
     state.dungeonRun = null;
 
     if (success) {
-      const drops = this.rollDrops(run.dungeonId, run.enemies.length);
+      const drops = this.rollDrops(run.enemies);
+      this.grantWaveExperience(state, run, outcome);
       state.dungeonWavesDefeated = (Number(state.dungeonWavesDefeated) || 0) + 1;
       state.dungeonCycleActiveIds = run.participantIds
         .map(id => this.getCharacterById(state, id))
@@ -485,7 +485,8 @@ export class GameDungeonService {
     const target = this.weightedTarget(
       run.participantIds
         .map(id => this.getCharacterById(state, id))
-        .filter((character): character is RuntimeDungeonCharacter => !!character)
+        .filter((character): character is RuntimeDungeonCharacter => !!character),
+      character => this.getCharacterStats(state, character).threat
     );
     if (!target) return;
 
@@ -568,29 +569,72 @@ export class GameDungeonService {
     const weapons = [character.equipment?.leftHand, character.equipment?.rightHand]
       .map(id => this.getWeaponById(state, id))
       .filter((weapon): weapon is RuntimeDungeonWeapon => Boolean(weapon));
-    return calculateCharacterStats(character.classId, weapons);
+    return calculateCharacterStats(
+      character.classId,
+      weapons,
+      characterStatLevelMultiplier(character.level)
+    );
   }
 
-  private weightedTarget<TTarget extends CombatTargetLike & { classId?: string | null }>(targets: readonly TTarget[]): TTarget | null {
-    const weighted = buildWeightedTargets(targets, target => CHARACTER_CLASSES[this.resolveClassId(target.classId)]?.threat ?? 50);
+  private weightedTarget<TTarget extends CombatTargetLike & { classId?: string | null }>(
+    targets: readonly TTarget[],
+    getFallbackThreat: (target: TTarget) => number = target => CHARACTER_CLASSES[this.resolveClassId(target.classId)]?.threat ?? 50
+  ): TTarget | null {
+    const weighted = buildWeightedTargets(targets, getFallbackThreat);
     if (!weighted.length) return null;
     return weighted[rollWeightedIndex(weighted.map(entry => entry.weight), Math.random())]?.target ?? null;
   }
 
-  private rollDrops(dungeonId: number, amount: number): RuntimeDungeonDrop[] {
-    const tables = DUNGEON_LOOT_TABLES as unknown as Record<number, DungeonLootTable | undefined>;
-    const table = tables[dungeonId];
-    if (!table) return [];
-
+  private rollDrops(enemies: readonly DungeonEnemy[]): RuntimeDungeonDrop[] {
     const result: RuntimeDungeonDrop[] = [];
-    const count = Math.max(0, Math.floor(Number(amount) || 0));
-    for (let index = 0; index < count; index += 1) {
-      const category = table.categories[rollWeightedIndex(table.categories.map(entry => entry.weight), Math.random())];
-      if (!category) continue;
-      const item = category.items[rollWeightedIndex(category.items.map(entry => entry.chance), Math.random())];
-      if (item) result.push({ name: item.name, category: category.name });
+    for (const enemy of enemies) {
+      const candidates = enemy.lootMaterialIds
+        .map(materialId => getMaterialById(materialId))
+        .filter((entry): entry is [string, NonNullable<ReturnType<typeof getMaterialById>>[1]] => Boolean(entry));
+      if (!candidates.length) continue;
+      const selected = candidates[rollWeightedIndex(
+        candidates.map(([, material]) => material.dungeonDropWeight),
+        Math.random()
+      )];
+      if (selected) result.push({ name: selected[0], category: selected[1].category });
     }
     return result;
+  }
+
+  private grantWaveExperience(
+    state: RuntimeDungeonState,
+    run: DungeonRunLike,
+    outcome: DungeonActionResult
+  ): void {
+    const participants = run.participantIds
+      .map(id => this.getCharacterById(state, id))
+      .filter((character): character is RuntimeDungeonCharacter => Boolean(character));
+    if (!participants.length) return;
+
+    const totalBaseXp = Math.max(0, Math.floor(run.enemies.reduce((sum, enemy) => sum + (Number(enemy.xpDrop) || 0), 0)));
+    const baseShare = Math.floor(totalBaseXp / participants.length);
+    const remainder = totalBaseXp % participants.length;
+
+    participants.forEach((character, index) => {
+      const baseXp = baseShare + (index < remainder ? 1 : 0);
+      if (baseXp <= 0) return;
+      const experienceFactor = this.getCharacterStats(state, character).experienceFactor;
+      const result = grantCharacterExperience(character, baseXp, experienceFactor);
+      if (result.levelsGained <= 0) return;
+
+      const effective = this.getCharacterStats(state, character);
+      character.maxHp = effective.maxHp;
+      character.maxEnergy = effective.maxEnergy;
+      character.hp = Math.min(character.hp, character.maxHp);
+      character.energy = Math.min(character.energy, character.maxEnergy);
+      if (!this.catchupMode) {
+        this.addEvent(
+          outcome,
+          `${character.name} erreicht Level ${result.level}. Grundwerte steigen auf ×${characterStatLevelMultiplier(result.level).toFixed(3)}.`,
+          'good'
+        );
+      }
+    });
   }
 
   private getFirstEventAt(state: RuntimeDungeonState, now: number): number {
