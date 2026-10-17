@@ -90,6 +90,10 @@ const HANDS: ReadonlyArray<{ hand: EquipmentHand; label: CharacterHandPresentati
 
 const DUNGEON_TEAM_SLOT_COUNT = 4;
 
+function formatResourceValue(value: number): string {
+  return value.toFixed(1).replace(/\.0$/, '');
+}
+
 export function getWeaponPickerKey(characterId: number, hand: EquipmentHand): string {
   return `${characterId}:${hand}`;
 }
@@ -105,8 +109,8 @@ export function getCharacterCardPresentation(
   const stats: CharacterStatPresentation[] = [
     { label: 'LVL', value: `${progression.level} / ${progression.maxLevel}` },
     { label: 'XP', value: progression.atMaxLevel ? 'MAX' : `${progression.xp} / ${progression.xpToNext}` },
-    { label: 'HP', value: `${character.hp.toFixed(1)} / ${effectiveStats.maxHp}` },
-    { label: 'EN', value: `${character.energy.toFixed(1)} / ${effectiveStats.maxEnergy}` },
+    { label: 'HP', value: `${formatResourceValue(character.hp)} / ${formatResourceValue(effectiveStats.maxHp)}` },
+    { label: 'EN', value: `${formatResourceValue(character.energy)} / ${formatResourceValue(effectiveStats.maxEnergy)}` },
     { label: 'RÜS', value: effectiveStats.armor.toFixed(2).replace(/\.00$/, '') },
     { label: 'AUS', value: `${Math.round(effectiveStats.dodge * 100)} %` },
     { label: 'SF', value: effectiveStats.strengthFactor.toFixed(2) },
@@ -166,7 +170,7 @@ export function getDungeonTeamPickerPresentation(
     .map((character): DungeonTeamCandidatePresentation => ({
       id: character.id,
       name: character.name,
-      meta: `${character.className} · HP ${character.hp.toFixed(1)} · EN ${character.energy.toFixed(1)}`,
+      meta: `${character.className} · HP ${formatResourceValue(character.hp)} · EN ${formatResourceValue(character.energy)}`,
       assignLabel: 'Zuweisen'
     }));
 
@@ -211,8 +215,8 @@ export function getDungeonTeamPresentation(
       title: `Platz ${slotIndex + 1}: ${character.name}`,
       fallen: cycleActive && !activeIds.includes(character.id),
       fallenLabel: 'GEFALLEN',
-      hpValue: `${character.hp.toFixed(1)} / ${character.maxHp}`,
-      energyValue: `${character.energy.toFixed(1)} / ${character.maxEnergy}`,
+      hpValue: `${formatResourceValue(character.hp)} / ${formatResourceValue(character.maxHp)}`,
+      energyValue: `${formatResourceValue(character.energy)} / ${formatResourceValue(character.maxEnergy)}`,
       emptyText: 'Nicht belegt',
       addLabel: '+ Charakter hinzufügen',
       removeLabel: 'Entfernen',
