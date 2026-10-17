@@ -32,6 +32,6 @@ const stateBootstrap = app.indexOf('this.gameState.openBootstrapRegistration();'
 assert.ok(bridgeOpen >= 0 && stateBootstrap > bridgeOpen, 'Progressions-Präsentationsbrücke muss vor dem State-/Legacy-Bootstrap geöffnet werden.');
 assert.match(app, /private readonly gameProgressionPresentation: GameProgressionPresentationService/);
 assert.match(app, /ngOnDestroy\(\): void \{[\s\S]*this\.gameProgressionPresentation\.closeLegacyCompatibilityBridge\(\);/);
-assert.match(app, /const APP_VERSION = '0\.12\.85';/);
+assert.match(app, /const APP_VERSION = '0\.12\.86';/);
 
 console.log('Progression-Presentation-Eigentümerschaft: Inn-, Schmiede- und Markt-Ausbaukarten werden direkt durch Angular aus Angular-State und GameProgressionService gerendert; Legacy besitzt nur noch einen dünnen Renderwrapper.');
