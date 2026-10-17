@@ -50,7 +50,7 @@ try {
   assert.equal(presentation.classTag, 'Klasse: Kämpfer');
   assert.deepEqual(presentation.stats, [
     { label: 'LVL', value: '3 / 20' },
-    { label: 'XP', value: '21 / 121' },
+    { label: 'XP', value: '21 / 196' },
     { label: 'HP', value: '31.3 / 43.9' },
     { label: 'EN', value: '87.8 / 156.4' },
     { label: 'RÜS', value: '3' },
