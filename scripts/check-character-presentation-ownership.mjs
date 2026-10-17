@@ -11,7 +11,7 @@ const equipmentAdapter = readFileSync('src/app/core/legacy-equipment-adapter.ser
 
 assert.match(service, /constructor\([\s\S]*private readonly gameState: GameStateService,[\s\S]*private readonly gameEquipment: GameEquipmentService,[\s\S]*private readonly weaponPresentation: GameWeaponPresentationService/);
 assert.match(service, /getCharacterCardPresentation\(/, 'Angular-Kaderdarstellung nutzt den Character-Presentation-Core nicht.');
-assert.match(service, /calculateCharacterStats\(character\.classId, this\.getEquippedWeapons\(character\)\)/, 'Angular-Kader löst Klassen- und Waffenboni nicht über das gemeinsame Statmodell auf.');
+assert.match(service, /calculateCharacterStats\([\s\S]*character\.classId,[\s\S]*this\.getEquippedWeapons\(character\),[\s\S]*characterStatLevelMultiplier\(character\.level\)[\s\S]*\)/, 'Angular-Kader löst Level-, Klassen- und Waffenboni nicht über das gemeinsame Statmodell auf.');
 assert.match(weaponPresentationService, /createWeaponPresentationCore\(/, 'Gemeinsame Angular-Waffenpräsentation nutzt den Weapon-Presentation-Core nicht.');
 assert.match(service, /weaponPresentation\.renderCard\(/, 'Angular-Kader nutzt die gemeinsame Waffenkarten-Präsentation nicht.');
 assert.match(service, /weaponDamageAfterArmor\(weapon, 0, stats\)\.raw/, 'Die gemeinsame Waffen-/Charakter-Offensivberechnung wird im Kader nicht wiederverwendet.');
@@ -36,4 +36,4 @@ assert.doesNotMatch(characterAdapter, /NoBrainerCharacterPresentationCore|CHARAC
 assert.doesNotMatch(equipmentAdapter, /getWeaponPickerPresentation/, 'Legacy-Equipment-Adapter enthält weiterhin die Kader-Waffenpicker-Präsentation.');
 assert.match(app, /const APP_VERSION = '0\.12\.84';/);
 
-console.log('Character-Präsentations-Eigentümerschaft: Kader zeigt den aufgelösten Klassen-/Waffen-Statblock; Waffenpicker und Equipment-Aktionen bleiben Angular-eigen.');
+console.log('Character-Präsentations-Eigentümerschaft: Kader zeigt Levelskalierung sowie aufgelöste Klassen-/Waffenstats; Waffenpicker und Equipment-Aktionen bleiben Angular-eigen.');
