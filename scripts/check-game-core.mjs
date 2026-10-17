@@ -5,6 +5,7 @@ import {
   MATERIALS,
   calculateCharacterStats,
   calculateWeaponStats,
+  createStatModifiers,
   getDungeonEnemyDefinition,
   getDungeonMaterialDropWeight,
   getMaterialById,
@@ -196,6 +197,12 @@ closeTo(levelTwoRecruit.experienceFactor, 1.1);
 closeTo(levelTwoRecruit.lifeSteal, 0);
 closeTo(levelTwoRecruit.penetration, 0.10, 'Ausrüstungsbonus wird erst nach der Grundwertskalierung addiert.');
 
+const cappedArmorCharacter = calculateCharacterStats('fighter', [{
+  id: 999,
+  stats: { characterModifiers: createStatModifiers({ armor: 100 }) }
+}]);
+closeTo(cappedArmorCharacter.armor, 80, 'Finale Charakterrüstung muss bei 80 % gedeckelt werden.');
+
 assert.equal(CHARACTER_CLASSES.fighter.threat, 100);
 assert.equal(CHARACTER_CLASSES.archer.threat, 33);
 assert.equal(CHARACTER_CLASSES.scholar.threat, 25);
@@ -203,7 +210,8 @@ assert.equal(CHARACTER_CLASSES.scholar.threat, 25);
 const armored = weaponDamageAfterArmor({ stats: sword }, 100, recruit);
 assert.ok(armored.raw > 0);
 closeTo(armored.penetration, 0.10);
-closeTo(armored.effectiveArmor, 90);
-assert.ok(armored.afterArmor > 0 && armored.afterArmor < armored.raw);
+closeTo(armored.effectiveArmor, 72);
+closeTo(armored.reduction, 0.72);
+closeTo(armored.afterArmor, armored.raw * 0.28);
 
-console.log('Game-Core: Waffenbau, aktuelle Material-/Dungeonwerte, 2H-Deduplizierung, Levelskalierung mit fixer Bedrohung und Kampfübergabe sind konsistent.');
+console.log('Game-Core: Waffenbau, aktuelle Material-/Dungeonwerte, 2H-Deduplizierung, Levelskalierung, prozentuale Rüstung mit 80%-Cap und Kampfübergabe sind konsistent.');
