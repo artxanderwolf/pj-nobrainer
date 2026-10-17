@@ -51,6 +51,10 @@ assert.deepEqual(getWeaponInventoryPresentation(characters, 20, resolveHandCount
   targets: []
 });
 assert.deepEqual(getWeaponPickerPresentation(characters, 20, 3, 'rightHand', resolveHandCount), { status: 'AUSGERÜSTET (2H)', disabled: true });
+assert.deepEqual(getWeaponPickerPresentation(characters, 21, 3, 'leftHand', resolveHandCount), { status: '', disabled: false }, 'Eine andere 2H-Waffe muss die bestehende 2H-Waffe direkt ersetzen dürfen.');
+assert.ok(getFreeWeaponEquipTargets(characters, 21, resolveHandCount).some(target => target.characterId === 3 && target.label === 'Beide Hände'), 'Das Waffenlager muss einen direkten 2H-gegen-2H-Wechsel anbieten.');
+assert.deepEqual(equipWeapon(characters, 21, 'rightHand', 3, resolveHandCount), { ok: true, location: { characterId: 3, hand: 'leftHand' } });
+assert.deepEqual(characters[2].equipment, { leftHand: 21, rightHand: 21 }, '2H-gegen-2H muss beide Hände atomar auf die neue Waffe umstellen.');
 assert.equal(unequipHand(characters, 3, 'rightHand'), true);
 assert.deepEqual(characters[2].equipment, { leftHand: null, rightHand: null }, 'Ablegen einer 2H-Waffe muss beide Hände leeren.');
 
@@ -78,4 +82,4 @@ assert.equal(characters[0].equipment.rightHand, null);
 assert.equal(unequipHand(characters, 99, 'leftHand'), false);
 assert.equal(unequipHand(characters, 1, 'belt'), false);
 
-console.log('Equipment-Core: 1H-/2H-Belegung, freie Ziele, Handwechsel, Mehrfachschutz und gemeinsames Ablegen sind konsistent.');
+console.log('Equipment-Core: 1H-/2H-Belegung, direkte 2H-Wechsel, freie Ziele, Handwechsel, Mehrfachschutz und gemeinsames Ablegen sind konsistent.');
