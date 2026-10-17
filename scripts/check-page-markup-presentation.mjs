@@ -45,10 +45,17 @@ for (const option of ['Dolch', '1H Schwert', '1H Axt', '2H Schwert', '2H Axt', '
 }
 
 const indexMarkup = getAngularOwnedPageMarkup('index') ?? '';
-for (const heading of ['Materialindex – gemeinsames Stat-System', 'Bauteile & Materialwirkung', 'Waffenbaupläne', 'Waffen-Grundwerte & Formboni', 'Waffen-Handverteilung', 'Klassen-Grundwerte', 'Level & Erfahrung', 'Kampfberechnung', 'Stat-Legende & Displayposition', 'Seltenheit, Herstellung & aktueller Umfang']) {
+for (const heading of ['Materialindex – gemeinsames Stat-System', 'Bauteile & Materialwirkung', 'Waffenbaupläne', 'Waffen-Grundwerte & Formboni', 'Waffen-Handverteilung', 'Klassen-Grundwerte', 'Level & Erfahrung', 'Dungeon 1 – Gegner & Belohnungen', 'Kampfberechnung', 'Stat-Legende & Displayposition', 'Seltenheit, Herstellung & aktueller Umfang']) {
   assert.ok(indexMarkup.includes(`<h2>${heading}</h2>`), `Index-Abschnitt ${heading} fehlt.`);
 }
-assert.match(indexMarkup, /Bedrohung = ausschließlich Klassenbasis/);
+assert.match(indexMarkup, /Bedrohung = skalierte Klassenbasis/);
+assert.match(indexMarkup, /Nicht-null Klassen-Grundwert auf Level L/);
+assert.match(indexMarkup, /10 Basis-XP/);
+assert.match(indexMarkup, /Neuling/);
+assert.match(indexMarkup, /Tank/);
+assert.match(indexMarkup, /Jäger/);
+assert.match(indexMarkup, /Lehrling/);
+assert.match(indexMarkup, /relative Gewichte/);
 assert.match(indexMarkup, /Sehne/);
 assert.match(indexMarkup, /Bogen/);
 assert.match(indexMarkup, /2H Axt/);
@@ -65,4 +72,4 @@ assert.match(appComponent, /composeAppShell\(pageMarkup\)/, 'Das Angular-eigene 
 assert.doesNotMatch(appComponent, /adaptLegacyWeaponMarkup/, 'Angular-eigenes Seitenmarkup darf nicht mehr durch den Legacy-Waffen-Markupadapter verändert werden.');
 assert.match(appComponent, /const APP_VERSION = '0\.12\.84';/, 'Die App-Version wurde nicht auf v0.12.84 gesetzt.');
 
-console.log('Seiten-Markup: sieben Waffen, Sehne, Handmetadaten, XP und aktuelles Stat-/Bauplansystem sind in Angular abgebildet.');
+console.log('Seiten-Markup: Waffen, Dungeon-Gegner/XP, Levelskalierung und aktuelles Stat-/Bauplansystem sind in Angular dokumentiert.');
