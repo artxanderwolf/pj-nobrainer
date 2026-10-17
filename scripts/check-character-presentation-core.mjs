@@ -26,8 +26,8 @@ try {
   };
   const characterClass = { name: 'Kämpfer' };
   const effectiveStats = {
-    maxHp: 35,
-    maxEnergy: 100,
+    maxHp: 43.92300000000001,
+    maxEnergy: 156.41000000000005,
     armor: 3,
     dodge: 0.08,
     strengthFactor: 1.1,
@@ -51,8 +51,8 @@ try {
   assert.deepEqual(presentation.stats, [
     { label: 'LVL', value: '3 / 20' },
     { label: 'XP', value: '21 / 121' },
-    { label: 'HP', value: '31.3 / 35' },
-    { label: 'EN', value: '87.8 / 100' },
+    { label: 'HP', value: '31.3 / 43.9' },
+    { label: 'EN', value: '87.8 / 156.4' },
     { label: 'RÜS', value: '3' },
     { label: 'AUS', value: '8 %' },
     { label: 'SF', value: '1.10' },
@@ -134,7 +134,7 @@ try {
     title: 'Platz 1: Kämpfer 01',
     fallen: false,
     fallenLabel: 'GEFALLEN',
-    hpValue: '32.0 / 35',
+    hpValue: '32 / 35',
     energyValue: '91.1 / 100',
     emptyText: 'Nicht belegt',
     addLabel: '+ Charakter hinzufügen',
@@ -157,7 +157,7 @@ try {
   assert.equal(legacy.split('function renderDungeonTeam(root)').length - 1, 1);
   assert.equal(legacy.split('function renderCharacter(target)').length - 1, 1);
 
-  console.log('Character-Presentation-Core: XP/Level, gemeinsamer Statblock, Handsektionen, Dungeon-Team-Slots und Legacy-Anker sind konsistent.');
+  console.log('Character-Presentation-Core: HP/EN mit maximal einer Nachkommastelle, XP/Level, gemeinsamer Statblock, Handsektionen, Dungeon-Team-Slots und Legacy-Anker sind konsistent.');
 } finally {
   fs.rmSync(temporaryUrl, { force: true });
 }
