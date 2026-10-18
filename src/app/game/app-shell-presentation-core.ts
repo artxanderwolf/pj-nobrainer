@@ -50,10 +50,10 @@ const APP_SHELL_AFTER_PAGES = `
     </div>
 
     <nav id="nav" class="bottom-nav" aria-label="Hauptnavigation">
-      <button data-page="base" data-section="base" class="active"><span>Übersicht</span></button>
-      <button data-page="character" data-section="character"><span>Charakter</span></button>
-      <button data-page="storage" data-section="storage"><span>Lager</span></button>
-      <button data-page="dungeon" data-section="dungeon"><span>Dungeon</span></button>
+      <button data-page="base" data-section="base" class="active">Übersicht</button>
+      <button data-page="character" data-section="character">Charakter</button>
+      <button data-page="storage" data-section="storage">Lager</button>
+      <button data-page="dungeon" data-section="dungeon">Dungeon</button>
     </nav>
   </main>
 </div>`;
