@@ -1,12 +1,13 @@
 import {
-  CONFIG,
+  calculateWeaponEconomy
+} from './economy-core';
+import {
   calculateWeaponStats,
   getWeaponCraftingSlots,
   getWeaponForm,
   getWeaponSelectionQuantity,
   isWeaponSelectionComplete,
   normalizeWeaponSlots,
-  rarityFactor,
   type WeaponCraftingSlotId,
   type WeaponSlot,
   type WeaponStats
@@ -20,6 +21,7 @@ export interface ForgeJob {
   slots: WeaponSlot[];
   stats: WeaponStats;
   valueNickel: number;
+  performance: number;
   totalSeconds: number;
   startedAt?: number;
   finishesAt?: number;
@@ -69,14 +71,16 @@ export function createForgeJob(weaponForm: string, weaponName: string, slots: re
   const storedSlots = normalized
     .filter(slot => craftingSlots.has(slot.slot as WeaponCraftingSlotId))
     .map(slot => ({ ...slot }));
-  const factor = rarityFactor(storedSlots);
+  const stats = calculateWeaponStats(storedSlots, weaponForm);
+  const economy = calculateWeaponEconomy(stats);
   return {
     weaponForm,
     weaponName: weaponName.trim() || form.name,
     slots: storedSlots,
-    stats: calculateWeaponStats(storedSlots, weaponForm),
-    valueNickel: Math.round(100 * factor),
-    totalSeconds: Math.round(CONFIG.forge.baseSeconds * form.timeFactor * factor)
+    stats,
+    valueNickel: economy.valueNickel,
+    performance: economy.performance,
+    totalSeconds: economy.forgeSeconds
   };
 }
 
