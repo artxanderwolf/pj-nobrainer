@@ -29,14 +29,33 @@ const LEGACY_GO = [
 ].join('\n');
 
 const NAVIGATION_GO_BRIDGE = [
-  'function go(page){',
-  '  const presentation=window.NoBrainerNavigationPresentationCore.getNavigationPresentation(page);',
+  'function applyNavigationPresentation(presentation){',
   '  document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));',
   '  document.querySelectorAll("#nav button").forEach(x=>x.classList.remove("active"));',
-  '  document.getElementById(presentation.pageId).classList.add("active");',
-  '  document.querySelector(`#nav button[data-page="${presentation.pageId}"]`).classList.add("active");',
-  '  document.getElementById("pageTitle").textContent=presentation.title;',
+  '  const pageElement=document.getElementById(presentation.pageId);',
+  '  if(pageElement)pageElement.classList.add("active");',
+  '  const sectionButton=document.querySelector(`#nav button[data-section="${presentation.sectionId}"]`);',
+  '  if(sectionButton)sectionButton.classList.add("active");',
+  '  const titleElement=document.getElementById("pageTitle");',
+  '  if(titleElement)titleElement.textContent=presentation.title;',
+  '  const backButton=document.getElementById("backBtn");',
+  '  if(backButton){',
+  '    backButton.hidden=!presentation.parentPageId;',
+  '    backButton.dataset.parentPage=presentation.parentPageId||"";',
+  '  }',
+  '}',
+  '',
+  'function go(page){',
+  '  const presentation=window.NoBrainerNavigationPresentationCore.getNavigationPresentation(page);',
+  '  applyNavigationPresentation(presentation);',
   '  render();',
+  '}',
+  '',
+  'function goBack(){',
+  '  const current=document.querySelector(".page.active");',
+  '  const currentId=current?.id||"base";',
+  '  const presentation=window.NoBrainerNavigationPresentationCore.getNavigationPresentation(currentId);',
+  '  go(presentation.parentPageId||"base");',
   '}'
 ].join('\n');
 
