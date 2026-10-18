@@ -45,7 +45,7 @@ assert.deepEqual(ready, {
   hitText: '78 %',
   rawText: '9.88',
   penetrationText: '25 %',
-  rarityText: '× 1.4',
+  rarityText: '1.40',
   reinforcementText: 'Spezialeffekt: +10 % Geschwindigkeit',
   startDisabled: false
 });
@@ -77,4 +77,4 @@ const queuedJob = getQueuedForgeJobPresentation(
 );
 assert.deepEqual(queuedJob, { title: '3. Eisendolch', metaText: '45s Herstellungszeit' });
 
-console.log('Forge-Presentation-Core: Bauplanvorschau sowie aktive und wartende Schmiedeaufträge sind konsistent.');
+console.log('Forge-Presentation-Core: Leistungswert, Bauplanvorschau sowie aktive und wartende Schmiedeaufträge sind konsistent.');
