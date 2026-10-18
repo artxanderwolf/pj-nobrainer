@@ -1,24 +1,31 @@
 import assert from 'node:assert/strict';
 import {
   NAVIGATION_ITEMS,
+  NAVIGATION_SCREEN_IDS,
   getNavigationPresentation
 } from '../src/app/game/navigation-presentation-core.ts';
 
-const expected = [
-  ['base', 'Stützpunkt'],
-  ['dungeon', 'Dungeon'],
-  ['tavern', 'Taverne'],
-  ['roster', 'Kader'],
-  ['storage', 'Lager'],
-  ['forge', 'Schmiede'],
-  ['market', 'Markt'],
-  ['index', 'Index']
-];
+assert.deepEqual(
+  NAVIGATION_ITEMS.map(({ id, title, sectionId }) => [id, title, sectionId]),
+  [
+    ['base', 'Übersicht', 'base'],
+    ['character', 'Charakter', 'character'],
+    ['storage', 'Lager', 'storage'],
+    ['dungeon', 'Dungeon', 'dungeon']
+  ]
+);
 
-assert.deepEqual(NAVIGATION_ITEMS.map(({ id, title }) => [id, title]), expected);
-for (const [pageId, title] of expected) {
-  assert.deepEqual(getNavigationPresentation(pageId), { pageId, title });
-}
-assert.deepEqual(getNavigationPresentation('unknown'), { pageId: 'unknown', title: '' });
+assert.deepEqual(getNavigationPresentation('base'), {
+  pageId: 'base', title: 'Übersicht', parentPageId: null, sectionId: 'base'
+});
+assert.deepEqual(getNavigationPresentation('forge-preview'), {
+  pageId: 'forge-preview', title: 'Waffenvorschau', parentPageId: 'forge-materials', sectionId: 'storage'
+});
+assert.deepEqual(getNavigationPresentation('dungeon-log'), {
+  pageId: 'dungeon-log', title: 'Kampfprotokoll', parentPageId: 'dungeon-expedition', sectionId: 'dungeon'
+});
+assert.ok(NAVIGATION_SCREEN_IDS.includes('character-capacity'));
+assert.ok(NAVIGATION_SCREEN_IDS.includes('market-upgrade'));
+assert.deepEqual(getNavigationPresentation('unknown'), getNavigationPresentation('base'));
 
-console.log('Navigation-Presentation-Core: Seitenkennungen und Titel sind konsistent.');
+console.log('Navigation-Presentation-Core: vier Hauptbereiche, Unterseiten und Zurück-Hierarchie sind konsistent.');
