@@ -3,8 +3,22 @@ import { readFileSync, writeFileSync, unlinkSync } from 'node:fs';
 
 const sourceUrl = new URL('../src/app/game/forge-core.ts', import.meta.url);
 const temporaryUrl = new URL('../src/app/game/forge-core.node-check.ts', import.meta.url);
-const source = readFileSync(sourceUrl, 'utf8').replace("from './game-core';", "from './game-core.ts';");
+const economySourceUrl = new URL('../src/app/game/economy-core.ts', import.meta.url);
+const temporaryEconomyUrl = new URL('../src/app/game/economy-core.forge-check.ts', import.meta.url);
+
+const economySource = readFileSync(economySourceUrl, 'utf8')
+  .replace("from './armor-core';", "from './armor-core.ts';")
+  .replace("from './game-core';", "from './game-core.ts';");
+writeFileSync(temporaryEconomyUrl, economySource, 'utf8');
+
+const source = readFileSync(sourceUrl, 'utf8')
+  .replace("from './economy-core';", "from './economy-core.forge-check.ts';")
+  .replace("from './game-core';", "from './game-core.ts';");
 writeFileSync(temporaryUrl, source, 'utf8');
+
+const assertClose = (actual, expected, epsilon = 1e-9) => {
+  assert.ok(Math.abs(actual - expected) <= epsilon, `Expected ${actual} to be within ${epsilon} of ${expected}`);
+};
 
 try {
   const {
@@ -54,14 +68,17 @@ try {
 
   const job = createForgeJob('sword', '', swordSlots);
   assert.equal(job.weaponName, '1H Schwert');
-  assert.equal(job.totalSeconds, 30);
-  assert.equal(job.valueNickel, 100);
+  assert.equal(job.totalSeconds, 75, 'Schmiedezeit muss aus dem neuen Waffenwert berechnet werden.');
+  assert.equal(job.valueNickel, 60, '1H-Testschwert muss nach Leistungswert statt Materialseltenheit bepreist werden.');
+  assertClose(job.performance, 3.63825);
   assert.deepEqual(job.slots.map(slot => slot.slot), ['workingPart', 'back', 'gripCore', 'gripWrap', 'special', 'parry']);
   assert.equal(job.slots.some(slot => slot.slot === 'baseMaterial'), false);
 
   const bowJob = createForgeJob('bow', '', bowSlots);
   assert.equal(bowJob.weaponName, 'Bogen');
-  assert.equal(bowJob.totalSeconds, 60);
+  assert.equal(bowJob.totalSeconds, 80);
+  assert.equal(bowJob.valueNickel, 65);
+  assertClose(bowJob.performance, 4.51444851);
   assert.deepEqual(bowJob.slots.map(slot => slot.slot), ['back', 'gripCore', 'gripWrap', 'special', 'bowstring']);
 
   const state = { forgeJobs: [], forgeQueue: [] };
@@ -69,16 +86,17 @@ try {
   assert.equal(enqueueForgeJob(state, { ...job, weaponName: 'B' }, 1, 2, 1000), 'queued');
   assert.equal(enqueueForgeJob(state, { ...job, weaponName: 'C' }, 1, 2, 1000), 'queued');
   assert.equal(enqueueForgeJob(state, { ...job, weaponName: 'D' }, 1, 2, 1000), 'full');
-  assert.equal(state.forgeJobs[0].finishesAt, 31000);
+  assert.equal(state.forgeJobs[0].finishesAt, 76000);
 
   const completed = [];
-  const count = advanceForgeJobs(state, 1, 92000, (finished, at) => completed.push([finished.weaponName, at]));
+  const count = advanceForgeJobs(state, 1, 230000, (finished, at) => completed.push([finished.weaponName, at]));
   assert.equal(count, 3);
-  assert.deepEqual(completed, [['A', 31000], ['B', 61000], ['C', 91000]]);
+  assert.deepEqual(completed, [['A', 76000], ['B', 151000], ['C', 226000]]);
   assert.equal(state.forgeJobs.length, 0);
   assert.equal(state.forgeQueue.length, 0);
 
-  console.log('Forge-Core: 5/8/14/16/9-Einheiten-Baupläne, Sehne, Parierstange, Reservierung, Queue und Offline-Catch-up sind konsistent.');
+  console.log('Forge-Core: Baupläne, Reservierung, Qualitätswert, wertbasierte Schmiedezeit, Queue und Offline-Catch-up sind konsistent.');
 } finally {
   unlinkSync(temporaryUrl);
+  unlinkSync(temporaryEconomyUrl);
 }
