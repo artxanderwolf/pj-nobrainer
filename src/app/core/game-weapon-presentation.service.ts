@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { formatCurrencyNickel } from '../game/economy-core';
+import { calculateWeaponValueNickel, formatCurrencyNickel } from '../game/economy-core';
 import {
   CONFIG,
   rarityFactor,
@@ -36,7 +36,9 @@ export class GameWeaponPresentationService {
     status = '',
     actions = ''
   ): string {
-    const presentation = WEAPON_PRESENTATION.getWeaponCardPresentation(weapon, compareWeapon);
+    const pricedWeapon = this.withCurrentEconomyValue(weapon);
+    const pricedCompareWeapon = compareWeapon ? this.withCurrentEconomyValue(compareWeapon) : null;
+    const presentation = WEAPON_PRESENTATION.getWeaponCardPresentation(pricedWeapon, pricedCompareWeapon);
     const statHtml = presentation.stats.map(stat => {
       const value = stat.value.kind === 'currency' ? formatCurrencyNickel(stat.value.nickel) : stat.value.text;
       const diff = stat.diff ? ` <span class="weapon-diff ${stat.diff.tone}">${stat.diff.text}</span>` : '';
@@ -46,5 +48,10 @@ export class GameWeaponPresentationService {
     const statusHtml = status ? `<span class="tag fixed">${status}</span>` : '';
 
     return `<div class="weapon-card"><div class="weapon-card-head"><div><div class="weapon-card-title">${presentation.title}</div><div class="weapon-card-sub">${presentation.formName} · ${presentation.rarityLabel}${reinforcement}</div></div>${statusHtml}</div><div class="weapon-stats">${statHtml}</div>${actions}</div>`;
+  }
+
+  private withCurrentEconomyValue(weapon: RuntimeWeaponPresentation): RuntimeWeaponPresentation {
+    if (weapon.starter || !weapon.stats) return weapon;
+    return { ...weapon, valueNickel: calculateWeaponValueNickel(weapon.stats) };
   }
 }
