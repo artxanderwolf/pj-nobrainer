@@ -280,6 +280,24 @@ body {
   max-height: min(52dvh, 500px);
 }
 
+.modular-ui .forge-build-card {
+  min-height: 0;
+  height: calc(100dvh - var(--ui-header-height) - var(--ui-bottom-nav-height) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 54px);
+  max-height: 760px;
+  overflow: hidden;
+}
+
+.modular-ui .forge-build-card h2 {
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.modular-ui .forge-build-card .forge-slot-wrap.scroll-region {
+  flex: 1 1 auto;
+  min-height: 140px;
+  max-height: none;
+}
+
 .modular-ui #index {
   max-height: calc(100dvh - var(--ui-header-height) - var(--ui-bottom-nav-height) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 40px);
   overflow: auto;
@@ -319,6 +337,14 @@ body {
 
   .compact-stats {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .modular-ui .forge-build-card {
+    padding: 12px;
+  }
+
+  .modular-ui .forge-build-card .forge-slot-wrap.scroll-region {
+    min-height: 120px;
   }
 }
 
