@@ -1,0 +1,343 @@
+:root {
+  --ui-content-max: 820px;
+  --ui-header-height: 72px;
+  --ui-bottom-nav-height: 78px;
+  --ui-page-gap: 14px;
+}
+
+html,
+body,
+app-root,
+.legacy-host,
+.modular-ui {
+  min-height: 100%;
+}
+
+body {
+  overscroll-behavior-y: none;
+}
+
+.modular-ui.app {
+  display: block;
+  min-height: 100dvh;
+  background: var(--bg);
+}
+
+.modular-ui .app-main {
+  width: min(100%, var(--ui-content-max));
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding: 0 14px calc(var(--ui-bottom-nav-height) + env(safe-area-inset-bottom) + 18px);
+}
+
+.modular-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  min-height: var(--ui-header-height);
+  margin: 0 -14px 14px;
+  padding: calc(10px + env(safe-area-inset-top)) 14px 10px;
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  background: color-mix(in srgb, var(--bg) 94%, transparent);
+  border-bottom: 1px solid var(--line);
+  backdrop-filter: blur(12px);
+}
+
+.back-btn,
+.help-btn {
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 22px;
+}
+
+.back-btn[hidden] {
+  visibility: hidden;
+  display: block;
+}
+
+.page-heading {
+  min-width: 0;
+}
+
+.page-heading h1 {
+  margin: 2px 0 0;
+  font-size: clamp(20px, 4vw, 28px);
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.ui-version {
+  font-size: 10px;
+  letter-spacing: .08em;
+  color: var(--muted);
+}
+
+.top-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.money-pill {
+  white-space: nowrap;
+  padding: 8px 10px;
+}
+
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.page-stack {
+  min-height: calc(100dvh - var(--ui-header-height) - var(--ui-bottom-nav-height) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 36px);
+}
+
+.modular-ui .page {
+  display: none;
+}
+
+.modular-ui .page.active {
+  display: block;
+}
+
+.screen-page {
+  min-height: 0;
+}
+
+.screen-menu {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--ui-page-gap);
+}
+
+.menu-card {
+  width: 100%;
+  min-height: clamp(118px, 16dvh, 160px);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 6px;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.menu-card:hover,
+.menu-card:focus-visible {
+  background: var(--panel2);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.menu-card-title {
+  font-size: clamp(20px, 4vw, 26px);
+  font-weight: 800;
+}
+
+.menu-card-copy,
+.menu-card-status {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.menu-card-status {
+  width: 100%;
+}
+
+.menu-card-status .statrow {
+  margin-top: 6px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.menu-card-status .stat {
+  padding: 7px;
+}
+
+.menu-card-status .stat b {
+  font-size: 13px;
+}
+
+.screen-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: var(--ui-page-gap);
+}
+
+.screen-card-fill {
+  min-height: calc(100dvh - var(--ui-header-height) - var(--ui-bottom-nav-height) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 54px);
+  display: flex;
+  flex-direction: column;
+}
+
+.screen-intro {
+  margin: 0 0 12px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.scroll-region {
+  min-height: 0;
+  max-height: calc(100dvh - var(--ui-header-height) - var(--ui-bottom-nav-height) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 120px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.screen-card-fill > .scroll-region {
+  flex: 1 1 auto;
+}
+
+.full-control {
+  width: 100%;
+  min-height: 48px;
+}
+
+.wizard-actions {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.wizard-actions .btn,
+.primary-actions .btn {
+  min-height: 48px;
+  width: 100%;
+}
+
+.compact-stats {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.modular-ui .bottom-nav {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  z-index: 60;
+  transform: translateX(-50%);
+  width: min(100%, var(--ui-content-max));
+  min-height: calc(var(--ui-bottom-nav-height) + env(safe-area-inset-bottom));
+  padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  background: color-mix(in srgb, #101318 96%, transparent);
+  border-top: 1px solid var(--line);
+  backdrop-filter: blur(12px);
+}
+
+.modular-ui .bottom-nav button {
+  width: 100%;
+  min-width: 0;
+  min-height: 54px;
+  margin: 0;
+  padding: 7px 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: clamp(11px, 2.7vw, 14px);
+  font-weight: 700;
+}
+
+.modular-ui .bottom-nav button.active {
+  background: var(--panel2);
+  border-color: var(--line);
+  color: var(--text);
+}
+
+.modular-ui .forge-slot-wrap.scroll-region {
+  max-height: min(52dvh, 500px);
+}
+
+.modular-ui #index {
+  max-height: calc(100dvh - var(--ui-header-height) - var(--ui-bottom-nav-height) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 40px);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+@media (max-width: 560px) {
+  .modular-ui .app-main {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .modular-topbar {
+    margin-left: -10px;
+    margin-right: -10px;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .money-pill {
+    font-size: 12px;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .help-btn,
+  .back-btn {
+    min-width: 42px;
+    min-height: 42px;
+  }
+
+  .menu-card {
+    min-height: clamp(104px, 15dvh, 140px);
+    padding: 14px;
+  }
+
+  .compact-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (min-width: 760px) {
+  .dashboard-menu,
+  .screen-menu:not(.compact-menu) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .menu-card {
+    min-height: 170px;
+  }
+}
+
+@media (pointer: coarse) {
+  .menu-card,
+  .back-btn,
+  .help-btn,
+  .bottom-nav button,
+  .btn {
+    touch-action: manipulation;
+  }
+}
