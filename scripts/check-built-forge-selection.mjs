@@ -90,6 +90,7 @@ const probeScript = `<script>
               startDisabled: document.getElementById('forgeStartBtn')?.disabled ?? null,
               previewNextDisabled,
               activePage: document.querySelector('.page.active')?.id || '',
+              capacityText: document.getElementById('forgeCapacityStatus')?.textContent || '',
               workingPartHidden: document.getElementById('forgeWorkingPartRow')?.hidden ?? false,
               parryHidden: document.getElementById('forgeParryRow')?.hidden ?? false,
               bowstringHidden: document.getElementById('forgeBowstringRow')?.hidden ?? true,
@@ -168,12 +169,13 @@ try {
   assert.equal(result.startDisabled, false);
   assert.equal(result.previewNextDisabled, false, 'Der Vorschau-Button darf nach der Materialauswahl nicht blockiert bleiben.');
   assert.equal(result.activePage, 'forge-preview', 'Der Vorschau-Button muss zur Waffenvorschau navigieren.');
+  assert.match(result.capacityText, /^Schmiede \d+\/\d+ · Warteschlange \d+\/\d+$/, 'Die Waffenvorschau muss aktive und maximale Schmiedekapazität anzeigen.');
   assert.equal(result.workingPartHidden, true);
   assert.equal(result.parryHidden, true);
   assert.equal(result.bowstringHidden, false);
   assert.equal(result.oldBaseMaterialPresent, false);
 
-  console.log('Schmiedeauswahl-Browserregression: Materialwahl bleibt gültig und der Vorschau-Button öffnet zuverlässig die Waffenvorschau.');
+  console.log('Schmiedeauswahl-Browserregression: Materialwahl, Vorschau-Navigation und Kapazitätsanzeige funktionieren gemeinsam.');
 } finally {
   if (child) await stopBrowser(child);
   rmSync(browserProfile, { recursive: true, force: true });
