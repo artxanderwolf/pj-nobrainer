@@ -22,7 +22,7 @@ const requiredPageAnchors = {
   'market-weapons': ['marketWeapons', 'marketWeaponsEmpty'],
   'market-jobs': ['marketJobCard', 'marketQueueCard'],
   'market-upgrade': ['marketUpgradeCard'],
-  'dungeon-select': ['enemyHp', 'enemyArmor', 'enemyDamage', 'energyCost', 'runDuration'],
+  'dungeon-select': ['dungeonTeamCard', 'dungeonPrimaryStatus', 'dungeonPrimaryBtn', 'enemyHp', 'enemyArmor', 'enemyDamage', 'energyCost', 'runDuration'],
   'dungeon-team': ['teamCard'],
   'dungeon-expedition': ['dungeonRunCard', 'autoDungeonBtn'],
   'dungeon-loot': ['collectLootBtn', 'dungeonLoot', 'dungeonLootEmpty'],
@@ -59,6 +59,13 @@ assert.equal(getAngularOwnedPageMarkup('forge-materials'), null, 'Materialauswah
 const forgePreview = getAngularOwnedPageMarkup('forge-preview') ?? '';
 assert.match(forgePreview, /<span>Leistungswert<\/span>/, 'Schmiedevorschau bezeichnet den Qualitätswert nicht als Leistungswert.');
 
+const dungeonHub = getAngularOwnedPageMarkup('dungeon') ?? '';
+assert.match(dungeonHub, /go\('dungeon-select'\)[\s\S]*Dungeon 1/, 'Dungeon-Bereich führt nicht direkt zu Dungeon 1.');
+assert.doesNotMatch(dungeonHub, /go\('dungeon-team'\)|go\('dungeon-expedition'\)|go\('dungeon-loot'\)/, 'Die alten Dungeon-Unterseiten dürfen nicht mehr als Hauptauswahl angeboten werden.');
+const dungeonOne = getAngularOwnedPageMarkup('dungeon-select') ?? '';
+assert.match(dungeonOne, /id="dungeonTeamCard"/, 'Dungeon 1 enthält keine direkte Teamauswahl.');
+assert.match(dungeonOne, /id="dungeonPrimaryBtn"[^>]*>Lauf starten<\/button>/, 'Dungeon 1 enthält keine zentrale Laufaktion.');
+
 const indexMarkup = getAngularOwnedPageMarkup('index') ?? '';
 for (const heading of ['Materialindex – gemeinsames Stat-System', 'Klassen-Grundwerte', 'Dungeon 1 – Gegner & Belohnungen', 'Kampfberechnung', 'Wirtschaft, Herstellung & Verkauf']) {
   assert.ok(indexMarkup.includes(`<h2>${heading}</h2>`), `Index-Abschnitt ${heading} fehlt.`);
@@ -71,7 +78,7 @@ const composed = composePageMarkup(APP_SHELL_PAGE_IDS);
 for (const pageId of APP_SHELL_PAGE_IDS) {
   assert.equal((composed.match(new RegExp(`<section class="[^"]*page[^"]*" id="${pageId}"`, 'g')) ?? []).length, 1, `Seite ${pageId} ist im zusammengesetzten Markup nicht genau einmal vorhanden.`);
 }
-for (const runtimeAnchor of ['inventoryRows', 'weaponInventory', 'forgeStartBtn', 'marketMaterials', 'teamCard', 'dungeonRunCard', 'combatLog']) {
+for (const runtimeAnchor of ['inventoryRows', 'weaponInventory', 'forgeStartBtn', 'marketMaterials', 'dungeonTeamCard', 'dungeonPrimaryBtn', 'combatLog']) {
   assert.equal((composed.match(new RegExp(`id="${runtimeAnchor}"`, 'g')) ?? []).length, 1, `Runtime-Anker ${runtimeAnchor} muss trotz Seitenaufteilung genau einmal existieren.`);
 }
 assert.equal((composed.match(/id="forgePreviewNextBtn"/g) ?? []).length, 1, 'Weiter-zur-Vorschau-Button muss genau einmal existieren.');
@@ -80,4 +87,4 @@ assert.match(appComponent, /composePageMarkup\(APP_SHELL_PAGE_IDS\)/, 'Der App-C
 assert.match(appComponent, /composeAppShell\(pageMarkup\)/, 'Das Angular-eigene Seitenmarkup wird nicht in die Angular-Shell eingesetzt.');
 assert.doesNotMatch(appComponent, /DOMParser/, 'Angular-eigenes Seitenmarkup darf nicht aus Legacy-HTML geparst werden.');
 
-console.log('Seiten-Markup: Waffenform und Materialwahl liegen gemeinsam auf einer kompakten Schmiedeseite; die Vorschau bleibt separat.');
+console.log('Seiten-Markup: Dungeon 1 bündelt Team, Laufsteuerung und Beutezugang; Schmiede bleibt kompakt aufgeteilt.');
