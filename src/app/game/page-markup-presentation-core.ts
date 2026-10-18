@@ -297,38 +297,26 @@ const MARKET_UPGRADE_PAGE_MARKUP = `<section class="page screen-page" id="market
 </section>`;
 
 const DUNGEON_PAGE_MARKUP = `<section class="page screen-page" id="dungeon">
-  <div class="screen-menu">
+  <div class="screen-menu compact-menu">
     <button class="menu-card" type="button" onclick="go('dungeon-select')">
-      <span class="menu-card-title">Dungeon auswählen</span>
-      <span class="menu-card-copy">Dungeon und Eckdaten ansehen</span>
-    </button>
-    <button class="menu-card" type="button" onclick="go('dungeon-team')">
-      <span class="menu-card-title">Team</span>
-      <span class="menu-card-copy">Bis zu vier Charaktere zuweisen</span>
-    </button>
-    <button class="menu-card" type="button" onclick="go('dungeon-expedition')">
-      <span class="menu-card-title">Aktuelle Expedition</span>
-      <span class="menu-card-copy">Suche, Kampf und Automatik steuern</span>
-    </button>
-    <button class="menu-card" type="button" onclick="go('dungeon-loot')">
-      <span class="menu-card-title">Beute</span>
-      <span class="menu-card-copy">Gesammelte Dungeon-Beute einsammeln</span>
+      <span class="menu-card-title">Dungeon 1</span>
+      <span class="menu-card-copy">Team wählen, Lauf starten und Beute einsammeln</span>
     </button>
   </div>
 </section>`;
 
 const DUNGEON_SELECT_PAGE_MARKUP = `<section class="page screen-page" id="dungeon-select">
-  <div class="screen-card screen-card-fill">
+  <div class="screen-card screen-card-fill dungeon-one-card">
     <h2>Dungeon 1</h2>
-    <p class="screen-intro">Aktuell verfügbarer Dungeon.</p>
-    <div class="statrow compact-stats scroll-region">
-      <div class="stat"><span>Gegnerbasis</span><b id="enemyHp">6 Basis-SCH</b></div>
-      <div class="stat"><span>Trefferchance</span><b id="enemyArmor">50 % Basis-TRF</b></div>
-      <div class="stat"><span>Geschwindigkeit</span><b id="enemyDamage">0,80 Basis-GES</b></div>
-      <div class="stat"><span>Energiekosten / Welle</span><b id="energyCost">4 gesamt</b></div>
-      <div class="stat"><span>Wellen</span><b id="runDuration">0 besiegt</b></div>
-    </div>
-    <div class="wizard-actions"><button class="btn primary" type="button" onclick="go('dungeon-expedition')">Dungeon 1 öffnen</button></div>
+    <p class="screen-intro">Bis zu vier Charaktere auswählen. Ein Lauf endet bei zu wenig Ausdauer oder nach einem manuellen Abbruch.</p>
+    <div id="dungeonTeamCard" class="dungeon-team-region scroll-region"></div>
+    <p id="dungeonPrimaryStatus" class="status-line dungeon-primary-status">Team wählen und Lauf starten.</p>
+    <div class="wizard-actions"><button id="dungeonPrimaryBtn" class="btn primary" type="button">Lauf starten</button></div>
+    <span id="enemyHp" class="sr-only">6 Basis-SCH</span>
+    <span id="enemyArmor" class="sr-only">50 % Basis-TRF</span>
+    <span id="enemyDamage" class="sr-only">0,80 Basis-GES</span>
+    <span id="energyCost" class="sr-only">4 gesamt</span>
+    <span id="runDuration" class="sr-only">0 besiegt</span>
   </div>
 </section>`;
 
