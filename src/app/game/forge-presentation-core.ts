@@ -96,7 +96,7 @@ export function getForgePreviewPresentation(
     hitText: `${Math.round(stats.hitChance * 100)} %`,
     rawText: stats.expectedRaw.toFixed(2),
     penetrationText: `${Math.round(stats.penetration * 100)} %`,
-    rarityText: `× ${input.factor}`,
+    rarityText: input.factor.toFixed(2),
     reinforcementText: `Spezialeffekt: ${formatReinforcement(input.reinforcementMaterial)}`,
     startDisabled: !input.hasCapacity || !input.hasMaterials
   };
