@@ -24,7 +24,10 @@
                 "output": "/legacy/"
               }
             ],
-            "styles": ["src/styles.css"]
+            "styles": [
+              "src/styles.css",
+              "src/ui-shell-v0.12.0.css"
+            ]
           },
           "configurations": {
             "production": {
