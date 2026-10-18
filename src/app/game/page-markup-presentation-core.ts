@@ -111,7 +111,7 @@ const FORGE_PAGE_MARKUP = `<section class="page" id="forge">
             <div class="stat"><span>Trefferchance</span><b id="forgeHitPreview">–</b></div>
             <div class="stat"><span>Erwarteter Rohschaden</span><b id="forgeRawPreview">–</b></div>
             <div class="stat"><span>Durchschlag</span><b id="forgePenPreview">–</b></div>
-            <div class="stat"><span>Seltenheitsfaktor</span><b id="forgeRarityPreview">–</b></div>
+            <div class="stat"><span>Leistungswert</span><b id="forgeRarityPreview">–</b></div>
           </div>
           <p id="forgeReinforcementPreview" class="status-line">Spezialeffekt: –</p>
 
