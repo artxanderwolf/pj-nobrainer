@@ -53,7 +53,7 @@ const SCREEN_PRESENTATIONS: Record<string, NavigationPresentation> = {
 export const NAVIGATION_SCREEN_IDS = Object.freeze(Object.keys(SCREEN_PRESENTATIONS));
 
 export function getNavigationPresentation(pageId: string): NavigationPresentation {
-  return SCREEN_PRESENTATIONS[pageId] ?? SCREEN_PRESENTATIONS.base;
+  return SCREEN_PRESENTATIONS[pageId] ?? SCREEN_PRESENTATIONS['base'];
 }
 
 export const NAVIGATION_PRESENTATION_CORE_BRIDGE = {
