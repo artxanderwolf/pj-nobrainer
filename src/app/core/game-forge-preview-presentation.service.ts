@@ -96,7 +96,9 @@ export class GameForgePreviewPresentationService {
     this.setText('forgeReinforcementPreview', presentation.reinforcementText);
     this.setText('forgeMaterialTotalPreview', `${Object.values(requirements).reduce((sum, qty) => sum + qty, 0)} Materialeinheiten`);
     this.renderConstructionInfo(weaponForm);
-    if (previewNextButton) previewNextButton.disabled = !complete;
+    // Die Vorschau ist nicht destruktiv und darf immer geöffnet werden.
+    // Ob tatsächlich hergestellt werden kann, bleibt ausschließlich am Start-Button validiert.
+    if (previewNextButton) previewNextButton.disabled = false;
     startButton.disabled = presentation.startDisabled;
     startButton.dataset['forgePreviewPresentationOwner'] = 'angular';
   }
