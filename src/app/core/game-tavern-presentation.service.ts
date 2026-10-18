@@ -59,7 +59,7 @@ export class GameTavernPresentationService {
     }
 
     if (capacity) {
-      capacity.innerHTML = `<div class="statrow">${this.renderStats(presentation.capacityStats)}</div><div class="actions"><button class="btn" onclick="go('base')">${presentation.openInnLabel}</button></div>`;
+      capacity.innerHTML = `<div class="statrow">${this.renderStats(presentation.capacityStats)}</div>`;
     }
   }
 
