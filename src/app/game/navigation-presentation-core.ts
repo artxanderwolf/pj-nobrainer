@@ -30,9 +30,8 @@ const SCREEN_PRESENTATIONS: Record<string, NavigationPresentation> = {
   'storage-weapons': { pageId: 'storage-weapons', title: 'Waffenlager', parentPageId: 'storage', sectionId: 'storage' },
 
   forge: { pageId: 'forge', title: 'Schmiede', parentPageId: 'storage', sectionId: 'storage' },
-  'forge-form': { pageId: 'forge-form', title: 'Waffenform', parentPageId: 'forge', sectionId: 'storage' },
-  'forge-materials': { pageId: 'forge-materials', title: 'Materialien', parentPageId: 'forge-form', sectionId: 'storage' },
-  'forge-preview': { pageId: 'forge-preview', title: 'Waffenvorschau', parentPageId: 'forge-materials', sectionId: 'storage' },
+  'forge-form': { pageId: 'forge-form', title: 'Waffe herstellen', parentPageId: 'forge', sectionId: 'storage' },
+  'forge-preview': { pageId: 'forge-preview', title: 'Waffenvorschau', parentPageId: 'forge-form', sectionId: 'storage' },
   'forge-jobs': { pageId: 'forge-jobs', title: 'Schmiedeaufträge', parentPageId: 'forge', sectionId: 'storage' },
   'forge-upgrade': { pageId: 'forge-upgrade', title: 'Schmiedeausbau', parentPageId: 'forge', sectionId: 'storage' },
 
