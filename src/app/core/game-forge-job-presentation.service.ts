@@ -11,6 +11,10 @@ import { GameStateService, type MutableGameState } from './game-state.service';
 type RuntimeForgeJobPresentationState = MutableGameState & {
   forgeJobs: ForgeJob[];
   forgeQueue: ForgeJob[];
+  upgrades: {
+    forgeSlots: number;
+    forgeQueue: number;
+  };
 };
 
 interface ForgeJobPresentationCompatibilityBridge {
@@ -33,9 +37,12 @@ export class GameForgeJobPresentationService {
   render(now = Date.now()): void {
     const box = document.getElementById('forgeJobCard');
     const queueBox = document.getElementById('forgeQueueCard');
-    if (!box && !queueBox) return;
+    const previewPage = document.getElementById('forge-preview');
+    if (!box && !queueBox && !previewPage) return;
 
     const state = this.state();
+    this.renderCapacityStatus(state, previewPage);
+
     if (box) {
       const jobs = state.forgeJobs.map((job, index) =>
         getActiveForgeJobPresentation(job, index, now, formatCurrencyNickel, formatDuration)
@@ -69,6 +76,26 @@ export class GameForgeJobPresentationService {
 
   closeLegacyCompatibilityBridge(): void {
     delete window.NoBrainerForgeJobPresentationCompatibility;
+  }
+
+  private renderCapacityStatus(state: RuntimeForgeJobPresentationState, previewPage: HTMLElement | null): void {
+    if (!previewPage) return;
+
+    let status = document.getElementById('forgeCapacityStatus');
+    if (!status) {
+      status = document.createElement('p');
+      status.id = 'forgeCapacityStatus';
+      status.className = 'small muted';
+      status.style.margin = '0 0 4px';
+      status.style.textAlign = 'center';
+      const card = previewPage.querySelector<HTMLElement>('.screen-card');
+      if (card) card.insertAdjacentElement('afterend', status);
+      else previewPage.appendChild(status);
+    }
+
+    const activeMax = Math.max(0, Number(state.upgrades?.forgeSlots) || 0);
+    const queueMax = Math.max(0, Number(state.upgrades?.forgeQueue) || 0);
+    status.textContent = `Schmiede ${state.forgeJobs.length}/${activeMax} · Warteschlange ${state.forgeQueue.length}/${queueMax}`;
   }
 
   private state(): RuntimeForgeJobPresentationState {
