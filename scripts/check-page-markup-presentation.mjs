@@ -14,8 +14,7 @@ const requiredPageAnchors = {
   'character-capacity': ['tavernCapacity', 'innUpgradeCard'],
   'storage-materials': ['inventoryRows', 'inventoryEmpty'],
   'storage-weapons': ['weaponInventory', 'weaponInventoryEmpty'],
-  'forge-form': ['weaponForm'],
-  'forge-materials': ['slotWorkingPart', 'slotBack', 'slotGripCore', 'slotGripWrap', 'slotSpecial', 'slotParry', 'slotBowstring', 'forgeParryInfo', 'forgeMaterialTotalPreview'],
+  'forge-form': ['weaponForm', 'slotWorkingPart', 'slotBack', 'slotGripCore', 'slotGripWrap', 'slotSpecial', 'slotParry', 'slotBowstring', 'forgeParryInfo', 'forgeMaterialTotalPreview', 'forgePreviewNextBtn'],
   'forge-preview': ['forgeWeaponName', 'forgeTimePreview', 'forgeValuePreview', 'forgeDamagePreview', 'forgeSpeedPreview', 'forgeHitPreview', 'forgeRawPreview', 'forgePenPreview', 'forgeRarityPreview', 'forgeReinforcementPreview', 'forgeStartBtn'],
   'forge-jobs': ['forgeJobCard', 'forgeQueueCard'],
   'forge-upgrade': ['forgeUpgradeCard'],
@@ -46,12 +45,17 @@ const forgeForm = getAngularOwnedPageMarkup('forge-form') ?? '';
 for (const option of ['Dolch', '1H Schwert', '1H Axt', '2H Schwert', '2H Axt', 'Bogen', 'Stab']) {
   assert.ok(forgeForm.includes(`>${option}</option>`), `Schmiedeoption ${option} fehlt.`);
 }
-const forgeMaterials = getAngularOwnedPageMarkup('forge-materials') ?? '';
 for (const obsolete of ['slotBaseMaterial', 'slotBlade', 'slotGripShape', 'slotGripMaterial', 'slotReinforcementMaterial']) {
-  assert.doesNotMatch(forgeMaterials, new RegExp(`id="${obsolete}"`), `Alter Schmiede-Renderanker ${obsolete} darf nicht mehr verwendet werden.`);
+  assert.doesNotMatch(forgeForm, new RegExp(`id="${obsolete}"`), `Alter Schmiede-Renderanker ${obsolete} darf nicht mehr verwendet werden.`);
 }
-assert.match(forgeMaterials, /id="forgeParryRow"/);
-assert.match(forgeMaterials, /id="forgeBowstringRow"/);
+assert.match(forgeForm, /<h2>1\. Waffenform wählen<\/h2>/);
+assert.match(forgeForm, /<h2>2\. Materialien wählen<\/h2>/);
+assert.match(forgeForm, /Waffenform bestimmt Bauteile und 1H\/2H-Nutzung\./);
+assert.match(forgeForm, /id="forgeParryRow"/);
+assert.match(forgeForm, /id="forgeBowstringRow"/);
+assert.match(forgeForm, /id="forgePreviewNextBtn"[^>]*disabled/);
+assert.equal(getAngularOwnedPageMarkup('forge-materials'), null, 'Materialauswahl darf keine eigene Schmiedeseite mehr sein.');
+
 const forgePreview = getAngularOwnedPageMarkup('forge-preview') ?? '';
 assert.match(forgePreview, /<span>Leistungswert<\/span>/, 'Schmiedevorschau bezeichnet den Qualitätswert nicht als Leistungswert.');
 
@@ -70,9 +74,10 @@ for (const pageId of APP_SHELL_PAGE_IDS) {
 for (const runtimeAnchor of ['inventoryRows', 'weaponInventory', 'forgeStartBtn', 'marketMaterials', 'teamCard', 'dungeonRunCard', 'combatLog']) {
   assert.equal((composed.match(new RegExp(`id="${runtimeAnchor}"`, 'g')) ?? []).length, 1, `Runtime-Anker ${runtimeAnchor} muss trotz Seitenaufteilung genau einmal existieren.`);
 }
+assert.equal((composed.match(/id="forgePreviewNextBtn"/g) ?? []).length, 1, 'Weiter-zur-Vorschau-Button muss genau einmal existieren.');
 assert.throws(() => composePageMarkup(['unknown-page']), /Unbekannte Angular-Seite: unknown-page/, 'Der Seiten-Composer soll unbekannte Seiten nicht stillschweigend akzeptieren.');
 assert.match(appComponent, /composePageMarkup\(APP_SHELL_PAGE_IDS\)/, 'Der App-Component verwendet nicht ausschließlich Angular-eigenes Seitenmarkup.');
 assert.match(appComponent, /composeAppShell\(pageMarkup\)/, 'Das Angular-eigene Seitenmarkup wird nicht in die Angular-Shell eingesetzt.');
 assert.doesNotMatch(appComponent, /DOMParser/, 'Angular-eigenes Seitenmarkup darf nicht aus Legacy-HTML geparst werden.');
 
-console.log('Seiten-Markup: UI v0.12.0 verteilt die bestehenden Renderanker auf kleine, hierarchische Screens ohne Spiellogik zu duplizieren.');
+console.log('Seiten-Markup: Waffenform und Materialwahl liegen gemeinsam auf einer kompakten Schmiedeseite; die Vorschau bleibt separat.');

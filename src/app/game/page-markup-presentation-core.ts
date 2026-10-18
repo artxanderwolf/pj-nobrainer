@@ -12,7 +12,6 @@ export const ANGULAR_OWNED_PAGE_IDS = [
   'storage-weapons',
   'forge',
   'forge-form',
-  'forge-materials',
   'forge-preview',
   'forge-jobs',
   'forge-upgrade',
@@ -154,7 +153,7 @@ const FORGE_PAGE_MARKUP = `<section class="page screen-page" id="forge">
   <div class="screen-menu">
     <button class="menu-card" type="button" onclick="go('forge-form')">
       <span class="menu-card-title">Waffe herstellen</span>
-      <span class="menu-card-copy">Waffenform, Materialien und Vorschau</span>
+      <span class="menu-card-copy">Waffenform und Materialien gemeinsam wählen</span>
     </button>
     <button class="menu-card" type="button" onclick="go('forge-jobs')">
       <span class="menu-card-title">Aufträge</span>
@@ -168,7 +167,7 @@ const FORGE_PAGE_MARKUP = `<section class="page screen-page" id="forge">
 </section>`;
 
 const FORGE_FORM_PAGE_MARKUP = `<section class="page screen-page" id="forge-form">
-  <div class="screen-card">
+  <div class="screen-card screen-card-fill forge-build-card">
     <h2>1. Waffenform wählen</h2>
     <label class="field-label" for="weaponForm">Waffenform</label>
     <select id="weaponForm" class="btn full-control" onchange="renderForgePreview()">
@@ -180,13 +179,7 @@ const FORGE_FORM_PAGE_MARKUP = `<section class="page screen-page" id="forge-form
       <option value="bow">Bogen</option>
       <option value="staff">Stab</option>
     </select>
-    <p class="screen-intro">Die Waffenform ist der Bauplan und bestimmt benötigte Bauteile sowie 1H/2H-Verwendung.</p>
-    <div class="wizard-actions"><button class="btn primary" type="button" onclick="go('forge-materials')">Weiter zu Materialien</button></div>
-  </div>
-</section>`;
-
-const FORGE_MATERIALS_PAGE_MARKUP = `<section class="page screen-page" id="forge-materials">
-  <div class="screen-card screen-card-fill">
+    <p class="screen-intro">Waffenform bestimmt Bauteile und 1H/2H-Nutzung.</p>
     <h2>2. Materialien wählen</h2>
     <div class="forge-slot-wrap scroll-region">
       <table>
@@ -204,7 +197,7 @@ const FORGE_MATERIALS_PAGE_MARKUP = `<section class="page screen-page" id="forge
     </div>
     <p id="forgeParryInfo" class="status-line">–</p>
     <p class="status-line"><strong>Materialbedarf:</strong> <span id="forgeMaterialTotalPreview">–</span></p>
-    <div class="wizard-actions"><button class="btn primary" type="button" onclick="go('forge-preview')">Weiter zur Vorschau</button></div>
+    <div class="wizard-actions"><button id="forgePreviewNextBtn" class="btn primary" type="button" onclick="go('forge-preview')" disabled>Weiter zur Vorschau</button></div>
   </div>
 </section>`;
 
@@ -382,7 +375,6 @@ const ANGULAR_PAGE_MARKUP: Record<AngularOwnedPageId, string> = {
   'storage-weapons': STORAGE_WEAPONS_PAGE_MARKUP,
   forge: FORGE_PAGE_MARKUP,
   'forge-form': FORGE_FORM_PAGE_MARKUP,
-  'forge-materials': FORGE_MATERIALS_PAGE_MARKUP,
   'forge-preview': FORGE_PREVIEW_PAGE_MARKUP,
   'forge-jobs': FORGE_JOBS_PAGE_MARKUP,
   'forge-upgrade': FORGE_UPGRADE_PAGE_MARKUP,

@@ -24,6 +24,8 @@ for (const binding of [
   "{ id: 'slotParry', rowId: 'forgeParryRow', slot: 'parry' }"
 ]) assert.ok(service.includes(binding), `Neue Schmiedebindung fehlt: ${binding}`);
 assert.match(service, /document\.getElementById\('weaponForm'\)/, 'Angular-Schmiedevorschau liest die aktuelle Waffenform-DOM-ID nicht.');
+assert.match(service, /document\.getElementById\('forgePreviewNextBtn'\)/, 'Angular-Schmiedevorschau verwaltet den Weiter-zur-Vorschau-Button nicht.');
+assert.match(service, /previewNextButton\.disabled = !complete/, 'Vorschau-Navigation wird nicht an eine vollständige Materialauswahl gekoppelt.');
 assert.doesNotMatch(service, /slotBaseMaterial|slotBlade|slotGripShape|slotGripMaterial|slotReinforcementMaterial/, 'Angular-Schmiedevorschau verwendet weiterhin alte Schmiede-DOM-IDs.');
 assert.match(service, /row\.hidden = !active/, 'Optionale Bauplanzeilen werden nicht dynamisch ein-/ausgeblendet.');
 for (const id of [
@@ -53,4 +55,4 @@ assert.ok(bridgeOpen >= 0 && stateBootstrap > bridgeOpen, 'Schmiedevorschau-Prä
 assert.match(app, /private readonly gameForgePreviewPresentation: GameForgePreviewPresentationService/);
 assert.match(app, /const APP_VERSION = '0\.12\.90';/);
 
-console.log('Forge-Preview-Presentation: Angular rendert Bauplanmengen, aktuellen Leistungswert und die Qualitätswirtschaft in v0.12.90.');
+console.log('Forge-Preview-Presentation: Materialvollständigkeit steuert die Vorschau-Navigation; Waffenwerte und Qualitätswirtschaft bleiben Angular-eigen.');

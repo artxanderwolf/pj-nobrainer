@@ -10,7 +10,6 @@ export const APP_SHELL_PAGE_IDS = [
   'storage-weapons',
   'forge',
   'forge-form',
-  'forge-materials',
   'forge-preview',
   'forge-jobs',
   'forge-upgrade',

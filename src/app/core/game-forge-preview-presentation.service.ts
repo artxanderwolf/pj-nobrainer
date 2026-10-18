@@ -55,6 +55,7 @@ export class GameForgePreviewPresentationService {
 
   render(): void {
     const startButton = document.getElementById('forgeStartBtn') as HTMLButtonElement | null;
+    const previewNextButton = document.getElementById('forgePreviewNextBtn') as HTMLButtonElement | null;
     if (!startButton) return;
 
     const weaponForm = (document.getElementById('weaponForm') as HTMLSelectElement | null)?.value || 'dagger';
@@ -95,6 +96,7 @@ export class GameForgePreviewPresentationService {
     this.setText('forgeReinforcementPreview', presentation.reinforcementText);
     this.setText('forgeMaterialTotalPreview', `${Object.values(requirements).reduce((sum, qty) => sum + qty, 0)} Materialeinheiten`);
     this.renderConstructionInfo(weaponForm);
+    if (previewNextButton) previewNextButton.disabled = !complete;
     startButton.disabled = presentation.startDisabled;
     startButton.dataset['forgePreviewPresentationOwner'] = 'angular';
   }
