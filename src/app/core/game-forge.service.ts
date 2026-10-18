@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
+import { calculateWeaponEconomy } from '../game/economy-core';
 import {
-  CONFIG,
   createStatModifiers,
   getWeaponForm,
   isWeaponSelectionComplete,
@@ -27,6 +27,7 @@ export interface ForgePreviewResult {
   weaponForm: string;
   slots: WeaponSlot[];
   form: WeaponFormDefinition;
+  /** Kompatibilitätsfeld für die bestehende Vorschau; enthält jetzt den Waffen-Leistungswert. */
   factor: number;
   valueNickel: number;
   seconds: number;
@@ -109,9 +110,9 @@ export class GameForgeService {
         weaponForm,
         slots: copiedSlots,
         form,
-        factor: 1,
-        valueNickel: 100,
-        seconds: Math.round(CONFIG.forge.baseSeconds * form.timeFactor),
+        factor: 0,
+        valueNickel: 0,
+        seconds: 0,
         stats: this.emptyStats(form)
       };
     }
@@ -121,7 +122,7 @@ export class GameForgeService {
       weaponForm,
       slots: copiedSlots,
       form,
-      factor: job.valueNickel / 100,
+      factor: job.performance,
       valueNickel: job.valueNickel,
       seconds: job.totalSeconds,
       stats: job.stats
@@ -205,13 +206,14 @@ export class GameForgeService {
   private completeJob(state: RuntimeForgeState, job: ForgeJob): string {
     const form = getWeaponForm(job.weaponForm);
     const name = job.weaponName || form.name;
+    const economy = calculateWeaponEconomy(job.stats);
     state.weaponInventory.unshift({
       id: state.nextWeaponId++,
       name,
       weaponForm: job.weaponForm,
       slots: job.slots,
       stats: job.stats,
-      valueNickel: job.valueNickel,
+      valueNickel: economy.valueNickel,
       craftedSeconds: job.totalSeconds
     });
     return name;
