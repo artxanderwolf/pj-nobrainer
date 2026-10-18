@@ -1,10 +1,27 @@
+import { resolveArmor } from './armor-core';
 import {
   CONFIG,
   MATERIALS,
   MATERIAL_SALE_RARITY_BONUS,
   rarityFactor,
-  type WeaponSlot
+  type WeaponSlot,
+  type WeaponStats
 } from './game-core';
+
+export const ECONOMY_BALANCE = {
+  positiveSpecialMaterialValueFactor: 1.10,
+  materialSaleBaseSeconds: 15,
+  materialSaleSecondsPerNickel: 1.5,
+  weaponArmorBenchmarks: [0, 40, 80] as const,
+  weaponBaseValueNickel: 40,
+  weaponValuePerPerformance: 6,
+  weaponValueRoundStepNickel: 5,
+  weaponForgeBaseSeconds: 30,
+  weaponForgeSecondsPerNickel: 0.7,
+  weaponSaleBaseSeconds: 15,
+  weaponSaleSecondsPerNickel: 0.5,
+  timeRoundStepSeconds: 5
+} as const;
 
 export interface MaterialSellData {
   type: 'material';
@@ -15,11 +32,14 @@ export interface MaterialSellData {
   seconds: number;
 }
 
+export type WeaponEconomyStatsLike = Pick<WeaponStats, 'expectedRaw' | 'penetration'>;
+
 export interface WeaponSaleLike {
   id: number;
   name: string;
   valueNickel: number;
   slots?: readonly WeaponSlot[] | null;
+  stats?: Partial<WeaponEconomyStatsLike> | null;
 }
 
 export interface WeaponSellData {
@@ -29,6 +49,14 @@ export interface WeaponSellData {
   factor: number;
   valueNickel: number;
   seconds: number;
+}
+
+export interface WeaponEconomyData {
+  performance: number;
+  benchmarkDamage: readonly number[];
+  valueNickel: number;
+  forgeSeconds: number;
+  saleSeconds: number;
 }
 
 type UpgradeKey = keyof typeof CONFIG.upgrades;
@@ -94,36 +122,113 @@ export function calculateUpgradeCost(kind: UpgradeKey, current: number): number 
   return Math.round(config.baseCostNickel * Math.pow(config.growth, Math.max(0, current - start)));
 }
 
+/** Legacy-Kompatibilität für noch nicht ausgeschnittene Runtime-Stellen. */
 export function rarityFactorFromRarity(rarity: number): number {
   return 1 + (MATERIAL_SALE_RARITY_BONUS[rarity] || 0);
+}
+
+export function roundToNearestStep(value: number, step: number): number {
+  const safeStep = Math.max(1, Number(step) || 1);
+  return Math.round((Number(value) || 0) / safeStep) * safeStep;
+}
+
+export function roundUpToStep(value: number, step: number): number {
+  const safeStep = Math.max(1, Number(step) || 1);
+  return Math.ceil(Math.max(0, Number(value) || 0) / safeStep) * safeStep;
 }
 
 export function materialSellData(name: string): MaterialSellData | null {
   const material = MATERIALS[name];
   if (!material) return null;
 
-  const factor = rarityFactorFromRarity(material.rarity);
+  const hasPositiveSpecial = Boolean(material.specialEffect && material.specialEffect.amount > 0);
+  const specialFactor = hasPositiveSpecial ? ECONOMY_BALANCE.positiveSpecialMaterialValueFactor : 1;
+  const factor = material.rarity * specialFactor;
+  const valueNickel = Math.round(CONFIG.market.materialBaseNickel * factor);
+  const seconds = roundUpToStep(
+    ECONOMY_BALANCE.materialSaleBaseSeconds + ECONOMY_BALANCE.materialSaleSecondsPerNickel * valueNickel,
+    ECONOMY_BALANCE.timeRoundStepSeconds
+  );
+
   return {
     type: 'material',
     name,
     rarity: material.rarity,
     factor,
-    valueNickel: Math.round(CONFIG.market.materialBaseNickel * factor),
-    seconds: Math.round(CONFIG.market.baseSeconds * factor)
+    valueNickel,
+    seconds
+  };
+}
+
+export function calculateWeaponPerformance(stats: Partial<WeaponEconomyStatsLike> | null | undefined): number {
+  const raw = Math.max(0, Number(stats?.expectedRaw) || 0);
+  const penetration = Math.max(0, Math.min(1, Number(stats?.penetration) || 0));
+  const benchmarkDamage = ECONOMY_BALANCE.weaponArmorBenchmarks.map(armor => {
+    const reduction = resolveArmor(armor, penetration).reduction;
+    return raw * (1 - reduction);
+  });
+  return benchmarkDamage.reduce((sum, value) => sum + value, 0) / benchmarkDamage.length;
+}
+
+export function calculateWeaponValueNickel(stats: Partial<WeaponEconomyStatsLike> | null | undefined): number {
+  const rawValue = ECONOMY_BALANCE.weaponBaseValueNickel
+    + ECONOMY_BALANCE.weaponValuePerPerformance * calculateWeaponPerformance(stats);
+  return Math.max(
+    ECONOMY_BALANCE.weaponValueRoundStepNickel,
+    roundToNearestStep(rawValue, ECONOMY_BALANCE.weaponValueRoundStepNickel)
+  );
+}
+
+export function calculateWeaponForgeSeconds(valueNickel: number): number {
+  return roundUpToStep(
+    ECONOMY_BALANCE.weaponForgeBaseSeconds + ECONOMY_BALANCE.weaponForgeSecondsPerNickel * Math.max(0, valueNickel),
+    ECONOMY_BALANCE.timeRoundStepSeconds
+  );
+}
+
+export function calculateWeaponSaleSeconds(valueNickel: number): number {
+  return roundUpToStep(
+    ECONOMY_BALANCE.weaponSaleBaseSeconds + ECONOMY_BALANCE.weaponSaleSecondsPerNickel * Math.max(0, valueNickel),
+    ECONOMY_BALANCE.timeRoundStepSeconds
+  );
+}
+
+export function calculateWeaponEconomy(stats: Partial<WeaponEconomyStatsLike> | null | undefined): WeaponEconomyData {
+  const raw = Math.max(0, Number(stats?.expectedRaw) || 0);
+  const penetration = Math.max(0, Math.min(1, Number(stats?.penetration) || 0));
+  const benchmarkDamage = ECONOMY_BALANCE.weaponArmorBenchmarks.map(armor => {
+    const reduction = resolveArmor(armor, penetration).reduction;
+    return raw * (1 - reduction);
+  });
+  const performance = benchmarkDamage.reduce((sum, value) => sum + value, 0) / benchmarkDamage.length;
+  const valueNickel = Math.max(
+    ECONOMY_BALANCE.weaponValueRoundStepNickel,
+    roundToNearestStep(
+      ECONOMY_BALANCE.weaponBaseValueNickel + ECONOMY_BALANCE.weaponValuePerPerformance * performance,
+      ECONOMY_BALANCE.weaponValueRoundStepNickel
+    )
+  );
+  return {
+    performance,
+    benchmarkDamage,
+    valueNickel,
+    forgeSeconds: calculateWeaponForgeSeconds(valueNickel),
+    saleSeconds: calculateWeaponSaleSeconds(valueNickel)
   };
 }
 
 export function weaponSellData(weapon: WeaponSaleLike | null | undefined): WeaponSellData | null {
   if (!weapon) return null;
 
-  const factor = rarityFactor(weapon.slots ?? []);
+  const economy = weapon.stats ? calculateWeaponEconomy(weapon.stats) : null;
+  const valueNickel = economy?.valueNickel ?? Math.max(0, Math.round(weapon.valueNickel));
   return {
     type: 'weapon',
     weaponId: weapon.id,
     name: weapon.name,
-    factor,
-    valueNickel: weapon.valueNickel,
-    seconds: Math.round(CONFIG.market.baseSeconds * factor)
+    factor: rarityFactor(weapon.slots ?? []),
+    valueNickel,
+    seconds: calculateWeaponSaleSeconds(valueNickel)
   };
 }
 
@@ -134,7 +239,14 @@ export const ECONOMY_CORE_BRIDGE = {
   calculateRecruitCost,
   calculateUpgradeCost,
   rarityFactorFromRarity,
+  roundToNearestStep,
+  roundUpToStep,
   materialSellData,
+  calculateWeaponPerformance,
+  calculateWeaponValueNickel,
+  calculateWeaponForgeSeconds,
+  calculateWeaponSaleSeconds,
+  calculateWeaponEconomy,
   weaponSellData
 };
 
