@@ -36,6 +36,7 @@ for (const obsolete of ['slotBaseMaterial', 'slotBlade', 'slotGripShape', 'slotG
 }
 assert.match(forgeMarkup, /Die Waffenform ist ein Bauplan/);
 assert.match(forgeMarkup, /1H\/2H ist reine Ausrüstungsmetadaten/);
+assert.match(forgeMarkup, /<span>Leistungswert<\/span>/, 'Schmiedevorschau bezeichnet den Qualitätswert nicht als Leistungswert.');
 assert.match(forgeMarkup, /id="forgeParryRow"/);
 assert.match(forgeMarkup, /id="slotParry"/);
 assert.match(forgeMarkup, /id="forgeBowstringRow"/);
@@ -45,7 +46,7 @@ for (const option of ['Dolch', '1H Schwert', '1H Axt', '2H Schwert', '2H Axt', '
 }
 
 const indexMarkup = getAngularOwnedPageMarkup('index') ?? '';
-for (const heading of ['Materialindex – gemeinsames Stat-System', 'Bauteile & Materialwirkung', 'Waffenbaupläne', 'Waffen-Grundwerte & Formboni', 'Waffen-Handverteilung', 'Klassen-Grundwerte', 'Level & Erfahrung', 'Dungeon 1 – Gegner & Belohnungen', 'Kampfberechnung', 'Stat-Legende & Displayposition', 'Seltenheit, Herstellung & aktueller Umfang']) {
+for (const heading of ['Materialindex – gemeinsames Stat-System', 'Bauteile & Materialwirkung', 'Waffenbaupläne', 'Waffen-Grundwerte & Formboni', 'Waffen-Handverteilung', 'Klassen-Grundwerte', 'Level & Erfahrung', 'Dungeon 1 – Gegner & Belohnungen', 'Kampfberechnung', 'Stat-Legende & Displayposition', 'Wirtschaft, Herstellung & Verkauf']) {
   assert.ok(indexMarkup.includes(`<h2>${heading}</h2>`), `Index-Abschnitt ${heading} fehlt.`);
 }
 assert.match(indexMarkup, /Bedrohung = unveränderter Klassen-Grundwert/);
@@ -68,6 +69,13 @@ assert.match(indexMarkup, /2H Axt/);
 assert.match(indexMarkup, /1H-Waffe → belegt genau eine/);
 assert.match(indexMarkup, /2H-Waffe → benötigt beide Hände/);
 assert.match(indexMarkup, /A = alle, S = nur schwer, M = nur mittel, L = nur leicht/);
+assert.match(indexMarkup, /Materialwert = 10 Nickel × Seltenheit/);
+assert.match(indexMarkup, /Positiver SPE auf einem Material → Materialwert × 1,10/);
+assert.match(indexMarkup, /R = 0 %, 40 % und 80 %/);
+assert.match(indexMarkup, /40 Nickel \+ 6 × Leistungswert/);
+assert.match(indexMarkup, /30 s \+ 0,7 s × Waffenwert/);
+assert.match(indexMarkup, /15 s \+ 0,5 s × Waffenwert/);
+assert.match(indexMarkup, /Seltenheit einer Waffe bleibt eine sichtbare Materialeigenschaft/);
 
 const composed = composePageMarkup(APP_SHELL_PAGE_IDS);
 for (const pageId of APP_SHELL_PAGE_IDS) assert.equal((composed.match(new RegExp(`id="${pageId}"`, 'g')) ?? []).length, 1, `Seite ${pageId} ist im zusammengesetzten Markup nicht genau einmal vorhanden.`);
@@ -75,6 +83,6 @@ assert.throws(() => composePageMarkup(['unknown-page']), /Unbekannte Angular-Sei
 assert.match(appComponent, /composePageMarkup\(APP_SHELL_PAGE_IDS\)/, 'Der App-Component verwendet nicht ausschließlich Angular-eigenes Seitenmarkup.');
 assert.match(appComponent, /composeAppShell\(pageMarkup\)/, 'Das Angular-eigene Seitenmarkup wird nicht in die Angular-Shell eingesetzt.');
 assert.doesNotMatch(appComponent, /adaptLegacyWeaponMarkup/, 'Angular-eigenes Seitenmarkup darf nicht mehr durch den Legacy-Waffen-Markupadapter verändert werden.');
-assert.match(appComponent, /const APP_VERSION = '0\.12\.89';/, 'Die App-Version wurde nicht auf v0.12.89 gesetzt.');
+assert.match(appComponent, /const APP_VERSION = '0\.12\.90';/, 'Die App-Version wurde nicht auf v0.12.90 gesetzt.');
 
-console.log('Seiten-Markup: Prozent-Rüstung mit 80%-Cap, Waffen, Dungeon-Gegner/XP, getrennte XP-/Stat-Steigung und fixe Bedrohung sind in Angular dokumentiert.');
+console.log('Seiten-Markup: Prozent-Rüstung, Waffen, Dungeon, Qualitätswirtschaft und v0.12.90 sind in Angular dokumentiert.');
