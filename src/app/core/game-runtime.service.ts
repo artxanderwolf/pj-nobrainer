@@ -235,6 +235,7 @@ export class GameRuntimeService {
       runtime.renderInventoryState();
     }
     if (result.saveRequested || inventoryChanged) runtime.save(false);
+    if (result.alertMessage) window.alert(result.alertMessage);
   }
 
   private registerVisibilityHandler(): void {

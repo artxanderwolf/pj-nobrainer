@@ -298,6 +298,77 @@ body {
   max-height: none;
 }
 
+.modular-ui .dungeon-one-card {
+  min-height: 0;
+  height: calc(100dvh - var(--ui-header-height) - var(--ui-bottom-nav-height) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 54px);
+  max-height: 760px;
+  overflow: hidden;
+}
+
+.modular-ui .dungeon-team-region.scroll-region {
+  flex: 1 1 auto;
+  min-height: 180px;
+  max-height: none;
+}
+
+.modular-ui #dungeonTeamCard .team-slot-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.modular-ui #dungeonTeamCard .team-slot {
+  padding: 10px;
+}
+
+.modular-ui #dungeonTeamCard .team-slot.picker-open {
+  grid-column: 1 / -1;
+}
+
+.modular-ui #dungeonTeamCard .empty {
+  padding: 12px 4px;
+}
+
+.modular-ui #dungeonTeamCard .statrow {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+  margin-top: 6px;
+}
+
+.modular-ui #dungeonTeamCard .stat {
+  padding: 6px;
+}
+
+.modular-ui #dungeonTeamCard .stat b {
+  font-size: 13px;
+}
+
+.modular-ui #dungeonTeamCard .actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.modular-ui #dungeonTeamCard .actions .btn {
+  width: 100%;
+  min-width: 0;
+  min-height: 38px;
+  padding: 7px 8px;
+}
+
+.modular-ui #dungeonTeamCard .actions .btn:only-child {
+  grid-column: 1 / -1;
+}
+
+.modular-ui #dungeonTeamCard .team-candidate {
+  align-items: center;
+}
+
+.modular-ui .dungeon-primary-status {
+  margin: 10px 0 0;
+  text-align: center;
+}
+
 .modular-ui #index {
   max-height: calc(100dvh - var(--ui-header-height) - var(--ui-bottom-nav-height) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 40px);
   overflow: auto;
@@ -339,12 +410,21 @@ body {
     grid-template-columns: 1fr 1fr;
   }
 
-  .modular-ui .forge-build-card {
+  .modular-ui .forge-build-card,
+  .modular-ui .dungeon-one-card {
     padding: 12px;
   }
 
   .modular-ui .forge-build-card .forge-slot-wrap.scroll-region {
     min-height: 120px;
+  }
+
+  .modular-ui .dungeon-team-region.scroll-region {
+    min-height: 160px;
+  }
+
+  .modular-ui #dungeonTeamCard .team-slot {
+    padding: 8px;
   }
 }
 

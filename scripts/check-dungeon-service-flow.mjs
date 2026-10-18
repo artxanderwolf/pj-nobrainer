@@ -71,6 +71,7 @@ function makeState(characterCount = 1, energy = 100) {
     inventory: {},
     expeditionActive: false,
     dungeonAuto: false,
+    dungeonStopRequested: false,
     dungeonRun: null,
     dungeonSearch: null,
     dungeonLootCollect: null,
@@ -124,7 +125,7 @@ try {
   assert.equal(successState.dungeonLootCollect, null, 'Die Loot-Zwischenphase muss nach Ablauf abgeschlossen werden.');
   assert.equal(Object.values(successState.dungeonLoot).reduce((sum, entry) => sum + (entry.qty || 0), 0), 1);
   assert.equal(successState.dungeonLoot.Lederfetzen?.qty, 1, 'Neuling muss aus seinem ID-Pool gewichten; bei Testwurf 0,5 gewinnt Lederfetzen.');
-  assert.equal(successState.dungeonSearch.nextCheckAt, 5000, 'Bei aktiver Automatik muss nach dem Loot wieder gesucht werden.');
+  assert.equal(successState.dungeonSearch.nextCheckAt, 5000, 'Bei aktivem Lauf muss nach dem Loot wieder gesucht werden.');
   assert.equal(successService.getSessionWaveCount(), 1);
 
   const collected = successService.collectLoot();
@@ -157,17 +158,52 @@ try {
     assert.equal(character.hp, character.maxHp, 'Nach Niederlage müssen die HP des Ursprungsteams zurückgesetzt sein.');
     assert.equal(character.alive, true, 'Nach Niederlage müssen Mitglieder des Ursprungsteams wieder leben.');
   });
-  assert.ok(failureState.dungeonSearch, 'Bei aktiver Automatik muss nach Niederlage wieder die Suche starten.');
+  assert.ok(failureState.dungeonSearch, 'Bei aktivem Lauf muss nach Niederlage wieder die Suche starten.');
   assert.ok(failureResult.events.some(event => event.text.startsWith('Welle verloren:')));
+
+  const searchAbortState = makeState(1);
+  const searchAbortService = new GameDungeonService({ getState: () => searchAbortState });
+  searchAbortService.toggleAuto(1000);
+  const searchAbortResult = searchAbortService.toggleAuto(1500);
+  assert.equal(searchAbortState.dungeonAuto, false);
+  assert.equal(searchAbortState.dungeonSearch, null);
+  assert.equal(searchAbortState.dungeonStopRequested, false);
+  assert.deepEqual(searchAbortState.dungeonTeamSlots, [null, null, null, null], 'Ein sofortiger Abbruch muss die Teamauswahl leeren.');
+  assert.match(searchAbortResult.alertMessage || '', /Dungeon 1 – Lauf abgebrochen/);
+
+  const waveAbortState = makeState(1);
+  const waveAbortService = new GameDungeonService({ getState: () => waveAbortState });
+  waveAbortService.toggleAuto(1000);
+  Math.random = () => 0;
+  waveAbortService.update(2000);
+  assert.ok(waveAbortState.dungeonRun);
+  const abortRequest = waveAbortService.toggleAuto(2100);
+  assert.equal(waveAbortState.dungeonAuto, false);
+  assert.equal(waveAbortState.dungeonStopRequested, true, 'Abbruch während einer Welle muss bis zum Wellenende vorgemerkt werden.');
+  assert.ok(waveAbortState.dungeonRun, 'Die laufende Welle darf durch den Abbruch nicht abgeschnitten werden.');
+  assert.ok(abortRequest.events.some(event => event.text.includes('aktuelle Welle wird noch beendet')));
+  Math.random = () => 0.5;
+  const waveFinished = waveAbortService.update(3000);
+  assert.ok(waveAbortState.dungeonLootCollect, 'Nach der noch laufenden Welle muss zunächst die Beutephase beendet werden.');
+  assert.equal(waveFinished.alertMessage, undefined);
+  const aborted = waveAbortService.update(4000);
+  assert.equal(waveAbortState.dungeonStopRequested, false);
+  assert.deepEqual(waveAbortState.dungeonTeamSlots, [null, null, null, null], 'Nach abgeschlossenem Abbruch muss das Team geleert sein.');
+  assert.equal(waveAbortState.dungeonAuto, false);
+  assert.match(aborted.alertMessage || '', /Dungeon 1 – Lauf abgebrochen/);
+  assert.match(aborted.alertMessage || '', /Besiegte Wellen: 1/);
+  assert.match(aborted.alertMessage || '', /Beute:/);
 
   const lowEnergyState = makeState(1, 3);
   const lowEnergyService = new GameDungeonService({ getState: () => lowEnergyState });
   const lowEnergyResult = lowEnergyService.toggleAuto(1000);
-  assert.equal(lowEnergyState.dungeonAuto, false, 'Bei unzureichender Energie muss die Automatik wieder beendet werden.');
+  assert.equal(lowEnergyState.dungeonAuto, false, 'Bei unzureichender Energie muss der Lauf beendet werden.');
   assert.equal(lowEnergyState.dungeonSearch, null);
+  assert.deepEqual(lowEnergyState.dungeonTeamSlots, [null, null, null, null], 'Nach Energieende muss für den nächsten Lauf ein neues Team gewählt werden.');
   assert.ok(lowEnergyResult.events.some(event => event.text.includes('Nicht genügend Energie')));
+  assert.match(lowEnergyResult.alertMessage || '', /Ausdauer reicht für keine weitere Welle/);
 
-  console.log('Dungeon-Service-Ablauf: Automatik, Gegnerprofile, XP/Level, gegnerspezifischer Loot, Wiederholung, Niederlagenreset und Einsammeln sind konsistent.');
+  console.log('Dungeon-Service-Ablauf: Laufstart, Wiederholung, Abbruch nach Wellenende, Energieende mit Teamreset, Ergebnis-Popup, XP/Level und Loot sind konsistent.');
 } finally {
   Math.random = originalRandom;
   for (const url of temporaryFiles.reverse()) {

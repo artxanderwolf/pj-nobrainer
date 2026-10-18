@@ -42,7 +42,7 @@ const SCREEN_PRESENTATIONS: Record<string, NavigationPresentation> = {
   'market-upgrade': { pageId: 'market-upgrade', title: 'Verkaufsausbau', parentPageId: 'market', sectionId: 'storage' },
 
   dungeon: { pageId: 'dungeon', title: 'Dungeon', parentPageId: 'base', sectionId: 'dungeon' },
-  'dungeon-select': { pageId: 'dungeon-select', title: 'Dungeon auswählen', parentPageId: 'dungeon', sectionId: 'dungeon' },
+  'dungeon-select': { pageId: 'dungeon-select', title: 'Dungeon 1', parentPageId: 'dungeon', sectionId: 'dungeon' },
   'dungeon-team': { pageId: 'dungeon-team', title: 'Dungeon-Team', parentPageId: 'dungeon', sectionId: 'dungeon' },
   'dungeon-expedition': { pageId: 'dungeon-expedition', title: 'Aktuelle Expedition', parentPageId: 'dungeon', sectionId: 'dungeon' },
   'dungeon-loot': { pageId: 'dungeon-loot', title: 'Dungeon-Beute', parentPageId: 'dungeon', sectionId: 'dungeon' },

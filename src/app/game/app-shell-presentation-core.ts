@@ -27,12 +27,12 @@ export const APP_SHELL_PAGE_IDS = [
   'index'
 ] as const;
 
-const APP_SHELL_BEFORE_PAGES = `<div class="app modular-ui" data-ui-version="0.12.0">
+const APP_SHELL_BEFORE_PAGES = `<div class="app modular-ui" data-ui-version="0.13.6">
   <main class="app-main">
     <header class="topbar modular-topbar">
       <button id="backBtn" class="back-btn" type="button" aria-label="Zurück" onclick="goBack()" hidden>←</button>
       <div class="page-heading">
-        <div class="ui-version">NO BRAINER · v0.12.0</div>
+        <div class="ui-version">NO BRAINER · v0.13.6</div>
         <h1 id="pageTitle">Übersicht</h1>
       </div>
       <div class="top-actions">
