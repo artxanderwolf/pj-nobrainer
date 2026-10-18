@@ -10,10 +10,11 @@ assert.match(service, /getTavernPresentation\(/, 'Angular-Tavernenservice verwen
 assert.match(service, /this\.gameProgression\.getRecruitOffer\('recruit'\)\.costNickel/, 'Rekrutierungskosten werden für die Tavernenanzeige nicht aus dem Angular-Progression-Service bezogen.');
 assert.match(service, /document\.getElementById\('tavernOffer'\)/, 'Angular-Tavernenservice rendert die Rekrutierungsangebote nicht.');
 assert.match(service, /document\.getElementById\('tavernCapacity'\)/, 'Angular-Tavernenservice rendert die Kapazitätsanzeige nicht.');
-assert.match(service, /document\.getElementById\('baseTavernSummary'\)/, 'Angular-Tavernenservice rendert die Stützpunkt-Zusammenfassung nicht.');
+assert.match(service, /document\.getElementById\('baseTavernSummary'\)/, 'Angular-Tavernenservice rendert die Übersichts-Zusammenfassung nicht.');
 assert.match(service, /offer\.dataset\['tavernPresentationOwner'\] = 'angular';/, 'Angular-Tavernenrenderer markiert seinen finalen Browser-Output nicht.');
 assert.match(service, /onclick="recruitCharacter\('\$\{entry\.classId\}'\)"/, 'Bestehende Rekrutierungsaktion wird durch den Angular-Renderer nicht beibehalten.');
-assert.match(service, /onclick="go\('base'\)"/, 'Bestehende Navigation zum Inn-Ausbau wird durch den Angular-Renderer nicht beibehalten.');
+assert.doesNotMatch(service, /onclick="go\('base'\)"/, 'Die Kapazitätsansicht darf keinen veralteten Rücksprung zum früheren Stützpunkt mehr erzeugen.');
+assert.match(service, /capacity\.innerHTML = `<div class="statrow">/, 'Kapazitätswerte werden nicht kompakt gerendert.');
 assert.match(service, /window\.NoBrainerTavernPresentationCompatibility = \{ render: \(\) => this\.render\(\) \};/);
 assert.match(service, /delete window\.NoBrainerTavernPresentationCompatibility;/);
 
@@ -27,6 +28,5 @@ const stateBootstrap = app.indexOf('this.gameState.openBootstrapRegistration();'
 assert.ok(bridgeOpen >= 0 && stateBootstrap > bridgeOpen, 'Tavernen-Präsentationsbrücke muss vor dem State-/Legacy-Bootstrap geöffnet werden.');
 assert.match(app, /private readonly gameTavernPresentation: GameTavernPresentationService/);
 assert.match(app, /ngOnDestroy\(\): void \{[\s\S]*this\.gameTavernPresentation\.closeLegacyCompatibilityBridge\(\);/);
-assert.match(app, /const APP_VERSION = '0\.12\.90';/);
 
-console.log('Tavernen-Präsentations-Eigentümerschaft: Zusammenfassung, Angebote und Kapazität werden direkt durch Angular aus Angular-State und Progression gerendert; Legacy besitzt nur noch einen dünnen Renderwrapper.');
+console.log('Tavernen-Präsentations-Eigentümerschaft: Rekrutierung und Kapazität bleiben Angular-eigen und passen in die neue Charakter-Hierarchie.');
