@@ -22,6 +22,11 @@ const fixture = JSON.stringify({
   savedAt: Date.now(),
   state: {
     inventory: {},
+    dungeonAuto: false,
+    dungeonStopRequested: false,
+    dungeonRun: null,
+    dungeonSearch: null,
+    dungeonLootCollect: null,
     dungeonLoot: {
       [materialName]: { category: 'Holz', qty: 2 }
     }
@@ -46,6 +51,7 @@ const probeScript = `<script>
       materialCount: document.getElementById('matCount')?.textContent?.trim() || '',
       storageText: document.getElementById('inventoryRows')?.textContent?.replace(/\\s+/g, ' ').trim() || '',
       dungeonLootText: document.getElementById('dungeonLoot')?.textContent?.replace(/\\s+/g, ' ').trim() || '',
+      primaryText: document.getElementById('dungeonPrimaryBtn')?.textContent?.replace(/\\s+/g, ' ').trim() || '',
       runtimeError: document.querySelector('.legacy-host')?.getAttribute('data-runtime-error') || '',
       browserErrors: Array.isArray(window.__lootErrors) ? window.__lootErrors : []
     };
@@ -57,8 +63,8 @@ const probeScript = `<script>
 
   const started = Date.now();
   const timer = setInterval(() => {
-    const button = document.getElementById('collectLootBtn');
-    if (button && !button.disabled) {
+    const button = document.getElementById('dungeonPrimaryBtn');
+    if (button && !button.disabled && /Beute einsammeln/.test(button.textContent || '')) {
       clearInterval(timer);
       button.click();
       setTimeout(() => finish('clicked'), 750);
@@ -162,15 +168,16 @@ try {
   const decoded = resultMatch[1].replaceAll('&quot;', '"').replaceAll('&amp;', '&');
   const result = JSON.parse(decoded);
 
-  assert.equal(result.status, 'clicked', `Der Einsammeln-Button wurde nicht verwendbar: ${JSON.stringify(result)}`);
+  assert.equal(result.status, 'clicked', `Der zentrale Dungeon-Button wurde zum Einsammeln nicht verwendbar: ${JSON.stringify(result)}`);
   assert.equal(result.inventoryQty, 2, `Dungeon-Loot wurde nicht in das gespeicherte Inventar übertragen: ${JSON.stringify(result)}`);
   assert.equal(result.browserErrors.length, 0, `Beim Loot-Einsammeln trat ein Browserfehler auf: ${JSON.stringify(result)}`);
   assert.equal(result.materialCount, '2', `Der Materialzähler wurde nach dem Einsammeln nicht aktualisiert: ${JSON.stringify(result)}`);
   assert.match(result.storageText, /Morsche Fichte/, `Das Materiallager zeigt den eingesammelten Loot nicht: ${JSON.stringify(result)}`);
   assert.equal(result.dungeonLootText, '', `Die Dungeon-Lootanzeige wurde nach dem Einsammeln nicht geleert: ${JSON.stringify(result)}`);
+  assert.equal(result.primaryText, 'Lauf starten', `Nach dem Einsammeln muss der zentrale Button wieder einen neuen Lauf anbieten: ${JSON.stringify(result)}`);
   assert.equal(result.runtimeError, '', `Die Runtime meldet während des Loot-E2E-Tests einen Fehler: ${JSON.stringify(result)}`);
 
-  console.log('Dungeon-Loot-Browserregression: Einsammeln über die echte UI aktualisiert Save, Materialzähler, Lager und Dungeon-Lootanzeige.');
+  console.log('Dungeon-Loot-Browserregression: zentraler Dungeon-1-Button sammelt Loot ein und kehrt zu Lauf starten zurück.');
 } finally {
   if (child) await stopBrowser(child);
   rmSync(browserProfile, { recursive: true, force: true });
