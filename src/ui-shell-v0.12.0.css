@@ -41,7 +41,7 @@ body {
   grid-template-columns: 46px minmax(0, 1fr) auto;
   gap: 10px;
   align-items: center;
-  background: color-mix(in srgb, var(--bg) 94%, transparent);
+  background: rgba(18, 20, 23, .94);
   border-bottom: 1px solid var(--line);
   backdrop-filter: blur(12px);
 }
@@ -245,7 +245,8 @@ body {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
-  background: color-mix(in srgb, #101318 96%, transparent);
+  overflow: visible;
+  background: rgba(16, 19, 24, .96);
   border-top: 1px solid var(--line);
   backdrop-filter: blur(12px);
 }
@@ -300,7 +301,7 @@ body {
 
   .money-pill {
     font-size: 12px;
-    max-width: 150px;
+    max-width: 128px;
     overflow: hidden;
     text-overflow: ellipsis;
   }
@@ -312,8 +313,8 @@ body {
   }
 
   .menu-card {
-    min-height: clamp(104px, 15dvh, 140px);
-    padding: 14px;
+    min-height: clamp(84px, 14dvh, 128px);
+    padding: 13px 14px;
   }
 
   .compact-stats {
