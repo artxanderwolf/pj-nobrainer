@@ -32,14 +32,33 @@ const legacyGo = [
 ].join('\n');
 
 const navigationGoBridge = [
-  'function go(page){',
-  '  const presentation=window.NoBrainerNavigationPresentationCore.getNavigationPresentation(page);',
+  'function applyNavigationPresentation(presentation){',
   '  document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));',
   '  document.querySelectorAll("#nav button").forEach(x=>x.classList.remove("active"));',
-  '  document.getElementById(presentation.pageId).classList.add("active");',
-  '  document.querySelector(`#nav button[data-page="${presentation.pageId}"]`).classList.add("active");',
-  '  document.getElementById("pageTitle").textContent=presentation.title;',
+  '  const pageElement=document.getElementById(presentation.pageId);',
+  '  if(pageElement)pageElement.classList.add("active");',
+  '  const sectionButton=document.querySelector(`#nav button[data-section="${presentation.sectionId}"]`);',
+  '  if(sectionButton)sectionButton.classList.add("active");',
+  '  const titleElement=document.getElementById("pageTitle");',
+  '  if(titleElement)titleElement.textContent=presentation.title;',
+  '  const backButton=document.getElementById("backBtn");',
+  '  if(backButton){',
+  '    backButton.hidden=!presentation.parentPageId;',
+  '    backButton.dataset.parentPage=presentation.parentPageId||"";',
+  '  }',
+  '}',
+  '',
+  'function go(page){',
+  '  const presentation=window.NoBrainerNavigationPresentationCore.getNavigationPresentation(page);',
+  '  applyNavigationPresentation(presentation);',
   '  render();',
+  '}',
+  '',
+  'function goBack(){',
+  '  const current=document.querySelector(".page.active");',
+  '  const currentId=current?.id||"base";',
+  '  const presentation=window.NoBrainerNavigationPresentationCore.getNavigationPresentation(currentId);',
+  '  go(presentation.parentPageId||"base");',
   '}'
 ].join('\n');
 
@@ -47,14 +66,17 @@ let source = match[1];
 source = replaceOnce(source, legacyTitles, '', 'Legacy-Seitentitel');
 source = replaceOnce(source, legacyGo, navigationGoBridge, 'Legacy-Navigation');
 
-new vm.Script(source, { filename: 'NoBrainer_GitHub_v0.12.46.navigation-presentation.js' });
+new vm.Script(source, { filename: 'NoBrainer_GitHub_v0.12.0.navigation-presentation.js' });
 assert.equal(source.includes('const titles = {'), false);
-assert.equal((source.match(/getNavigationPresentation\(/g) || []).length, 1);
+assert.equal((source.match(/getNavigationPresentation\(/g) || []).length, 2);
+assert.ok(source.includes('function goBack(){'));
+assert.ok(source.includes('data-section="${presentation.sectionId}"'));
+assert.ok(source.includes('backButton.hidden=!presentation.parentPageId;'));
 assert.ok(source.includes('document.getElementById("nav").addEventListener'));
 assert.ok(source.includes('if(e.target.dataset.page) go(e.target.dataset.page);'));
 assert.ok(source.includes('  render();'));
 
-// Regression-Sicherung für zuletzt empfindliche Vollrender-Bereiche.
+// Regression-Sicherung für empfindliche Vollrender-Bereiche.
 assert.ok(source.includes('renderForgePreview();'));
 assert.ok(source.includes('renderDungeonStatus();'));
 assert.ok(source.includes('const tbody=document.getElementById("inventoryRows");tbody.innerHTML="";'));
@@ -65,4 +87,4 @@ const navigationAdapterIndex = app.indexOf('adaptedScript = this.legacyNavigatio
 assert.ok(sourceAdapterIndex >= 0, 'LegacySourceAdapter-Aufruf fehlt.');
 assert.ok(navigationAdapterIndex > sourceAdapterIndex, 'Navigation-Adapter muss nach dem Source-Adapter laufen.');
 
-console.log('Navigation-Presentation-Adapter: Seitentitel und Seitenwechsel migriert; Render- und Navigationspfade bleiben erhalten.');
+console.log('Navigation-Presentation-Adapter: hierarchische Navigation, Zurück-Pfad und Bottom-Navigation bleiben mit der Legacy-Runtime kompatibel.');
