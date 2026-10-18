@@ -152,7 +152,7 @@ try {
   assert.equal(result.runtimeError, '', `Die Runtime meldet bei der Schmiedeauswahl einen Fehler: ${JSON.stringify(result)}`);
   assert.deepEqual(result.selected, { back: true, gripCore: true, gripWrap: true, special: true, bowstring: true, form: true });
   assert.equal(result.finalForm, 'bow');
-  assert.equal(result.timeText, '60 s');
+  assert.equal(result.timeText, '80 s');
   assert.equal(result.materialTotalText, '16 Materialeinheiten');
   assert.match(result.constructionText, /2H · belegt beide Hände/);
   assert.match(result.constructionText, /3× Sehne/);
