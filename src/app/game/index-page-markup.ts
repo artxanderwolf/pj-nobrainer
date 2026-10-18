@@ -143,13 +143,19 @@ export const INDEX_PAGE_MARKUP = `<section class="page" id="index">
         </div>
 
         <div class="card span-12">
-          <h2>Seltenheit, Herstellung & aktueller Umfang</h2>
-          <div class="formula">Waffen-Seltenheitsfaktor = niedrigste Seltenheit aller gewählten Bauteilmaterialien</div>
-          <div class="formula">Waffenwert = 100 Nickel × Waffen-Seltenheitsfaktor</div>
-          <div class="formula">Herstellungszeit = 30 s × Waffenform-Faktor × Waffen-Seltenheitsfaktor</div>
-          <p class="index-note">Waffenform-Faktoren: Dolch 0,5 · 1H Schwert 1,0 · 1H Axt 1,0 · 2H Schwert 1,75 · 2H Axt 1,75 · Bogen 2,0 · Stab 1,1. Materialmenge verändert nur den Verbrauch, nicht den Statbeitrag.</p>
+          <h2>Wirtschaft, Herstellung & Verkauf</h2>
+          <div class="formula">Materialwert = 10 Nickel × Seltenheit</div>
+          <div class="formula">Positiver SPE auf einem Material → Materialwert × 1,10</div>
+          <div class="formula">Material-Verkaufszeit = auf nächste 5 s aufrunden(15 s + 1,5 s × Materialwert)</div>
+          <div class="formula">Waffen-Leistungswert = Mittelwert des erwarteten Waffenschadens nach Rüstung bei R = 0 %, 40 % und 80 %</div>
+          <div class="formula">Prüfschaden = ROH × (1 − [min(80 %, R) × (1 − DS)] / 100)</div>
+          <div class="formula">Waffenwert = auf nächste 5 Nickel runden(40 Nickel + 6 × Leistungswert)</div>
+          <div class="formula">Herstellungszeit = auf nächste 5 s aufrunden(30 s + 0,7 s × Waffenwert)</div>
+          <div class="formula">Waffen-Verkaufszeit = auf nächste 5 s aufrunden(15 s + 0,5 s × Waffenwert)</div>
+          <p class="index-note">Die festen Prüfrüstungen 0/40/80 sind unabhängig vom Dungeon und decken das aktuelle Prozent-Rüstungssystem bis zum 80-%-Cap ab. Dadurch verändert ein neues Dungeon-Balancing nicht automatisch den Marktwert bestehender Waffen.</p>
+          <p class="index-note">Der positive SPE-Bonus von 10 % gilt nur beim direkten Verkauf eines Rohmaterials. Bei fertigen Waffen gibt es keinen zweiten pauschalen SPE-Bonus: GES-, P- und DS-Effekte fließen über die tatsächlichen Waffenwerte bereits in den Leistungswert ein.</p>
+          <p class="index-note">Die Seltenheit einer Waffe bleibt eine sichtbare Materialeigenschaft, bestimmt aber nicht mehr direkt Waffenwert, Herstellungszeit oder Waffen-Verkaufszeit. Materialmenge verändert weiterhin nur den Verbrauch, nicht den Statbeitrag eines Bauteils.</p>
           <p class="index-note">Noch nicht aktiv sind die klassenabhängigen Waffenfreigaben, Schildkombinationen und Rüstungsklassen aus „Charakter_abhängikeiten“. Für Rüstung gilt später exakt die Tabellenlogik: A = alle, S = nur schwer, M = nur mittel, L = nur leicht; Kombinationen erlauben nur die ausdrücklich genannten Klassen.</p>
-          <div class="formula">Materialwert pro Stück = 10 Nickel × Material-Verkaufsfaktor</div>
           <div class="formula">Material-Verkaufserlös = Materialwert pro Stück × Verkaufsmenge</div>
           <div class="formula">Währung: 100 Nickel = 1 Bronze · 100 Bronze = 1 Silber · 100 Silber = 1 Gold</div>
         </div>
