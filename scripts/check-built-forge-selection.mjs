@@ -74,21 +74,28 @@ const probeScript = `<script>
           form: formChosen
         };
         setTimeout(() => {
-          finish({
-            status: 'tested',
-            selected,
-            finalForm: document.getElementById('weaponForm')?.value || '',
-            timeText: document.getElementById('forgeTimePreview')?.textContent || '',
-            materialTotalText: document.getElementById('forgeMaterialTotalPreview')?.textContent || '',
-            constructionText: document.getElementById('forgeParryInfo')?.textContent || '',
-            damageText: document.getElementById('forgeDamagePreview')?.textContent || '',
-            speedText: document.getElementById('forgeSpeedPreview')?.textContent || '',
-            startDisabled: document.getElementById('forgeStartBtn')?.disabled ?? null,
-            workingPartHidden: document.getElementById('forgeWorkingPartRow')?.hidden ?? false,
-            parryHidden: document.getElementById('forgeParryRow')?.hidden ?? false,
-            bowstringHidden: document.getElementById('forgeBowstringRow')?.hidden ?? true,
-            oldBaseMaterialPresent: Boolean(document.getElementById('slotBaseMaterial'))
-          });
+          const previewButton = document.getElementById('forgePreviewNextBtn');
+          const previewNextDisabled = previewButton instanceof HTMLButtonElement ? previewButton.disabled : null;
+          if (previewButton instanceof HTMLButtonElement) previewButton.click();
+          setTimeout(() => {
+            finish({
+              status: 'tested',
+              selected,
+              finalForm: document.getElementById('weaponForm')?.value || '',
+              timeText: document.getElementById('forgeTimePreview')?.textContent || '',
+              materialTotalText: document.getElementById('forgeMaterialTotalPreview')?.textContent || '',
+              constructionText: document.getElementById('forgeParryInfo')?.textContent || '',
+              damageText: document.getElementById('forgeDamagePreview')?.textContent || '',
+              speedText: document.getElementById('forgeSpeedPreview')?.textContent || '',
+              startDisabled: document.getElementById('forgeStartBtn')?.disabled ?? null,
+              previewNextDisabled,
+              activePage: document.querySelector('.page.active')?.id || '',
+              workingPartHidden: document.getElementById('forgeWorkingPartRow')?.hidden ?? false,
+              parryHidden: document.getElementById('forgeParryRow')?.hidden ?? false,
+              bowstringHidden: document.getElementById('forgeBowstringRow')?.hidden ?? true,
+              oldBaseMaterialPresent: Boolean(document.getElementById('slotBaseMaterial'))
+            });
+          }, 100);
         }, 180);
       }, 120);
       return;
@@ -159,12 +166,14 @@ try {
   assert.equal(result.damageText, '11.11');
   assert.equal(result.speedText, '0.90');
   assert.equal(result.startDisabled, false);
+  assert.equal(result.previewNextDisabled, false, 'Der Vorschau-Button darf nach der Materialauswahl nicht blockiert bleiben.');
+  assert.equal(result.activePage, 'forge-preview', 'Der Vorschau-Button muss zur Waffenvorschau navigieren.');
   assert.equal(result.workingPartHidden, true);
   assert.equal(result.parryHidden, true);
   assert.equal(result.bowstringHidden, false);
   assert.equal(result.oldBaseMaterialPresent, false);
 
-  console.log('Schmiedeauswahl-Browserregression: Bogen nutzt fünf Materialwahlen, 16 Einheiten, drei Sehnen-Einheiten und 2H-Metadaten.');
+  console.log('Schmiedeauswahl-Browserregression: Materialwahl bleibt gültig und der Vorschau-Button öffnet zuverlässig die Waffenvorschau.');
 } finally {
   if (child) await stopBrowser(child);
   rmSync(browserProfile, { recursive: true, force: true });
