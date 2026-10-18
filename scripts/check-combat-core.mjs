@@ -2,6 +2,10 @@ import assert from 'node:assert/strict';
 import { MAX_ARMOR_PERCENT, resolveArmor } from '../src/app/game/armor-core.ts';
 import { applyAttackDamage, buildWeightedTargets, enforceGlobalActionCooldown, resolveAttack, targetWeight } from '../src/app/game/combat-core.ts';
 
+const assertClose = (actual, expected, epsilon = 1e-9) => {
+  assert.ok(Math.abs(actual - expected) <= epsilon, `Expected ${actual} to be within ${epsilon} of ${expected}`);
+};
+
 assert.equal(MAX_ARMOR_PERCENT, 80);
 assert.deepEqual(resolveArmor(100, 0), { armor: 80, penetration: 0, effectiveArmor: 80, reduction: 0.8 });
 assert.deepEqual(resolveArmor(80, 0.25), { armor: 80, penetration: 0.25, effectiveArmor: 60, reduction: 0.6 });
@@ -45,8 +49,8 @@ assert.equal(defeated.hp, 0);
 assert.equal(defeated.alive, false);
 
 const capped = { hp: 20, alive: true, armor: 100 };
-assert.equal(applyAttackDamage(capped, 10, 0), 2);
-assert.equal(capped.hp, 18);
+assertClose(applyAttackDamage(capped, 10, 0), 2);
+assertClose(capped.hp, 18);
 
 const capWithPenetration = { hp: 20, alive: true, armor: 100 };
 assert.equal(applyAttackDamage(capWithPenetration, 10, 0.25), 4);
