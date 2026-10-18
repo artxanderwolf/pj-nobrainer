@@ -96,12 +96,15 @@ interface RuntimeDungeonInventoryEntry {
   qty?: number | null;
 }
 
+type DungeonSessionEndReason = 'manual' | 'energy';
+
 type RuntimeDungeonState = MutableGameState & {
   characters: RuntimeDungeonCharacter[];
   weaponInventory: RuntimeDungeonWeapon[];
   inventory: Record<string, RuntimeDungeonInventoryEntry | undefined>;
   expeditionActive: boolean;
   dungeonAuto: boolean;
+  dungeonStopRequested?: boolean;
   dungeonRun: DungeonRunLike | null;
   dungeonSearch: RuntimeDungeonSearch | null;
   dungeonLootCollect: RuntimeDungeonLootCollect | null;
@@ -208,19 +211,35 @@ export class GameDungeonService {
   toggleAuto(at = Date.now()): DungeonActionResult {
     const state = this.getState();
     const outcome = this.createOutcome();
+    const sessionActive = Boolean(
+      state.dungeonAuto || state.dungeonRun || state.dungeonSearch || state.dungeonLootCollect || state.dungeonStopRequested
+    );
 
-    if (state.dungeonAuto) {
+    if (sessionActive) {
+      if (state.dungeonStopRequested) return outcome;
+
       state.dungeonAuto = false;
       state.dungeonSearch = null;
-      this.addEvent(
-        outcome,
-        state.dungeonRun
-          ? 'Dungeon-Automatik angehalten. Die aktuelle Welle wird noch beendet.'
-          : state.dungeonLootCollect
-            ? 'Dungeon-Automatik angehalten. Die aktuelle Beute wird noch eingesammelt.'
-            : 'Dungeon-Automatik angehalten.',
-        'muted'
-      );
+
+      if (state.dungeonRun || state.dungeonLootCollect) {
+        state.dungeonStopRequested = true;
+        this.addEvent(
+          outcome,
+          state.dungeonRun
+            ? 'Laufabbruch angefordert. Die aktuelle Welle wird noch beendet.'
+            : 'Laufabbruch angefordert. Die aktuelle Beute wird noch eingesammelt.',
+          'muted'
+        );
+        outcome.saveRequested = true;
+        return outcome;
+      }
+
+      this.finishSession(state, 'manual', at, outcome);
+      return outcome;
+    }
+
+    if (this.getLootTotal(state) > 0) {
+      outcome.alertMessage = 'Bitte zuerst die Beute des vorherigen Dungeonlaufs einsammeln.';
       return outcome;
     }
 
@@ -230,13 +249,14 @@ export class GameDungeonService {
       return outcome;
     }
 
+    state.dungeonStopRequested = false;
     state.dungeonCycleOriginalIds = [...selectedIds];
     state.dungeonCycleActiveIds = [...selectedIds];
     resetDungeonCycle(selectedIds.map(id => this.getCharacterById(state, id)).filter((character): character is RuntimeDungeonCharacter => !!character));
     state.expeditionActive = selectedIds.length > 0;
     state.dungeonSessionStartWaves = Number(state.dungeonWavesDefeated) || 0;
     state.dungeonAuto = true;
-    this.addEvent(outcome, 'Dungeon-Automatik gestartet. Das ausgewählte Team beginnt mit der Suche.', 'good');
+    this.addEvent(outcome, 'Dungeon-1-Lauf gestartet. Das ausgewählte Team beginnt mit der Suche.', 'good');
     this.beginSearch(state, at, outcome);
     outcome.saveRequested = true;
     return outcome;
@@ -272,14 +292,14 @@ export class GameDungeonService {
   }
 
   private beginSearch(state: RuntimeDungeonState, at: number, outcome: DungeonActionResult): boolean {
-    if (!state.dungeonAuto || state.dungeonRun || state.dungeonLootCollect) return false;
+    if (!state.dungeonAuto || state.dungeonRun || state.dungeonLootCollect || state.dungeonStopRequested) return false;
     const check = checkDungeonStart(this.getAliveParticipants(state));
     if (!check.ok) {
       if (check.reason.includes('Energie')) {
         this.stopForEnergy(
           state,
           at,
-          'Dungeon-Automatik beendet: Nicht genügend Energie für eine weitere Gegnerwelle. Nach der Regeneration muss sie manuell neu gestartet werden.',
+          'Dungeon-1-Lauf beendet: Nicht genügend Energie für eine weitere Gegnerwelle.',
           outcome
         );
       }
@@ -292,7 +312,7 @@ export class GameDungeonService {
   }
 
   private startRun(state: RuntimeDungeonState, at: number, outcome: DungeonActionResult): boolean {
-    if (state.dungeonRun || state.dungeonLootCollect) return false;
+    if (state.dungeonRun || state.dungeonLootCollect || state.dungeonStopRequested) return false;
     state.dungeonSearch = null;
     const check = checkDungeonStart(this.getAliveParticipants(state));
     if (!check.ok) {
@@ -300,7 +320,7 @@ export class GameDungeonService {
         this.stopForEnergy(
           state,
           at,
-          'Dungeon-Automatik beendet: Nicht genügend Energie für die gefundene Gegnerwelle. Nach der Regeneration muss sie manuell neu gestartet werden.',
+          'Dungeon-1-Lauf beendet: Nicht genügend Energie für die gefundene Gegnerwelle.',
           outcome
         );
       }
@@ -365,7 +385,8 @@ export class GameDungeonService {
       }
     } else {
       this.resetCycleAfterFailure(state, outcome);
-      if (state.dungeonAuto) this.beginSearch(state, at, outcome);
+      if (state.dungeonStopRequested) this.finishSession(state, 'manual', at, outcome);
+      else if (state.dungeonAuto) this.beginSearch(state, at, outcome);
     }
 
     outcome.saveRequested = true;
@@ -385,6 +406,11 @@ export class GameDungeonService {
     }
     state.dungeonLootCollect = null;
     outcome.saveRequested = true;
+
+    if (state.dungeonStopRequested) {
+      this.finishSession(state, 'manual', at, outcome);
+      return;
+    }
     if (state.dungeonAuto) this.beginSearch(state, at, outcome);
   }
 
@@ -405,7 +431,59 @@ export class GameDungeonService {
     state.dungeonSearch = null;
     state.lastEnergyUpdate = at;
     this.addEvent(outcome, message, 'muted');
+    this.finishSession(state, 'energy', at, outcome);
+  }
+
+  private finishSession(
+    state: RuntimeDungeonState,
+    reason: DungeonSessionEndReason,
+    at: number,
+    outcome: DungeonActionResult
+  ): void {
+    const summary = this.buildSessionSummary(state, reason);
+    state.dungeonAuto = false;
+    state.dungeonStopRequested = false;
+    state.dungeonSearch = null;
+    state.dungeonRun = null;
+    state.dungeonLootCollect = null;
+    state.expeditionActive = false;
+    state.lastEnergyUpdate = at;
+    state.dungeonTeamSlots = [null, null, null, null];
+    state.dungeonCycleOriginalIds = [];
+    state.dungeonCycleActiveIds = [];
+    state.dungeonSessionStartWaves = Number(state.dungeonWavesDefeated) || 0;
+    outcome.alertMessage = summary;
     outcome.saveRequested = true;
+  }
+
+  private buildSessionSummary(state: RuntimeDungeonState, reason: DungeonSessionEndReason): string {
+    const teamIds = state.dungeonCycleOriginalIds?.length ? state.dungeonCycleOriginalIds : this.getSelectedIds(state);
+    const teamNames = teamIds
+      .map(id => this.getCharacterById(state, id)?.name)
+      .filter((name): name is string => Boolean(name));
+    const waves = this.getSessionWaveCount();
+    const loot = Object.entries(state.dungeonLoot ?? {})
+      .filter(([, entry]) => (Number(entry?.qty) || 0) > 0)
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([name, entry]) => `${name} ×${Number(entry?.qty) || 0}`);
+    const title = reason === 'manual' ? 'Dungeon 1 – Lauf abgebrochen' : 'Dungeon 1 – Lauf beendet';
+    const reasonText = reason === 'manual'
+      ? 'Grund: Abbruch nach Abschluss der aktuellen Welle.'
+      : 'Grund: Ausdauer reicht für keine weitere Welle.';
+    const lines = [
+      title,
+      '',
+      reasonText,
+      `Team: ${teamNames.length ? teamNames.join(', ') : '–'}`,
+      `Besiegte Wellen: ${waves}`,
+      `Beute: ${loot.length ? loot.join(', ') : 'keine'}`
+    ];
+    if (loot.length) lines.push('', 'Beute liegt zum Einsammeln bereit.');
+    return lines.join('\n');
+  }
+
+  private getLootTotal(state: RuntimeDungeonState): number {
+    return Object.values(state.dungeonLoot ?? {}).reduce((sum, entry) => sum + (Number(entry?.qty) || 0), 0);
   }
 
   private playerAttack(
