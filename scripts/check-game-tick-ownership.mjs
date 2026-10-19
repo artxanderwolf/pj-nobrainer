@@ -23,6 +23,22 @@ assert.match(simulatedCutover, /function updateForgeJob\(\)/, 'Die Schmiede-Komp
 assert.match(simulatedCutover, /function updateMarketJob\(\)/, 'Die Markt-Kompatibilitätsfunktion wurde beim gameTick-Cutover versehentlich entfernt.');
 assert.match(simulatedCutover, /function updateDungeonAutomation\(\)/, 'Die Dungeon-Referenzfunktion wurde beim gameTick-Cutover versehentlich entfernt.');
 
+const prepareStart = runtimeService.indexOf('  prepare(): void {');
+const prepareEnd = runtimeService.indexOf('  startTick(): void {', prepareStart);
+assert.ok(prepareStart >= 0 && prepareEnd > prepareStart, 'Die Angular-Startsequenz konnte nicht isoliert werden.');
+const prepareCycle = runtimeService.slice(prepareStart, prepareEnd);
+const prepareDungeonIndex = prepareCycle.indexOf('const dungeonUpdate = this.gameDungeon.update();');
+const prepareEnergyIndex = prepareCycle.indexOf('this.gameEnergy.update();');
+assert.ok(
+  prepareDungeonIndex >= 0 && prepareEnergyIndex > prepareDungeonIndex,
+  'Beim Start muss der Dungeon-Offline-Fortschritt vor der Energieregeneration ausgewertet werden.'
+);
+assert.equal(
+  (prepareCycle.match(/this\.gameEnergy\.update\(\);/g) ?? []).length,
+  1,
+  'Die Startsequenz darf den Energie-Zeitstempel nicht vor dem Dungeon-Catch-up vorziehen.'
+);
+
 const tickStart = runtimeService.indexOf('private runTickCycle(): void {');
 const tickEnd = runtimeService.indexOf('private logForgeCompletions(', tickStart);
 assert.ok(tickStart >= 0 && tickEnd > tickStart, 'Der zentrale Angular-Tick-Zyklus konnte nicht isoliert werden.');
@@ -59,7 +75,6 @@ assert.doesNotMatch(runtimeService, /\baddLog\(text: string/, 'Die Runtime-API e
 assert.doesNotMatch(runtimeService, /runtime\.addLog\(/, 'Der Angular-Tick schreibt weiterhin über die Legacy-Runtime ins Kampfprotokoll.');
 
 const orderedRuntimeCalls = [
-  'this.gameEnergy.update();',
   'const forgeUpdate = this.gameForge.update();',
   'this.logForgeCompletions(forgeUpdate.completedNames);',
   'const marketUpdate = this.gameMarket.update();',
@@ -67,6 +82,7 @@ const orderedRuntimeCalls = [
   'this.logMarketCompletions(marketUpdate.completedSales);',
   'const dungeonUpdate = this.gameDungeon.update();',
   'this.applyDungeonResult(runtime, dungeonUpdate);',
+  'this.gameEnergy.update();',
   'this.forgeJobPresentation.render();',
   'runtime.renderMarketJob();',
   'this.characterPresentation.renderIfIdle();',
@@ -104,4 +120,4 @@ const tickAdapterIndex = appComponent.indexOf('adaptedScript = this.legacyGameTi
 const registrationAdapterIndex = appComponent.indexOf('adaptedScript = this.legacyRuntimeRegistrationAdapter.adapt(adaptedScript);');
 assert.ok(sourceAdapterIndex >= 0 && tickAdapterIndex > sourceAdapterIndex && registrationAdapterIndex > tickAdapterIndex, 'Die Adapterreihenfolge für den gameTick-Cutover ist nicht stabil.');
 
-console.log('gameTick-Eigentümerschaft: Der zentrale 250-ms-Zyklus liegt in Angular; Kader, Waffenlager, Ressourcen, Schmiedeaufträge, Schmiedevorschau, Dungeon und Kampfprotokoll werden dort ohne Legacy-Runtime-Präsentationscallbacks verarbeitet.');
+console.log('gameTick-Eigentümerschaft: Der zentrale 250-ms-Zyklus liegt in Angular; Dungeon-Catch-up wird vor der Energiezeit ausgewertet, damit Offline-Regeneration chronologisch korrekt bleibt.');
