@@ -103,7 +103,6 @@ export class GameRuntimeService {
       runtime.renderMarketWeapons();
     });
     this.dungeonPresentation.bindActions((result, inventoryChanged) => this.applyDungeonResult(runtime, result, inventoryChanged));
-    this.gameEnergy.update();
     const forgeUpdate = this.gameForge.update();
     this.logForgeCompletions(forgeUpdate.completedNames);
     const marketUpdate = this.gameMarket.update();
@@ -179,7 +178,6 @@ export class GameRuntimeService {
   private runTickCycle(): void {
     const runtime = this.getRuntime();
 
-    this.gameEnergy.update();
     const forgeUpdate = this.gameForge.update();
     const forgeCompleted = forgeUpdate.completedCount > 0;
     this.logForgeCompletions(forgeUpdate.completedNames);
@@ -188,6 +186,7 @@ export class GameRuntimeService {
     this.logMarketCompletions(marketUpdate.completedSales);
     const dungeonUpdate = this.gameDungeon.update();
     this.applyDungeonResult(runtime, dungeonUpdate);
+    this.gameEnergy.update();
 
     this.forgeJobPresentation.render();
     runtime.renderMarketJob();
