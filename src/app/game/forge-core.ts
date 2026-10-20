@@ -13,9 +13,15 @@ import {
   type WeaponSlot,
   type WeaponStats
 } from './game-core';
+import {
+  getMaterialQuantityById,
+  reserveMaterialQuantitiesById,
+  type MaterialQuantityRequirements,
+  type MaterialStorageInventory
+} from './material-storage-core.ts';
 
-export interface ForgeInventoryEntry { qty?: number | null; }
-export type ForgeInventory = Record<string, ForgeInventoryEntry | undefined>;
+export type ForgeInventory = MaterialStorageInventory;
+export type ForgeMaterialRequirements = MaterialQuantityRequirements;
 export interface ForgeJob {
   weaponForm: string;
   weaponName: string;
@@ -146,15 +152,17 @@ export function isWeaponProgressionSource(weaponForm: string): boolean {
   return PROGRESSION_SOURCE_FORMS.has(weaponForm);
 }
 
-export function forgeRequirements(slots: readonly WeaponSlot[], weaponForm = 'sword'): Record<string, number> {
+export function forgeRequirements(slots: readonly WeaponSlot[], weaponForm = 'sword'): Record<number, number> {
   const normalized = normalizeWeaponSlots(slots);
-  const selected = new Map(normalized.map(slot => [slot.slot, slot.material]));
-  const requirements: Record<string, number> = {};
+  const selected = new Map(normalized.map(slot => [slot.slot, slot.materialId]));
+  const requirements: Record<number, number> = {};
 
   for (const slot of getWeaponCraftingSlots(weaponForm)) {
-    const material = selected.get(slot);
+    const materialId = Number(selected.get(slot));
     const quantity = getWeaponSelectionQuantity(weaponForm, slot);
-    if (material && quantity > 0) requirements[material] = (requirements[material] ?? 0) + quantity;
+    if (Number.isInteger(materialId) && materialId > 0 && quantity > 0) {
+      requirements[materialId] = (requirements[materialId] ?? 0) + quantity;
+    }
   }
   return requirements;
 }
@@ -165,18 +173,14 @@ export function getForgeSelectionQuantities(weaponForm: string): Record<WeaponCr
   ) as Record<WeaponCraftingSlotId, number>;
 }
 
-export function hasForgeMaterials(inventory: ForgeInventory, requirements: Readonly<Record<string, number>>): boolean {
-  return Object.entries(requirements).every(([name, qty]) => (Number(inventory[name]?.qty) || 0) >= qty);
+export function hasForgeMaterials(inventory: ForgeInventory, requirements: ForgeMaterialRequirements): boolean {
+  return Object.entries(requirements).every(
+    ([materialId, qty]) => getMaterialQuantityById(inventory, Number(materialId)) >= Number(qty)
+  );
 }
 
-export function reserveForgeMaterials(inventory: ForgeInventory, requirements: Readonly<Record<string, number>>): boolean {
-  if (!hasForgeMaterials(inventory, requirements)) return false;
-  for (const [name, qty] of Object.entries(requirements)) {
-    const remaining = (Number(inventory[name]?.qty) || 0) - qty;
-    if (remaining > 0) inventory[name] = { ...(inventory[name] ?? {}), qty: remaining };
-    else delete inventory[name];
-  }
-  return true;
+export function reserveForgeMaterials(inventory: ForgeInventory, requirements: ForgeMaterialRequirements): boolean {
+  return reserveMaterialQuantitiesById(inventory, requirements);
 }
 
 export function calculateWeaponBalanceSnapshot(
