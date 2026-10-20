@@ -7,15 +7,18 @@ import { pathToFileURL } from 'node:url';
 const sourcePath = path.resolve('src/app/game/progression-core.ts');
 const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'nobrainer-progression-'));
 const tempPath = path.join(tempDir, 'progression-core.node-check.ts');
+const generatedDir = path.join(tempDir, 'data', 'generated');
 const source = fs.readFileSync(sourcePath, 'utf8')
   .replace("from './game-core';", "from './game-core.ts';")
   .replace("from './economy-core';", "from './economy-core.ts';");
-const economySource = fs.readFileSync(path.resolve('src/app/game/economy-core.ts'), 'utf8')
-  .replace("from './armor-core';", "from './armor-core.ts';")
-  .replace("from './game-core';", "from './game-core.ts';");
+fs.mkdirSync(generatedDir, { recursive: true });
 fs.copyFileSync(path.resolve('src/app/game/armor-core.ts'), path.join(tempDir, 'armor-core.ts'));
 fs.copyFileSync(path.resolve('src/app/game/game-core.ts'), path.join(tempDir, 'game-core.ts'));
-fs.writeFileSync(path.join(tempDir, 'economy-core.ts'), economySource);
+fs.copyFileSync(path.resolve('src/app/game/game-core-v01310-baseline.ts'), path.join(tempDir, 'game-core-v01310-baseline.ts'));
+fs.copyFileSync(path.resolve('src/app/game/economy-core.ts'), path.join(tempDir, 'economy-core.ts'));
+fs.copyFileSync(path.resolve('src/app/game/economy-core-v01310-baseline.ts'), path.join(tempDir, 'economy-core-v01310-baseline.ts'));
+fs.copyFileSync(path.resolve('src/app/game/data/generated/game-data.generated.ts'), path.join(generatedDir, 'game-data.generated.ts'));
+fs.copyFileSync(path.resolve('src/app/game/data/generated/economy-balance.generated.ts'), path.join(generatedDir, 'economy-balance.generated.ts'));
 fs.writeFileSync(tempPath, source);
 
 try {
