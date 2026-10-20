@@ -47,6 +47,13 @@ try {
     { slot: 'gripWrap', material: 'Lederfetzen' },
     { slot: 'special', material: 'Fichte' }
   ];
+  const daggerIdSlots = [
+    { slot: 'workingPart', materialId: 4 },
+    { slot: 'back', materialId: 4 },
+    { slot: 'gripCore', materialId: 2 },
+    { slot: 'gripWrap', materialId: 9 },
+    { slot: 'special', materialId: 2 }
+  ];
   const swordSlots = [...daggerSlots, { slot: 'parry', material: 'Fichte' }];
   const bowSlots = [
     { slot: 'back', material: 'Fichte' },
@@ -63,9 +70,10 @@ try {
   assert.deepEqual(getForgeSelectionQuantities('axe2h'), { workingPart: 2, back: 2, gripCore: 6, gripWrap: 3, special: 1 });
   assert.deepEqual(getForgeSelectionQuantities('bow'), { back: 1, gripCore: 5, gripWrap: 6, special: 1, bowstring: 3 });
   assert.deepEqual(getForgeSelectionQuantities('staff'), { back: 1, gripCore: 5, gripWrap: 2, special: 1 });
-  assert.deepEqual(forgeRequirements(daggerSlots, 'dagger'), { Zinn: 2, Fichte: 2, Lederfetzen: 1 }, 'Dolch muss genau fünf Materialeinheiten benötigen.');
-  assert.deepEqual(forgeRequirements(swordSlots, 'sword'), { Zinn: 4, Fichte: 3, Lederfetzen: 1 }, '1H Schwert muss genau acht Materialeinheiten benötigen.');
-  assert.deepEqual(forgeRequirements(bowSlots, 'bow'), { Fichte: 7, Lederfetzen: 9 }, 'Bogen muss 16 Einheiten inklusive drei Sehnen-Einheiten benötigen.');
+  assert.deepEqual(forgeRequirements(daggerSlots, 'dagger'), { 2: 2, 4: 2, 9: 1 }, 'Dolch muss genau fünf Materialeinheiten per ID benötigen.');
+  assert.deepEqual(forgeRequirements(daggerIdSlots, 'dagger'), { 2: 2, 4: 2, 9: 1 }, 'ID-Auswahl muss denselben Dolchbedarf liefern.');
+  assert.deepEqual(forgeRequirements(swordSlots, 'sword'), { 2: 3, 4: 4, 9: 1 }, '1H Schwert muss genau acht Materialeinheiten per ID benötigen.');
+  assert.deepEqual(forgeRequirements(bowSlots, 'bow'), { 2: 7, 9: 9 }, 'Bogen muss 16 Einheiten inklusive drei Sehnen-Einheiten benötigen.');
 
   const inventory = { Zinn: { category: 'Metall', qty: 4 }, Fichte: { category: 'Holz', qty: 3 }, Lederfetzen: { category: 'Leder', qty: 1 } };
   const swordRequirements = forgeRequirements(swordSlots, 'sword');
@@ -80,6 +88,7 @@ try {
   assert.equal(snapshot.forgeSeconds, 80);
   assertClose(snapshot.performance, 3.759525);
   assertClose(snapshot.stats.penetration, 0.05);
+  assert.ok(snapshot.slots.every(slot => Number.isInteger(slot.materialId)), 'Gespeicherte Schmiedeslots müssen stabile Material-IDs besitzen.');
 
   const job = createForgeJob('sword', '', swordSlots);
   assert.equal(job.weaponName, '1H Schwert');
@@ -88,6 +97,11 @@ try {
   assertClose(job.performance, 3.759525);
   assert.deepEqual(job.slots.map(slot => slot.slot), ['workingPart', 'back', 'gripCore', 'gripWrap', 'special', 'parry']);
   assert.equal(job.slots.some(slot => slot.slot === 'baseMaterial'), false);
+  assert.ok(job.slots.every(slot => Number.isInteger(slot.materialId)), 'Schmiedeauftrag persistiert Material-IDs.');
+
+  const idJob = createForgeJob('dagger', '', daggerIdSlots);
+  assert.deepEqual(idJob.slots.map(slot => slot.material), ['Zinn', 'Zinn', 'Fichte', 'Lederfetzen', 'Fichte']);
+  assert.deepEqual(idJob.slots.map(slot => slot.materialId), [4, 4, 2, 9, 2]);
 
   const staleJob = weaponName => ({
     ...job,
@@ -177,7 +191,7 @@ try {
   assert.equal(isWeaponFormUnlocked('staff', craftCounts), true);
   assert.deepEqual(getVisibleWeaponForms(craftCounts), ['dagger', 'sword', 'axe1h', 'sword2h', 'axe2h', 'bow', 'staff']);
 
-  console.log('Forge-Core: Baupläne, Material-Balance-Migration, Queue-Timer und Waffen-Freischaltung sind konsistent.');
+  console.log('Forge-Core: Baupläne, ID-basierte Materialreservierung, Balance, Queue-Timer und Waffen-Freischaltung sind konsistent.');
 } finally {
   unlinkSync(temporaryUrl);
   unlinkSync(temporaryEconomyUrl);
