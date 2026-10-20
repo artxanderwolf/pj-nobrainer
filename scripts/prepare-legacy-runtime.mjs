@@ -1,3 +1,4 @@
+import './data/build-game-data.mjs';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import {
