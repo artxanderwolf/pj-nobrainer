@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { formatCurrencyNickel } from '../game/economy-core';
+import { normalizeMaterialInventory, type MaterialStorageInventory } from '../game/material-storage-core';
 import { OfflineProgressService, SaveSnapshot } from './offline-progress.service';
 import { SaveStorageService } from './save-storage.service';
 import { GameCharacterPresentationService } from './game-character-presentation.service';
@@ -13,6 +14,7 @@ import { GameForgePreviewPresentationService } from './game-forge-preview-presen
 import { GameForgeService } from './game-forge.service';
 import { GameMarketService } from './game-market.service';
 import { GameResourcePresentationService } from './game-resource-presentation.service';
+import { GameStateService, type MutableGameState } from './game-state.service';
 import { GameWeaponInventoryPresentationService } from './game-weapon-inventory-presentation.service';
 
 interface GameSaveStorageAdapter {
@@ -54,6 +56,7 @@ export class GameRuntimeService {
   constructor(
     private readonly saveStorage: SaveStorageService,
     private readonly offlineProgress: OfflineProgressService,
+    private readonly gameState: GameStateService,
     private readonly characterPresentation: GameCharacterPresentationService,
     private readonly weaponInventoryPresentation: GameWeaponInventoryPresentationService,
     private readonly resourcePresentation: GameResourcePresentationService,
@@ -92,6 +95,7 @@ export class GameRuntimeService {
 
     const before = this.saveStorage.readSnapshot();
     runtime.prepare();
+    const materialStorageChanged = this.normalizeMaterialStorage() > 0;
     this.characterPresentation.bindActions(() => {
       this.dungeonEquipmentSync.refresh();
       this.weaponInventoryPresentation.render();
@@ -115,6 +119,8 @@ export class GameRuntimeService {
       runtime.save(false);
       const after = this.saveStorage.readSnapshot();
       if (after) this.offlineProgress.showSummary(before, after);
+    } else if (materialStorageChanged) {
+      runtime.save(false);
     }
 
     this.registerVisibilityHandler();
@@ -229,12 +235,20 @@ export class GameRuntimeService {
       this.combatLog.add(event.text, event.className);
     }
     if (inventoryChanged) {
+      this.normalizeMaterialStorage();
       this.resourcePresentation.render();
       this.forgePreviewPresentation.render();
       runtime.renderInventoryState();
     }
     if (result.saveRequested || inventoryChanged) runtime.save(false);
     if (result.alertMessage) window.alert(result.alertMessage);
+  }
+
+  private normalizeMaterialStorage(): number {
+    const state = this.gameState.getState<MutableGameState & { inventory?: MaterialStorageInventory }>();
+    const inventory = state.inventory;
+    if (!inventory || typeof inventory !== 'object' || Array.isArray(inventory)) return 0;
+    return normalizeMaterialInventory(inventory);
   }
 
   private registerVisibilityHandler(): void {
