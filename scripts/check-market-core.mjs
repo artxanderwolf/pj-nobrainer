@@ -1,8 +1,42 @@
 import assert from 'node:assert/strict';
-import { advanceMarketJobs, cancelMarketJob, enqueueMarketJob, hasMarketCapacity } from '../src/app/game/market-core.ts';
+import {
+  advanceMarketJobs,
+  cancelMarketJob,
+  enqueueMarketJob,
+  hasMarketCapacity,
+  normalizeMarketMaterialJob,
+  normalizeMarketMaterialJobs
+} from '../src/app/game/market-core.ts';
 
 function job(name, seconds = 10, valueNickel = 100) {
   return { type: 'material', name, seconds, valueNickel, quantity: 1 };
+}
+
+{
+  const legacy = job('Fichte');
+  assert.equal(normalizeMarketMaterialJob(legacy), true);
+  assert.equal(legacy.materialId, 2);
+  assert.equal(legacy.name, 'Fichte');
+  assert.equal(normalizeMarketMaterialJob(legacy), false, 'Markt-Migration muss idempotent sein.');
+
+  const idOnly = { ...job('Alte Anzeige'), materialId: 4 };
+  assert.equal(normalizeMarketMaterialJob(idOnly), true);
+  assert.equal(idOnly.materialId, 4);
+  assert.equal(idOnly.name, 'Zinn');
+
+  assert.throws(
+    () => normalizeMarketMaterialJob({ ...job('Fichte'), materialId: 4 }),
+    /Widersprüchliche Materialreferenz/,
+    'Bekannter Name und fremde Material-ID dürfen nicht stillschweigend akzeptiert werden.'
+  );
+
+  const migrationState = {
+    marketJobs: [{ ...job('Kupfer') }],
+    marketQueue: [{ ...job('Lederfetzen') }]
+  };
+  assert.equal(normalizeMarketMaterialJobs(migrationState), 2);
+  assert.deepEqual(migrationState.marketJobs.map(entry => entry.materialId), [5]);
+  assert.deepEqual(migrationState.marketQueue.map(entry => entry.materialId), [9]);
 }
 
 {
@@ -58,4 +92,4 @@ function job(name, seconds = 10, valueNickel = 100) {
   assert.equal(state.marketQueue.length, 0);
 }
 
-console.log('Market Core checks passed.');
+console.log('Market Core checks passed: Queue-Ablauf und stabile Material-IDs sind konsistent.');
