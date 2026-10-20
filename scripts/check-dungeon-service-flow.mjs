@@ -114,7 +114,11 @@ try {
   assert.equal(successState.dungeonRun, null, 'Die Testwaffe muss den Gegner in der ersten fälligen Aktion besiegen.');
   assert.equal(successState.dungeonWavesDefeated, 1);
   assert.ok(successState.dungeonLootCollect, 'Nach Sieg muss zunächst die Loot-Zwischenphase aktiv sein.');
-  assert.deepEqual(successState.dungeonLootCollect.drops, [{ materialId: 9 }], 'Aktive Dungeon-Beute muss nur noch die stabile Material-ID tragen.');
+  assert.deepEqual(
+    successState.dungeonLootCollect.drops,
+    [{ materialId: 9, name: 'Lederfetzen', category: 'Leder' }],
+    'Aktive Dungeon-Beute muss die stabile Material-ID als kanonische Referenz und die alten Felder für Rollback-Kompatibilität tragen.'
+  );
   assert.deepEqual(successState.dungeonCycleActiveIds, [1], 'Überlebende müssen für den nächsten Durchlauf aktiv bleiben.');
   assert.equal(successState.characters[0].level, 2, '10 Gegner-XP müssen bei 95/100 XP den Levelaufstieg auslösen.');
   assert.equal(successState.characters[0].xp, 5);
@@ -215,7 +219,7 @@ try {
   assert.ok(lowEnergyResult.events.some(event => event.text.includes('Nicht genügend Energie')));
   assert.match(lowEnergyResult.alertMessage || '', /Ausdauer reicht für keine weitere Welle/);
 
-  console.log('Dungeon-Service-Ablauf: Laufstart, Wiederholung, ID-basierter Loot, Altstand-Kompatibilität, Abbruch, Energieende, XP/Level und Beute sind konsistent.');
+  console.log('Dungeon-Service-Ablauf: Laufstart, Wiederholung, ID-basierter Loot, Altstand-/Rollback-Kompatibilität, Abbruch, Energieende, XP/Level und Beute sind konsistent.');
 } finally {
   Math.random = originalRandom;
   for (const url of temporaryFiles.reverse()) {
