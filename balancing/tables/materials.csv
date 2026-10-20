@@ -1,0 +1,10 @@
+material_id,technical_key,display_name,category,rarity,dungeon_drop_weight,hp,energy,armor,dodge,strength_factor,precision,threat,crit_chance,crit_damage,hp_regen_per_min,energy_regen_per_min,experience_factor,life_steal,penetration,special_stat,special_amount
+1,rotten_spruce,Morsche Fichte,Holz,1,81,4,0,0,0,0,0,0,0,0,0,0,0,0,0,,0
+2,spruce,Fichte,Holz,1,8,5,0,1,0.01,0,0.05,0,0,0,0,0,0,0,0,DS,0.05
+3,fir,Tanne,Holz,2,2,7,0,1,0.02,0,0.10,0,0,0,0,0,0,0,0,P,0.10
+4,tin,Zinn,Metall,1,81,6,0,1,0,0,0,0,0,0,0,0,0,0,0,,0
+5,copper,Kupfer,Metall,1,8,8,0,2,0,0.05,0,0,0,0,0,0,0,0,0,DS,0.10
+6,aluminium,Aluminium,Metall,2,2,9,0,2,0.02,0.10,0,0,0,0,0,0,0,0,0,GES,0.10
+7,hare_leather,Hasen-Leder,Leder,1,8,1,0,0,0,0.03,0,0,0.02,0,0,0,0,0,0.02,GES,0.15
+8,fox_leather,Fuchs-Leder,Leder,2,2,2,0,0,0,0.05,0,0,0.04,0,0,0,0,0,0.04,P,0.05
+9,leather_scraps,Lederfetzen,Leder,1,81,3,0,0,0,0.01,0,0,0.01,0,0,0,0,0,0.01,,0

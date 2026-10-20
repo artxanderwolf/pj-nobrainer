@@ -1,0 +1,5 @@
+id,display_name,role,distance,max_hp,max_energy,armor,dodge,strength_factor,precision,threat,crit_chance,crit_damage,hp_regen_per_min,energy_regen_per_min,experience_factor,life_steal,penetration
+recruit,Rekrut,Basis,2,30,100,2,0.10,1.00,1.00,50,0.05,1.50,0,5,1.00,0,0
+fighter,Kämpfer,Nahkampf,1,35,100,3,0.08,1.10,0.95,100,0.04,1.60,0,5,1.00,0,0
+archer,Bogner,Fernkampf,3,26,100,1,0.15,0.95,1.15,33,0.10,1.50,0,5,1.00,0,0
+scholar,Gelehrter,Magie,4,22,100,0,0.05,1.15,1.10,25,0.05,1.75,0,5,1.00,0,0

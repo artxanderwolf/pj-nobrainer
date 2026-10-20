@@ -1,0 +1,8 @@
+id,display_name,one_handed,time_factor,base_damage,base_speed,base_hit_chance,base_penetration,mod_hp,mod_energy,mod_armor,mod_dodge,mod_strength_factor,mod_precision,mod_threat,mod_crit_chance,mod_crit_damage,mod_hp_regen_per_min,mod_energy_regen_per_min,mod_experience_factor,mod_life_steal,mod_penetration
+dagger,Dolch,true,0.5,6,1.4,0.60,0,0,0,0,0.02,0,0.05,0,0.03,0,0,0,0,0,0
+sword,1H Schwert,true,1.0,10,1.0,0.55,0,0,0,1,0,0.05,0,0,0,0.10,0,0,0,0,0
+axe1h,1H Axt,true,1.0,12,0.85,0.52,0,0,0,0,0,0.08,0,0,0,0.15,0,0,0,0,0.05
+sword2h,2H Schwert,false,1.75,16,0.80,0.55,0,0,0,2,0,0.10,0,0,0,0.15,0,0,0,0,0
+axe2h,2H Axt,false,1.75,20,0.70,0.50,0,0,0,0,0,0.15,-0.05,0,0,0.25,0,0,0,0,0.10
+bow,Bogen,false,2.0,11,0.90,0.65,0,0,0,0,0.02,0,0.10,0,0.08,0,0,0,0,0
+staff,Stab,false,1.10,10,1.00,0.60,0,0,10,0,0,0.05,0.10,0,0,0.15,0,0,0,0,0
