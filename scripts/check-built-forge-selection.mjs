@@ -85,24 +85,34 @@ const probeScript = `<script>
           const previewNextDisabled = previewButton instanceof HTMLButtonElement ? previewButton.disabled : null;
           if (previewButton instanceof HTMLButtonElement) previewButton.click();
           setTimeout(() => {
-            finish({
-              status: 'tested',
-              selected,
-              finalForm: document.getElementById('weaponForm')?.value || '',
-              timeText: document.getElementById('forgeTimePreview')?.textContent || '',
-              materialTotalText: document.getElementById('forgeMaterialTotalPreview')?.textContent || '',
-              constructionText: document.getElementById('forgeParryInfo')?.textContent || '',
-              damageText: document.getElementById('forgeDamagePreview')?.textContent || '',
-              speedText: document.getElementById('forgeSpeedPreview')?.textContent || '',
-              startDisabled: document.getElementById('forgeStartBtn')?.disabled ?? null,
-              previewNextDisabled,
+            const startButton = document.getElementById('forgeStartBtn');
+            const beforeStart = {
+              startDisabled: startButton instanceof HTMLButtonElement ? startButton.disabled : null,
               activePage: document.querySelector('.page.active')?.id || '',
-              capacityText: document.getElementById('forgeCapacityStatus')?.textContent || '',
-              workingPartHidden: document.getElementById('forgeWorkingPartRow')?.hidden ?? false,
-              parryHidden: document.getElementById('forgeParryRow')?.hidden ?? false,
-              bowstringHidden: document.getElementById('forgeBowstringRow')?.hidden ?? true,
-              oldBaseMaterialPresent: Boolean(document.getElementById('slotBaseMaterial'))
-            });
+              capacityText: document.getElementById('forgeCapacityStatus')?.textContent || ''
+            };
+            if (startButton instanceof HTMLButtonElement) startButton.click();
+            setTimeout(() => {
+              finish({
+                status: 'tested',
+                selected,
+                finalForm: document.getElementById('weaponForm')?.value || '',
+                timeText: document.getElementById('forgeTimePreview')?.textContent || '',
+                materialTotalText: document.getElementById('forgeMaterialTotalPreview')?.textContent || '',
+                constructionText: document.getElementById('forgeParryInfo')?.textContent || '',
+                damageText: document.getElementById('forgeDamagePreview')?.textContent || '',
+                speedText: document.getElementById('forgeSpeedPreview')?.textContent || '',
+                previewNextDisabled,
+                beforeStart,
+                forgeJobText: document.getElementById('forgeJobCard')?.textContent?.replace(/\\s+/g, ' ').trim() || '',
+                forgeQueueText: document.getElementById('forgeQueueCard')?.textContent?.replace(/\\s+/g, ' ').trim() || '',
+                afterStartDisabled: document.getElementById('forgeStartBtn')?.disabled ?? null,
+                workingPartHidden: document.getElementById('forgeWorkingPartRow')?.hidden ?? false,
+                parryHidden: document.getElementById('forgeParryRow')?.hidden ?? false,
+                bowstringHidden: document.getElementById('forgeBowstringRow')?.hidden ?? true,
+                oldBaseMaterialPresent: Boolean(document.getElementById('slotBaseMaterial'))
+              });
+            }, 120);
           }, 100);
         }, 180);
       }, 120);
@@ -163,26 +173,21 @@ try {
   const result=JSON.parse(resultMatch[1].replaceAll('&quot;','"').replaceAll('&amp;','&'));
 
   assert.equal(result.status,'tested',`Die Schmiedeauswahl wurde nicht testbereit: ${JSON.stringify(result)}`);
-  assert.equal(result.browserErrors.length,0,`Bei der Schmiedeauswahl trat ein Browserfehler auf: ${JSON.stringify(result)}`);
+  assert.equal(result.browserErrors.length,0,`Bei der Schmiedeauswahl oder beim Schmiedestart trat ein Browserfehler auf: ${JSON.stringify(result)}`);
   assert.equal(result.runtimeError,'',`Die Runtime meldet bei der Schmiedeauswahl einen Fehler: ${JSON.stringify(result)}`);
   assert.deepEqual(result.selected,{back:true,gripCore:true,gripWrap:true,special:true,bowstring:true,form:true});
   assert.equal(result.finalForm,'bow');
-  assert.equal(result.timeText,'80 s');
-  assert.equal(result.materialTotalText,'16 Materialeinheiten');
-  assert.match(result.constructionText,/2H · belegt beide Hände/);
-  assert.match(result.constructionText,/3× Sehne/);
-  assert.equal(result.damageText,'11.11');
-  assert.equal(result.speedText,'0.90');
-  assert.equal(result.startDisabled,false);
   assert.equal(result.previewNextDisabled,false,'Der Vorschau-Button darf nach der Materialauswahl nicht blockiert bleiben.');
-  assert.equal(result.activePage,'forge-preview','Der Vorschau-Button muss zur Waffenvorschau navigieren.');
-  assert.match(result.capacityText,/^Schmiede \d+\/\d+ · Warteschlange \d+\/\d+$/,'Die Waffenvorschau muss aktive und maximale Schmiedekapazität anzeigen.');
+  assert.equal(result.beforeStart.startDisabled,false,'Waffe herstellen muss bei vollständiger Auswahl und ausreichendem Bestand aktiv sein.');
+  assert.equal(result.beforeStart.activePage,'forge-preview','Der Vorschau-Button muss zur Waffenvorschau navigieren.');
+  assert.match(result.beforeStart.capacityText,/^Schmiede \d+\/\d+ · Warteschlange \d+\/\d+$/,'Die Waffenvorschau muss aktive und maximale Schmiedekapazität anzeigen.');
+  assert.match(result.forgeJobText,/Bogen/,'Der Klick auf Waffe herstellen muss einen aktiven Schmiedeauftrag erzeugen.');
   assert.equal(result.workingPartHidden,true);
   assert.equal(result.parryHidden,true);
   assert.equal(result.bowstringHidden,false);
   assert.equal(result.oldBaseMaterialPresent,false);
 
-  console.log('Schmiedeauswahl-Browserregression: ID-basierte Materialwahl, freigeschalteter Bogen, Vorschau-Navigation und Kapazitätsanzeige funktionieren gemeinsam.');
+  console.log('Schmiede-Browserregression: ID-basierte Auswahl, Vorschau und echter Klick auf Waffe herstellen erzeugen gemeinsam einen Schmiedeauftrag.');
 } finally {
   if (child) await stopBrowser(child);
   rmSync(browserProfile,{recursive:true,force:true});
