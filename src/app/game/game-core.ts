@@ -1,7 +1,9 @@
 import * as baseline from './game-core-v01310-baseline.ts';
 import type {
+  CharacterModifierKey,
   CharacterStatModifiers,
   MaterialDefinition,
+  WeaponPartRequirement,
   WeaponSlot as BaselineWeaponSlot,
   WeaponStats
 } from './game-core-v01310-baseline.ts';
@@ -41,59 +43,32 @@ export interface MaterialReference {
 }
 
 export interface WeaponSlot extends BaselineWeaponSlot {
-  /** Kanonische Materialreferenz. material bleibt nur für Anzeige und Altstände erhalten. */
+  /** Kanonische Materialreferenz. material ist nur eine temporäre Legacy-Projektion. */
   materialId?: number | null;
 }
 
 const materialReferences: MaterialReference[] = GENERATED_MATERIAL_KEYS.map(key => {
   const definition = baseline.MATERIALS[key.displayName];
-  if (!definition || definition.materialId !== key.materialId) {
-    throw new Error(`Ungültige Materialreferenz: ID ${key.materialId} (${key.displayName}).`);
-  }
-  return {
-    materialId: key.materialId,
-    technicalKey: key.technicalKey,
-    displayName: key.displayName,
-    definition
-  };
+  if (!definition || definition.materialId !== key.materialId) throw new Error(`Ungültige Materialreferenz: ID ${key.materialId} (${key.displayName}).`);
+  return { materialId: key.materialId, technicalKey: key.technicalKey, displayName: key.displayName, definition };
 });
 
-export const MATERIAL_REFERENCES = Object.freeze(
-  [...materialReferences].sort((a, b) => a.materialId - b.materialId)
-) as readonly MaterialReference[];
-
-export const MATERIAL_REFERENCES_BY_ID = Object.freeze(
-  Object.fromEntries(MATERIAL_REFERENCES.map(reference => [reference.materialId, reference]))
-) as Readonly<Record<number, MaterialReference>>;
-
-export const MATERIAL_IDS_BY_NAME = Object.freeze(
-  Object.fromEntries(MATERIAL_REFERENCES.map(reference => [reference.displayName, reference.materialId]))
-) as Readonly<Record<string, number>>;
+export const MATERIAL_REFERENCES = Object.freeze([...materialReferences].sort((a, b) => a.materialId - b.materialId)) as readonly MaterialReference[];
+export const MATERIAL_REFERENCES_BY_ID = Object.freeze(Object.fromEntries(MATERIAL_REFERENCES.map(reference => [reference.materialId, reference]))) as Readonly<Record<number, MaterialReference>>;
+export const MATERIAL_IDS_BY_NAME = Object.freeze(Object.fromEntries(MATERIAL_REFERENCES.map(reference => [reference.displayName, reference.materialId]))) as Readonly<Record<string, number>>;
 
 export function getMaterialReferenceById(materialId: number | null | undefined): MaterialReference | null {
   const resolved = Number(materialId);
   if (!Number.isInteger(resolved)) return null;
   return MATERIAL_REFERENCES_BY_ID[resolved] ?? null;
 }
-
-export function getMaterialDefinitionById(materialId: number | null | undefined): MaterialDefinition | null {
-  return getMaterialReferenceById(materialId)?.definition ?? null;
-}
-
+export function getMaterialDefinitionById(materialId: number | null | undefined): MaterialDefinition | null { return getMaterialReferenceById(materialId)?.definition ?? null; }
 export function getMaterialById(materialId: number | null | undefined): [string, MaterialDefinition] | null {
-  const reference = getMaterialReferenceById(materialId);
-  return reference ? [reference.displayName, reference.definition] : null;
+  const reference = getMaterialReferenceById(materialId); return reference ? [reference.displayName, reference.definition] : null;
 }
-
 /** Ausschließlich für Save-/Legacy-Migration und Kompatibilitätsgrenzen. */
-export function getMaterialIdByName(displayName: string | null | undefined): number | null {
-  if (!displayName) return null;
-  return MATERIAL_IDS_BY_NAME[String(displayName)] ?? null;
-}
-
-export function getMaterialDisplayNameById(materialId: number | null | undefined): string | null {
-  return getMaterialReferenceById(materialId)?.displayName ?? null;
-}
+export function getMaterialIdByName(displayName: string | null | undefined): number | null { return displayName ? MATERIAL_IDS_BY_NAME[String(displayName)] ?? null : null; }
+export function getMaterialDisplayNameById(materialId: number | null | undefined): string | null { return getMaterialReferenceById(materialId)?.displayName ?? null; }
 
 export function reinforcementEffectTextById(materialId: number | null | undefined): string {
   const effect = getMaterialDefinitionById(materialId)?.specialEffect;
@@ -102,81 +77,95 @@ export function reinforcementEffectTextById(materialId: number | null | undefine
   if (effect.stat === 'DS') return `${effect.amount >= 0 ? '+' : '−'}${percent} Prozentpunkte DS`;
   return `${effect.amount >= 0 ? '+' : '−'}${percent} % ${effect.stat}`;
 }
+/** Legacy-Grenze: sichtbaren Namen einmalig auf ID auflösen. */
+export function reinforcementEffectText(materialName: string | null | undefined): string { return reinforcementEffectTextById(getMaterialIdByName(materialName)); }
 
-export function getDungeonMaterialDropWeightById(
-  dungeonId: number,
-  materialId: number | null | undefined
-): number | null {
+export function getDungeonMaterialDropWeightById(dungeonId: number, materialId: number | null | undefined): number | null {
   const reference = getMaterialReferenceById(materialId);
   const dungeon = baseline.DUNGEON_ENEMY_DEFINITIONS[Number(dungeonId)];
   if (!reference || !dungeon) return null;
-  const used = Object.values(dungeon).some(enemy => enemy.lootMaterialIds.includes(reference.materialId));
-  return used ? reference.definition.dungeonDropWeight : null;
+  return Object.values(dungeon).some(enemy => enemy.lootMaterialIds.includes(reference.materialId)) ? reference.definition.dungeonDropWeight : null;
 }
 
-function normalizeWeaponMaterialReference(slot: BaselineWeaponSlot & { materialId?: number | null }): WeaponSlot {
+function resolveSlotMaterialId(slot: BaselineWeaponSlot & { materialId?: number | null }): number | null {
   const referenceById = getMaterialReferenceById(slot.materialId);
-  const materialName = typeof slot.material === 'string' && slot.material ? slot.material : null;
-  const materialIdByName = getMaterialIdByName(materialName);
-
-  if (referenceById && materialIdByName !== null && materialIdByName !== referenceById.materialId) {
-    throw new Error(
-      `Widersprüchliche Materialreferenz an Waffenslot ${String(slot.slot ?? '?')}: ` +
-      `${materialName} verweist auf ID ${materialIdByName}, der Slot auf ID ${referenceById.materialId}.`
-    );
+  const legacyName = typeof slot.material === 'string' && slot.material ? slot.material : null;
+  const legacyId = getMaterialIdByName(legacyName);
+  if (referenceById && legacyId !== null && legacyId !== referenceById.materialId) {
+    throw new Error(`Widersprüchliche Materialreferenz an Waffenslot ${String(slot.slot ?? '?')}: ${legacyName} verweist auf ID ${legacyId}, der Slot auf ID ${referenceById.materialId}.`);
   }
-
-  const reference = referenceById ?? getMaterialReferenceById(materialIdByName);
-  if (!reference) return { ...slot, materialId: null };
-  return {
-    ...slot,
-    materialId: reference.materialId,
-    material: reference.displayName
-  };
+  return referenceById?.materialId ?? legacyId;
 }
 
-/**
- * Normalisiert alte Slot-Bezeichner und ergänzt stabile Material-IDs.
- * Bei bekannten Materialien ist materialId die kanonische Referenz; material wird
- * nur als lesbarer Anzeige-/Kompatibilitätswert mitgeführt.
- */
+/** Legacy-kompatible Normalisierung: materialId ist kanonisch, material nur lesbare Projektion. */
 export function normalizeWeaponSlots(slots: readonly WeaponSlot[] | null | undefined): WeaponSlot[] {
-  return baseline
-    .normalizeWeaponSlots(slots as readonly BaselineWeaponSlot[] | null | undefined)
-    .map(slot => normalizeWeaponMaterialReference(slot));
+  return baseline.normalizeWeaponSlots(slots as readonly BaselineWeaponSlot[] | null | undefined).map(slot => {
+    const materialId = resolveSlotMaterialId(slot);
+    const reference = getMaterialReferenceById(materialId);
+    return { ...slot, materialId, material: reference?.displayName ?? null };
+  });
 }
 
-export function isWeaponSelectionComplete(
-  slots: readonly WeaponSlot[] | null | undefined,
-  weaponForm: string
-): boolean {
+/** Persistenzform für Waffen und Schmiedeaufträge: ausschließlich Slot-ID + Material-ID. */
+export function canonicalWeaponSlots(slots: readonly WeaponSlot[] | null | undefined): WeaponSlot[] {
+  return normalizeWeaponSlots(slots).map(slot => ({ slot: slot.slot, materialId: slot.materialId ?? null }));
+}
+
+export function isWeaponSelectionComplete(slots: readonly WeaponSlot[] | null | undefined, weaponForm: string): boolean {
   const selected = new Map(normalizeWeaponSlots(slots).map(entry => [entry.slot, entry.materialId]));
   return baseline.getWeaponCraftingSlots(weaponForm).every(slot => Number.isInteger(Number(selected.get(slot))));
 }
-
 export function rarityFactor(slots: readonly WeaponSlot[] | null | undefined): number {
-  const rarities = normalizeWeaponSlots(slots)
-    .filter(entry => entry.slot !== 'baseMaterial')
-    .map(entry => getMaterialDefinitionById(entry.materialId)?.rarity)
-    .filter((value): value is number => Number.isFinite(value));
+  const rarities = normalizeWeaponSlots(slots).filter(entry => entry.slot !== 'baseMaterial').map(entry => getMaterialDefinitionById(entry.materialId)?.rarity).filter((value): value is number => Number.isFinite(value));
   return rarities.length ? Math.min(...rarities) : 1;
 }
 
-export function calculateWeaponCharacterModifiers(
-  slots: readonly WeaponSlot[] | null | undefined,
-  weaponForm: string
-): CharacterStatModifiers {
-  // Der eingefrorene v0.13.10-Balancekern erhält nur noch eine aus den IDs
-  // erzeugte Namensprojektion. Die technische Identität bleibt materialId.
-  return baseline.calculateWeaponCharacterModifiers(normalizeWeaponSlots(slots), weaponForm);
+function createModifiers(overrides: Partial<CharacterStatModifiers> = {}): CharacterStatModifiers { return baseline.createStatModifiers(overrides); }
+function addModifiers(target: CharacterStatModifiers, source: Partial<CharacterStatModifiers>): void { (Object.keys(target) as CharacterModifierKey[]).forEach(key => { target[key] += Number(source[key]) || 0; }); }
+function selectedMaterial(slots: readonly WeaponSlot[], slotId: string): MaterialDefinition | null { return getMaterialDefinitionById(slots.find(entry => entry.slot === slotId)?.materialId); }
+function partModifiers(part: WeaponPartRequirement, material: MaterialDefinition | null): CharacterStatModifiers {
+  const modifiers = createModifiers(); if (!material) return modifiers;
+  for (const key of part.statKeys) modifiers[key] += Number(material.stats[key]) || 0;
+  if (part.id === 'special' && material.specialEffect) {
+    if (material.specialEffect.stat === 'P') modifiers.precision += material.specialEffect.amount;
+    if (material.specialEffect.stat === 'DS') modifiers.penetration += material.specialEffect.amount;
+  }
+  return modifiers;
 }
 
-export function calculateWeaponStats(
-  slots: readonly WeaponSlot[] | null | undefined,
-  weaponForm: string
-): WeaponStats {
-  return baseline.calculateWeaponStats(normalizeWeaponSlots(slots), weaponForm);
+/** Waffenmodifikatoren werden ausschließlich über materialId aufgelöst. */
+export function calculateWeaponCharacterModifiers(slots: readonly WeaponSlot[] | null | undefined, weaponForm: string): CharacterStatModifiers {
+  const normalized = normalizeWeaponSlots(slots); const form = baseline.getWeaponForm(weaponForm); const modifiers = createModifiers(form.characterModifiers);
+  for (const part of form.parts) addModifiers(modifiers, partModifiers(part, selectedMaterial(normalized, part.materialSlot)));
+  modifiers.threat = 0; return modifiers;
 }
+
+/** Waffenwerte sind ID-nativ; Materialnamen werden nicht in den Stat-Snapshot geschrieben. */
+export function calculateWeaponStats(slots: readonly WeaponSlot[] | null | undefined, weaponForm: string): WeaponStats {
+  const normalized = normalizeWeaponSlots(slots); const form = baseline.getWeaponForm(weaponForm); const modifiers = calculateWeaponCharacterModifiers(normalized, weaponForm);
+  const workingPart = selectedMaterial(normalized, 'workingPart'); const specialEffect = selectedMaterial(normalized, 'special')?.specialEffect ?? null;
+  const specialSpeedFactor = specialEffect?.stat === 'GES' ? 1 + specialEffect.amount : 1;
+  const reinforcementHitChanceAdd = specialEffect?.stat === 'P' ? specialEffect.amount : 0;
+  const reinforcementPenetrationAdd = specialEffect?.stat === 'DS' ? specialEffect.amount : 0;
+  const damagePerHit = form.baseDamage * Math.max(0, 1 + modifiers.strengthFactor);
+  const attackSpeed = form.baseSpeed * Math.max(0.01, specialSpeedFactor);
+  const hitChance = Math.max(0, Math.min(1, form.baseHitChance * Math.max(0, 1 + modifiers.precision)));
+  const penetration = Math.max(0, Math.min(1, form.basePenetration + modifiers.penetration));
+  return {
+    weaponBaseDamage: form.baseDamage, weaponBaseSpeed: form.baseSpeed, weaponBaseHitChance: form.baseHitChance, weaponBasePenetration: form.basePenetration,
+    characterModifiers: modifiers, specialSpeedFactor, baseDamage: form.baseDamage, baseSpeed: form.baseSpeed,
+    bladeMultiplier: 1 + (workingPart?.stats.strengthFactor ?? 0), gripMultiplier: 1, specialMaterial: null, reinforcementMaterial: null,
+    reinforcementSpeedFactor: specialSpeedFactor, reinforcementHitChanceAdd, reinforcementPenetrationAdd, hitChance, penetration,
+    damagePerHit, attackSpeed, expectedRaw: damagePerHit * attackSpeed * hitChance,
+    materialBaseDamage: form.baseDamage, materialBaseSpeed: form.baseSpeed, formDamageFactor: 1, formSpeedFactor: 1
+  };
+}
+
+export const GAME_CORE_BRIDGE = {
+  ...baseline.GAME_CORE_BRIDGE,
+  getMaterialById, normalizeWeaponSlots, canonicalWeaponSlots, isWeaponSelectionComplete, rarityFactor,
+  reinforcementEffectText, reinforcementEffectTextById, calculateWeaponCharacterModifiers, calculateWeaponStats
+};
 
 export { DATA_META, GENERATED_MATERIAL_KEYS as MATERIAL_KEYS };
 export * from './game-core-v01310-baseline.ts';

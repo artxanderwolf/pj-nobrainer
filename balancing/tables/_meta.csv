@@ -1,2 +1,2 @@
 schema_version,content_revision,baseline_version,description
-1,1,0.13.10,NoBrainer Data Architecture v1 – Phase 1: tabellarische Quelle; bestehende IDs und Runtime-Verträge bleiben erhalten.
+1,2,0.13.10,NoBrainer Data Architecture v1 – Materialfachlogik ID-nativ; sichtbare Namen sind Präsentationsdaten und Legacy-Migrationsquelle.

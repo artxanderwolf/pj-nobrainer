@@ -1,27 +1,29 @@
 # NoBrainer Data Architecture v1
 
-Die kanonischen Balance- und Contentdaten liegen in `balancing/tables/*.csv`. Die CSV-Dateien sind bewusst Excel-kompatibel und Git-freundlich: Sie können in Excel bearbeitet werden, benötigen aber keine Excel-Bibliothek in Web- oder Android-Builds.
+Die kanonischen Balance- und Contentdaten liegen in `balancing/tables/*.csv`. Die CSV-Dateien sind Excel-kompatibel und Git-freundlich: Sie können in Excel bearbeitet werden, benötigen aber keine Excel-Bibliothek in Web- oder Android-Builds.
 
 ## Datenfluss
 
-`balancing/tables/*.csv` → Validierung → generierte TypeScript-Daten → bestehende Game-Cores → Angular/Legacy-Kompatibilität.
+`balancing/tables/*.csv` → Validierung → generierte TypeScript-Daten → Game-Cores → Angular/Legacy-Kompatibilität.
 
-`npm start` und der vorhandene Build-/Check-Ablauf führen `scripts/prepare-legacy-runtime.mjs` aus. Dabei werden die Tabellen zuerst validiert und `src/app/game/data/generated/*.generated.ts` neu erzeugt. Ungültige Referenzen, doppelte IDs oder Werte außerhalb unterstützter Bereiche stoppen den Vorgang mit einer Fehlermeldung.
+`npm start` und der Build-/Check-Ablauf führen `scripts/prepare-legacy-runtime.mjs` aus. Dabei werden die Tabellen validiert und `src/app/game/data/generated/*.generated.ts` neu erzeugt. Ungültige Referenzen, doppelte IDs oder Werte außerhalb unterstützter Bereiche stoppen den Vorgang.
 
 Manuell kann die Erzeugung mit `node scripts/data/build-game-data.mjs` gestartet werden; eine reine Prüfung ist mit `node scripts/data/validate-game-data.mjs` möglich.
 
 ## IDs und Namen
 
-Bestehende IDs aus v0.13.10 bleiben in Phase 1 erhalten. Material-IDs `1..9`, Klassen-IDs wie `fighter` und Waffenform-IDs wie `sword` werden nicht neu vergeben. Materialien besitzen zusätzlich einen stabilen `technical_key`, damit sichtbarer Name und technische Identität künftig getrennt werden können.
+Bestehende stabile IDs bleiben erhalten: Material-IDs `1..9`, Klassen-IDs wie `fighter` und Waffenform-IDs wie `sword`. Materialien besitzen zusätzlich einen stabilen `technical_key`. Sichtbare Namen sind Präsentationsdaten und keine technische Identität.
 
-Der sichtbare `display_name` darf erst dann unabhängig umbenannt werden, wenn die noch vorhandenen Namensreferenzen in Inventar, Schmiede, Markt, Waffen und Savegame schrittweise auf IDs umgestellt wurden. Diese vollständige ID-Migration ist ausdrücklich **nicht** Teil von Phase 1.
+Seit v0.13.14 arbeitet die aktive Material-Fachlogik ID-nativ: Lager und Dungeon-Loot sind ID-keyed, Dungeon-Drops referenzieren `materialId`, Schmiede und Markt lösen Materialien über `materialId` auf, und Waffenberechnungen lesen Materialdefinitionen direkt über IDs. Materialnamen werden nur an Präsentations- und Altstand-Kompatibilitätsgrenzen aufgelöst.
 
-## Phase 1
+Alte Saves mit Namensreferenzen bleiben ladbar. Beim Laden werden bekannte Materialnamen auf die bestehenden stabilen IDs migriert und der normalisierte Zustand wieder gespeichert. IDs werden niemals wegen einer Umbenennung des sichtbaren Namens neu vergeben.
 
-Phase 1 ändert keine Gameplayregel und kein Save-Format. Die Werte aus v0.13.10 wurden 1:1 in Tabellen übertragen. `game-core.ts` und `economy-core.ts` verwenden vorübergehend die v0.13.10-Baseline-Dateien als Logik-/Kompatibilitätsschicht und überschreiben deren Datenobjekte beim Modulstart mit den generierten Tabellenwerten. Dadurch bleiben bestehende Imports, Funktionen und Legacy-Bridges unverändert nutzbar.
+## Persistenz
 
-Die Baseline-Dateien sind ein Übergangsschutz und keine zweite zu pflegende Balancequelle. Balanceänderungen gehören ausschließlich in `balancing/tables/`; die generierten Dateien werden nicht manuell bearbeitet.
+Kanonische Materialbestände verwenden `String(materialId)` als JSON-Schlüssel und tragen die `materialId` zusätzlich im Eintrag. Waffenslots und Schmiede-/Marktreferenzen besitzen `materialId` als technische Referenz. Sichtbare Namen dürfen als Anzeige-Snapshot vorkommen, sind aber nicht maßgeblich für Identität, Berechnung oder Zuordnung.
 
-## Nächste Phase
+## Balancequelle
 
-Nach erfolgreichem Regressionstest werden verbliebene Namensreferenzen systemweise auf IDs migriert. Erst danach können die temporären v0.13.10-Baseline-Datendefinitionen vollständig entfernt werden. Savegame-Migrationen erfolgen separat und nicht zusammen mit Balanceänderungen.
+Die Werte aus v0.13.10 wurden ursprünglich 1:1 in Tabellen übertragen. Die v0.13.10-Baseline-Dateien dienen weiterhin als eingefrorene Logik-/Kompatibilitätsschicht, sind aber keine zweite Balancequelle. Balanceänderungen gehören ausschließlich in `balancing/tables/`; generierte Dateien werden nicht manuell bearbeitet.
+
+Die vollständige Entfernung der verbleibenden Legacy-Runtime ist ein eigener Angular-Cutover und unabhängig von der ID-Architektur. Sie soll nicht mit Balanceänderungen vermischt werden.
