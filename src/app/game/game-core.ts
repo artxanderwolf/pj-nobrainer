@@ -1,7 +1,9 @@
 import * as baseline from './game-core-v01310-baseline.ts';
 import type {
+  CharacterModifierKey,
   CharacterStatModifiers,
   MaterialDefinition,
+  WeaponPartRequirement,
   WeaponSlot as BaselineWeaponSlot,
   WeaponStats
 } from './game-core-v01310-baseline.ts';
@@ -41,7 +43,7 @@ export interface MaterialReference {
 }
 
 export interface WeaponSlot extends BaselineWeaponSlot {
-  /** Kanonische Materialreferenz. material bleibt nur für Anzeige und Altstände erhalten. */
+  /** Kanonische Materialreferenz. material wird nur beim Einlesen alter Saves akzeptiert. */
   materialId?: number | null;
 }
 
@@ -50,25 +52,12 @@ const materialReferences: MaterialReference[] = GENERATED_MATERIAL_KEYS.map(key 
   if (!definition || definition.materialId !== key.materialId) {
     throw new Error(`Ungültige Materialreferenz: ID ${key.materialId} (${key.displayName}).`);
   }
-  return {
-    materialId: key.materialId,
-    technicalKey: key.technicalKey,
-    displayName: key.displayName,
-    definition
-  };
+  return { materialId: key.materialId, technicalKey: key.technicalKey, displayName: key.displayName, definition };
 });
 
-export const MATERIAL_REFERENCES = Object.freeze(
-  [...materialReferences].sort((a, b) => a.materialId - b.materialId)
-) as readonly MaterialReference[];
-
-export const MATERIAL_REFERENCES_BY_ID = Object.freeze(
-  Object.fromEntries(MATERIAL_REFERENCES.map(reference => [reference.materialId, reference]))
-) as Readonly<Record<number, MaterialReference>>;
-
-export const MATERIAL_IDS_BY_NAME = Object.freeze(
-  Object.fromEntries(MATERIAL_REFERENCES.map(reference => [reference.displayName, reference.materialId]))
-) as Readonly<Record<string, number>>;
+export const MATERIAL_REFERENCES = Object.freeze([...materialReferences].sort((a, b) => a.materialId - b.materialId)) as readonly MaterialReference[];
+export const MATERIAL_REFERENCES_BY_ID = Object.freeze(Object.fromEntries(MATERIAL_REFERENCES.map(reference => [reference.materialId, reference]))) as Readonly<Record<number, MaterialReference>>;
+export const MATERIAL_IDS_BY_NAME = Object.freeze(Object.fromEntries(MATERIAL_REFERENCES.map(reference => [reference.displayName, reference.materialId]))) as Readonly<Record<string, number>>;
 
 export function getMaterialReferenceById(materialId: number | null | undefined): MaterialReference | null {
   const resolved = Number(materialId);
@@ -103,10 +92,12 @@ export function reinforcementEffectTextById(materialId: number | null | undefine
   return `${effect.amount >= 0 ? '+' : '−'}${percent} % ${effect.stat}`;
 }
 
-export function getDungeonMaterialDropWeightById(
-  dungeonId: number,
-  materialId: number | null | undefined
-): number | null {
+/** Legacy-Grenze: sichtbaren Namen einmalig auf ID auflösen, danach ID-Pfad verwenden. */
+export function reinforcementEffectText(materialName: string | null | undefined): string {
+  return reinforcementEffectTextById(getMaterialIdByName(materialName));
+}
+
+export function getDungeonMaterialDropWeightById(dungeonId: number, materialId: number | null | undefined): number | null {
   const reference = getMaterialReferenceById(materialId);
   const dungeon = baseline.DUNGEON_ENEMY_DEFINITIONS[Number(dungeonId)];
   if (!reference || !dungeon) return null;
@@ -114,42 +105,27 @@ export function getDungeonMaterialDropWeightById(
   return used ? reference.definition.dungeonDropWeight : null;
 }
 
-function normalizeWeaponMaterialReference(slot: BaselineWeaponSlot & { materialId?: number | null }): WeaponSlot {
+function resolveSlotMaterialId(slot: BaselineWeaponSlot & { materialId?: number | null }): number | null {
   const referenceById = getMaterialReferenceById(slot.materialId);
-  const materialName = typeof slot.material === 'string' && slot.material ? slot.material : null;
-  const materialIdByName = getMaterialIdByName(materialName);
-
-  if (referenceById && materialIdByName !== null && materialIdByName !== referenceById.materialId) {
-    throw new Error(
-      `Widersprüchliche Materialreferenz an Waffenslot ${String(slot.slot ?? '?')}: ` +
-      `${materialName} verweist auf ID ${materialIdByName}, der Slot auf ID ${referenceById.materialId}.`
-    );
+  const legacyName = typeof slot.material === 'string' && slot.material ? slot.material : null;
+  const legacyId = getMaterialIdByName(legacyName);
+  if (referenceById && legacyId !== null && legacyId !== referenceById.materialId) {
+    throw new Error(`Widersprüchliche Materialreferenz an Waffenslot ${String(slot.slot ?? '?')}: ${legacyName} verweist auf ID ${legacyId}, der Slot auf ID ${referenceById.materialId}.`);
   }
-
-  const reference = referenceById ?? getMaterialReferenceById(materialIdByName);
-  if (!reference) return { ...slot, materialId: null };
-  return {
-    ...slot,
-    materialId: reference.materialId,
-    material: reference.displayName
-  };
+  return referenceById?.materialId ?? legacyId;
 }
 
-/**
- * Normalisiert alte Slot-Bezeichner und ergänzt stabile Material-IDs.
- * Bei bekannten Materialien ist materialId die kanonische Referenz; material wird
- * nur als lesbarer Anzeige-/Kompatibilitätswert mitgeführt.
- */
+/** Normalisiert alte Slotnamen und migriert Materialnamen auf die kanonische materialId. */
 export function normalizeWeaponSlots(slots: readonly WeaponSlot[] | null | undefined): WeaponSlot[] {
-  return baseline
-    .normalizeWeaponSlots(slots as readonly BaselineWeaponSlot[] | null | undefined)
-    .map(slot => normalizeWeaponMaterialReference(slot));
+  return baseline.normalizeWeaponSlots(slots as readonly BaselineWeaponSlot[] | null | undefined).map(slot => {
+    const materialId = resolveSlotMaterialId(slot);
+    const normalized: WeaponSlot = { ...slot, materialId };
+    delete normalized.material;
+    return normalized;
+  });
 }
 
-export function isWeaponSelectionComplete(
-  slots: readonly WeaponSlot[] | null | undefined,
-  weaponForm: string
-): boolean {
+export function isWeaponSelectionComplete(slots: readonly WeaponSlot[] | null | undefined, weaponForm: string): boolean {
   const selected = new Map(normalizeWeaponSlots(slots).map(entry => [entry.slot, entry.materialId]));
   return baseline.getWeaponCraftingSlots(weaponForm).every(slot => Number.isInteger(Number(selected.get(slot))));
 }
@@ -162,21 +138,93 @@ export function rarityFactor(slots: readonly WeaponSlot[] | null | undefined): n
   return rarities.length ? Math.min(...rarities) : 1;
 }
 
-export function calculateWeaponCharacterModifiers(
-  slots: readonly WeaponSlot[] | null | undefined,
-  weaponForm: string
-): CharacterStatModifiers {
-  // Der eingefrorene v0.13.10-Balancekern erhält nur noch eine aus den IDs
-  // erzeugte Namensprojektion. Die technische Identität bleibt materialId.
-  return baseline.calculateWeaponCharacterModifiers(normalizeWeaponSlots(slots), weaponForm);
+function createModifiers(overrides: Partial<CharacterStatModifiers> = {}): CharacterStatModifiers {
+  return baseline.createStatModifiers(overrides);
 }
 
-export function calculateWeaponStats(
-  slots: readonly WeaponSlot[] | null | undefined,
-  weaponForm: string
-): WeaponStats {
-  return baseline.calculateWeaponStats(normalizeWeaponSlots(slots), weaponForm);
+function addModifiers(target: CharacterStatModifiers, source: Partial<CharacterStatModifiers>): void {
+  (Object.keys(target) as CharacterModifierKey[]).forEach(key => { target[key] += Number(source[key]) || 0; });
 }
+
+function selectedMaterial(slots: readonly WeaponSlot[], slotId: string): MaterialDefinition | null {
+  return getMaterialDefinitionById(slots.find(entry => entry.slot === slotId)?.materialId);
+}
+
+function partModifiers(part: WeaponPartRequirement, material: MaterialDefinition | null): CharacterStatModifiers {
+  const modifiers = createModifiers();
+  if (!material) return modifiers;
+  for (const key of part.statKeys) modifiers[key] += Number(material.stats[key]) || 0;
+  if (part.id === 'special' && material.specialEffect) {
+    if (material.specialEffect.stat === 'P') modifiers.precision += material.specialEffect.amount;
+    if (material.specialEffect.stat === 'DS') modifiers.penetration += material.specialEffect.amount;
+  }
+  return modifiers;
+}
+
+/** Waffenmodifikatoren werden ausschließlich über materialId aufgelöst. */
+export function calculateWeaponCharacterModifiers(slots: readonly WeaponSlot[] | null | undefined, weaponForm: string): CharacterStatModifiers {
+  const normalized = normalizeWeaponSlots(slots);
+  const form = baseline.getWeaponForm(weaponForm);
+  const modifiers = createModifiers(form.characterModifiers);
+  for (const part of form.parts) addModifiers(modifiers, partModifiers(part, selectedMaterial(normalized, part.materialSlot)));
+  modifiers.threat = 0;
+  return modifiers;
+}
+
+/** Waffenwerte sind ID-nativ; Materialnamen werden weder gelesen noch in den Snapshot geschrieben. */
+export function calculateWeaponStats(slots: readonly WeaponSlot[] | null | undefined, weaponForm: string): WeaponStats {
+  const normalized = normalizeWeaponSlots(slots);
+  const form = baseline.getWeaponForm(weaponForm);
+  const modifiers = calculateWeaponCharacterModifiers(normalized, weaponForm);
+  const workingPart = selectedMaterial(normalized, 'workingPart');
+  const special = selectedMaterial(normalized, 'special');
+  const specialEffect = special?.specialEffect ?? null;
+  const specialSpeedFactor = specialEffect?.stat === 'GES' ? 1 + specialEffect.amount : 1;
+  const reinforcementHitChanceAdd = specialEffect?.stat === 'P' ? specialEffect.amount : 0;
+  const reinforcementPenetrationAdd = specialEffect?.stat === 'DS' ? specialEffect.amount : 0;
+  const damagePerHit = form.baseDamage * Math.max(0, 1 + modifiers.strengthFactor);
+  const attackSpeed = form.baseSpeed * Math.max(0.01, specialSpeedFactor);
+  const hitChance = Math.max(0, Math.min(1, form.baseHitChance * Math.max(0, 1 + modifiers.precision)));
+  const penetration = Math.max(0, Math.min(1, form.basePenetration + modifiers.penetration));
+  return {
+    weaponBaseDamage: form.baseDamage,
+    weaponBaseSpeed: form.baseSpeed,
+    weaponBaseHitChance: form.baseHitChance,
+    weaponBasePenetration: form.basePenetration,
+    characterModifiers: modifiers,
+    specialSpeedFactor,
+    baseDamage: form.baseDamage,
+    baseSpeed: form.baseSpeed,
+    bladeMultiplier: 1 + (workingPart?.stats.strengthFactor ?? 0),
+    gripMultiplier: 1,
+    specialMaterial: null,
+    reinforcementMaterial: null,
+    reinforcementSpeedFactor: specialSpeedFactor,
+    reinforcementHitChanceAdd,
+    reinforcementPenetrationAdd,
+    hitChance,
+    penetration,
+    damagePerHit,
+    attackSpeed,
+    expectedRaw: damagePerHit * attackSpeed * hitChance,
+    materialBaseDamage: form.baseDamage,
+    materialBaseSpeed: form.baseSpeed,
+    formDamageFactor: 1,
+    formSpeedFactor: 1
+  };
+}
+
+export const GAME_CORE_BRIDGE = {
+  ...baseline.GAME_CORE_BRIDGE,
+  getMaterialById,
+  normalizeWeaponSlots,
+  isWeaponSelectionComplete,
+  rarityFactor,
+  reinforcementEffectText,
+  reinforcementEffectTextById,
+  calculateWeaponCharacterModifiers,
+  calculateWeaponStats
+};
 
 export { DATA_META, GENERATED_MATERIAL_KEYS as MATERIAL_KEYS };
 export * from './game-core-v01310-baseline.ts';
