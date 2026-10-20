@@ -10,10 +10,12 @@ const presentationAdapter = readFileSync('src/app/core/legacy-dungeon-presentati
 const characterPresentationAdapter = readFileSync('src/app/core/legacy-character-presentation-adapter.service.ts', 'utf8');
 const registrationAdapter = readFileSync('src/app/core/legacy-runtime-registration-adapter.service.ts', 'utf8');
 
-for (const pattern of [/getDungeonPhase\(state\)/, /resolveSearchStep\(/, /checkDungeonStart\(/, /payDungeonEnergy\(/, /createDungeonEnemies\(/, /createDungeonAttackPoints\(/, /resolveAttack\(/, /rescheduleDungeonAttack\(/, /getMaterialById\(/, /grantCharacterExperience\(/, /characterStatLevelMultiplier\(/, /resetDungeonCycle\(/]) {
+for (const pattern of [/getDungeonPhase\(state\)/, /resolveSearchStep\(/, /checkDungeonStart\(/, /payDungeonEnergy\(/, /createDungeonEnemies\(/, /createDungeonAttackPoints\(/, /resolveAttack\(/, /rescheduleDungeonAttack\(/, /getMaterialReferenceById\(/, /addMaterialQuantityById\(/, /getMaterialStorageEntries\(/, /grantCharacterExperience\(/, /characterStatLevelMultiplier\(/, /resetDungeonCycle\(/]) {
   assert.match(dungeonService, pattern, `Dungeon-Service verliert erwartete Fachlogik: ${pattern}`);
 }
-assert.doesNotMatch(dungeonService, /DUNGEON_LOOT_TABLES/, 'Aktive Dungeon-Drops hängen weiterhin an der alten globalen Loot-Tabelle.');
+assert.doesNotMatch(dungeonService, /DUNGEON_LOOT_TABLES|MATERIALS\[/, 'Aktive Dungeon-Drops hängen weiterhin an einer namenbasierten oder alten globalen Loot-Tabelle.');
+assert.match(dungeonService, /if \(selected\) result\.push\(\{ materialId: selected\.materialId \}\);/, 'Neue Dungeon-Drops persistieren weiterhin Namen statt ausschließlich Material-IDs.');
+assert.match(dungeonService, /normalizeMaterialReferences\(\): number/, 'Dungeon besitzt keine Altstand-Migration für Loot-Referenzen.');
 assert.doesNotMatch(dungeonService, /NoBrainerDungeonCompatibility|openLegacyCompatibilityBridge|closeLegacyCompatibilityBridge/, 'GameDungeonService enthält weiterhin die alte Dungeon-Kompatibilitätsbrücke.');
 
 assert.match(presentationService, /private renderOverview\(\): void/, 'Die Dungeon-Basiswerte werden nicht durch die Angular-Präsentation gerendert.');
@@ -25,6 +27,7 @@ assert.match(presentationService, /private handleOverviewAction\(\): void/, 'Die
 assert.match(presentationService, /document\.getElementById\('dungeonOverviewOpenBtn'\)[\s\S]*\.click\(\)/, 'Lauf starten ohne Team führt nicht zur Dungeon-Teamauswahl.');
 assert.match(presentationService, /this\.gameEnergy\.costPerCharacter\(displayedCount\)/, 'Die Angular-Dungeon-Präsentation verwendet für Energiekosten nicht den bestehenden Energy-Service.');
 assert.match(presentationService, /getDungeonStatusPresentation\(/, 'Angular-Dungeon-Präsentation nutzt den Status-Core nicht.');
+assert.match(presentationService, /getMaterialStorageEntries\(state\.dungeonLoot\)/, 'Dungeon-Präsentation löst ID-keyed Loot nicht über die gemeinsame Materialreferenzschicht auf.');
 assert.match(presentationService, /getDungeonLootPresentation\(/, 'Angular-Dungeon-Präsentation nutzt den Loot-Core nicht.');
 assert.match(presentationService, /getDungeonTeamPresentation\(/, 'Angular-Dungeon-Präsentation nutzt den Team-Core nicht.');
 assert.match(presentationService, /getDungeonTeamPickerPresentation\(/, 'Angular-Dungeon-Präsentation nutzt den Team-Picker-Core nicht.');
@@ -58,4 +61,4 @@ assert.doesNotMatch(registrationMatch[1], /renderResourceHeader\(\)/, 'Ressource
 assert.doesNotMatch(appComponent, /GameDungeonService|NoBrainerDungeonCompatibility|gameDungeon\.openLegacyCompatibilityBridge|gameDungeon\.closeLegacyCompatibilityBridge/, 'AppComponent verwaltet weiterhin die alte Dungeon-Kompatibilitätsbrücke.');
 assert.match(appComponent, /const APP_VERSION = APP_UI_VERSION;/, 'Der Dungeon-Cutover verwendet nicht die gemeinsame App-Version.');
 
-console.log('Dungeon-Eigentümerschaft: Gegnerprofile, Loot, XP/Level, Prozent-Rüstung, Kampf, Team und direkter Hubstatus laufen ausschließlich über Angular.');
+console.log('Dungeon-Eigentümerschaft: Gegnerprofile, ID-only Loot, XP/Level, Prozent-Rüstung, Kampf, Team und direkter Hubstatus laufen ausschließlich über Angular.');
