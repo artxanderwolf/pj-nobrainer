@@ -18,7 +18,7 @@ Die Angular-Hülle übernimmt jetzt zwei zentrale Infrastrukturaufgaben, ohne di
 
 Der Legacy-Code behält vorerst die eigentliche Zustandsstruktur, Save-Migrationen und Gameplay-Funktionen. Eine explizite Kompatibilitätsschicht adaptiert ausschließlich den bekannten v0.12.2-Quelltext und bricht mit einer klaren Fehlermeldung ab, falls die erwarteten Anker nicht mehr vorhanden sind. Dadurch werden Abweichungen nicht stillschweigend akzeptiert.
 
-## Lokal starten
+## Lokale Entwicklung
 
 ```bash
 npm install
@@ -35,7 +35,7 @@ Der Produktions-Build verwendet `/pj-nobrainer/` als Base-Href für GitHub Pages
 
 ## Prüfungen
 
-`npm run build` führt vor dem Angular-Build automatisch einen Legacy-Check aus. Dabei werden JavaScript-Syntax, zentrale Hilfsfunktionen, Energie-Regenerationsschutz und die Kompatibilitätsanpassung geprüft.
+`npm run build` führt vor dem Angular-Build automatisch die Core-, Ownership-, Adapter- und Legacy-Prüfungen aus.
 
 ## Migrationsstrategie
 
