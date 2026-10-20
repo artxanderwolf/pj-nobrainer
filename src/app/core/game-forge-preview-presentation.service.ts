@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import { formatCurrencyNickel } from '../game/economy-core';
 import {
-  MATERIALS,
+  MATERIAL_REFERENCES_BY_ID,
+  getMaterialIdByName,
   getWeaponForm,
   reinforcementEffectText,
   type MaterialCategory,
@@ -9,15 +10,12 @@ import {
   type WeaponSlot
 } from '../game/game-core';
 import { getForgePreviewPresentation } from '../game/forge-presentation-core';
+import { getMaterialQuantityById, type MaterialStorageInventory } from '../game/material-storage-core';
 import { GameForgeService } from './game-forge.service';
 import { GameStateService, type MutableGameState } from './game-state.service';
 
-interface RuntimeForgePreviewInventoryEntry {
-  qty?: number | null;
-}
-
 type RuntimeForgePreviewState = MutableGameState & {
-  inventory: Record<string, RuntimeForgePreviewInventoryEntry | undefined>;
+  inventory: MaterialStorageInventory;
   forgeJobs: unknown[];
   forgeQueue: unknown[];
   upgrades: {
@@ -165,7 +163,7 @@ export class GameForgePreviewPresentationService {
     const selections = new Map(
       FORGE_SLOT_BINDINGS.map(binding => [
         binding.id,
-        (document.getElementById(binding.id) as HTMLSelectElement | null)?.value || ''
+        this.readSelectedMaterialId(binding.id)
       ])
     );
 
@@ -184,16 +182,16 @@ export class GameForgePreviewPresentationService {
       }
 
       const categories = categoriesBySlot.get(binding.slot) ?? [];
-      const previous = selections.get(binding.id) || '';
-      const reservedByOthers = new Map<string, number>();
+      const previousMaterialId = selections.get(binding.id) ?? null;
+      const reservedByOthers = new Map<number, number>();
 
       for (const other of activeBindings) {
         if (other.id === binding.id) continue;
-        const selectedMaterial = selections.get(other.id) || '';
-        if (!selectedMaterial) continue;
+        const selectedMaterialId = selections.get(other.id);
+        if (!selectedMaterialId) continue;
         reservedByOthers.set(
-          selectedMaterial,
-          (reservedByOthers.get(selectedMaterial) || 0) + (quantities[other.slot] ?? 0)
+          selectedMaterialId,
+          (reservedByOthers.get(selectedMaterialId) || 0) + (quantities[other.slot] ?? 0)
         );
       }
 
@@ -201,39 +199,53 @@ export class GameForgePreviewPresentationService {
       const placeholder = document.createElement('option');
       placeholder.value = '';
       placeholder.textContent = `Material auswählen · benötigt ${needed}`;
-      placeholder.selected = !previous;
+      placeholder.selected = previousMaterialId === null;
       select.appendChild(placeholder);
 
-      const available = Object.entries(MATERIALS)
-        .filter(([, material]) => categories.includes(material.category))
-        .sort((a, b) => a[1].rarity - b[1].rarity || a[1].category.localeCompare(b[1].category) || a[0].localeCompare(b[0]))
-        .filter(([name]) => {
-          const stock = Number(state.inventory[name]?.qty) || 0;
-          const reserved = reservedByOthers.get(name) || 0;
+      const available = Object.values(MATERIAL_REFERENCES_BY_ID)
+        .filter(reference => categories.includes(reference.definition.category))
+        .sort((a, b) =>
+          a.definition.rarity - b.definition.rarity
+          || a.definition.category.localeCompare(b.definition.category)
+          || a.displayName.localeCompare(b.displayName)
+        )
+        .filter(reference => {
+          const stock = getMaterialQuantityById(state.inventory, reference.materialId);
+          const reserved = reservedByOthers.get(reference.materialId) || 0;
           return stock - reserved >= needed;
         });
 
-      for (const [name, materialDefinition] of available) {
-        const stock = Number(state.inventory[name]?.qty) || 0;
-        const reserved = reservedByOthers.get(name) || 0;
+      for (const reference of available) {
+        const stock = getMaterialQuantityById(state.inventory, reference.materialId);
+        const reserved = reservedByOthers.get(reference.materialId) || 0;
         const remaining = stock - reserved;
         const option = document.createElement('option');
-        option.value = name;
-        option.textContent = `${name} · S${materialDefinition.rarity} · benötigt ${needed} · verfügbar ${remaining}${
-          binding.slot === 'special' ? ` · ${reinforcementEffectText(name)}` : ''
+        option.value = String(reference.materialId);
+        option.textContent = `${reference.displayName} · S${reference.definition.rarity} · benötigt ${needed} · verfügbar ${remaining}${
+          binding.slot === 'special' ? ` · ${reinforcementEffectText(reference.displayName)}` : ''
         }`;
         select.appendChild(option);
       }
 
-      select.value = previous && Array.from(select.options).some(option => option.value === previous) ? previous : '';
+      const previousValue = previousMaterialId === null ? '' : String(previousMaterialId);
+      select.value = previousValue && Array.from(select.options).some(option => option.value === previousValue)
+        ? previousValue
+        : '';
     }
   }
 
   private getForgeSelection(): WeaponSlot[] {
     return FORGE_SLOT_BINDINGS.map(binding => ({
       slot: binding.slot,
-      material: (document.getElementById(binding.id) as HTMLSelectElement | null)?.value || null
+      materialId: this.readSelectedMaterialId(binding.id)
     }));
+  }
+
+  private readSelectedMaterialId(selectId: string): number | null {
+    const value = (document.getElementById(selectId) as HTMLSelectElement | null)?.value || '';
+    const numeric = Number(value);
+    if (Number.isInteger(numeric) && numeric > 0) return numeric;
+    return getMaterialIdByName(value);
   }
 
   private renderConstructionInfo(weaponForm: string): void {

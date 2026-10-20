@@ -13,8 +13,11 @@ assert.match(service, /getForgePreviewPresentation\(/, 'Angular-Schmiedevorschau
 assert.match(service, /this\.gameForge\.preview\(weaponForm, slots\)/, 'Angular-Schmiedevorschau bezieht Waffenwerte nicht über GameForgeService.');
 assert.match(service, /this\.gameForge\.requirements\(weaponForm, preview\.slots\)/, 'Angular-Schmiedevorschau verwendet nicht den Bauplan-Materialbedarf.');
 assert.match(service, /this\.gameForge\.selectionQuantities\(weaponForm\)/, 'Angular-Schmiedevorschau verwendet nicht die Bauplan-Materialmengen.');
-assert.match(service, /Object\.entries\(MATERIALS\)/, 'Angular-Schmiedevorschau baut die Materialauswahl nicht aus der gemeinsamen Materialdefinition.');
-assert.match(service, /reinforcementEffectText\(name\)/, 'SPE-Text fehlt in der Angular-Materialauswahl.');
+assert.match(service, /Object\.values\(MATERIAL_REFERENCES_BY_ID\)/, 'Angular-Schmiedevorschau baut die Materialauswahl nicht aus den stabilen Materialreferenzen.');
+assert.match(service, /getMaterialQuantityById\(state\.inventory, reference\.materialId\)/, 'Schmiedevorschau prüft Lagerbestände nicht per Material-ID.');
+assert.match(service, /option\.value = String\(reference\.materialId\)/, 'Materialauswahl speichert weiterhin Materialnamen als Optionswert.');
+assert.match(service, /materialId: this\.readSelectedMaterialId\(binding\.id\)/, 'Schmiedeauswahl erzeugt keine ID-basierten Waffenslots.');
+assert.match(service, /reinforcementEffectText\(reference\.displayName\)/, 'SPE-Text fehlt in der Angular-Materialauswahl.');
 for (const binding of [
   "{ id: 'slotWorkingPart', rowId: 'forgeWorkingPartRow', slot: 'workingPart' }",
   "{ id: 'slotBack', rowId: 'forgeBackRow', slot: 'back' }",
@@ -63,4 +66,4 @@ assert.ok(bridgeOpen >= 0 && stateBootstrap > bridgeOpen, 'Schmiedevorschau-Prä
 assert.match(app, /private readonly gameForgePreviewPresentation: GameForgePreviewPresentationService/);
 assert.match(app, /const APP_VERSION = APP_UI_VERSION;/);
 
-console.log('Forge-Preview-Presentation: Waffenfreischaltung, Bauplan-Auswahl und Herstellungsvalidierung bleiben Angular-eigen.');
+console.log('Forge-Preview-Presentation: Materialauswahl arbeitet per ID; Waffenfreischaltung, Bauplan-Auswahl und Herstellungsvalidierung bleiben Angular-eigen.');

@@ -1,5 +1,10 @@
 import * as baseline from './game-core-v01310-baseline.ts';
-import type { MaterialDefinition } from './game-core-v01310-baseline.ts';
+import type {
+  CharacterStatModifiers,
+  MaterialDefinition,
+  WeaponSlot as BaselineWeaponSlot,
+  WeaponStats
+} from './game-core-v01310-baseline.ts';
 import {
   DATA_META,
   GENERATED_CHARACTER_CLASSES,
@@ -33,6 +38,11 @@ export interface MaterialReference {
   technicalKey: string;
   displayName: string;
   definition: MaterialDefinition;
+}
+
+export interface WeaponSlot extends BaselineWeaponSlot {
+  /** Kanonische Materialreferenz. material bleibt nur für Anzeige und Altstände erhalten. */
+  materialId?: number | null;
 }
 
 const materialReferences: MaterialReference[] = GENERATED_MATERIAL_KEYS.map(key => {
@@ -74,6 +84,63 @@ export function getMaterialIdByName(displayName: string | null | undefined): num
 
 export function getMaterialDisplayNameById(materialId: number | null | undefined): string | null {
   return getMaterialReferenceById(materialId)?.displayName ?? null;
+}
+
+function normalizeWeaponMaterialReference(slot: BaselineWeaponSlot & { materialId?: number | null }): WeaponSlot {
+  const referenceById = getMaterialReferenceById(slot.materialId);
+  const materialName = typeof slot.material === 'string' && slot.material ? slot.material : null;
+  const materialIdByName = getMaterialIdByName(materialName);
+
+  if (referenceById && materialIdByName !== null && materialIdByName !== referenceById.materialId) {
+    throw new Error(
+      `Widersprüchliche Materialreferenz an Waffenslot ${String(slot.slot ?? '?')}: ` +
+      `${materialName} verweist auf ID ${materialIdByName}, der Slot auf ID ${referenceById.materialId}.`
+    );
+  }
+
+  const reference = referenceById ?? getMaterialReferenceById(materialIdByName);
+  if (!reference) return { ...slot, materialId: null };
+  return {
+    ...slot,
+    materialId: reference.materialId,
+    material: reference.displayName
+  };
+}
+
+/**
+ * Normalisiert alte Slot-Bezeichner und ergänzt stabile Material-IDs.
+ * Bei bekannten Materialien ist materialId die kanonische Referenz; material wird
+ * nur als lesbarer Anzeige-/Kompatibilitätswert mitgeführt.
+ */
+export function normalizeWeaponSlots(slots: readonly WeaponSlot[] | null | undefined): WeaponSlot[] {
+  return baseline
+    .normalizeWeaponSlots(slots as readonly BaselineWeaponSlot[] | null | undefined)
+    .map(slot => normalizeWeaponMaterialReference(slot));
+}
+
+export function isWeaponSelectionComplete(
+  slots: readonly WeaponSlot[] | null | undefined,
+  weaponForm: string
+): boolean {
+  return baseline.isWeaponSelectionComplete(normalizeWeaponSlots(slots), weaponForm);
+}
+
+export function rarityFactor(slots: readonly WeaponSlot[] | null | undefined): number {
+  return baseline.rarityFactor(normalizeWeaponSlots(slots));
+}
+
+export function calculateWeaponCharacterModifiers(
+  slots: readonly WeaponSlot[] | null | undefined,
+  weaponForm: string
+): CharacterStatModifiers {
+  return baseline.calculateWeaponCharacterModifiers(normalizeWeaponSlots(slots), weaponForm);
+}
+
+export function calculateWeaponStats(
+  slots: readonly WeaponSlot[] | null | undefined,
+  weaponForm: string
+): WeaponStats {
+  return baseline.calculateWeaponStats(normalizeWeaponSlots(slots), weaponForm);
 }
 
 export { DATA_META, GENERATED_MATERIAL_KEYS as MATERIAL_KEYS };

@@ -31,7 +31,9 @@ assert.match(runtimeService, /delete window\.NoBrainerRuntimeBootstrap;/, 'Der t
 assert.match(runtimeService, /this\.runtime = runtime;/, 'Die registrierte Runtime wird nicht im Angular-Service gespeichert.');
 assert.doesNotMatch(runtimeService, /NoBrainerLegacyRuntime/, 'Der Angular-Runtime-Service greift weiterhin auf window.NoBrainerLegacyRuntime zu.');
 assert.match(runtimeService, /runtime\.prepare\(\);\n    const materialStorageChanged = this\.normalizeMaterialStorage\(\) > 0;/, 'Geladene Lagerbestände werden nach dem Legacy-Load nicht auf stabile Material-IDs normalisiert.');
-assert.match(runtimeService, /else if \(materialStorageChanged\) \{\n      runtime\.save\(false\);\n    \}/, 'Eine reine Material-ID-Migration wird nach dem Laden nicht persistent gespeichert.');
+assert.match(runtimeService, /const forgeMaterialReferencesChanged = this\.gameForge\.normalizeMaterialReferences\(\) > 0;/, 'Geladene Schmiedeslots werden nicht auf stabile Material-IDs normalisiert.');
+assert.match(runtimeService, /const marketMaterialReferencesChanged = this\.gameMarket\.normalizeMaterialReferences\(\) > 0;/, 'Geladene Marktaufträge werden nicht auf stabile Material-IDs normalisiert.');
+assert.match(runtimeService, /else if \(materialReferencesChanged\) \{\n      runtime\.save\(false\);\n    \}/, 'Eine reine Materialreferenz-Migration wird nach dem Laden nicht persistent gespeichert.');
 assert.match(runtimeService, /if \(inventoryChanged\) \{\n      this\.normalizeMaterialStorage\(\);/, 'Neue Dungeon-Lagerzugänge werden vor Render/Save nicht auf Material-IDs normalisiert.');
 assert.match(runtimeService, /return normalizeMaterialInventory\(inventory\);/, 'Runtime delegiert die Materialnormalisierung nicht an den gemeinsamen Storage-Core.');
 assert.match(gameTickAdapter, /const LEGACY_GAME_TICK_BLOCK = `function gameTick\(\)\{/, 'Der gameTick-Cutover besitzt keinen eindeutigen Legacy-Anker.');
@@ -39,4 +41,4 @@ assert.match(registrationAdapter, /const runtimeBootstrap=window\.NoBrainerRunti
 assert.match(registrationAdapter, /runtimeBootstrap\.register\(\{/, 'Die Legacy-Runtime wird nicht an Angular übergeben.');
 assert.match(registrationAdapter, /window\.NoBrainerLegacyRuntime=\{/, 'Der Adapter besitzt nicht mehr den erwarteten alten Registrierungsanker.');
 
-console.log('Runtime-Eigentümerschaft: Runtime-Instanz, zentraler Tick, Material-ID-Normalisierung und gemeinsame App-Version liegen in Angular; globale Legacy-Runtime und Legacy-gameTick sind aus dem laufenden Pfad entfernt.');
+console.log('Runtime-Eigentümerschaft: Lager, Schmiedeslots und Marktaufträge werden nach dem Laden auf stabile Material-IDs migriert; Runtime, Tick und Version bleiben Angular-eigen.');

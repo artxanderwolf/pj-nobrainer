@@ -1,13 +1,20 @@
 import { Injectable } from '@angular/core';
 import { getMaterialIdByName, type WeaponSlot } from '../game/game-core';
-import { materialSellData, weaponSellData } from '../game/economy-core';
+import { materialSellDataById, weaponSellData } from '../game/economy-core';
 import { getWeaponEquipLocation, type EquipmentCharacterLike } from '../game/equipment-core';
-import { addMaterialQuantityById, type MaterialStorageInventory } from '../game/material-storage-core';
+import {
+  addMaterialQuantityById,
+  getMaterialQuantityById,
+  takeMaterialQuantityById,
+  type MaterialStorageInventory
+} from '../game/material-storage-core';
 import {
   advanceMarketJobs,
   cancelMarketJob,
   enqueueMarketJob,
   hasMarketCapacity,
+  normalizeMarketMaterialJob,
+  normalizeMarketMaterialJobs,
   type MarketJob,
   type MarketStateLike
 } from '../game/market-core';
@@ -17,7 +24,7 @@ export type MarketMaterialStartResult =
   | { status: 'no-stock' }
   | { status: 'unknown-material' }
   | { status: 'full' }
-  | { status: 'started' | 'queued'; name: string; quantity: number; valueNickel: number };
+  | { status: 'started' | 'queued'; materialId: number; name: string; quantity: number; valueNickel: number };
 
 export type MarketWeaponStartResult =
   | { status: 'not-found' }
@@ -67,20 +74,38 @@ export class GameMarketService {
     return hasMarketCapacity(state, Number(state.upgrades.marketSlots) || 0, Number(state.upgrades.marketQueue) || 0);
   }
 
-  startMaterial(name: string, quantity = 1, at = Date.now()): MarketMaterialStartResult {
+  /** Aktiver Angular-Pfad: Materialverkäufe werden ausschließlich über die stabile ID gestartet. */
+  startMaterialById(materialId: number, quantity = 1, at = Date.now()): MarketMaterialStartResult {
     const state = this.getState();
-    const stock = Number(state.inventory[name]?.qty) || 0;
-    if (stock <= 0) return { status: 'no-stock' };
-    const unit = materialSellData(name);
+    const unit = materialSellDataById(materialId);
     if (!unit) return { status: 'unknown-material' };
+
+    const stock = getMaterialQuantityById(state.inventory, unit.materialId);
+    if (stock <= 0) return { status: 'no-stock' };
+
     const qty = Math.max(1, Math.min(stock, Math.floor(Number(quantity) || 1)));
-    const job: MarketJob = { ...unit, quantity: qty, valueNickel: unit.valueNickel * qty, seconds: unit.seconds * qty, unitValueNickel: unit.valueNickel, unitSeconds: unit.seconds };
-    const status = enqueueMarketJob(state, job, Number(state.upgrades.marketSlots) || 0, Number(state.upgrades.marketQueue) || 0, at);
+    const job: MarketJob = {
+      ...unit,
+      materialId: unit.materialId,
+      quantity: qty,
+      valueNickel: unit.valueNickel * qty,
+      seconds: unit.seconds * qty,
+      unitValueNickel: unit.valueNickel,
+      unitSeconds: unit.seconds
+    };
+    const status = enqueueMarketJob(
+      state,
+      job,
+      Number(state.upgrades.marketSlots) || 0,
+      Number(state.upgrades.marketQueue) || 0,
+      at
+    );
     if (status === 'full') return { status: 'full' };
-    const remaining = stock - qty;
-    if (remaining > 0) state.inventory[name] = { ...(state.inventory[name] ?? {}), qty: remaining };
-    else delete state.inventory[name];
-    return { status, name, quantity: qty, valueNickel: job.valueNickel };
+
+    if (!takeMaterialQuantityById(state.inventory, unit.materialId, qty)) {
+      throw new Error(`Materialbestand änderte sich während einer synchronen Marktauftragserstellung: ID ${unit.materialId}.`);
+    }
+    return { status, materialId: unit.materialId, name: unit.name, quantity: qty, valueNickel: job.valueNickel };
   }
 
   startWeapon(weaponId: number, at = Date.now()): MarketWeaponStartResult {
@@ -102,12 +127,19 @@ export class GameMarketService {
     const state = this.getState();
     const job = cancelMarketJob(state, kind, index, Number(state.upgrades.marketSlots) || 0, at);
     if (!job) return null;
+    normalizeMarketMaterialJob(job);
     this.returnJob(state, job);
     return { name: job.name };
   }
 
+  /** Migriert laufende/wartende Altaufträge auf stabile Material-IDs. */
+  normalizeMaterialReferences(): number {
+    return normalizeMarketMaterialJobs(this.getState());
+  }
+
   update(now = Date.now()): MarketUpdateResult {
     const state = this.getState();
+    normalizeMarketMaterialJobs(state);
     const completedSales: MarketCompletedSale[] = [];
     const completedCount = advanceMarketJobs(state, Number(state.upgrades.marketSlots) || 0, now, (job: MarketJob) => {
       state.gold += job.valueNickel;
@@ -120,7 +152,12 @@ export class GameMarketService {
     if (window.NoBrainerMarketCompatibility) throw new Error('NoBrainer-Markt-Kompatibilitätsbrücke ist bereits geöffnet.');
     window.NoBrainerMarketCompatibility = {
       hasCapacity: () => this.hasCapacity(),
-      startMaterial: (name, quantity, at) => this.startMaterial(name, quantity, at),
+      startMaterial: (name, quantity, at) => {
+        const materialId = getMaterialIdByName(name);
+        return materialId === null
+          ? { status: 'unknown-material' }
+          : this.startMaterialById(materialId, quantity, at);
+      },
       startWeapon: (weaponId, at) => this.startWeapon(weaponId, at),
       cancel: (kind, index, at) => this.cancel(kind, index, at)
     };
@@ -132,8 +169,8 @@ export class GameMarketService {
 
   private returnJob(state: RuntimeMarketState, job: MarketJob): void {
     if (job.type === 'material') {
-      const materialId = getMaterialIdByName(job.name);
-      if (materialId === null) throw new Error(`Unbekanntes Material im Marktauftrag: ${job.name}`);
+      const materialId = job.materialId ?? getMaterialIdByName(job.name);
+      if (materialId === null || materialId === undefined) throw new Error(`Unbekanntes Material im Marktauftrag: ${job.name}`);
       const returned = addMaterialQuantityById(state.inventory, materialId, job.quantity || 1);
       if (!returned) throw new Error(`Material ${job.name} konnte nicht ins Inventar zurückgegeben werden.`);
       return;

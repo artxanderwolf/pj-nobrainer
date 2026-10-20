@@ -7,9 +7,12 @@ import {
 } from '../src/app/game/material-presentation-core.ts';
 import {
   addMaterialQuantityById,
+  getMaterialQuantityById,
   getMaterialStorageEntryById,
   getMaterialStorageEntries,
-  normalizeMaterialInventory
+  normalizeMaterialInventory,
+  reserveMaterialQuantitiesById,
+  takeMaterialQuantityById
 } from '../src/app/game/material-storage-core.ts';
 
 assert.equal(formatMaterialValue(null), '–');
@@ -133,6 +136,16 @@ assert.equal(zinn?.displayName, 'Zinn');
 assert.deepEqual(legacyInventory.Zinn, { materialId: 4, category: 'Metall', qty: 2 });
 addMaterialQuantityById(legacyInventory, 5, 2);
 assert.equal(legacyInventory.Kupfer.qty, 5, 'ID-basierte Zugänge müssen vorhandene Bestände erhöhen statt Duplikate anzulegen.');
+assert.equal(getMaterialQuantityById(legacyInventory, 5), 5);
+assert.equal(takeMaterialQuantityById(legacyInventory, 5, 2), true);
+assert.equal(getMaterialQuantityById(legacyInventory, 5), 3);
+
+const beforeFailedReservation = JSON.stringify(legacyInventory);
+assert.equal(reserveMaterialQuantitiesById(legacyInventory, { 2: 99, 4: 1 }), false, 'Fehlende Menge muss die gesamte Reservierung blockieren.');
+assert.equal(JSON.stringify(legacyInventory), beforeFailedReservation, 'Fehlgeschlagene ID-Reservierung darf keinen Teilbestand verbrauchen.');
+assert.equal(reserveMaterialQuantitiesById(legacyInventory, { 2: 2, 4: 1 }), true);
+assert.equal(getMaterialQuantityById(legacyInventory, 2), 2);
+assert.equal(getMaterialQuantityById(legacyInventory, 4), 1);
 
 const resolvedKnown = getMaterialStorageEntries(legacyInventory);
 assert.deepEqual(
@@ -147,4 +160,4 @@ assert.throws(
   'Ein Konflikt zwischen bekanntem Namen und Material-ID muss sichtbar fehlschlagen statt stillschweigend Daten umzudeuten.'
 );
 
-console.log('Material-Presentation/Core: Statmatrix, Darstellung und rückwärtskompatible ID-Normalisierung des Materiallagers sind konsistent.');
+console.log('Material-Presentation/Core: Statmatrix, Darstellung, ID-Reservierung und rückwärtskompatible Normalisierung des Materiallagers sind konsistent.');
