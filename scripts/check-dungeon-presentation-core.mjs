@@ -101,11 +101,11 @@ assert.equal(unassigned.collectButtonText, 'Einsammeln');
 assert.equal(unassigned.collectButtonDisabled, true);
 
 assert.deepEqual(
-  getDungeonLootPresentation({
-    Zinn: { qty: 2 },
-    Aluminium: { qty: 1 },
-    Kupfer: { qty: 0 }
-  }),
+  getDungeonLootPresentation([
+    { name: 'Zinn', qty: 2 },
+    { name: 'Aluminium', qty: 1 },
+    { name: 'Kupfer', qty: 0 }
+  ]),
   {
     empty: false,
     entries: [
@@ -114,6 +114,6 @@ assert.deepEqual(
     ]
   }
 );
-assert.deepEqual(getDungeonLootPresentation({ Kupfer: { qty: 0 } }), { empty: true, entries: [] });
+assert.deepEqual(getDungeonLootPresentation([{ name: 'Kupfer', qty: 0 }]), { empty: true, entries: [] });
 
-console.log('Dungeon-Presentation-Core: Statusphasen, Buttons, Gegnerwerte und Beuteanzeige sind konsistent.');
+console.log('Dungeon-Presentation-Core: Statusphasen, Buttons, Gegnerwerte und ID-aufgelöste Beuteanzeige sind konsistent.');
