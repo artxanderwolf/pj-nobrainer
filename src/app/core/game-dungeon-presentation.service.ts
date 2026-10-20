@@ -43,12 +43,14 @@ export class GameDungeonPresentationService {
 
     const primaryButton = document.getElementById('dungeonPrimaryBtn');
     const primaryTeamCard = document.getElementById('dungeonTeamCard');
-    if (!primaryButton || !primaryTeamCard) {
+    const overviewAction = document.getElementById('dungeonOverviewAction');
+    if (!primaryButton || !primaryTeamCard || !overviewAction) {
       throw new Error('Angular-Dungeon-Präsentation konnte die Dungeon-1-Bedienelemente nicht finden.');
     }
 
     primaryButton.addEventListener('click', () => this.handlePrimaryAction());
     primaryTeamCard.addEventListener('click', event => this.handleTeamClick(event));
+    overviewAction.addEventListener('click', () => this.handleOverviewAction());
 
     const legacyAutoButton = document.getElementById('autoDungeonBtn');
     const legacyCollectButton = document.getElementById('collectLootBtn');
@@ -71,6 +73,7 @@ export class GameDungeonPresentationService {
 
   render(): void {
     this.renderOverview();
+    this.renderOverviewAction();
     this.renderStatus();
     this.renderLoot();
     this.renderTeamInto('dungeonTeamCard');
@@ -93,6 +96,32 @@ export class GameDungeonPresentationService {
       const share = this.gameEnergy.costPerCharacter(displayedCount);
       energyCost.textContent = displayedCount ? `${share} je Char. (${share * displayedCount} gesamt)` : '–';
     }
+  }
+
+  private renderOverviewAction(): void {
+    const state = this.getState();
+    const button = document.getElementById('dungeonOverviewAction') as HTMLButtonElement | null;
+    if (!button) return;
+
+    button.dataset['dungeonOverviewOwner'] = 'angular';
+    const sessionBusy = Boolean(
+      state.dungeonAuto || state.dungeonRun || state.dungeonSearch || state.dungeonLootCollect || state.dungeonStopRequested
+    );
+
+    if (sessionBusy) {
+      button.textContent = 'Läuft';
+      button.disabled = true;
+      return;
+    }
+
+    if (this.getLootTotal(state) > 0) {
+      button.textContent = 'Loot sammeln';
+      button.disabled = false;
+      return;
+    }
+
+    button.textContent = 'Lauf starten';
+    button.disabled = false;
   }
 
   private renderStatus(): void {
@@ -232,6 +261,27 @@ export class GameDungeonPresentationService {
     if (!presentation.open) return '';
     if (!presentation.candidates.length) return `<div class="team-slot-picker muted small">${presentation.emptyText}</div>`;
     return `<div class="team-slot-picker">${presentation.candidates.map(candidate => `<div class="team-candidate"><div><strong>${candidate.name}</strong><div class="sell-meta">${candidate.meta}</div></div><button class="btn smallbtn primary" data-dungeon-action="assign" data-slot="${slot}" data-character-id="${candidate.id}">${candidate.assignLabel}</button></div>`).join('')}</div>`;
+  }
+
+  private handleOverviewAction(): void {
+    const state = this.getState();
+    const sessionBusy = Boolean(
+      state.dungeonAuto || state.dungeonRun || state.dungeonSearch || state.dungeonLootCollect || state.dungeonStopRequested
+    );
+    if (sessionBusy) return;
+
+    if (this.getLootTotal(state) > 0) {
+      const result = this.gameDungeon.collectLoot();
+      this.handleResult(result, result.events.length > 0);
+      return;
+    }
+
+    if (this.getSelectedIds(state).length <= 0) {
+      (document.getElementById('dungeonOverviewOpenBtn') as HTMLButtonElement | null)?.click();
+      return;
+    }
+
+    this.handleResult(this.gameDungeon.toggleAuto(Date.now()));
   }
 
   private handlePrimaryAction(): void {
