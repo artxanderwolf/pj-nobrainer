@@ -1,25 +1,24 @@
 import { Injectable } from '@angular/core';
 
-const FORGE_SELECTION = `function forgeMaterialId(selectId){
-  const value=document.getElementById(selectId)?.value||"";
-  const numeric=Number(value);
-  if(Number.isInteger(numeric)&&numeric>0)return numeric;
-  const legacyMaterial=MATERIALS[value];
-  const legacyId=Number(legacyMaterial?.materialId);
-  return Number.isInteger(legacyId)&&legacyId>0?legacyId:null;
-}
-
-function getForgeSelection(){
+const FORGE_SELECTION = `function getForgeSelection(){
+  const materialId=selectId=>{
+    const value=document.getElementById(selectId)?.value||"";
+    const numeric=Number(value);
+    if(Number.isInteger(numeric)&&numeric>0)return numeric;
+    const legacyMaterial=MATERIALS[value];
+    const legacyId=Number(legacyMaterial?.materialId);
+    return Number.isInteger(legacyId)&&legacyId>0?legacyId:null;
+  };
   return {
     weaponForm:document.getElementById("weaponForm")?.value||"dagger",
     slots:[
-      {slot:"workingPart",materialId:forgeMaterialId("slotWorkingPart")},
-      {slot:"back",materialId:forgeMaterialId("slotBack")},
-      {slot:"gripCore",materialId:forgeMaterialId("slotGripCore")},
-      {slot:"gripWrap",materialId:forgeMaterialId("slotGripWrap")},
-      {slot:"special",materialId:forgeMaterialId("slotSpecial")},
-      {slot:"parry",materialId:forgeMaterialId("slotParry")},
-      {slot:"bowstring",materialId:forgeMaterialId("slotBowstring")}
+      {slot:"workingPart",materialId:materialId("slotWorkingPart")},
+      {slot:"back",materialId:materialId("slotBack")},
+      {slot:"gripCore",materialId:materialId("slotGripCore")},
+      {slot:"gripWrap",materialId:materialId("slotGripWrap")},
+      {slot:"special",materialId:materialId("slotSpecial")},
+      {slot:"parry",materialId:materialId("slotParry")},
+      {slot:"bowstring",materialId:materialId("slotBowstring")}
     ]
   };
 }`;
