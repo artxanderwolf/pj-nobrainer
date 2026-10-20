@@ -1,0 +1,1 @@
+NoBrainer Data Architecture v1 keeps current gameplay contracts stable while moving editable balance data to a tabular source and generating TypeScript definitions for the existing game core.
