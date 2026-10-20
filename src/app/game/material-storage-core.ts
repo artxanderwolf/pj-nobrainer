@@ -3,7 +3,7 @@ import {
   getMaterialReferenceById,
   type MaterialCategory,
   type MaterialReference
-} from './game-core';
+} from './game-core.ts';
 
 export interface MaterialStorageInventoryEntry {
   materialId?: number | null;
