@@ -1,12 +1,15 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { APP_SHELL_PAGE_IDS, composeAppShell } from '../src/app/game/app-shell-presentation-core.ts';
+import { APP_SHELL_PAGE_IDS, APP_UI_VERSION, composeAppShell } from '../src/app/game/app-shell-presentation-core.ts';
 
 const appComponent = readFileSync('src/app/app.component.ts', 'utf8');
 const angularConfig = JSON.parse(readFileSync('angular.json', 'utf8'));
+const packageJson = JSON.parse(readFileSync('package.json', 'utf8'));
 const probePage = '<section class="page" id="probe">Probe</section>';
 const shell = composeAppShell(probePage);
 
+assert.equal(APP_UI_VERSION, '0.13.11', 'Die gemeinsame sichtbare App-Version muss v0.13.11 sein.');
+assert.equal(packageJson.version, APP_UI_VERSION, 'package.json und sichtbare App-Version dürfen nicht auseinanderlaufen.');
 assert.equal(APP_SHELL_PAGE_IDS[0], 'base');
 for (const required of ['character', 'storage', 'forge-preview', 'market-jobs', 'dungeon-select', 'index']) {
   assert.ok(APP_SHELL_PAGE_IDS.includes(required), `Modulare Seite ${required} fehlt in der Shell-Seitenliste.`);
@@ -43,4 +46,4 @@ assert.match(appComponent, /composeAppShell\(pageMarkup\)/, 'Der App-Component b
 assert.doesNotMatch(appComponent, /DOMParser/, 'Der App-Component parst weiterhin die Legacy-HTML.');
 assert.match(appComponent, /const LEGACY_RUNTIME_PATH = 'legacy\/NoBrainer_GitHub_v0\.12\.2\.runtime\.js';/, 'Der App-Component verweist nicht auf das eigenständige Runtime-Asset.');
 
-console.log('App-Shell-Präsentation: responsive UI v0.13.11 mit Topbar, Zurück-Button und vierteiliger Bottom-Navigation ist Angular-eigen.');
+console.log('App-Shell-Präsentation: responsive UI v0.13.11 mit synchronisierter Paketversion, Topbar, Zurück-Button und vierteiliger Bottom-Navigation ist Angular-eigen.');
