@@ -44,7 +44,9 @@ export class GameProgressionPresentationService {
     const inn = document.getElementById('innUpgradeCard');
     const forge = document.getElementById('forgeUpgradeCard');
     const market = document.getElementById('marketUpgradeCard');
-    if (!inn && !forge && !market) return;
+    const forgeInline = document.getElementById('forgeUpgradeCardInline');
+    const marketInline = document.getElementById('marketUpgradeCardInline');
+    if (!inn && !forge && !market && !forgeInline && !marketInline) return;
 
     const state = this.state();
     const offers = {
@@ -73,8 +75,22 @@ export class GameProgressionPresentationService {
       inn.dataset['progressionPresentationOwner'] = 'angular';
       inn.innerHTML = this.renderCard(presentation.inn);
     }
-    if (forge) forge.innerHTML = this.renderCard(presentation.forge);
-    if (market) market.innerHTML = this.renderCard(presentation.market);
+    if (forge) {
+      forge.dataset['progressionPresentationOwner'] = 'angular';
+      forge.innerHTML = this.renderCard(presentation.forge);
+    }
+    if (market) {
+      market.dataset['progressionPresentationOwner'] = 'angular';
+      market.innerHTML = this.renderCard(presentation.market);
+    }
+    if (forgeInline) {
+      forgeInline.dataset['progressionPresentationOwner'] = 'angular';
+      forgeInline.innerHTML = this.renderInlineButtons(presentation.forge);
+    }
+    if (marketInline) {
+      marketInline.dataset['progressionPresentationOwner'] = 'angular';
+      marketInline.innerHTML = this.renderInlineButtons(presentation.market);
+    }
   }
 
   openLegacyCompatibilityBridge(): void {
@@ -92,11 +108,18 @@ export class GameProgressionPresentationService {
     const stats = card.stats.map(stat =>
       `<div class="stat"><span>${stat.label}</span><b>${stat.value}</b></div>`
     ).join('');
-    const buttons = card.buttons.map(button =>
+    const note = card.note ? `<p class="muted small">${card.note}</p>` : '';
+    return `<div class="statrow">${stats}</div><div class="actions">${this.renderButtons(card)}</div>${note}`;
+  }
+
+  private renderInlineButtons(card: UpgradeCardPresentation): string {
+    return `<div class="inline-upgrade-actions">${this.renderButtons(card)}</div>`;
+  }
+
+  private renderButtons(card: UpgradeCardPresentation): string {
+    return card.buttons.map(button =>
       `<button class="${button.primary ? 'btn primary' : 'btn'}" onclick="buyUpgrade('${button.kind}')" ${button.disabled ? 'disabled' : ''}>${button.text}</button>`
     ).join('');
-    const note = card.note ? `<p class="muted small">${card.note}</p>` : '';
-    return `<div class="statrow">${stats}</div><div class="actions">${buttons}</div>${note}`;
   }
 
   private state(): RuntimeProgressionPresentationState {
