@@ -10,7 +10,7 @@ assert.match(service, /getUpgradeCardsPresentation\(/, 'Angular-Progressionsprä
 for (const kind of ['inn', 'forgeSlots', 'forgeQueue', 'marketSlots', 'marketQueue']) {
   assert.match(service, new RegExp(`gameProgression\\.getUpgradeOffer\\('${kind}'\\)`), `Upgrade-Angebot ${kind} wird nicht über GameProgressionService bezogen.`);
 }
-for (const id of ['innUpgradeCard', 'forgeUpgradeCard', 'marketUpgradeCard']) {
+for (const id of ['innUpgradeCard', 'forgeUpgradeCard', 'marketUpgradeCard', 'forgeUpgradeCardInline', 'marketUpgradeCardInline']) {
   assert.match(service, new RegExp(`document\\.getElementById\\('${id}'\\)`), `Angular-Progressionspräsentation rendert ${id} nicht.`);
 }
 assert.match(service, /state\.characters\.length/);
@@ -18,6 +18,8 @@ assert.match(service, /state\.forgeJobs\.length/);
 assert.match(service, /state\.forgeQueue\.length/);
 assert.match(service, /state\.marketJobs\.length/);
 assert.match(service, /state\.marketQueue\.length/);
+assert.match(service, /renderInlineButtons\(presentation\.forge\)/, 'Schmiede-Ausbau wird nicht direkt in der Hub-Karte gerendert.');
+assert.match(service, /renderInlineButtons\(presentation\.market\)/, 'Markt-Ausbau wird nicht direkt in der Hub-Karte gerendert.');
 assert.match(service, /onclick="buyUpgrade\('\$\{button\.kind\}'\)"/, 'Bestehende Upgrade-Aktion wird im Angular-Renderer nicht beibehalten.');
 assert.match(service, /progressionPresentationOwner'\] = 'angular'/, 'Browser-nachweisbarer Angular-Ownership-Marker fehlt.');
 assert.match(service, /window\.NoBrainerProgressionPresentationCompatibility = \{ render: \(\) => this\.render\(\) \};/);
@@ -34,4 +36,4 @@ assert.match(app, /private readonly gameProgressionPresentation: GameProgression
 assert.match(app, /ngOnDestroy\(\): void \{[\s\S]*this\.gameProgressionPresentation\.closeLegacyCompatibilityBridge\(\);/);
 assert.match(app, /const APP_VERSION = '0\.12\.91';/);
 
-console.log('Progression-Presentation-Eigentümerschaft: Inn-, Schmiede- und Markt-Ausbaukarten werden direkt durch Angular aus Angular-State und GameProgressionService gerendert; Legacy besitzt nur noch einen dünnen Renderwrapper.');
+console.log('Progression-Presentation-Eigentümerschaft: Inn-Ausbau sowie direkter Schmiede- und Markt-Ausbau werden durch Angular aus Angular-State und GameProgressionService gerendert.');
