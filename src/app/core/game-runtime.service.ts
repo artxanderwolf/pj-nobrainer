@@ -96,9 +96,10 @@ export class GameRuntimeService {
     const before = this.saveStorage.readSnapshot();
     runtime.prepare();
     const materialStorageChanged = this.normalizeMaterialStorage() > 0;
+    const dungeonMaterialReferencesChanged = this.gameDungeon.normalizeMaterialReferences() > 0;
     const forgeMaterialReferencesChanged = this.gameForge.normalizeMaterialReferences() > 0;
     const marketMaterialReferencesChanged = this.gameMarket.normalizeMaterialReferences() > 0;
-    const materialReferencesChanged = materialStorageChanged || forgeMaterialReferencesChanged || marketMaterialReferencesChanged;
+    const materialReferencesChanged = materialStorageChanged || dungeonMaterialReferencesChanged || forgeMaterialReferencesChanged || marketMaterialReferencesChanged;
     this.characterPresentation.bindActions(() => {
       this.dungeonEquipmentSync.refresh();
       this.weaponInventoryPresentation.render();
