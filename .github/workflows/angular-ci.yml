@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - migration/angular
-      - feature/forge-market-material-id-v01312
   pull_request:
     branches:
       - main
