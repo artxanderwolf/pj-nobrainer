@@ -1,6 +1,10 @@
+import { getMaterialIdByName, getMaterialReferenceById } from './game-core.ts';
+
 export interface MarketJob {
   type: 'material' | 'weapon';
   name: string;
+  /** Kanonische Referenz für Materialverkäufe; bei Waffen nicht gesetzt. */
+  materialId?: number;
   valueNickel: number;
   seconds: number;
   quantity?: number;
@@ -15,6 +19,42 @@ export interface MarketJob {
 export interface MarketStateLike {
   marketJobs: MarketJob[];
   marketQueue: MarketJob[];
+}
+
+/** Ergänzt/prüft die stabile Material-ID eines bestehenden Marktauftrags. */
+export function normalizeMarketMaterialJob(job: MarketJob): boolean {
+  if (job.type !== 'material') return false;
+
+  const referenceById = getMaterialReferenceById(job.materialId);
+  const materialIdByName = getMaterialIdByName(job.name);
+  if (referenceById && materialIdByName !== null && materialIdByName !== referenceById.materialId) {
+    throw new Error(
+      `Widersprüchliche Materialreferenz im Marktauftrag: ${job.name} verweist auf ID ${materialIdByName}, ` +
+      `der Auftrag auf ID ${referenceById.materialId}.`
+    );
+  }
+
+  const reference = referenceById ?? getMaterialReferenceById(materialIdByName);
+  if (!reference) return false;
+
+  let changed = false;
+  if (job.materialId !== reference.materialId) {
+    job.materialId = reference.materialId;
+    changed = true;
+  }
+  if (job.name !== reference.displayName) {
+    job.name = reference.displayName;
+    changed = true;
+  }
+  return changed;
+}
+
+export function normalizeMarketMaterialJobs(state: MarketStateLike): number {
+  let changed = 0;
+  for (const job of [...state.marketJobs, ...state.marketQueue]) {
+    if (normalizeMarketMaterialJob(job)) changed += 1;
+  }
+  return changed;
 }
 
 export function hasMarketCapacity(state: MarketStateLike, activeSlots: number, queueSlots: number): boolean {
@@ -79,6 +119,8 @@ export function cancelMarketJob(state: MarketStateLike, kind: 'active' | 'queue'
 }
 
 export const MARKET_CORE_BRIDGE = {
+  normalizeMarketMaterialJob,
+  normalizeMarketMaterialJobs,
   hasMarketCapacity,
   startMarketQueuedJob,
   fillMarketSlots,
