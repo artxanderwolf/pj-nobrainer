@@ -61,6 +61,6 @@ const bridgeOpen = app.indexOf('this.gameForgePreviewPresentation.openLegacyComp
 const stateBootstrap = app.indexOf('this.gameState.openBootstrapRegistration();');
 assert.ok(bridgeOpen >= 0 && stateBootstrap > bridgeOpen, 'Schmiedevorschau-Präsentationsbrücke muss vor dem State-/Legacy-Bootstrap geöffnet werden.');
 assert.match(app, /private readonly gameForgePreviewPresentation: GameForgePreviewPresentationService/);
-assert.match(app, /const APP_VERSION = '0\.12\.91';/);
+assert.match(app, /const APP_VERSION = APP_UI_VERSION;/);
 
 console.log('Forge-Preview-Presentation: Waffenfreischaltung, Bauplan-Auswahl und Herstellungsvalidierung bleiben Angular-eigen.');
