@@ -75,7 +75,11 @@ closeTo(MATERIALS['Fuchs-Leder'].stats.strengthFactor, 0.05);
 closeTo(MATERIALS['Fuchs-Leder'].stats.penetration, 0.04);
 closeTo(MATERIALS['Fuchs-Leder'].stats.critChance, 0.04);
 assert.deepEqual(MATERIALS.Kupfer.specialEffect, { stat: 'DS', amount: 0.10 });
-assert.deepEqual(MATERIALS['Morsche Fichte'].specialEffect, { stat: 'GES', amount: 0.05 });
+assert.equal(MATERIALS['Morsche Fichte'].specialEffect, null);
+assert.deepEqual(MATERIALS.Fichte.specialEffect, { stat: 'DS', amount: 0.05 });
+assert.deepEqual(MATERIALS.Tanne.specialEffect, { stat: 'P', amount: 0.10 });
+assert.deepEqual(MATERIALS['Hasen-Leder'].specialEffect, { stat: 'GES', amount: 0.15 });
+assert.deepEqual(MATERIALS['Fuchs-Leder'].specialEffect, { stat: 'P', amount: 0.05 });
 assert.equal(MATERIALS['Morsche Fichte'].materialId, 1);
 assert.equal(MATERIALS['Morsche Fichte'].dungeonDropWeight, 81);
 assert.equal(MATERIALS.Fichte.dungeonDropWeight, 8);
@@ -138,12 +142,33 @@ closeTo(bow.characterModifiers.dodge, 0.02);
 closeTo(bow.characterModifiers.strengthFactor, 0.05);
 closeTo(bow.characterModifiers.precision, 0.20);
 closeTo(bow.characterModifiers.critChance, 0.12);
-closeTo(bow.characterModifiers.penetration, 0.04);
+closeTo(bow.characterModifiers.penetration, 0.09);
 closeTo(bow.damagePerHit, 11.55);
 closeTo(bow.attackSpeed, 0.9);
 closeTo(bow.hitChance, 0.78);
-closeTo(bow.penetration, 0.04);
+closeTo(bow.penetration, 0.09);
 closeTo(bow.expectedRaw, 8.1081);
+
+const specialBaseSlots = [
+  { slot: 'workingPart', material: 'Zinn' },
+  { slot: 'back', material: 'Zinn' },
+  { slot: 'gripCore', material: 'Fichte' },
+  { slot: 'gripWrap', material: 'Lederfetzen' }
+];
+const noSpecial = calculateWeaponStats([...specialBaseSlots, { slot: 'special', material: 'Morsche Fichte' }], 'dagger');
+closeTo(noSpecial.specialSpeedFactor, 1);
+closeTo(noSpecial.reinforcementHitChanceAdd, 0);
+closeTo(noSpecial.reinforcementPenetrationAdd, 0);
+const penetrationSpecial = calculateWeaponStats([...specialBaseSlots, { slot: 'special', material: 'Fichte' }], 'dagger');
+closeTo(penetrationSpecial.penetration, 0.05);
+closeTo(penetrationSpecial.reinforcementPenetrationAdd, 0.05);
+const precisionSpecial = calculateWeaponStats([...specialBaseSlots, { slot: 'special', material: 'Tanne' }], 'dagger');
+closeTo(precisionSpecial.characterModifiers.precision, 0.20);
+closeTo(precisionSpecial.reinforcementHitChanceAdd, 0.10);
+closeTo(precisionSpecial.hitChance, 0.72);
+const speedSpecial = calculateWeaponStats([...specialBaseSlots, { slot: 'special', material: 'Hasen-Leder' }], 'dagger');
+closeTo(speedSpecial.specialSpeedFactor, 1.15);
+closeTo(speedSpecial.attackSpeed, 1.61);
 
 const legacySlots = [
   { slot: 'Waffentyp', material: 'Aluminium' },
@@ -162,9 +187,11 @@ assert.deepEqual(
 assert.equal(rarityFactor(legacySlots), 1);
 
 assert.equal(reinforcementEffectText('Kupfer'), '+10 Prozentpunkte DS');
-assert.equal(reinforcementEffectText('Fichte'), 'Kein Spezialeffekt');
-assert.equal(reinforcementEffectText('Tanne'), '+15 % GES');
-assert.equal(reinforcementEffectText('Hasen-Leder'), '+5 % P');
+assert.equal(reinforcementEffectText('Morsche Fichte'), 'Kein Spezialeffekt');
+assert.equal(reinforcementEffectText('Fichte'), '+5 Prozentpunkte DS');
+assert.equal(reinforcementEffectText('Tanne'), '+10 % P');
+assert.equal(reinforcementEffectText('Hasen-Leder'), '+15 % GES');
+assert.equal(reinforcementEffectText('Fuchs-Leder'), '+5 % P');
 
 const swordWeapon = { id: 77, stats: sword };
 const recruit = calculateCharacterStats('recruit', [swordWeapon]);
@@ -214,4 +241,4 @@ closeTo(armored.effectiveArmor, 72);
 closeTo(armored.reduction, 0.72);
 closeTo(armored.afterArmor, armored.raw * 0.28);
 
-console.log('Game-Core: Waffenbau, aktuelle Material-/Dungeonwerte, 2H-Deduplizierung, Levelskalierung, prozentuale Rüstung mit 80%-Cap und Kampfübergabe sind konsistent.');
+console.log('Game-Core: Material-SPE v0.13.9, Waffenbau, Dungeonwerte, 2H-Deduplizierung, Levelskalierung und Kampfübergabe sind konsistent.');

@@ -10,6 +10,7 @@ import {
 } from '../game/game-core';
 import {
   advanceForgeJobs,
+  calculateWeaponBalanceSnapshot,
   createForgeJob,
   enqueueForgeJob,
   forgeRequirements,
@@ -23,6 +24,7 @@ import {
   isWeaponProgressionSource,
   normalizeWeaponCraftCounts,
   recordCompletedWeaponCraft,
+  refreshForgeJobBalance,
   reserveForgeMaterials,
   type ForgeInventory,
   type ForgeJob,
@@ -68,6 +70,7 @@ interface RuntimeWeaponInventoryEntry {
   stats: WeaponStats;
   valueNickel: number;
   craftedSeconds: number;
+  starter?: boolean;
 }
 
 type RuntimeForgeState = MutableGameState & ForgeStateLike & {
@@ -93,6 +96,8 @@ declare global {
 
 @Injectable({ providedIn: 'root' })
 export class GameForgeService {
+  private balanceRefreshApplied = false;
+
   constructor(private readonly gameState: GameStateService) {}
 
   requirements(weaponForm: string, slots: readonly WeaponSlot[]): Record<string, number> {
@@ -203,6 +208,7 @@ export class GameForgeService {
 
   update(now = Date.now()): ForgeUpdateResult {
     const state = this.getState();
+    this.refreshMaterialBalance(state);
     const activeSlots = Number(state.upgrades.forgeSlots) || 0;
     const completedNames: string[] = [];
 
@@ -225,6 +231,22 @@ export class GameForgeService {
 
   closeLegacyCompatibilityBridge(): void {
     delete window.NoBrainerForgeCompatibility;
+  }
+
+  private refreshMaterialBalance(state: RuntimeForgeState): void {
+    if (this.balanceRefreshApplied) return;
+    this.balanceRefreshApplied = true;
+
+    for (const weapon of state.weaponInventory) {
+      if (weapon.starter || weapon.id === 0 || !weapon.weaponForm || !Array.isArray(weapon.slots)) continue;
+      const snapshot = calculateWeaponBalanceSnapshot(weapon.weaponForm, weapon.slots);
+      weapon.slots = snapshot.slots;
+      weapon.stats = snapshot.stats;
+      weapon.valueNickel = snapshot.valueNickel;
+    }
+
+    for (const job of state.forgeJobs) refreshForgeJobBalance(job, true);
+    for (const job of state.forgeQueue) refreshForgeJobBalance(job, false);
   }
 
   private getState(): RuntimeForgeState {

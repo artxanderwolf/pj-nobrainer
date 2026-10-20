@@ -27,6 +27,13 @@ export interface ForgeJob {
   startedAt?: number;
   finishesAt?: number;
 }
+export interface WeaponBalanceSnapshot {
+  slots: WeaponSlot[];
+  stats: WeaponStats;
+  valueNickel: number;
+  performance: number;
+  forgeSeconds: number;
+}
 export interface ForgeStateLike {
   forgeJobs: ForgeJob[];
   forgeQueue: ForgeJob[];
@@ -172,8 +179,10 @@ export function reserveForgeMaterials(inventory: ForgeInventory, requirements: R
   return true;
 }
 
-export function createForgeJob(weaponForm: string, weaponName: string, slots: readonly WeaponSlot[]): ForgeJob {
-  const form = getWeaponForm(weaponForm);
+export function calculateWeaponBalanceSnapshot(
+  weaponForm: string,
+  slots: readonly WeaponSlot[]
+): WeaponBalanceSnapshot {
   const normalized = normalizeWeaponSlots(slots);
   const craftingSlots = new Set(getWeaponCraftingSlots(weaponForm));
   const storedSlots = normalized
@@ -182,13 +191,41 @@ export function createForgeJob(weaponForm: string, weaponName: string, slots: re
   const stats = calculateWeaponStats(storedSlots, weaponForm);
   const economy = calculateWeaponEconomy(stats);
   return {
-    weaponForm,
-    weaponName: weaponName.trim() || form.name,
     slots: storedSlots,
     stats,
     valueNickel: economy.valueNickel,
     performance: economy.performance,
-    totalSeconds: economy.forgeSeconds
+    forgeSeconds: economy.forgeSeconds
+  };
+}
+
+export function refreshForgeJobBalance(job: ForgeJob, preserveDuration: boolean): boolean {
+  const snapshot = calculateWeaponBalanceSnapshot(job.weaponForm, job.slots);
+  const changed = JSON.stringify(job.slots) !== JSON.stringify(snapshot.slots)
+    || JSON.stringify(job.stats) !== JSON.stringify(snapshot.stats)
+    || job.valueNickel !== snapshot.valueNickel
+    || job.performance !== snapshot.performance
+    || (!preserveDuration && job.totalSeconds !== snapshot.forgeSeconds);
+
+  job.slots = snapshot.slots;
+  job.stats = snapshot.stats;
+  job.valueNickel = snapshot.valueNickel;
+  job.performance = snapshot.performance;
+  if (!preserveDuration) job.totalSeconds = snapshot.forgeSeconds;
+  return changed;
+}
+
+export function createForgeJob(weaponForm: string, weaponName: string, slots: readonly WeaponSlot[]): ForgeJob {
+  const form = getWeaponForm(weaponForm);
+  const snapshot = calculateWeaponBalanceSnapshot(weaponForm, slots);
+  return {
+    weaponForm,
+    weaponName: weaponName.trim() || form.name,
+    slots: snapshot.slots,
+    stats: snapshot.stats,
+    valueNickel: snapshot.valueNickel,
+    performance: snapshot.performance,
+    totalSeconds: snapshot.forgeSeconds
   };
 }
 
@@ -250,6 +287,8 @@ export const FORGE_CORE_BRIDGE = {
   isWeaponSelectionComplete,
   hasForgeMaterials,
   reserveForgeMaterials,
+  calculateWeaponBalanceSnapshot,
+  refreshForgeJobBalance,
   createForgeJob,
   hasForgeCapacity,
   startForgeQueuedJob,

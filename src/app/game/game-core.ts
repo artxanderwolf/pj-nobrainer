@@ -435,14 +435,14 @@ function material(
 }
 
 export const MATERIALS: Record<string, MaterialDefinition> = {
-  'Morsche Fichte': material(1, 'Holz', 1, { hp: 4 }, { stat: 'GES', amount: 0.05 }, 81),
-  Fichte: material(2, 'Holz', 1, { hp: 5, armor: 1, dodge: 0.01, precision: 0.05 }, null, 8),
-  Tanne: material(3, 'Holz', 2, { hp: 7, armor: 1, dodge: 0.02, precision: 0.10 }, { stat: 'GES', amount: 0.15 }, 2),
+  'Morsche Fichte': material(1, 'Holz', 1, { hp: 4 }, null, 81),
+  Fichte: material(2, 'Holz', 1, { hp: 5, armor: 1, dodge: 0.01, precision: 0.05 }, { stat: 'DS', amount: 0.05 }, 8),
+  Tanne: material(3, 'Holz', 2, { hp: 7, armor: 1, dodge: 0.02, precision: 0.10 }, { stat: 'P', amount: 0.10 }, 2),
   Zinn: material(4, 'Metall', 1, { hp: 6, armor: 1 }, null, 81),
   Kupfer: material(5, 'Metall', 1, { hp: 8, armor: 2, strengthFactor: 0.05 }, { stat: 'DS', amount: 0.10 }, 8),
   Aluminium: material(6, 'Metall', 2, { hp: 9, armor: 2, dodge: 0.02, strengthFactor: 0.10 }, { stat: 'GES', amount: 0.10 }, 2),
-  'Hasen-Leder': material(7, 'Leder', 1, { hp: 1, strengthFactor: 0.03, critChance: 0.02, penetration: 0.02 }, { stat: 'P', amount: 0.05 }, 8),
-  'Fuchs-Leder': material(8, 'Leder', 2, { hp: 2, strengthFactor: 0.05, critChance: 0.04, penetration: 0.04 }, { stat: 'P', amount: 0.10 }, 2),
+  'Hasen-Leder': material(7, 'Leder', 1, { hp: 1, strengthFactor: 0.03, critChance: 0.02, penetration: 0.02 }, { stat: 'GES', amount: 0.15 }, 8),
+  'Fuchs-Leder': material(8, 'Leder', 2, { hp: 2, strengthFactor: 0.05, critChance: 0.04, penetration: 0.04 }, { stat: 'P', amount: 0.05 }, 2),
   Lederfetzen: material(9, 'Leder', 1, { hp: 3, strengthFactor: 0.01, critChance: 0.01, penetration: 0.01 }, null, 81)
 };
 

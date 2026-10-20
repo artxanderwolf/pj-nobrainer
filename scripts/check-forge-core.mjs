@@ -26,6 +26,8 @@ try {
     getForgeSelectionQuantities,
     hasForgeMaterials,
     reserveForgeMaterials,
+    calculateWeaponBalanceSnapshot,
+    refreshForgeJobBalance,
     createForgeJob,
     enqueueForgeJob,
     advanceForgeJobs,
@@ -73,19 +75,53 @@ try {
   assert.equal(inventory.Fichte, undefined);
   assert.equal(inventory.Lederfetzen, undefined);
 
+  const snapshot = calculateWeaponBalanceSnapshot('sword', swordSlots);
+  assert.equal(snapshot.valueNickel, 65);
+  assert.equal(snapshot.forgeSeconds, 80);
+  assertClose(snapshot.performance, 3.759525);
+  assertClose(snapshot.stats.penetration, 0.05);
+
   const job = createForgeJob('sword', '', swordSlots);
   assert.equal(job.weaponName, '1H Schwert');
-  assert.equal(job.totalSeconds, 75, 'Schmiedezeit muss aus dem neuen Waffenwert berechnet werden.');
-  assert.equal(job.valueNickel, 60, '1H-Testschwert muss nach Leistungswert statt Materialseltenheit bepreist werden.');
-  assertClose(job.performance, 3.63825);
+  assert.equal(job.totalSeconds, 80, 'Schmiedezeit muss aus dem aktuellen Waffenwert berechnet werden.');
+  assert.equal(job.valueNickel, 65, 'Fichte-DS muss den Leistungswert des 1H-Testschwerts berücksichtigen.');
+  assertClose(job.performance, 3.759525);
   assert.deepEqual(job.slots.map(slot => slot.slot), ['workingPart', 'back', 'gripCore', 'gripWrap', 'special', 'parry']);
   assert.equal(job.slots.some(slot => slot.slot === 'baseMaterial'), false);
+
+  const staleJob = weaponName => ({
+    ...job,
+    weaponName,
+    stats: {
+      ...job.stats,
+      characterModifiers: { ...job.stats.characterModifiers, penetration: 0 },
+      penetration: 0,
+      reinforcementPenetrationAdd: 0
+    },
+    valueNickel: 60,
+    performance: 3.63825,
+    totalSeconds: 75
+  });
+  const activeStale = { ...staleJob('Aktiv'), startedAt: 1000, finishesAt: 76000 };
+  assert.equal(refreshForgeJobBalance(activeStale, true), true);
+  assert.equal(activeStale.valueNickel, 65);
+  assertClose(activeStale.performance, 3.759525);
+  assertClose(activeStale.stats.penetration, 0.05);
+  assert.equal(activeStale.totalSeconds, 75, 'Laufende Aufträge behalten ihre bereits gestartete Dauer.');
+  assert.equal(activeStale.finishesAt, 76000, 'Laufende Aufträge dürfen durch den Balance-Patch nicht zeitlich verschoben werden.');
+
+  const queuedStale = staleJob('Wartend');
+  assert.equal(refreshForgeJobBalance(queuedStale, false), true);
+  assert.equal(queuedStale.valueNickel, 65);
+  assertClose(queuedStale.performance, 3.759525);
+  assertClose(queuedStale.stats.penetration, 0.05);
+  assert.equal(queuedStale.totalSeconds, 80, 'Noch nicht gestartete Aufträge übernehmen die neue Schmiedezeit.');
 
   const bowJob = createForgeJob('bow', '', bowSlots);
   assert.equal(bowJob.weaponName, 'Bogen');
   assert.equal(bowJob.totalSeconds, 80);
-  assert.equal(bowJob.valueNickel, 65);
-  assertClose(bowJob.performance, 4.51444851);
+  assert.equal(bowJob.valueNickel, 70);
+  assertClose(bowJob.performance, 4.66393356);
   assert.deepEqual(bowJob.slots.map(slot => slot.slot), ['back', 'gripCore', 'gripWrap', 'special', 'bowstring']);
 
   const state = { forgeJobs: [], forgeQueue: [] };
@@ -93,12 +129,12 @@ try {
   assert.equal(enqueueForgeJob(state, { ...job, weaponName: 'B' }, 1, 2, 1000), 'queued');
   assert.equal(enqueueForgeJob(state, { ...job, weaponName: 'C' }, 1, 2, 1000), 'queued');
   assert.equal(enqueueForgeJob(state, { ...job, weaponName: 'D' }, 1, 2, 1000), 'full');
-  assert.equal(state.forgeJobs[0].finishesAt, 76000);
+  assert.equal(state.forgeJobs[0].finishesAt, 81000);
 
   const completed = [];
-  const count = advanceForgeJobs(state, 1, 230000, (finished, at) => completed.push([finished.weaponName, at]));
+  const count = advanceForgeJobs(state, 1, 250000, (finished, at) => completed.push([finished.weaponName, at]));
   assert.equal(count, 3);
-  assert.deepEqual(completed, [['A', 76000], ['B', 151000], ['C', 226000]]);
+  assert.deepEqual(completed, [['A', 81000], ['B', 161000], ['C', 241000]]);
   assert.equal(state.forgeJobs.length, 0);
   assert.equal(state.forgeQueue.length, 0);
 
@@ -141,7 +177,7 @@ try {
   assert.equal(isWeaponFormUnlocked('staff', craftCounts), true);
   assert.deepEqual(getVisibleWeaponForms(craftCounts), ['dagger', 'sword', 'axe1h', 'sword2h', 'axe2h', 'bow', 'staff']);
 
-  console.log('Forge-Core: Baupläne, Queue und Waffen-Freischaltung über 10 abgeschlossene Herstellungsaufträge sind konsistent.');
+  console.log('Forge-Core: Baupläne, Material-Balance-Migration, Queue-Timer und Waffen-Freischaltung sind konsistent.');
 } finally {
   unlinkSync(temporaryUrl);
   unlinkSync(temporaryEconomyUrl);

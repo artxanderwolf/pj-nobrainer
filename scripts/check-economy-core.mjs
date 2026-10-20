@@ -52,6 +52,22 @@ try {
 
   assert.equal(rarityFactorFromRarity(1), 1, 'Legacy-Verkaufsfaktor bleibt für Kompatibilität erhalten.');
   assert.equal(rarityFactorFromRarity(2), 1.1, 'Legacy-Verkaufsfaktor bleibt für Kompatibilität erhalten.');
+  assert.deepEqual(materialSellData('Morsche Fichte'), {
+    type: 'material',
+    name: 'Morsche Fichte',
+    rarity: 1,
+    factor: 1,
+    valueNickel: 10,
+    seconds: 30
+  }, 'Morsche Fichte verliert mit dem SPE auch den 10-%-Verkaufsbonus.');
+  assert.deepEqual(materialSellData('Fichte'), {
+    type: 'material',
+    name: 'Fichte',
+    rarity: 1,
+    factor: 1.1,
+    valueNickel: 11,
+    seconds: 35
+  }, 'Fichte erhält mit positivem DS-SPE den 10-%-Verkaufsbonus.');
   assert.deepEqual(materialSellData('Zinn'), {
     type: 'material',
     name: 'Zinn',
@@ -115,7 +131,7 @@ try {
     }
   );
 
-  console.log('Economy-Core: 1000er-Währungsstaffelung, verteuerte Progressionskosten sowie unveränderte Einkommen und Zeiten sind konsistent.');
+  console.log('Economy-Core: neue Material-SPE, 1000er-Währung, Progressionskosten sowie daraus abgeleitete Einkommen und Zeiten sind konsistent.');
 } finally {
   unlinkSync(temporaryUrl);
 }
