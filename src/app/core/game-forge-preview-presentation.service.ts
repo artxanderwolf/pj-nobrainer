@@ -2,9 +2,8 @@ import { Injectable } from '@angular/core';
 import { formatCurrencyNickel } from '../game/economy-core';
 import {
   MATERIAL_REFERENCES_BY_ID,
-  getMaterialIdByName,
   getWeaponForm,
-  reinforcementEffectText,
+  reinforcementEffectTextById,
   type MaterialCategory,
   type WeaponCraftingSlotId,
   type WeaponSlot
@@ -75,10 +74,10 @@ export class GameForgePreviewPresentationService {
         valueNickel: preview.valueNickel,
         factor: preview.factor,
         stats: preview.stats,
-        reinforcementMaterial: preview.slots.find(slot => slot.slot === 'special')?.material || null
+        reinforcementMaterialId: preview.slots.find(slot => slot.slot === 'special')?.materialId ?? null
       },
       formatCurrencyNickel,
-      reinforcementEffectText
+      reinforcementEffectTextById
     );
 
     this.setText('forgeTimePreview', presentation.timeText);
@@ -222,7 +221,7 @@ export class GameForgePreviewPresentationService {
         const option = document.createElement('option');
         option.value = String(reference.materialId);
         option.textContent = `${reference.displayName} · S${reference.definition.rarity} · benötigt ${needed} · verfügbar ${remaining}${
-          binding.slot === 'special' ? ` · ${reinforcementEffectText(reference.displayName)}` : ''
+          binding.slot === 'special' ? ` · ${reinforcementEffectTextById(reference.materialId)}` : ''
         }`;
         select.appendChild(option);
       }
@@ -244,8 +243,7 @@ export class GameForgePreviewPresentationService {
   private readSelectedMaterialId(selectId: string): number | null {
     const value = (document.getElementById(selectId) as HTMLSelectElement | null)?.value || '';
     const numeric = Number(value);
-    if (Number.isInteger(numeric) && numeric > 0) return numeric;
-    return getMaterialIdByName(value);
+    return Number.isInteger(numeric) && numeric > 0 ? numeric : null;
   }
 
   private renderConstructionInfo(weaponForm: string): void {
