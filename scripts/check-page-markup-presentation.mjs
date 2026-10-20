@@ -14,14 +14,17 @@ const requiredPageAnchors = {
   'character-capacity': ['tavernCapacity', 'innUpgradeCard'],
   'storage-materials': ['inventoryRows', 'inventoryEmpty'],
   'storage-weapons': ['weaponInventory', 'weaponInventoryEmpty'],
+  forge: ['forgeUpgradeCardInline'],
   'forge-form': ['weaponForm', 'slotWorkingPart', 'slotBack', 'slotGripCore', 'slotGripWrap', 'slotSpecial', 'slotParry', 'slotBowstring', 'forgeParryInfo', 'forgeMaterialTotalPreview', 'forgePreviewNextBtn'],
   'forge-preview': ['forgeWeaponName', 'forgeTimePreview', 'forgeValuePreview', 'forgeDamagePreview', 'forgeSpeedPreview', 'forgeHitPreview', 'forgeRawPreview', 'forgePenPreview', 'forgeRarityPreview', 'forgeReinforcementPreview', 'forgeStartBtn'],
   'forge-jobs': ['forgeJobCard', 'forgeQueueCard'],
   'forge-upgrade': ['forgeUpgradeCard'],
+  market: ['marketUpgradeCardInline'],
   'market-materials': ['marketMaterials', 'marketMaterialsEmpty'],
   'market-weapons': ['marketWeapons', 'marketWeaponsEmpty'],
   'market-jobs': ['marketJobCard', 'marketQueueCard'],
   'market-upgrade': ['marketUpgradeCard'],
+  dungeon: ['dungeonOverviewOpenBtn', 'dungeonOverviewAction'],
   'dungeon-select': ['dungeonTeamCard', 'dungeonPrimaryStatus', 'dungeonPrimaryBtn', 'enemyHp', 'enemyArmor', 'enemyDamage', 'energyCost', 'runDuration'],
   'dungeon-team': ['teamCard'],
   'dungeon-expedition': ['dungeonRunCard', 'autoDungeonBtn'],
@@ -40,6 +43,14 @@ for (const hub of ['character', 'storage', 'forge', 'market', 'dungeon']) {
   assert.match(markup, /class="screen-menu/, `Bereichsseite ${hub} verwendet nicht das kompakte Menümuster.`);
   assert.doesNotMatch(markup, /class="grid"/, `Bereichsseite ${hub} ist wieder zu einer alten Dashboard-Gridseite geworden.`);
 }
+
+const forgeHub = getAngularOwnedPageMarkup('forge') ?? '';
+assert.doesNotMatch(forgeHub, /go\('forge-upgrade'\)/, 'Schmiede-Ausbau darf nicht mehr auf eine Extra-Unterseite verweisen.');
+assert.match(forgeHub, /id="forgeUpgradeCardInline"/, 'Schmiede-Ausbau wird nicht direkt im Hub gerendert.');
+
+const marketHub = getAngularOwnedPageMarkup('market') ?? '';
+assert.doesNotMatch(marketHub, /go\('market-upgrade'\)/, 'Markt-Ausbau darf nicht mehr auf eine Extra-Unterseite verweisen.');
+assert.match(marketHub, /id="marketUpgradeCardInline"/, 'Markt-Ausbau wird nicht direkt im Hub gerendert.');
 
 const forgeForm = getAngularOwnedPageMarkup('forge-form') ?? '';
 for (const option of ['Dolch', '1H Schwert', '1H Axt', '2H Schwert', '2H Axt', 'Bogen', 'Stab']) {
@@ -60,7 +71,8 @@ const forgePreview = getAngularOwnedPageMarkup('forge-preview') ?? '';
 assert.match(forgePreview, /<span>Leistungswert<\/span>/, 'Schmiedevorschau bezeichnet den Qualitätswert nicht als Leistungswert.');
 
 const dungeonHub = getAngularOwnedPageMarkup('dungeon') ?? '';
-assert.match(dungeonHub, /go\('dungeon-select'\)[\s\S]*Dungeon 1/, 'Dungeon-Bereich führt nicht direkt zu Dungeon 1.');
+assert.match(dungeonHub, /id="dungeonOverviewOpenBtn"[\s\S]*go\('dungeon-select'\)[\s\S]*Dungeon 1/, 'Dungeon-Bereich führt nicht direkt zu Dungeon 1.');
+assert.match(dungeonHub, /id="dungeonOverviewAction"[^>]*>Lauf starten<\/button>/, 'Dungeon-Bereich besitzt keine direkte Status-/Laufaktion.');
 assert.doesNotMatch(dungeonHub, /go\('dungeon-team'\)|go\('dungeon-expedition'\)|go\('dungeon-loot'\)/, 'Die alten Dungeon-Unterseiten dürfen nicht mehr als Hauptauswahl angeboten werden.');
 const dungeonOne = getAngularOwnedPageMarkup('dungeon-select') ?? '';
 assert.match(dungeonOne, /id="dungeonTeamCard"/, 'Dungeon 1 enthält keine direkte Teamauswahl.');
@@ -78,7 +90,7 @@ const composed = composePageMarkup(APP_SHELL_PAGE_IDS);
 for (const pageId of APP_SHELL_PAGE_IDS) {
   assert.equal((composed.match(new RegExp(`<section class="[^"]*page[^"]*" id="${pageId}"`, 'g')) ?? []).length, 1, `Seite ${pageId} ist im zusammengesetzten Markup nicht genau einmal vorhanden.`);
 }
-for (const runtimeAnchor of ['inventoryRows', 'weaponInventory', 'forgeStartBtn', 'marketMaterials', 'dungeonTeamCard', 'dungeonPrimaryBtn', 'combatLog']) {
+for (const runtimeAnchor of ['inventoryRows', 'weaponInventory', 'forgeStartBtn', 'marketMaterials', 'dungeonTeamCard', 'dungeonPrimaryBtn', 'combatLog', 'forgeUpgradeCardInline', 'marketUpgradeCardInline', 'dungeonOverviewAction']) {
   assert.equal((composed.match(new RegExp(`id="${runtimeAnchor}"`, 'g')) ?? []).length, 1, `Runtime-Anker ${runtimeAnchor} muss trotz Seitenaufteilung genau einmal existieren.`);
 }
 assert.equal((composed.match(/id="forgePreviewNextBtn"/g) ?? []).length, 1, 'Weiter-zur-Vorschau-Button muss genau einmal existieren.');
@@ -87,4 +99,4 @@ assert.match(appComponent, /composePageMarkup\(APP_SHELL_PAGE_IDS\)/, 'Der App-C
 assert.match(appComponent, /composeAppShell\(pageMarkup\)/, 'Das Angular-eigene Seitenmarkup wird nicht in die Angular-Shell eingesetzt.');
 assert.doesNotMatch(appComponent, /DOMParser/, 'Angular-eigenes Seitenmarkup darf nicht aus Legacy-HTML geparst werden.');
 
-console.log('Seiten-Markup: Dungeon 1 bündelt Team, Laufsteuerung und Beutezugang; Schmiede bleibt kompakt aufgeteilt.');
+console.log('Seiten-Markup: Dungeonstatus sowie Schmiede- und Markt-Ausbau sind direkt in den Bereichskarten verfügbar.');
