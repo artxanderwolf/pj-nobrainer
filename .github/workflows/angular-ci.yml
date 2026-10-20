@@ -20,6 +20,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Check stale app version markers
+        run: |
+          if grep -R --line-number --fixed-strings "0.12.91" src scripts package.json; then
+            echo "Stale v0.12.91 marker found."
+            exit 1
+          fi
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
