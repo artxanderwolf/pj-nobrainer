@@ -1,0 +1,13 @@
+dungeon_id,class_id,order,material_id
+1,recruit,1,9
+1,recruit,2,5
+1,recruit,3,3
+1,fighter,1,9
+1,fighter,2,4
+1,fighter,3,6
+1,archer,1,9
+1,archer,2,8
+1,archer,3,7
+1,scholar,1,9
+1,scholar,2,2
+1,scholar,3,1

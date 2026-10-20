@@ -1,0 +1,7 @@
+key,value
+energyRegenPerMinute,5
+market.baseSeconds,30
+market.materialBaseNickel,10
+tavern.recruitBaseNickel,200
+tavern.recruitGrowth,1.75
+forge.baseSeconds,30

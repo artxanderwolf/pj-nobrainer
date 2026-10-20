@@ -1,0 +1,8 @@
+part_id,label,material_slot,categories,stat_keys
+workingPart,Schneide,workingPart,Metall,strengthFactor
+back,Kern,back,Metall|Holz,armor
+gripCore,Griff,gripCore,Holz,precision
+gripWrap,Wicklung,gripWrap,Leder,critChance
+special,Spezial,special,Metall|Holz|Leder,
+parry,Parierstange,parry,Metall|Holz,armor|dodge
+bowstring,Sehne,bowstring,Leder,strengthFactor|penetration

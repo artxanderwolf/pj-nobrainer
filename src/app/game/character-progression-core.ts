@@ -1,7 +1,11 @@
-export const CHARACTER_LEVEL_MAX = 20;
-export const CHARACTER_XP_BASE = 100;
-export const CHARACTER_XP_GROWTH = 1.4;
-export const CHARACTER_STAT_GROWTH = 1.1;
+import {
+  CHARACTER_LEVEL_MAX,
+  CHARACTER_STAT_GROWTH,
+  CHARACTER_XP_BASE,
+  CHARACTER_XP_GROWTH
+} from './data/generated/character-progression.generated.ts';
+
+export { CHARACTER_LEVEL_MAX, CHARACTER_STAT_GROWTH, CHARACTER_XP_BASE, CHARACTER_XP_GROWTH };
 
 export interface CharacterProgressionLike {
   level?: number | null;

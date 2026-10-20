@@ -1,0 +1,5 @@
+dungeon_id,class_id,weight
+1,recruit,55
+1,fighter,20
+1,archer,15
+1,scholar,10

@@ -1,0 +1,2 @@
+dungeon_id,energy_cost,enemy_base_damage,enemy_base_speed,enemy_base_hit_chance,enemy_base_penetration,enemy_mult_hp,enemy_mult_armor,enemy_mult_dodge,enemy_mult_damage,enemy_mult_speed,enemy_mult_hit_chance,enemy_mult_penetration,encounter_chance,search_step_ms,loot_collect_ms
+1,4,6,0.8,0.50,0,2.0,1,1,1,1,1,1,0.10,1000,1000
