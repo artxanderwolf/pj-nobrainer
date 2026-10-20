@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - migration/angular
-      - feature/data-architecture-v1-csv
   pull_request:
     branches:
       - main
