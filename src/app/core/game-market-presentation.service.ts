@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
-import { formatCurrencyNickel, formatDuration, materialSellData, weaponSellData } from '../game/economy-core';
+import { formatCurrencyNickel, formatDuration, materialSellDataById, weaponSellData } from '../game/economy-core';
 import { getWeaponEquipLocation, type EquipmentCharacterLike } from '../game/equipment-core';
+import { getMaterialStorageEntries, type MaterialStorageInventory } from '../game/material-storage-core';
 import {
   getActiveMarketJobPresentation,
   getMarketMaterialPresentation,
@@ -13,10 +14,9 @@ import { GameMarketService } from './game-market.service';
 import { GameProgressionPresentationService } from './game-progression-presentation.service';
 import { GameStateService, type MutableGameState } from './game-state.service';
 
-interface RuntimeMarketInventoryEntry { qty?: number | null; }
 interface RuntimeMarketWeapon { id: number; name: string; valueNickel: number; slots?: readonly any[] | null; starter?: boolean; }
 type RuntimeMarketPresentationState = MutableGameState & {
-  inventory: Record<string, RuntimeMarketInventoryEntry | undefined>;
+  inventory: MaterialStorageInventory;
   weaponInventory: RuntimeMarketWeapon[];
   characters: EquipmentCharacterLike[];
   marketJobs: MarketPresentationJobLike[];
@@ -71,20 +71,22 @@ export class GameMarketPresentationService {
     const box = document.getElementById('marketMaterials');
     const empty = document.getElementById('marketMaterialsEmpty');
     if (!box || !empty) return;
-    const entries = Object.entries(this.state().inventory).filter(([, item]) => (Number(item?.qty) || 0) > 0).sort((a, b) => a[0].localeCompare(b[0]));
+    const entries = getMaterialStorageEntries(this.state().inventory)
+      .filter(entry => entry.qty > 0)
+      .sort((a, b) => a.displayName.localeCompare(b.displayName));
     const hasCapacity = this.gameMarket.hasCapacity();
     box.innerHTML = '';
     empty.style.display = entries.length ? 'none' : 'block';
-    entries.forEach(([name, item], index) => {
-      const stock = Number(item?.qty) || 0;
-      const sale = materialSellData(name);
+    entries.forEach((entry, index) => {
+      const { materialId, displayName: name, qty: stock } = entry;
+      const sale = materialSellDataById(materialId);
       if (!sale) return;
       const inputId = `marketQty_${index}`;
       const row = document.createElement('div');
       row.className = 'sell-row';
       const presentation = getMarketMaterialPresentation(name, stock, 1, sale.valueNickel, sale.seconds, hasCapacity, formatCurrencyNickel, formatDuration);
       row.title = presentation.title;
-      row.innerHTML = `<div><strong>${name}</strong><div class="sell-meta">${presentation.stockText}</div><div class="sell-meta" data-market-preview>${presentation.previewText}</div></div><div class="market-qty"><button class="btn smallbtn" type="button">−</button><input id="${inputId}" class="number-input" type="number" min="1" max="${stock}" step="1" value="1" data-material="${name}"><button class="btn smallbtn" type="button">+</button><button class="btn smallbtn primary" type="button" ${presentation.sellDisabled ? 'disabled' : ''}>Verkaufen</button></div>`;
+      row.innerHTML = `<div><strong>${name}</strong><div class="sell-meta">${presentation.stockText}</div><div class="sell-meta" data-market-preview>${presentation.previewText}</div></div><div class="market-qty"><button class="btn smallbtn" type="button">−</button><input id="${inputId}" class="number-input" type="number" min="1" max="${stock}" step="1" value="1" data-material="${name}" data-material-id="${materialId}"><button class="btn smallbtn" type="button">+</button><button class="btn smallbtn primary" type="button" ${presentation.sellDisabled ? 'disabled' : ''}>Verkaufen</button></div>`;
       const buttons = row.querySelectorAll<HTMLButtonElement>('button');
       const input = row.querySelector<HTMLInputElement>('input');
       const preview = row.querySelector<HTMLElement>('[data-market-preview]');
@@ -113,7 +115,7 @@ export class GameMarketPresentationService {
 
       buttons[0]?.addEventListener('click', () => commitQuantity(clampQuantity(Number(input.value)) - 1));
       buttons[1]?.addEventListener('click', () => commitQuantity(clampQuantity(Number(input.value)) + 1));
-      buttons[2]?.addEventListener('click', () => this.startMaterial(name, commitQuantity(Number(input.value))));
+      buttons[2]?.addEventListener('click', () => this.startMaterial(materialId, commitQuantity(Number(input.value))));
       input.addEventListener('input', () => {
         if (input.value === '') return;
         const value = Number(input.value);
@@ -160,8 +162,8 @@ export class GameMarketPresentationService {
 
   closeLegacyCompatibilityBridge(): void { delete window.NoBrainerMarketPresentationCompatibility; }
 
-  private startMaterial(name: string, quantity: number): void {
-    const result = this.gameMarket.startMaterial(name, quantity, Date.now());
+  private startMaterial(materialId: number, quantity: number): void {
+    const result = this.gameMarket.startMaterialById(materialId, quantity, Date.now());
     if (result.status === 'full') { alert('Alle Verkaufs- und Warteschlangenplätze sind belegt.'); return; }
     if (result.status === 'no-stock' || result.status === 'unknown-material') return;
     this.combatLog.add(`Verkauf eingestellt: ${result.quantity}× ${result.name} für ${formatCurrencyNickel(result.valueNickel)}.`, 'good');
