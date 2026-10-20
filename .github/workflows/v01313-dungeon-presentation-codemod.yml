@@ -1,0 +1,28 @@
+name: v0.13.13 Dungeon presentation codemod
+
+on:
+  push:
+    branches:
+      - feature/complete-material-id-v01313
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: ${{ github.actor != 'github-actions[bot]' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/complete-material-id-v01313
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+      - run: node scripts/apply-v01313-dungeon-presentation.mjs
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/app/core/game-dungeon-presentation.service.ts
+          git commit -m "refactor: present dungeon loot from stable material IDs"
+          git push origin HEAD:feature/complete-material-id-v01313
