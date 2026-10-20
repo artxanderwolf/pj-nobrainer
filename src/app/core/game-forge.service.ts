@@ -2,8 +2,10 @@ import { Injectable } from '@angular/core';
 import { calculateWeaponEconomy } from '../game/economy-core';
 import {
   createStatModifiers,
+  getMaterialReferenceById,
   getWeaponForm,
   isWeaponSelectionComplete,
+  normalizeWeaponSlots,
   type WeaponFormDefinition,
   type WeaponSlot,
   type WeaponStats
@@ -28,10 +30,12 @@ import {
   reserveForgeMaterials,
   type ForgeInventory,
   type ForgeJob,
+  type ForgeMaterialRequirements,
   type ForgeStateLike,
   type WeaponCraftCounts,
   type WeaponUnlockState
 } from '../game/forge-core';
+import { getMaterialQuantityById } from '../game/material-storage-core';
 import { GameStateService, type MutableGameState } from './game-state.service';
 
 export interface ForgePreviewResult {
@@ -49,7 +53,7 @@ export type ForgeStartResult =
   | { status: 'full' }
   | { status: 'locked'; weaponForm: string }
   | { status: 'incomplete' }
-  | { status: 'missing-material'; material: string; required: number; available: number }
+  | { status: 'missing-material'; material: string; materialId: number; required: number; available: number }
   | { status: 'started' | 'queued'; weaponName: string };
 
 export interface ForgeUpdateResult {
@@ -82,8 +86,8 @@ type RuntimeForgeState = MutableGameState & ForgeStateLike & {
 };
 
 interface LegacyForgeCompatibilityBridge {
-  requirements(weaponForm: string, slots: readonly WeaponSlot[]): Record<string, number>;
-  hasMaterials(requirements: Readonly<Record<string, number>>): boolean;
+  requirements(weaponForm: string, slots: readonly WeaponSlot[]): ForgeMaterialRequirements;
+  hasMaterials(requirements: ForgeMaterialRequirements): boolean;
   preview(weaponForm: string, slots: readonly WeaponSlot[]): ForgePreviewResult;
   start(weaponForm: string, weaponName: string, slots: readonly WeaponSlot[], at?: number): ForgeStartResult;
 }
@@ -100,7 +104,7 @@ export class GameForgeService {
 
   constructor(private readonly gameState: GameStateService) {}
 
-  requirements(weaponForm: string, slots: readonly WeaponSlot[]): Record<string, number> {
+  requirements(weaponForm: string, slots: readonly WeaponSlot[]): ForgeMaterialRequirements {
     return forgeRequirements(slots, weaponForm);
   }
 
@@ -112,7 +116,7 @@ export class GameForgeService {
     return isWeaponSelectionComplete(slots, weaponForm);
   }
 
-  hasMaterials(requirements: Readonly<Record<string, number>>): boolean {
+  hasMaterials(requirements: ForgeMaterialRequirements): boolean {
     return hasForgeMaterials(this.getState().inventory, requirements);
   }
 
@@ -134,7 +138,7 @@ export class GameForgeService {
 
   preview(weaponForm: string, slots: readonly WeaponSlot[]): ForgePreviewResult {
     const form = getWeaponForm(weaponForm);
-    const copiedSlots = slots.map(slot => ({ ...slot }));
+    const copiedSlots = normalizeWeaponSlots(slots).map(slot => ({ ...slot }));
     const complete = this.isComplete(weaponForm, copiedSlots);
 
     if (!complete) {
@@ -152,7 +156,7 @@ export class GameForgeService {
     const job = createForgeJob(weaponForm, '', copiedSlots);
     return {
       weaponForm,
-      slots: copiedSlots,
+      slots: job.slots,
       form,
       factor: job.performance,
       valueNickel: job.valueNickel,
@@ -170,40 +174,49 @@ export class GameForgeService {
     if (!hasForgeCapacity(state, activeSlots, queueSlots)) return { status: 'full' };
     if (!this.isComplete(weaponForm, slots)) return { status: 'incomplete' };
 
-    const requirements = forgeRequirements(slots, weaponForm);
+    const normalizedSlots = normalizeWeaponSlots(slots);
+    const requirements = forgeRequirements(normalizedSlots, weaponForm);
     const missing = Object.entries(requirements).find(
-      ([material, required]) => (Number(state.inventory[material]?.qty) || 0) < required
+      ([materialId, required]) => getMaterialQuantityById(state.inventory, Number(materialId)) < required
     );
-    if (missing) {
-      const [material, required] = missing;
-      return {
-        status: 'missing-material',
-        material,
-        required,
-        available: Number(state.inventory[material]?.qty) || 0
-      };
-    }
+    if (missing) return this.missingMaterialResult(state, missing);
 
-    const job = createForgeJob(weaponForm, weaponName, slots);
+    const job = createForgeJob(weaponForm, weaponName, normalizedSlots);
     if (!reserveForgeMaterials(state.inventory, requirements)) {
       const fallbackMissing = Object.entries(requirements).find(
-        ([material, required]) => (Number(state.inventory[material]?.qty) || 0) < required
+        ([materialId, required]) => getMaterialQuantityById(state.inventory, Number(materialId)) < required
       );
-      if (fallbackMissing) {
-        const [material, required] = fallbackMissing;
-        return {
-          status: 'missing-material',
-          material,
-          required,
-          available: Number(state.inventory[material]?.qty) || 0
-        };
-      }
+      if (fallbackMissing) return this.missingMaterialResult(state, fallbackMissing);
       return { status: 'incomplete' };
     }
 
     const status = enqueueForgeJob(state, job, activeSlots, queueSlots, at);
     if (status === 'full') throw new Error('Schmiedekapazität änderte sich während einer synchronen Auftragserstellung.');
     return { status, weaponName: job.weaponName };
+  }
+
+  /** Ergänzt bei alten Waffen und Schmiedeaufträgen die stabilen Material-IDs. */
+  normalizeMaterialReferences(): number {
+    const state = this.getState();
+    let changed = 0;
+
+    for (const weapon of state.weaponInventory) {
+      if (!Array.isArray(weapon.slots)) continue;
+      const normalized = normalizeWeaponSlots(weapon.slots);
+      if (JSON.stringify(normalized) === JSON.stringify(weapon.slots)) continue;
+      weapon.slots = normalized;
+      changed += 1;
+    }
+
+    for (const job of [...state.forgeJobs, ...state.forgeQueue]) {
+      if (!Array.isArray(job.slots)) continue;
+      const normalized = normalizeWeaponSlots(job.slots);
+      if (JSON.stringify(normalized) === JSON.stringify(job.slots)) continue;
+      job.slots = normalized;
+      changed += 1;
+    }
+
+    return changed;
   }
 
   update(now = Date.now()): ForgeUpdateResult {
@@ -231,6 +244,22 @@ export class GameForgeService {
 
   closeLegacyCompatibilityBridge(): void {
     delete window.NoBrainerForgeCompatibility;
+  }
+
+  private missingMaterialResult(
+    state: RuntimeForgeState,
+    missing: [string, number]
+  ): Extract<ForgeStartResult, { status: 'missing-material' }> {
+    const [rawMaterialId, required] = missing;
+    const materialId = Number(rawMaterialId);
+    const reference = getMaterialReferenceById(materialId);
+    return {
+      status: 'missing-material',
+      material: reference?.displayName ?? `Material #${materialId}`,
+      materialId,
+      required,
+      available: getMaterialQuantityById(state.inventory, materialId)
+    };
   }
 
   private refreshMaterialBalance(state: RuntimeForgeState): void {
@@ -267,7 +296,7 @@ export class GameForgeService {
       id: state.nextWeaponId++,
       name,
       weaponForm: job.weaponForm,
-      slots: job.slots,
+      slots: normalizeWeaponSlots(job.slots),
       stats: job.stats,
       valueNickel: economy.valueNickel,
       craftedSeconds: job.totalSeconds
