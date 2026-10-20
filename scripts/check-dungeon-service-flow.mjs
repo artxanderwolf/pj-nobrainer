@@ -114,6 +114,7 @@ try {
   assert.equal(successState.dungeonRun, null, 'Die Testwaffe muss den Gegner in der ersten fälligen Aktion besiegen.');
   assert.equal(successState.dungeonWavesDefeated, 1);
   assert.ok(successState.dungeonLootCollect, 'Nach Sieg muss zunächst die Loot-Zwischenphase aktiv sein.');
+  assert.deepEqual(successState.dungeonLootCollect.drops, [{ materialId: 9 }], 'Aktive Dungeon-Beute muss nur noch die stabile Material-ID tragen.');
   assert.deepEqual(successState.dungeonCycleActiveIds, [1], 'Überlebende müssen für den nächsten Durchlauf aktiv bleiben.');
   assert.equal(successState.characters[0].level, 2, '10 Gegner-XP müssen bei 95/100 XP den Levelaufstieg auslösen.');
   assert.equal(successState.characters[0].xp, 5);
@@ -132,6 +133,17 @@ try {
   assert.equal(Object.keys(successState.dungeonLoot).length, 0, 'Manuelles Einsammeln muss die Dungeon-Beute leeren.');
   assert.equal(Object.values(successState.inventory).reduce((sum, entry) => sum + (entry.qty || 0), 0), 1);
   assert.equal(collected.events.length, 1);
+
+  const legacyLootState = makeState(1);
+  legacyLootState.dungeonLootCollect = {
+    readyAt: 1000,
+    drops: [{ name: 'Kupfer', category: 'Metall' }],
+    enemyCount: 1
+  };
+  const legacyLootService = new GameDungeonService({ getState: () => legacyLootState });
+  const legacyLootResult = legacyLootService.update(1000);
+  assert.equal(legacyLootState.dungeonLoot.Kupfer?.qty, 1, 'Alte laufende Loot-Saves mit Materialnamen müssen weiterhin auflösbar sein.');
+  assert.ok(legacyLootResult.events.some(event => event.text.includes('Kupfer')));
 
   const splitState = makeState(2);
   const splitService = new GameDungeonService({ getState: () => splitState });
@@ -203,7 +215,7 @@ try {
   assert.ok(lowEnergyResult.events.some(event => event.text.includes('Nicht genügend Energie')));
   assert.match(lowEnergyResult.alertMessage || '', /Ausdauer reicht für keine weitere Welle/);
 
-  console.log('Dungeon-Service-Ablauf: Laufstart, Wiederholung, Abbruch nach Wellenende, Energieende mit Teamreset, Ergebnis-Popup, XP/Level und Loot sind konsistent.');
+  console.log('Dungeon-Service-Ablauf: Laufstart, Wiederholung, ID-basierter Loot, Altstand-Kompatibilität, Abbruch, Energieende, XP/Level und Beute sind konsistent.');
 } finally {
   Math.random = originalRandom;
   for (const url of temporaryFiles.reverse()) {
