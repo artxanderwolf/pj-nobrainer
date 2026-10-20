@@ -13,6 +13,7 @@ export interface MaterialStorageInventoryEntry {
 }
 
 export type MaterialStorageInventory = Record<string, MaterialStorageInventoryEntry | undefined>;
+export type MaterialQuantityRequirements = Readonly<Record<number, number>>;
 
 export interface ResolvedMaterialStorageEntry {
   storageKey: string;
@@ -55,11 +56,7 @@ function resolvedEntry(
   };
 }
 
-/**
- * Ergänzt bekannte Legacy-Lagereinträge um ihre stabile Material-ID.
- * Der vorhandene Namensschlüssel bleibt absichtlich erhalten, solange Schmiede,
- * Markt und alte Saves noch auf diese Kompatibilitätsdarstellung angewiesen sind.
- */
+/** Ergänzt bekannte Legacy-Lagereinträge um ihre stabile Material-ID. */
 export function normalizeMaterialInventory(inventory: MaterialStorageInventory): number {
   if (!inventory || typeof inventory !== 'object' || Array.isArray(inventory)) return 0;
 
@@ -121,6 +118,13 @@ export function getMaterialStorageEntryById(
   return null;
 }
 
+export function getMaterialQuantityById(
+  inventory: MaterialStorageInventory,
+  materialId: number | null | undefined
+): number {
+  return getMaterialStorageEntryById(inventory, materialId)?.qty ?? 0;
+}
+
 export function addMaterialQuantityById(
   inventory: MaterialStorageInventory,
   materialId: number | null | undefined,
@@ -145,4 +149,47 @@ export function addMaterialQuantityById(
   existing.entry.category = reference.definition.category;
   existing.entry.qty = (Number(existing.entry.qty) || 0) + amount;
   return resolvedEntry(existing.storageKey, existing.entry, reference);
+}
+
+export function takeMaterialQuantityById(
+  inventory: MaterialStorageInventory,
+  materialId: number | null | undefined,
+  quantity: number
+): boolean {
+  const amount = Number(quantity);
+  if (!Number.isFinite(amount) || amount <= 0) return false;
+  const existing = getMaterialStorageEntryById(inventory, materialId);
+  if (!existing || existing.qty < amount) return false;
+
+  const remaining = existing.qty - amount;
+  if (remaining > 0) {
+    existing.entry.qty = remaining;
+    existing.entry.materialId = existing.materialId;
+    existing.entry.category = existing.category;
+  } else {
+    delete inventory[existing.storageKey];
+  }
+  return true;
+}
+
+/** Prüft zuerst alle Mengen und zieht sie anschließend atomar per Material-ID ab. */
+export function reserveMaterialQuantitiesById(
+  inventory: MaterialStorageInventory,
+  requirements: MaterialQuantityRequirements
+): boolean {
+  const normalized = Object.entries(requirements)
+    .map(([rawId, rawQuantity]) => ({ materialId: Number(rawId), quantity: Number(rawQuantity) }))
+    .filter(requirement => Number.isFinite(requirement.quantity) && requirement.quantity > 0);
+
+  if (normalized.some(requirement => !getMaterialReferenceById(requirement.materialId))) return false;
+  if (normalized.some(requirement => getMaterialQuantityById(inventory, requirement.materialId) < requirement.quantity)) {
+    return false;
+  }
+
+  for (const requirement of normalized) {
+    if (!takeMaterialQuantityById(inventory, requirement.materialId, requirement.quantity)) {
+      throw new Error(`Materialbestand änderte sich während einer synchronen Reservierung: ID ${requirement.materialId}.`);
+    }
+  }
+  return true;
 }
