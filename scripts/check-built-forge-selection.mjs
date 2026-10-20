@@ -73,11 +73,11 @@ const probeScript = `<script>
       const formChosen = choose('weaponForm', 'bow');
       setTimeout(() => {
         const selected = {
-          back: choose('slotBack', 'Fichte'),
-          gripCore: choose('slotGripCore', 'Fichte'),
-          gripWrap: choose('slotGripWrap', 'Lederfetzen'),
-          special: choose('slotSpecial', 'Fichte'),
-          bowstring: choose('slotBowstring', 'Lederfetzen'),
+          back: choose('slotBack', '2'),
+          gripCore: choose('slotGripCore', '2'),
+          gripWrap: choose('slotGripWrap', '9'),
+          special: choose('slotSpecial', '2'),
+          bowstring: choose('slotBowstring', '9'),
           form: formChosen
         };
         setTimeout(() => {
@@ -139,7 +139,7 @@ const server = createServer((request, response) => {
   response.end(body);
 });
 
-const delay = ms => new Promise(resolveDelay => setTimeout(resolveDelay, ms));
+const delay = ms =>new Promise(resolveDelay => setTimeout(resolveDelay, ms));
 async function stopBrowser(child) {
   if (child.exitCode !== null) return;
   child.kill('SIGTERM');
@@ -153,38 +153,38 @@ let child = null;
 try {
   const address = server.address(); assert.ok(address && typeof address === 'object');
   const pageUrl = `http://127.0.0.1:${address.port}${basePath}`;
-  child = spawn(browser, ['--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--hide-scrollbars','--no-first-run','--no-default-browser-check',`--user-data-dir=${browserProfile}`,'--virtual-time-budget=6500','--dump-dom',pageUrl], { stdio: ['ignore','pipe','pipe'] });
+  child=spawn(browser,['--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--hide-scrollbars','--no-first-run','--no-default-browser-check',`--user-data-dir=${browserProfile}`,'--virtual-time-budget=6500','--dump-dom',pageUrl],{stdio:['ignore','pipe','pipe']});
   child.stdout.setEncoding('utf8'); child.stderr.setEncoding('utf8');
-  let stdout = '', stderr = ''; child.stdout.on('data', chunk => { stdout += chunk; }); child.stderr.on('data', chunk => { stderr += chunk; });
-  const code = await new Promise((resolveClose, rejectClose) => { child.once('error', rejectClose); child.once('close', resolveClose); });
-  assert.equal(code, 0, `Chrome/Chromium beendete den Schmiedeauswahl-E2E-Test mit Code ${code}.\n${stderr}`);
-  const resultMatch = stdout.match(/<pre id="forgeSelectionE2EResult">([^<]+)<\/pre>/);
-  assert.ok(resultMatch, `Der Schmiedeauswahl-E2E-Test hat kein Ergebnis erzeugt.\n${stderr}\nDOM-Ausgabe: ${stdout.slice(-5000)}`);
-  const result = JSON.parse(resultMatch[1].replaceAll('&quot;', '"').replaceAll('&amp;', '&'));
+  let stdout='',stderr=''; child.stdout.on('data',chunk=>{stdout+=chunk;}); child.stderr.on('data',chunk=>{stderr+=chunk;});
+  const code=await new Promise((resolveClose,rejectClose)=>{child.once('error',rejectClose);child.once('close',resolveClose);});
+  assert.equal(code,0,`Chrome/Chromium beendete den Schmiedeauswahl-E2E-Test mit Code ${code}.\n${stderr}`);
+  const resultMatch=stdout.match(/<pre id="forgeSelectionE2EResult">([^<]+)<\/pre>/);
+  assert.ok(resultMatch,`Der Schmiedeauswahl-E2E-Test hat kein Ergebnis erzeugt.\n${stderr}\nDOM-Ausgabe: ${stdout.slice(-5000)}`);
+  const result=JSON.parse(resultMatch[1].replaceAll('&quot;','"').replaceAll('&amp;','&'));
 
-  assert.equal(result.status, 'tested', `Die Schmiedeauswahl wurde nicht testbereit: ${JSON.stringify(result)}`);
-  assert.equal(result.browserErrors.length, 0, `Bei der Schmiedeauswahl trat ein Browserfehler auf: ${JSON.stringify(result)}`);
-  assert.equal(result.runtimeError, '', `Die Runtime meldet bei der Schmiedeauswahl einen Fehler: ${JSON.stringify(result)}`);
-  assert.deepEqual(result.selected, { back: true, gripCore: true, gripWrap: true, special: true, bowstring: true, form: true });
-  assert.equal(result.finalForm, 'bow');
-  assert.equal(result.timeText, '80 s');
-  assert.equal(result.materialTotalText, '16 Materialeinheiten');
-  assert.match(result.constructionText, /2H · belegt beide Hände/);
-  assert.match(result.constructionText, /3× Sehne/);
-  assert.equal(result.damageText, '11.11');
-  assert.equal(result.speedText, '0.90');
-  assert.equal(result.startDisabled, false);
-  assert.equal(result.previewNextDisabled, false, 'Der Vorschau-Button darf nach der Materialauswahl nicht blockiert bleiben.');
-  assert.equal(result.activePage, 'forge-preview', 'Der Vorschau-Button muss zur Waffenvorschau navigieren.');
-  assert.match(result.capacityText, /^Schmiede \d+\/\d+ · Warteschlange \d+\/\d+$/, 'Die Waffenvorschau muss aktive und maximale Schmiedekapazität anzeigen.');
-  assert.equal(result.workingPartHidden, true);
-  assert.equal(result.parryHidden, true);
-  assert.equal(result.bowstringHidden, false);
-  assert.equal(result.oldBaseMaterialPresent, false);
+  assert.equal(result.status,'tested',`Die Schmiedeauswahl wurde nicht testbereit: ${JSON.stringify(result)}`);
+  assert.equal(result.browserErrors.length,0,`Bei der Schmiedeauswahl trat ein Browserfehler auf: ${JSON.stringify(result)}`);
+  assert.equal(result.runtimeError,'',`Die Runtime meldet bei der Schmiedeauswahl einen Fehler: ${JSON.stringify(result)}`);
+  assert.deepEqual(result.selected,{back:true,gripCore:true,gripWrap:true,special:true,bowstring:true,form:true});
+  assert.equal(result.finalForm,'bow');
+  assert.equal(result.timeText,'80 s');
+  assert.equal(result.materialTotalText,'16 Materialeinheiten');
+  assert.match(result.constructionText,/2H · belegt beide Hände/);
+  assert.match(result.constructionText,/3× Sehne/);
+  assert.equal(result.damageText,'11.11');
+  assert.equal(result.speedText,'0.90');
+  assert.equal(result.startDisabled,false);
+  assert.equal(result.previewNextDisabled,false,'Der Vorschau-Button darf nach der Materialauswahl nicht blockiert bleiben.');
+  assert.equal(result.activePage,'forge-preview','Der Vorschau-Button muss zur Waffenvorschau navigieren.');
+  assert.match(result.capacityText,/^Schmiede \d+\/\d+ · Warteschlange \d+\/\d+$/,'Die Waffenvorschau muss aktive und maximale Schmiedekapazität anzeigen.');
+  assert.equal(result.workingPartHidden,true);
+  assert.equal(result.parryHidden,true);
+  assert.equal(result.bowstringHidden,false);
+  assert.equal(result.oldBaseMaterialPresent,false);
 
-  console.log('Schmiedeauswahl-Browserregression: freigeschalteter Bogen, Materialwahl, Vorschau-Navigation und Kapazitätsanzeige funktionieren gemeinsam.');
+  console.log('Schmiedeauswahl-Browserregression: ID-basierte Materialwahl, freigeschalteter Bogen, Vorschau-Navigation und Kapazitätsanzeige funktionieren gemeinsam.');
 } finally {
   if (child) await stopBrowser(child);
-  rmSync(browserProfile, { recursive: true, force: true });
-  await new Promise(resolveClose => server.close(resolveClose));
+  rmSync(browserProfile,{recursive:true,force:true});
+  await new Promise(resolveClose=>server.close(resolveClose));
 }
