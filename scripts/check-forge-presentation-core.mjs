@@ -20,7 +20,7 @@ const stats = {
 let currencyCalls = 0;
 let reinforcementCalls = 0;
 const incomplete = getForgePreviewPresentation(
-  { complete: false, hasMaterials: false, hasCapacity: false, seconds: 42, valueNickel: 140, factor: 1.4, stats, reinforcementMaterial: 'Kupfer' },
+  { complete: false, hasMaterials: false, hasCapacity: false, seconds: 42, valueNickel: 140, factor: 1.4, stats, reinforcementMaterialId: 5 },
   () => { currencyCalls += 1; return '140 Nickel'; },
   () => { reinforcementCalls += 1; return '+10 % Geschwindigkeit'; }
 );
@@ -31,9 +31,9 @@ assert.equal(currencyCalls, 0);
 assert.equal(reinforcementCalls, 0);
 
 const ready = getForgePreviewPresentation(
-  { complete: true, hasMaterials: true, hasCapacity: true, seconds: 42, valueNickel: 140, factor: 1.4, stats, reinforcementMaterial: 'Kupfer' },
+  { complete: true, hasMaterials: true, hasCapacity: true, seconds: 42, valueNickel: 140, factor: 1.4, stats, reinforcementMaterialId: 5 },
   value => `${value} Nickel`,
-  material => material === 'Kupfer' ? '+10 % Geschwindigkeit' : 'Kein Zusatzeffekt'
+  materialId => materialId === 5 ? '+10 % Geschwindigkeit' : 'Kein Zusatzeffekt'
 );
 assert.deepEqual(ready, {
   timeText: '42 s',
@@ -51,14 +51,14 @@ assert.deepEqual(ready, {
 });
 
 const noMaterials = getForgePreviewPresentation(
-  { complete: true, hasMaterials: false, hasCapacity: true, seconds: 1, valueNickel: 1, factor: 1, stats, reinforcementMaterial: null },
+  { complete: true, hasMaterials: false, hasCapacity: true, seconds: 1, valueNickel: 1, factor: 1, stats, reinforcementMaterialId: null },
   () => '1 Nickel',
   () => 'Kein Zusatzeffekt'
 );
 assert.equal(noMaterials.startDisabled, true);
 
 const noCapacity = getForgePreviewPresentation(
-  { complete: true, hasMaterials: true, hasCapacity: false, seconds: 1, valueNickel: 1, factor: 1, stats, reinforcementMaterial: null },
+  { complete: true, hasMaterials: true, hasCapacity: false, seconds: 1, valueNickel: 1, factor: 1, stats, reinforcementMaterialId: null },
   () => '1 Nickel',
   () => 'Kein Zusatzeffekt'
 );
@@ -77,4 +77,4 @@ const queuedJob = getQueuedForgeJobPresentation(
 );
 assert.deepEqual(queuedJob, { title: '3. Eisendolch', metaText: '45s Herstellungszeit' });
 
-console.log('Forge-Presentation-Core: Leistungswert, Bauplanvorschau sowie aktive und wartende Schmiedeaufträge sind konsistent.');
+console.log('Forge-Presentation-Core: ID-basierter Spezialeffekt, Leistungswert sowie aktive und wartende Schmiedeaufträge sind konsistent.');
