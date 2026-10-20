@@ -1,0 +1,1 @@
+Tables: meta, character_classes, character_progression, materials, weapon_forms, weapon_form_parts, dungeons, dungeon_enemy_weights, dungeon_enemy_counts, dungeon_enemies, dungeon_enemy_loot, economy_balance, upgrades, rarity_balance.
