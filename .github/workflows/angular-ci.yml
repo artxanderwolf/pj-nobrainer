@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - migration/angular
-      - feature/material-id-migration-dungeon
   pull_request:
     branches:
       - main
