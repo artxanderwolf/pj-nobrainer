@@ -50,6 +50,6 @@ assert.match(registrationMatch[1], /renderInventoryState:\(\)=>\{[\s\S]*renderMa
 assert.doesNotMatch(registrationMatch[1], /renderForgePreview\(\)/, 'Schmiedevorschau hängt weiterhin am Legacy-Inventar-Refresh.');
 assert.doesNotMatch(registrationMatch[1], /renderResourceHeader\(\)/, 'Ressourcen-Kopfzeile hängt weiterhin am Legacy-Inventar-Refresh.');
 assert.doesNotMatch(appComponent, /GameDungeonService|NoBrainerDungeonCompatibility|gameDungeon\.openLegacyCompatibilityBridge|gameDungeon\.closeLegacyCompatibilityBridge/, 'AppComponent verwaltet weiterhin die alte Dungeon-Kompatibilitätsbrücke.');
-assert.match(appComponent, /const APP_VERSION = '0\.12\.90';/, 'Die App-Version wurde nicht auf v0.12.90 gesetzt.');
+assert.match(appComponent, /const APP_VERSION = '0\.12\.91';/, 'Die App-Version wurde nicht auf v0.12.91 gesetzt.');
 
 console.log('Dungeon-Eigentümerschaft: Gegnerprofile, Loot, XP/Level, Prozent-Rüstung, Kampf, Status und Team laufen ausschließlich über Angular.');
