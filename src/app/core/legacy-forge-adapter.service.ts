@@ -9,7 +9,8 @@ const FORGE_SELECTION = `function getForgeSelection(){
       {slot:"gripCore",material:document.getElementById("slotGripCore")?.value},
       {slot:"gripWrap",material:document.getElementById("slotGripWrap")?.value},
       {slot:"special",material:document.getElementById("slotSpecial")?.value},
-      {slot:"parry",material:document.getElementById("slotParry")?.value}
+      {slot:"parry",material:document.getElementById("slotParry")?.value},
+      {slot:"bowstring",material:document.getElementById("slotBowstring")?.value}
     ]
   };
 }`;
@@ -39,6 +40,7 @@ const FORGE_START = `function startForgeJob(){
   const forgeCompatibility=window.NoBrainerForgeCompatibility;
   if(!forgeCompatibility)throw new Error("NoBrainer-Schmiede-Kompatibilitätsbrücke wurde nicht registriert.");
   const result=forgeCompatibility.start(preview.weaponForm,finalName,preview.slots,Date.now());
+  if(result.status==="locked"){alert("Diese Waffenform ist noch nicht freigeschaltet.");return;}
   if(result.status==="full"){alert("Alle Herstellungs- und Warteschlangenplätze sind belegt.");return;}
   if(result.status==="incomplete"){alert("Bitte für alle benötigten Bauteile ein Material auswählen.");return;}
   if(result.status==="missing-material"){alert(\`Nicht genügend \${result.material} vorhanden. Benötigt: \${result.required}, Lager: \${result.available}.\`);return;}

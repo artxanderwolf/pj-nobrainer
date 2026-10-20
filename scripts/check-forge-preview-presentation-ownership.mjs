@@ -21,9 +21,16 @@ for (const binding of [
   "{ id: 'slotGripCore', rowId: 'forgeGripCoreRow', slot: 'gripCore' }",
   "{ id: 'slotGripWrap', rowId: 'forgeGripWrapRow', slot: 'gripWrap' }",
   "{ id: 'slotSpecial', rowId: 'forgeSpecialRow', slot: 'special' }",
-  "{ id: 'slotParry', rowId: 'forgeParryRow', slot: 'parry' }"
+  "{ id: 'slotParry', rowId: 'forgeParryRow', slot: 'parry' }",
+  "{ id: 'slotBowstring', rowId: 'forgeBowstringRow', slot: 'bowstring' }"
 ]) assert.ok(service.includes(binding), `Neue Schmiedebindung fehlt: ${binding}`);
 assert.match(service, /document\.getElementById\('weaponForm'\)/, 'Angular-Schmiedevorschau liest die aktuelle Waffenform-DOM-ID nicht.');
+assert.match(service, /this\.populateWeaponFormSelect\(\)/, 'Die Schmiede bereitet die sichtbaren Waffenformen nicht vor der Vorschau auf.');
+assert.match(service, /this\.gameForge\.visibleWeaponForms\(\)/, 'Die Waffenform-Auswahl bezieht die Sichtbarkeit nicht aus der Angular-Freischaltlogik.');
+assert.match(service, /this\.gameForge\.unlockState\(weaponForm\)/, 'Die Waffenform-Auswahl bezieht den Sperrstatus nicht aus der Angular-Freischaltlogik.');
+assert.match(service, /option\.disabled = !unlock\.unlocked/, 'Sichtbare, noch gesperrte Waffenformen werden nicht deaktiviert dargestellt.');
+assert.match(service, /select\.dataset\['weaponUnlockOwner'\] = 'angular'/, 'Browser-nachweisbarer Angular-Ownership-Marker für Waffenfreischaltungen fehlt.');
+assert.match(service, /select\.dataset\['visibleWeaponForms'\] = visibleWeaponForms\.join\(','\)/, 'Browser-nachweisbare Liste sichtbarer Waffenformen fehlt.');
 assert.match(service, /document\.getElementById\('forgePreviewNextBtn'\)/, 'Angular-Schmiedevorschau verwaltet den Weiter-zur-Vorschau-Button nicht.');
 assert.match(service, /previewNextButton\.disabled = false/, 'Vorschau-Navigation darf nicht durch Herstellungsvalidierung blockiert werden.');
 assert.doesNotMatch(service, /previewNextButton\.disabled = !complete/, 'Vorschau-Navigation darf nicht erneut an die Vollständigkeitsprüfung gekoppelt werden.');
@@ -56,4 +63,4 @@ assert.ok(bridgeOpen >= 0 && stateBootstrap > bridgeOpen, 'Schmiedevorschau-Prä
 assert.match(app, /private readonly gameForgePreviewPresentation: GameForgePreviewPresentationService/);
 assert.match(app, /const APP_VERSION = '0\.12\.91';/);
 
-console.log('Forge-Preview-Presentation: Vorschau-Navigation bleibt erreichbar; Herstellungsvalidierung und Qualitätswirtschaft bleiben Angular-eigen.');
+console.log('Forge-Preview-Presentation: Waffenfreischaltung, Bauplan-Auswahl und Herstellungsvalidierung bleiben Angular-eigen.');

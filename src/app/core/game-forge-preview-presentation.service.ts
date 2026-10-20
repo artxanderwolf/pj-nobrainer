@@ -58,7 +58,7 @@ export class GameForgePreviewPresentationService {
     const previewNextButton = document.getElementById('forgePreviewNextBtn') as HTMLButtonElement | null;
     if (!startButton) return;
 
-    const weaponForm = (document.getElementById('weaponForm') as HTMLSelectElement | null)?.value || 'dagger';
+    const weaponForm = this.populateWeaponFormSelect();
     this.populateForgeSelects(weaponForm);
 
     const slots = this.getForgeSelection();
@@ -112,6 +112,46 @@ export class GameForgePreviewPresentationService {
 
   closeLegacyCompatibilityBridge(): void {
     delete window.NoBrainerForgePreviewPresentationCompatibility;
+  }
+
+  private populateWeaponFormSelect(): string {
+    const select = document.getElementById('weaponForm') as HTMLSelectElement | null;
+    if (!select) return 'dagger';
+
+    const previous = select.value || 'dagger';
+    const visibleWeaponForms = this.gameForge.visibleWeaponForms();
+    select.innerHTML = '';
+
+    for (const weaponForm of visibleWeaponForms) {
+      const form = getWeaponForm(weaponForm);
+      const unlock = this.gameForge.unlockState(weaponForm);
+      const option = document.createElement('option');
+      option.value = weaponForm;
+      option.disabled = !unlock.unlocked;
+
+      if (!unlock.unlocked) {
+        const requirementText = unlock.prerequisites
+          .map(requirement => {
+            const current = Math.min(requirement.current, requirement.target);
+            return `${getWeaponForm(requirement.weaponForm).name} ${current}/${requirement.target}`;
+          })
+          .join(' · ');
+        option.textContent = `${form.name} · gesperrt (${requirementText})`;
+      } else if (this.gameForge.isProgressionSource(weaponForm)) {
+        const current = Math.min(this.gameForge.craftCount(weaponForm), 10);
+        option.textContent = `${form.name} · ${current}/10`;
+      } else {
+        option.textContent = form.name;
+      }
+      select.appendChild(option);
+    }
+
+    const previousStillUnlocked = visibleWeaponForms.includes(previous) && this.gameForge.unlockState(previous).unlocked;
+    const fallback = visibleWeaponForms.find(weaponForm => this.gameForge.unlockState(weaponForm).unlocked) || 'dagger';
+    select.value = previousStillUnlocked ? previous : fallback;
+    select.dataset['weaponUnlockOwner'] = 'angular';
+    select.dataset['visibleWeaponForms'] = visibleWeaponForms.join(',');
+    return select.value || fallback;
   }
 
   private populateForgeSelects(weaponForm: string): void {

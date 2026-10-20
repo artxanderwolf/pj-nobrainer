@@ -11,9 +11,9 @@ assert.equal(APP_SHELL_PAGE_IDS[0], 'base');
 for (const required of ['character', 'storage', 'forge-preview', 'market-jobs', 'dungeon-select', 'index']) {
   assert.ok(APP_SHELL_PAGE_IDS.includes(required), `Modulare Seite ${required} fehlt in der Shell-Seitenliste.`);
 }
-assert.match(shell, /^<div class="app modular-ui" data-ui-version="0\.13\.7">/, 'Die modulare UI-v0.13.7-Shell fehlt.');
+assert.match(shell, /^<div class="app modular-ui" data-ui-version="0\.13\.8">/, 'Die modulare UI-v0.13.8-Shell fehlt.');
 assert.match(shell, /id="backBtn"[\s\S]*onclick="goBack\(\)"/, 'Der globale Zurück-Button fehlt.');
-assert.match(shell, /<div class="ui-version">NO BRAINER · v0\.13\.7<\/div>/, 'Die sichtbare Versionsanzeige ist nicht v0.13.7.');
+assert.match(shell, /<div class="ui-version">NO BRAINER · v0\.13\.8<\/div>/, 'Die sichtbare Versionsanzeige ist nicht v0.13.8.');
 assert.match(shell, /<h1 id="pageTitle">Übersicht<\/h1>/, 'Der Seitentitel-Anker fehlt.');
 assert.match(shell, /id="gold"/, 'Der Geld-Anker fehlt.');
 assert.match(shell, /class="help-btn"[\s\S]*onclick="go\('index'\)"/, 'Der Hilfezugang fehlt.');
@@ -43,4 +43,4 @@ assert.match(appComponent, /composeAppShell\(pageMarkup\)/, 'Der App-Component b
 assert.doesNotMatch(appComponent, /DOMParser/, 'Der App-Component parst weiterhin die Legacy-HTML.');
 assert.match(appComponent, /const LEGACY_RUNTIME_PATH = 'legacy\/NoBrainer_GitHub_v0\.12\.2\.runtime\.js';/, 'Der App-Component verweist nicht auf das eigenständige Runtime-Asset.');
 
-console.log('App-Shell-Präsentation: responsive UI v0.13.7 mit Topbar, Zurück-Button und vierteiliger Bottom-Navigation ist Angular-eigen.');
+console.log('App-Shell-Präsentation: responsive UI v0.13.8 mit Topbar, Zurück-Button und vierteiliger Bottom-Navigation ist Angular-eigen.');

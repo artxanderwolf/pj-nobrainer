@@ -28,7 +28,14 @@ try {
     reserveForgeMaterials,
     createForgeJob,
     enqueueForgeJob,
-    advanceForgeJobs
+    advanceForgeJobs,
+    normalizeWeaponCraftCounts,
+    getWeaponCraftCount,
+    recordCompletedWeaponCraft,
+    getWeaponUnlockState,
+    isWeaponFormUnlocked,
+    getVisibleWeaponForms,
+    isWeaponProgressionSource
   } = await import(`${temporaryUrl.href}?check=${Date.now()}`);
 
   const daggerSlots = [
@@ -95,7 +102,46 @@ try {
   assert.equal(state.forgeJobs.length, 0);
   assert.equal(state.forgeQueue.length, 0);
 
-  console.log('Forge-Core: Baupläne, Reservierung, Qualitätswert, wertbasierte Schmiedezeit, Queue und Offline-Catch-up sind konsistent.');
+  const craftCounts = normalizeWeaponCraftCounts({ dagger: 9.8, sword: -4, unknown: 99 });
+  assert.deepEqual(craftCounts, { dagger: 9 });
+  assert.equal(getWeaponCraftCount(craftCounts, 'dagger'), 9);
+  assert.deepEqual(getVisibleWeaponForms(craftCounts), ['dagger']);
+  assert.equal(getWeaponUnlockState('sword', craftCounts).visible, false);
+  assert.equal(isWeaponFormUnlocked('sword', craftCounts), false);
+  assert.equal(isWeaponProgressionSource('bow'), false);
+  assert.equal(isWeaponProgressionSource('sword2h'), true);
+
+  recordCompletedWeaponCraft(craftCounts, 'dagger');
+  assert.equal(getWeaponCraftCount(craftCounts, 'dagger'), 10);
+  assert.deepEqual(getVisibleWeaponForms(craftCounts), ['dagger', 'sword', 'axe1h', 'sword2h', 'axe2h']);
+  assert.equal(isWeaponFormUnlocked('sword'), false, 'Unlock-Prüfung ohne Zähler soll gesperrt bleiben.');
+  assert.equal(isWeaponFormUnlocked('sword', craftCounts), true);
+  assert.equal(isWeaponFormUnlocked('axe1h', craftCounts), true);
+  assert.equal(isWeaponFormUnlocked('sword2h', craftCounts), false);
+  assert.deepEqual(getWeaponUnlockState('sword2h', craftCounts).prerequisites, [{ weaponForm: 'sword', current: 0, target: 10 }]);
+  assert.equal(getWeaponUnlockState('bow', craftCounts).visible, false);
+
+  craftCounts.sword = 10;
+  assert.equal(isWeaponFormUnlocked('sword2h', craftCounts), true);
+  assert.equal(isWeaponFormUnlocked('axe2h', craftCounts), false);
+  assert.equal(getWeaponUnlockState('bow', craftCounts).visible, false);
+
+  craftCounts.axe1h = 10;
+  assert.equal(isWeaponFormUnlocked('axe2h', craftCounts), true);
+  assert.equal(getWeaponUnlockState('bow', craftCounts).visible, true);
+  assert.equal(getWeaponUnlockState('staff', craftCounts).visible, true);
+  assert.equal(isWeaponFormUnlocked('bow', craftCounts), false);
+  assert.equal(isWeaponFormUnlocked('staff', craftCounts), false);
+
+  craftCounts.sword2h = 10;
+  craftCounts.axe2h = 9;
+  assert.equal(isWeaponFormUnlocked('bow', craftCounts), false);
+  recordCompletedWeaponCraft(craftCounts, 'axe2h');
+  assert.equal(isWeaponFormUnlocked('bow', craftCounts), true);
+  assert.equal(isWeaponFormUnlocked('staff', craftCounts), true);
+  assert.deepEqual(getVisibleWeaponForms(craftCounts), ['dagger', 'sword', 'axe1h', 'sword2h', 'axe2h', 'bow', 'staff']);
+
+  console.log('Forge-Core: Baupläne, Queue und Waffen-Freischaltung über 10 abgeschlossene Herstellungsaufträge sind konsistent.');
 } finally {
   unlinkSync(temporaryUrl);
   unlinkSync(temporaryEconomyUrl);

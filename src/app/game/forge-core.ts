@@ -2,6 +2,7 @@ import {
   calculateWeaponEconomy
 } from './economy-core';
 import {
+  CONFIG,
   calculateWeaponStats,
   getWeaponCraftingSlots,
   getWeaponForm,
@@ -29,6 +30,113 @@ export interface ForgeJob {
 export interface ForgeStateLike {
   forgeJobs: ForgeJob[];
   forgeQueue: ForgeJob[];
+}
+
+export const WEAPON_CRAFT_UNLOCK_TARGET = 10;
+export type WeaponCraftCounts = Record<string, number>;
+
+export interface WeaponUnlockProgress {
+  weaponForm: string;
+  current: number;
+  target: number;
+}
+
+export interface WeaponUnlockState {
+  weaponForm: string;
+  visible: boolean;
+  unlocked: boolean;
+  prerequisites: readonly WeaponUnlockProgress[];
+}
+
+const PROGRESSION_SOURCE_FORMS = new Set(['dagger', 'sword', 'axe1h', 'sword2h', 'axe2h']);
+
+export function normalizeWeaponCraftCounts(raw: unknown): WeaponCraftCounts {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+  const normalized: WeaponCraftCounts = {};
+  for (const [weaponForm, value] of Object.entries(raw as Record<string, unknown>)) {
+    if (!Object.prototype.hasOwnProperty.call(CONFIG.forge.weaponForms, weaponForm)) continue;
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric) || numeric <= 0) continue;
+    normalized[weaponForm] = Math.floor(numeric);
+  }
+  return normalized;
+}
+
+export function getWeaponCraftCount(counts: Readonly<WeaponCraftCounts> | null | undefined, weaponForm: string): number {
+  const numeric = Number(counts?.[weaponForm]);
+  return Number.isFinite(numeric) && numeric > 0 ? Math.floor(numeric) : 0;
+}
+
+export function recordCompletedWeaponCraft(counts: WeaponCraftCounts, weaponForm: string): number {
+  if (!Object.prototype.hasOwnProperty.call(CONFIG.forge.weaponForms, weaponForm)) return 0;
+  const next = getWeaponCraftCount(counts, weaponForm) + 1;
+  counts[weaponForm] = next;
+  return next;
+}
+
+function progress(counts: Readonly<WeaponCraftCounts> | null | undefined, weaponForm: string): WeaponUnlockProgress {
+  return {
+    weaponForm,
+    current: getWeaponCraftCount(counts, weaponForm),
+    target: WEAPON_CRAFT_UNLOCK_TARGET
+  };
+}
+
+function reached(counts: Readonly<WeaponCraftCounts> | null | undefined, weaponForm: string): boolean {
+  return getWeaponCraftCount(counts, weaponForm) >= WEAPON_CRAFT_UNLOCK_TARGET;
+}
+
+export function getWeaponUnlockState(
+  weaponForm: string,
+  counts: Readonly<WeaponCraftCounts> | null | undefined
+): WeaponUnlockState {
+  switch (weaponForm) {
+    case 'dagger':
+      return { weaponForm, visible: true, unlocked: true, prerequisites: [] };
+    case 'sword':
+    case 'axe1h': {
+      const unlocked = reached(counts, 'dagger');
+      return { weaponForm, visible: unlocked, unlocked, prerequisites: [progress(counts, 'dagger')] };
+    }
+    case 'sword2h': {
+      const visible = reached(counts, 'dagger');
+      const unlocked = reached(counts, 'sword');
+      return { weaponForm, visible, unlocked, prerequisites: [progress(counts, 'sword')] };
+    }
+    case 'axe2h': {
+      const visible = reached(counts, 'dagger');
+      const unlocked = reached(counts, 'axe1h');
+      return { weaponForm, visible, unlocked, prerequisites: [progress(counts, 'axe1h')] };
+    }
+    case 'bow':
+    case 'staff': {
+      const visible = reached(counts, 'sword') && reached(counts, 'axe1h');
+      const unlocked = reached(counts, 'sword2h') && reached(counts, 'axe2h');
+      return {
+        weaponForm,
+        visible,
+        unlocked,
+        prerequisites: [progress(counts, 'sword2h'), progress(counts, 'axe2h')]
+      };
+    }
+    default:
+      return { weaponForm, visible: false, unlocked: false, prerequisites: [] };
+  }
+}
+
+export function isWeaponFormUnlocked(
+  weaponForm: string,
+  counts: Readonly<WeaponCraftCounts> | null | undefined
+): boolean {
+  return getWeaponUnlockState(weaponForm, counts).unlocked;
+}
+
+export function getVisibleWeaponForms(counts: Readonly<WeaponCraftCounts> | null | undefined): string[] {
+  return Object.keys(CONFIG.forge.weaponForms).filter(weaponForm => getWeaponUnlockState(weaponForm, counts).visible);
+}
+
+export function isWeaponProgressionSource(weaponForm: string): boolean {
+  return PROGRESSION_SOURCE_FORMS.has(weaponForm);
 }
 
 export function forgeRequirements(slots: readonly WeaponSlot[], weaponForm = 'sword'): Record<string, number> {
@@ -147,6 +255,13 @@ export const FORGE_CORE_BRIDGE = {
   startForgeQueuedJob,
   fillForgeSlots,
   enqueueForgeJob,
-  advanceForgeJobs
+  advanceForgeJobs,
+  normalizeWeaponCraftCounts,
+  getWeaponCraftCount,
+  recordCompletedWeaponCraft,
+  getWeaponUnlockState,
+  isWeaponFormUnlocked,
+  getVisibleWeaponForms,
+  isWeaponProgressionSource
 };
 export type ForgeCoreBridge = typeof FORGE_CORE_BRIDGE;

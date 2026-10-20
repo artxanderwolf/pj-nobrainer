@@ -14,12 +14,21 @@ import {
   enqueueForgeJob,
   forgeRequirements,
   getForgeSelectionQuantities,
+  getVisibleWeaponForms,
+  getWeaponCraftCount,
+  getWeaponUnlockState,
   hasForgeCapacity,
   hasForgeMaterials,
+  isWeaponFormUnlocked,
+  isWeaponProgressionSource,
+  normalizeWeaponCraftCounts,
+  recordCompletedWeaponCraft,
   reserveForgeMaterials,
   type ForgeInventory,
   type ForgeJob,
-  type ForgeStateLike
+  type ForgeStateLike,
+  type WeaponCraftCounts,
+  type WeaponUnlockState
 } from '../game/forge-core';
 import { GameStateService, type MutableGameState } from './game-state.service';
 
@@ -36,6 +45,7 @@ export interface ForgePreviewResult {
 
 export type ForgeStartResult =
   | { status: 'full' }
+  | { status: 'locked'; weaponForm: string }
   | { status: 'incomplete' }
   | { status: 'missing-material'; material: string; required: number; available: number }
   | { status: 'started' | 'queued'; weaponName: string };
@@ -65,6 +75,7 @@ type RuntimeForgeState = MutableGameState & ForgeStateLike & {
   upgrades: RuntimeForgeUpgrades;
   weaponInventory: RuntimeWeaponInventoryEntry[];
   nextWeaponId: number;
+  weaponCraftCounts?: WeaponCraftCounts;
 };
 
 interface LegacyForgeCompatibilityBridge {
@@ -98,6 +109,22 @@ export class GameForgeService {
 
   hasMaterials(requirements: Readonly<Record<string, number>>): boolean {
     return hasForgeMaterials(this.getState().inventory, requirements);
+  }
+
+  visibleWeaponForms(): string[] {
+    return getVisibleWeaponForms(this.getCraftCounts());
+  }
+
+  unlockState(weaponForm: string): WeaponUnlockState {
+    return getWeaponUnlockState(weaponForm, this.getCraftCounts());
+  }
+
+  craftCount(weaponForm: string): number {
+    return getWeaponCraftCount(this.getCraftCounts(), weaponForm);
+  }
+
+  isProgressionSource(weaponForm: string): boolean {
+    return isWeaponProgressionSource(weaponForm);
   }
 
   preview(weaponForm: string, slots: readonly WeaponSlot[]): ForgePreviewResult {
@@ -134,6 +161,7 @@ export class GameForgeService {
     const activeSlots = Number(state.upgrades.forgeSlots) || 0;
     const queueSlots = Number(state.upgrades.forgeQueue) || 0;
 
+    if (!isWeaponFormUnlocked(weaponForm, this.getCraftCounts(state))) return { status: 'locked', weaponForm };
     if (!hasForgeCapacity(state, activeSlots, queueSlots)) return { status: 'full' };
     if (!this.isComplete(weaponForm, slots)) return { status: 'incomplete' };
 
@@ -203,6 +231,12 @@ export class GameForgeService {
     return this.gameState.getState<RuntimeForgeState>();
   }
 
+  private getCraftCounts(state = this.getState()): WeaponCraftCounts {
+    const normalized = normalizeWeaponCraftCounts(state.weaponCraftCounts);
+    state.weaponCraftCounts = normalized;
+    return normalized;
+  }
+
   private completeJob(state: RuntimeForgeState, job: ForgeJob): string {
     const form = getWeaponForm(job.weaponForm);
     const name = job.weaponName || form.name;
@@ -216,6 +250,7 @@ export class GameForgeService {
       valueNickel: economy.valueNickel,
       craftedSeconds: job.totalSeconds
     });
+    recordCompletedWeaponCraft(this.getCraftCounts(state), job.weaponForm);
     return name;
   }
 
