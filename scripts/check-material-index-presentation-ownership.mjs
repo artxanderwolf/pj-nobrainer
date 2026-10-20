@@ -5,10 +5,11 @@ const app = readFileSync('src/app/app.component.ts', 'utf8');
 const service = readFileSync('src/app/core/game-material-index-presentation.service.ts', 'utf8');
 const adapter = readFileSync('src/app/core/legacy-material-presentation-adapter.service.ts', 'utf8');
 
-assert.match(service, /Object\.entries\(MATERIALS\)/, 'Materialindex liest nicht aus den gemeinsamen Materialdefinitionen.');
+assert.match(service, /for \(const reference of MATERIAL_REFERENCES\)/, 'Materialindex iteriert nicht über die kanonischen Material-ID-Referenzen.');
 assert.match(service, /getMaterialIndexRowPresentation\(/, 'Materialindex verwendet den bestehenden Presentation-Core nicht.');
-assert.match(service, /reinforcementEffectText\(name\)/, 'Materialindex verwendet den bestehenden Verstärkungstext nicht.');
-assert.match(service, /getDungeonMaterialDropWeight\(1, name\)/, 'Materialindex übernimmt nicht die aktuellen Dungeon-Gewichte aus den gemeinsamen Definitionen.');
+assert.match(service, /reinforcementEffectTextById\(reference\.materialId\)/, 'Materialindex löst Verstärkungseffekte nicht über Material-IDs auf.');
+assert.match(service, /getDungeonMaterialDropWeightById\(1, reference\.materialId\)/, 'Materialindex übernimmt Dungeon-Gewichte nicht über die kanonische Material-ID.');
+assert.doesNotMatch(service, /Object\.entries\(MATERIALS\)|reinforcementEffectText\(name\)|getDungeonMaterialDropWeight\(1, name\)/, 'Materialindex verwendet weiterhin Materialnamen als technische Referenz.');
 assert.doesNotMatch(service, /DUNGEON_LOOT_TABLES|category\.items\.find/, 'Materialindex hängt weiterhin an der alten globalen Dungeon-Loot-Tabelle.');
 assert.match(service, /document\.getElementById\('materialIndexRows'\)/);
 assert.match(service, /materialIndexPresentationOwner'\] = 'angular'/, 'Browser-nachweisbarer Angular-Ownership-Marker fehlt.');
@@ -32,4 +33,4 @@ assert.match(app, /private readonly gameMaterialIndexPresentation: GameMaterialI
 assert.match(app, /ngOnDestroy\(\): void \{[\s\S]*this\.gameMaterialIndexPresentation\.closeLegacyCompatibilityBridge\(\);/);
 assert.match(app, /const APP_VERSION = APP_UI_VERSION;/);
 
-console.log('Materialindex-Präsentations-Eigentümerschaft: Materialwerte inklusive Prozent-Rüstung und aktuelle Dungeon-Gewichte werden direkt durch Angular aus den gemeinsamen Definitionen gerendert.');
+console.log('Materialindex-Präsentations-Eigentümerschaft: Werte, Spezialeffekte und Dungeon-Gewichte werden durch Angular ausschließlich über stabile Material-IDs aufgelöst.');
