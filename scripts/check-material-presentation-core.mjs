@@ -5,6 +5,12 @@ import {
   getMaterialStorageRowPresentation,
   sortMaterialStorageEntries
 } from '../src/app/game/material-presentation-core.ts';
+import {
+  addMaterialQuantityById,
+  getMaterialStorageEntryById,
+  getMaterialStorageEntries,
+  normalizeMaterialInventory
+} from '../src/app/game/material-storage-core.ts';
 
 assert.equal(formatMaterialValue(null), '–');
 assert.equal(formatMaterialValue(undefined), '–');
@@ -91,7 +97,7 @@ assert.deepEqual(sortedStorage.map(([name]) => name), ['Fichte', 'Kupfer', 'Zinn
 
 const storageRow = getMaterialStorageRowPresentation(
   'Kupfer',
-  { category: 'Metall', qty: 3 },
+  { materialId: 5, category: 'Metall', qty: 3 },
   10,
   value => `${value} Nickel`
 );
@@ -103,4 +109,42 @@ assert.deepEqual(storageRow, {
   tooltip: 'Verkaufswert: 10 Nickel'
 });
 
-console.log('Material-Presentation-Core: gemeinsame Statmatrix mit Rüstung in Prozent, SPE/SPE%, Sortierung, Seltenheit und Dungeonchance sind konsistent.');
+const legacyInventory = {
+  Kupfer: { category: 'Falsch', qty: 3 },
+  LegacyFichte: { materialId: 2, category: 'Alt', qty: 4 },
+  Unbekannt: { category: 'Sonstiges', qty: 7 }
+};
+assert.equal(normalizeMaterialInventory(legacyInventory), 2, 'Bekannte Legacy-Einträge müssen genau einmal auf stabile IDs normalisiert werden.');
+assert.deepEqual(legacyInventory.Kupfer, { materialId: 5, category: 'Metall', qty: 3 });
+assert.deepEqual(legacyInventory.LegacyFichte, { materialId: 2, category: 'Holz', qty: 4 });
+assert.deepEqual(legacyInventory.Unbekannt, { category: 'Sonstiges', qty: 7 }, 'Unbekannte Legacy-Einträge dürfen nicht stillschweigend gelöscht werden.');
+assert.equal(normalizeMaterialInventory(legacyInventory), 0, 'Bereits normalisierte Lagerdaten dürfen nicht bei jedem Start erneut verändert werden.');
+
+const copperById = getMaterialStorageEntryById(legacyInventory, 5);
+assert.equal(copperById?.displayName, 'Kupfer');
+assert.equal(copperById?.storageKey, 'Kupfer');
+assert.equal(copperById?.qty, 3);
+const fichteById = getMaterialStorageEntryById(legacyInventory, 2);
+assert.equal(fichteById?.displayName, 'Fichte', 'Die Anzeige muss aus der Material-ID stammen und nicht aus einem alten Lager-Schlüssel.');
+assert.equal(fichteById?.storageKey, 'LegacyFichte');
+
+const zinn = addMaterialQuantityById(legacyInventory, 4, 2);
+assert.equal(zinn?.displayName, 'Zinn');
+assert.deepEqual(legacyInventory.Zinn, { materialId: 4, category: 'Metall', qty: 2 });
+addMaterialQuantityById(legacyInventory, 5, 2);
+assert.equal(legacyInventory.Kupfer.qty, 5, 'ID-basierte Zugänge müssen vorhandene Bestände erhöhen statt Duplikate anzulegen.');
+
+const resolvedKnown = getMaterialStorageEntries(legacyInventory);
+assert.deepEqual(
+  resolvedKnown.map(entry => entry.materialId).sort((a, b) => a - b),
+  [2, 4, 5],
+  'Die kanonische Lageransicht darf unbekannte Legacy-Einträge nicht als bekannte Materialien ausgeben.'
+);
+
+assert.throws(
+  () => normalizeMaterialInventory({ Kupfer: { materialId: 4, category: 'Metall', qty: 1 } }),
+  /Widersprüchliche Materialreferenz/,
+  'Ein Konflikt zwischen bekanntem Namen und Material-ID muss sichtbar fehlschlagen statt stillschweigend Daten umzudeuten.'
+);
+
+console.log('Material-Presentation/Core: Statmatrix, Darstellung und rückwärtskompatible ID-Normalisierung des Materiallagers sind konsistent.');
