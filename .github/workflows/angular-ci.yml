@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - migration/angular
+      - feature/material-storage-id-v01311
   pull_request:
     branches:
       - main
