@@ -40,6 +40,6 @@ const stateBootstrap = app.indexOf('this.gameState.openBootstrapRegistration();'
 assert.ok(bridgeOpen >= 0 && stateBootstrap > bridgeOpen, 'Ressourcen-Präsentationsbrücke muss vor dem State-/Legacy-Bootstrap geöffnet werden.');
 assert.match(app, /private readonly gameResourcePresentation: GameResourcePresentationService/);
 assert.match(app, /ngOnDestroy\(\): void \{[\s\S]*this\.gameResourcePresentation\.closeLegacyCompatibilityBridge\(\);/);
-assert.match(app, /const APP_VERSION = '0\.12\.90';/);
+assert.match(app, /const APP_VERSION = '0\.12\.91';/);
 
 console.log('Ressourcen-Präsentations-Eigentümerschaft: Gold und Materialgesamtzahl werden direkt durch Angular aus dem Angular-State gerendert; Legacy besitzt nur noch einen dünnen Renderwrapper.');
