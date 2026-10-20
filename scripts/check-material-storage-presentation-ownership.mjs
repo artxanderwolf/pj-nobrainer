@@ -8,7 +8,8 @@ const adapter = readFileSync('src/app/core/legacy-material-presentation-adapter.
 assert.match(service, /constructor\(private readonly gameState: GameStateService\)/, 'Materiallager-Präsentation liest nicht aus dem Angular-State.');
 assert.match(service, /getMaterialStorageEntries\(this\.state\(\)\.inventory\)/, 'Materiallager-Präsentation löst Lagerdaten nicht über die kanonische Material-ID-Schicht auf.');
 assert.match(service, /\.sort\(\(a, b\) => a\.displayName\.localeCompare\(b\.displayName\)\)/, 'Materiallager-Präsentation sortiert die kanonischen Anzeigenamen nicht stabil.');
-assert.match(service, /materialSellData\(materialEntry\.displayName\)/, 'Materiallager-Präsentation verwendet nicht die bestehenden Verkaufswerte an der Kompatibilitätsgrenze.');
+assert.match(service, /materialSellDataById\(materialEntry\.materialId\)/, 'Materiallager-Präsentation muss Verkaufswerte per stabiler Material-ID auflösen.');
+assert.doesNotMatch(service, /materialSellData\(materialEntry\.displayName\)/, 'Materiallager-Präsentation darf Anzeigenamen nicht mehr als technische Wirtschaftsreferenz verwenden.');
 assert.match(service, /getMaterialStorageRowPresentation\(/, 'Materiallager-Präsentation verwendet den bestehenden Presentation-Core nicht.');
 assert.match(service, /materialId: materialEntry\.materialId/, 'Die kanonische Material-ID wird nicht bis an die Darstellungsgrenze geführt.');
 assert.match(service, /document\.getElementById\('inventoryRows'\)/);
@@ -37,4 +38,4 @@ assert.match(app, /private readonly gameMaterialStoragePresentation: GameMateria
 assert.match(app, /ngOnDestroy\(\): void \{[\s\S]*this\.gameMaterialStoragePresentation\.closeLegacyCompatibilityBridge\(\);/);
 assert.match(app, /const APP_VERSION = APP_UI_VERSION;/, 'Materiallager-Cutover verwendet nicht die gemeinsame App-Version.');
 
-console.log('Materiallager-Präsentations-Eigentümerschaft: bekannte Lagerbestände werden ID-basiert aufgelöst und durch Angular gerendert; der Legacy-Materialadapter enthält nur noch dünne Renderdelegationen.');
+console.log('Materiallager-Präsentations-Eigentümerschaft: Lager, Verkaufswerte und Darstellung werden per Material-ID aufgelöst; Anzeigenamen bleiben reine Präsentation.');
