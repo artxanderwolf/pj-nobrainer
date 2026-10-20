@@ -1,0 +1,1 @@
+Editable source data -> validation -> generated TypeScript -> existing game core interfaces.
