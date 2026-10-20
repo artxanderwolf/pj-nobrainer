@@ -58,12 +58,16 @@ const materialReferences: MaterialReference[] = GENERATED_MATERIAL_KEYS.map(key 
   };
 });
 
+export const MATERIAL_REFERENCES = Object.freeze(
+  [...materialReferences].sort((a, b) => a.materialId - b.materialId)
+) as readonly MaterialReference[];
+
 export const MATERIAL_REFERENCES_BY_ID = Object.freeze(
-  Object.fromEntries(materialReferences.map(reference => [reference.materialId, reference]))
+  Object.fromEntries(MATERIAL_REFERENCES.map(reference => [reference.materialId, reference]))
 ) as Readonly<Record<number, MaterialReference>>;
 
 export const MATERIAL_IDS_BY_NAME = Object.freeze(
-  Object.fromEntries(materialReferences.map(reference => [reference.displayName, reference.materialId]))
+  Object.fromEntries(MATERIAL_REFERENCES.map(reference => [reference.displayName, reference.materialId]))
 ) as Readonly<Record<string, number>>;
 
 export function getMaterialReferenceById(materialId: number | null | undefined): MaterialReference | null {
@@ -72,11 +76,16 @@ export function getMaterialReferenceById(materialId: number | null | undefined):
   return MATERIAL_REFERENCES_BY_ID[resolved] ?? null;
 }
 
+export function getMaterialDefinitionById(materialId: number | null | undefined): MaterialDefinition | null {
+  return getMaterialReferenceById(materialId)?.definition ?? null;
+}
+
 export function getMaterialById(materialId: number | null | undefined): [string, MaterialDefinition] | null {
   const reference = getMaterialReferenceById(materialId);
   return reference ? [reference.displayName, reference.definition] : null;
 }
 
+/** Ausschließlich für Save-/Legacy-Migration und Kompatibilitätsgrenzen. */
 export function getMaterialIdByName(displayName: string | null | undefined): number | null {
   if (!displayName) return null;
   return MATERIAL_IDS_BY_NAME[String(displayName)] ?? null;
@@ -84,6 +93,25 @@ export function getMaterialIdByName(displayName: string | null | undefined): num
 
 export function getMaterialDisplayNameById(materialId: number | null | undefined): string | null {
   return getMaterialReferenceById(materialId)?.displayName ?? null;
+}
+
+export function reinforcementEffectTextById(materialId: number | null | undefined): string {
+  const effect = getMaterialDefinitionById(materialId)?.specialEffect;
+  if (!effect) return 'Kein Spezialeffekt';
+  const percent = Math.round(Math.abs(effect.amount) * 100);
+  if (effect.stat === 'DS') return `${effect.amount >= 0 ? '+' : '−'}${percent} Prozentpunkte DS`;
+  return `${effect.amount >= 0 ? '+' : '−'}${percent} % ${effect.stat}`;
+}
+
+export function getDungeonMaterialDropWeightById(
+  dungeonId: number,
+  materialId: number | null | undefined
+): number | null {
+  const reference = getMaterialReferenceById(materialId);
+  const dungeon = baseline.DUNGEON_ENEMY_DEFINITIONS[Number(dungeonId)];
+  if (!reference || !dungeon) return null;
+  const used = Object.values(dungeon).some(enemy => enemy.lootMaterialIds.includes(reference.materialId));
+  return used ? reference.definition.dungeonDropWeight : null;
 }
 
 function normalizeWeaponMaterialReference(slot: BaselineWeaponSlot & { materialId?: number | null }): WeaponSlot {
@@ -122,17 +150,24 @@ export function isWeaponSelectionComplete(
   slots: readonly WeaponSlot[] | null | undefined,
   weaponForm: string
 ): boolean {
-  return baseline.isWeaponSelectionComplete(normalizeWeaponSlots(slots), weaponForm);
+  const selected = new Map(normalizeWeaponSlots(slots).map(entry => [entry.slot, entry.materialId]));
+  return baseline.getWeaponCraftingSlots(weaponForm).every(slot => Number.isInteger(Number(selected.get(slot))));
 }
 
 export function rarityFactor(slots: readonly WeaponSlot[] | null | undefined): number {
-  return baseline.rarityFactor(normalizeWeaponSlots(slots));
+  const rarities = normalizeWeaponSlots(slots)
+    .filter(entry => entry.slot !== 'baseMaterial')
+    .map(entry => getMaterialDefinitionById(entry.materialId)?.rarity)
+    .filter((value): value is number => Number.isFinite(value));
+  return rarities.length ? Math.min(...rarities) : 1;
 }
 
 export function calculateWeaponCharacterModifiers(
   slots: readonly WeaponSlot[] | null | undefined,
   weaponForm: string
 ): CharacterStatModifiers {
+  // Der eingefrorene v0.13.10-Balancekern erhält nur noch eine aus den IDs
+  // erzeugte Namensprojektion. Die technische Identität bleibt materialId.
   return baseline.calculateWeaponCharacterModifiers(normalizeWeaponSlots(slots), weaponForm);
 }
 

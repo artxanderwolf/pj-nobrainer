@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import {
-  MATERIALS,
-  getDungeonMaterialDropWeight,
-  reinforcementEffectText
+  MATERIAL_REFERENCES,
+  getDungeonMaterialDropWeightById,
+  reinforcementEffectTextById
 } from '../game/game-core';
 import { getMaterialIndexRowPresentation } from '../game/material-presentation-core';
 
@@ -25,12 +25,12 @@ export class GameMaterialIndexPresentationService {
     body.innerHTML = '';
     body.dataset['materialIndexPresentationOwner'] = 'angular';
 
-    for (const [name, material] of Object.entries(MATERIALS)) {
+    for (const reference of MATERIAL_REFERENCES) {
       const presentation = getMaterialIndexRowPresentation(
-        name,
-        material,
-        reinforcementEffectText(name),
-        getDungeonMaterialDropWeight(1, name)
+        reference.displayName,
+        reference.definition,
+        reinforcementEffectTextById(reference.materialId),
+        getDungeonMaterialDropWeightById(1, reference.materialId)
       );
       const row = document.createElement('tr');
       row.innerHTML = `<td>${presentation.category}</td><td><strong>${presentation.name}</strong></td><td class="rarity">${presentation.rarityText}</td><td>${presentation.hpText}</td><td>${presentation.energyText}</td><td>${presentation.armorText}</td><td>${presentation.dodgeText}</td><td>${presentation.strengthFactorText}</td><td>${presentation.precisionText}</td><td>${presentation.threatText}</td><td>${presentation.critChanceText}</td><td>${presentation.critDamageText}</td><td>${presentation.hpRegenText}</td><td>${presentation.energyRegenText}</td><td>${presentation.experienceText}</td><td>${presentation.lifeStealText}</td><td>${presentation.penetrationText}</td><td>${presentation.specialStatText}</td><td>${presentation.specialPercentText}</td><td>${presentation.dungeonChanceText}</td>`;

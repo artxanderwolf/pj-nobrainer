@@ -9,6 +9,7 @@ const distRoot = resolve('dist/nobrainer/browser');
 const basePath = '/pj-nobrainer/';
 const saveKey = 'nobrainer_save_v1';
 const materialName = 'Morsche Fichte';
+const materialId = 1;
 assert.ok(existsSync(join(distRoot, 'index.html')), 'Der gebaute Angular-Index fehlt.');
 
 const browser = ['google-chrome', 'google-chrome-stable', 'chromium', 'chromium-browser'].find(candidate => {
@@ -17,6 +18,7 @@ const browser = ['google-chrome', 'google-chrome-stable', 'chromium', 'chromium-
 });
 assert.ok(browser, 'Chrome/Chromium wurde für den Loot-E2E-Test nicht gefunden.');
 
+// Absichtlich alter v9-Spielstand mit materialnamenbasiertem Dungeon-Loot.
 const fixture = JSON.stringify({
   saveVersion: 9,
   savedAt: Date.now(),
@@ -47,7 +49,11 @@ const probeScript = `<script>
     try { saved = JSON.parse(localStorage.getItem(${JSON.stringify(saveKey)}) || 'null'); } catch {}
     const result = {
       status,
-      inventoryQty: Number(saved?.state?.inventory?.[${JSON.stringify(materialName)}]?.qty || 0),
+      saveVersion: Number(saved?.saveVersion || 0),
+      inventoryQty: Number(saved?.state?.inventory?.[${JSON.stringify(String(materialId))}]?.qty || 0),
+      canonicalMaterialId: Number(saved?.state?.inventory?.[${JSON.stringify(String(materialId))}]?.materialId || 0),
+      legacyInventoryKeyPresent: Boolean(saved?.state?.inventory?.[${JSON.stringify(materialName)}]),
+      legacyDungeonLootKeyPresent: Boolean(saved?.state?.dungeonLoot?.[${JSON.stringify(materialName)}]),
       materialCount: document.getElementById('matCount')?.textContent?.trim() || '',
       storageText: document.getElementById('inventoryRows')?.textContent?.replace(/\\s+/g, ' ').trim() || '',
       dungeonLootText: document.getElementById('dungeonLoot')?.textContent?.replace(/\\s+/g, ' ').trim() || '',
@@ -170,16 +176,20 @@ try {
   const result = JSON.parse(decoded);
 
   assert.equal(result.status, 'clicked', `Der direkte Dungeon-Hubbutton wurde zum Einsammeln nicht verwendbar: ${JSON.stringify(result)}`);
-  assert.equal(result.inventoryQty, 2, `Dungeon-Loot wurde nicht in das gespeicherte Inventar übertragen: ${JSON.stringify(result)}`);
+  assert.equal(result.saveVersion, 12, `Der migrierte Altstand wurde nicht als Save v12 persistiert: ${JSON.stringify(result)}`);
+  assert.equal(result.inventoryQty, 2, `Dungeon-Loot wurde nicht in das ID-keyed gespeicherte Inventar übertragen: ${JSON.stringify(result)}`);
+  assert.equal(result.canonicalMaterialId, materialId, `Der kanonische Lagereintrag trägt nicht die erwartete Material-ID: ${JSON.stringify(result)}`);
+  assert.equal(result.legacyInventoryKeyPresent, false, `Der Materialname blieb fälschlich als Inventarschlüssel erhalten: ${JSON.stringify(result)}`);
+  assert.equal(result.legacyDungeonLootKeyPresent, false, `Der Materialname blieb fälschlich als Dungeon-Loot-Schlüssel erhalten: ${JSON.stringify(result)}`);
   assert.equal(result.browserErrors.length, 0, `Beim Loot-Einsammeln trat ein Browserfehler auf: ${JSON.stringify(result)}`);
   assert.equal(result.materialCount, '2', `Der Materialzähler wurde nach dem Einsammeln nicht aktualisiert: ${JSON.stringify(result)}`);
-  assert.match(result.storageText, /Morsche Fichte/, `Das Materiallager zeigt den eingesammelten Loot nicht: ${JSON.stringify(result)}`);
+  assert.match(result.storageText, /Morsche Fichte/, `Das Materiallager zeigt den eingesammelten Loot nicht mit Anzeigenamen: ${JSON.stringify(result)}`);
   assert.equal(result.dungeonLootText, '', `Die Dungeon-Lootanzeige wurde nach dem Einsammeln nicht geleert: ${JSON.stringify(result)}`);
   assert.equal(result.overviewText, 'Lauf starten', `Nach dem Einsammeln muss die Dungeon-Hubaktion wieder einen neuen Lauf anbieten: ${JSON.stringify(result)}`);
   assert.equal(result.primaryText, 'Lauf starten', `Nach dem Einsammeln muss auch der Dungeon-Detailbutton wieder einen neuen Lauf anbieten: ${JSON.stringify(result)}`);
   assert.equal(result.runtimeError, '', `Die Runtime meldet während des Loot-E2E-Tests einen Fehler: ${JSON.stringify(result)}`);
 
-  console.log('Dungeon-Loot-Browserregression: direkte Dungeon-Hubaktion sammelt Loot ein und kehrt zu Lauf starten zurück.');
+  console.log('Dungeon-Loot-Browserregression: v9-Namensloot wird zu ID-keyed Save v12 migriert, eingesammelt und weiterhin korrekt angezeigt.');
 } finally {
   if (child) await stopBrowser(child);
   rmSync(browserProfile, { recursive: true, force: true });

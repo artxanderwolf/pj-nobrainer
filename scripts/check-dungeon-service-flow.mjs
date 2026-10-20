@@ -28,6 +28,7 @@ let dungeonServiceSource = readFileSync(new URL('game-dungeon.service.ts', coreD
   .replace("from '../game/dungeon-core';", "from '../game/dungeon-core.node-check.ts';")
   .replace("from '../game/game-core';", "from '../game/game-core.node-check.ts';")
   .replace("from '../game/character-progression-core';", "from '../game/character-progression-core.node-check.ts';")
+  .replace("from '../game/material-storage-core';", "from '../game/material-storage-core.ts';")
   .replace(
     "import { GameStateService, type MutableGameState } from './game-state.service';",
     "import type { GameStateService, MutableGameState } from './game-state.service';"
@@ -116,8 +117,8 @@ try {
   assert.ok(successState.dungeonLootCollect, 'Nach Sieg muss zunächst die Loot-Zwischenphase aktiv sein.');
   assert.deepEqual(
     successState.dungeonLootCollect.drops,
-    [{ materialId: 9, name: 'Lederfetzen', category: 'Leder' }],
-    'Aktive Dungeon-Beute muss die stabile Material-ID als kanonische Referenz und die alten Felder für Rollback-Kompatibilität tragen.'
+    [{ materialId: 9 }],
+    'Neue Dungeon-Drops dürfen technisch nur noch die stabile Material-ID persistieren.'
   );
   assert.deepEqual(successState.dungeonCycleActiveIds, [1], 'Überlebende müssen für den nächsten Durchlauf aktiv bleiben.');
   assert.equal(successState.characters[0].level, 2, '10 Gegner-XP müssen bei 95/100 XP den Levelaufstieg auslösen.');
@@ -129,25 +130,33 @@ try {
   result = successService.update(4000);
   assert.equal(successState.dungeonLootCollect, null, 'Die Loot-Zwischenphase muss nach Ablauf abgeschlossen werden.');
   assert.equal(Object.values(successState.dungeonLoot).reduce((sum, entry) => sum + (entry.qty || 0), 0), 1);
-  assert.equal(successState.dungeonLoot.Lederfetzen?.qty, 1, 'Neuling muss aus seinem ID-Pool gewichten; bei Testwurf 0,5 gewinnt Lederfetzen.');
+  assert.equal(successState.dungeonLoot['9']?.qty, 1, 'Neuling muss Lederfetzen unter Material-ID 9 speichern.');
+  assert.equal(successState.dungeonLoot.Lederfetzen, undefined, 'Neue Dungeon-Beute darf keinen Materialnamen als Schlüssel verwenden.');
   assert.equal(successState.dungeonSearch.nextCheckAt, 5000, 'Bei aktivem Lauf muss nach dem Loot wieder gesucht werden.');
   assert.equal(successService.getSessionWaveCount(), 1);
 
   const collected = successService.collectLoot();
   assert.equal(Object.keys(successState.dungeonLoot).length, 0, 'Manuelles Einsammeln muss die Dungeon-Beute leeren.');
   assert.equal(Object.values(successState.inventory).reduce((sum, entry) => sum + (entry.qty || 0), 0), 1);
+  assert.equal(successState.inventory['9']?.qty, 1, 'Eingesammelte Beute muss unter der Material-ID im Lager liegen.');
+  assert.equal(successState.inventory.Lederfetzen, undefined);
   assert.equal(collected.events.length, 1);
 
   const legacyLootState = makeState(1);
+  legacyLootState.dungeonLoot = { Kupfer: { category: 'Metall', qty: 2 } };
   legacyLootState.dungeonLootCollect = {
     readyAt: 1000,
     drops: [{ name: 'Kupfer', category: 'Metall' }],
     enemyCount: 1
   };
   const legacyLootService = new GameDungeonService({ getState: () => legacyLootState });
+  assert.equal(legacyLootService.normalizeMaterialReferences(), 2, 'Legacy-Dungeon-Loot und ausstehender Drop müssen gemeinsam auf IDs migriert werden.');
+  assert.equal(legacyLootState.dungeonLoot.Kupfer, undefined);
+  assert.deepEqual(legacyLootState.dungeonLoot['5'], { materialId: 5, category: 'Metall', qty: 2 });
+  assert.deepEqual(legacyLootState.dungeonLootCollect.drops, [{ materialId: 5 }]);
   const legacyLootResult = legacyLootService.update(1000);
-  assert.equal(legacyLootState.dungeonLoot.Kupfer?.qty, 1, 'Alte laufende Loot-Saves mit Materialnamen müssen weiterhin auflösbar sein.');
-  assert.ok(legacyLootResult.events.some(event => event.text.includes('Kupfer')));
+  assert.equal(legacyLootState.dungeonLoot['5']?.qty, 3, 'Der migrierte laufende Drop muss denselben ID-keyed Kupferbestand erhöhen.');
+  assert.ok(legacyLootResult.events.some(event => event.text.includes('Kupfer')), 'Anzeigenamen müssen weiterhin in Benutzerereignissen erscheinen.');
 
   const splitState = makeState(2);
   const splitService = new GameDungeonService({ getState: () => splitState });
@@ -219,7 +228,7 @@ try {
   assert.ok(lowEnergyResult.events.some(event => event.text.includes('Nicht genügend Energie')));
   assert.match(lowEnergyResult.alertMessage || '', /Ausdauer reicht für keine weitere Welle/);
 
-  console.log('Dungeon-Service-Ablauf: Laufstart, Wiederholung, ID-basierter Loot, Altstand-/Rollback-Kompatibilität, Abbruch, Energieende, XP/Level und Beute sind konsistent.');
+  console.log('Dungeon-Service-Ablauf: Laufstart, Wiederholung, ID-only Loot, Altstand-Migration, Abbruch, Energieende, XP/Level und Beute sind konsistent.');
 } finally {
   Math.random = originalRandom;
   for (const url of temporaryFiles.reverse()) {

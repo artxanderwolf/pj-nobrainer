@@ -23,9 +23,9 @@ import {
 import {
   CHARACTER_CLASSES,
   CONFIG,
-  MATERIALS,
   calculateCharacterStats,
-  getMaterialById,
+  getMaterialIdByName,
+  getMaterialReferenceById,
   type CharacterClassId,
   type ResolvedCharacterStats,
   type WeaponStats
@@ -34,6 +34,12 @@ import {
   characterStatLevelMultiplier,
   grantCharacterExperience
 } from '../game/character-progression-core';
+import {
+  addMaterialQuantityById,
+  getMaterialStorageEntries,
+  normalizeMaterialInventory,
+  type MaterialStorageInventory
+} from '../game/material-storage-core';
 import { GameStateService, type MutableGameState } from './game-state.service';
 
 export interface DungeonRuntimeEvent {
@@ -94,24 +100,19 @@ interface RuntimeDungeonLootCollect {
   enemyCount: number;
 }
 
-interface RuntimeDungeonInventoryEntry {
-  category?: string;
-  qty?: number | null;
-}
-
 type DungeonSessionEndReason = 'manual' | 'energy';
 
 type RuntimeDungeonState = MutableGameState & {
   characters: RuntimeDungeonCharacter[];
   weaponInventory: RuntimeDungeonWeapon[];
-  inventory: Record<string, RuntimeDungeonInventoryEntry | undefined>;
+  inventory: MaterialStorageInventory;
   expeditionActive: boolean;
   dungeonAuto: boolean;
   dungeonStopRequested?: boolean;
   dungeonRun: DungeonRunLike | null;
   dungeonSearch: RuntimeDungeonSearch | null;
   dungeonLootCollect: RuntimeDungeonLootCollect | null;
-  dungeonLoot: Record<string, RuntimeDungeonInventoryEntry | undefined>;
+  dungeonLoot: MaterialStorageInventory;
   dungeonTeamSlots: Array<number | null>;
   dungeonCycleOriginalIds: number[];
   dungeonCycleActiveIds: number[];
@@ -268,22 +269,39 @@ export class GameDungeonService {
   collectLoot(): DungeonActionResult {
     const state = this.getState();
     const outcome = this.createOutcome();
-    const entries = Object.entries(state.dungeonLoot ?? {}).filter(([, entry]) => (Number(entry?.qty) || 0) > 0);
+    normalizeMaterialInventory(state.dungeonLoot);
+    const entries = getMaterialStorageEntries(state.dungeonLoot).filter(entry => entry.qty > 0);
     if (!entries.length) return outcome;
 
     let total = 0;
-    entries.forEach(([name, entry]) => {
-      const quantity = Number(entry?.qty) || 0;
-      const category = entry?.category || MATERIALS[name]?.category || 'Unbekannt';
-      state.inventory[name] ??= { category, qty: 0 };
-      const inventoryEntry = state.inventory[name];
-      if (!inventoryEntry) return;
-      inventoryEntry.qty = (Number(inventoryEntry.qty) || 0) + quantity;
-      total += quantity;
-    });
-    state.dungeonLoot = {};
+    for (const entry of entries) {
+      const added = addMaterialQuantityById(state.inventory, entry.materialId, entry.qty);
+      if (!added) throw new Error(`Dungeon-Beute konnte nicht ins Lager übertragen werden: Material-ID ${entry.materialId}.`);
+      delete state.dungeonLoot[String(entry.materialId)];
+      total += entry.qty;
+    }
     this.addEvent(outcome, `${total} Material${total === 1 ? '' : 'ien'} aus der Dungeon-Beute ins Lager eingesammelt.`, 'good');
     return outcome;
+  }
+
+  /** Migriert alte Namensreferenzen in Dungeon-Beute und ausstehenden Drops auf stabile IDs. */
+  normalizeMaterialReferences(): number {
+    const state = this.getState();
+    let changed = normalizeMaterialInventory(state.dungeonLoot);
+    const collect = state.dungeonLootCollect;
+    if (!collect?.drops?.length) return changed;
+
+    for (const drop of collect.drops) {
+      const resolved = this.resolveDungeonDrop(drop);
+      if (!resolved) continue;
+      if (drop.materialId !== resolved.materialId || drop.name !== undefined || drop.category !== undefined) {
+        drop.materialId = resolved.materialId;
+        delete drop.name;
+        delete drop.category;
+        changed += 1;
+      }
+    }
+    return changed;
   }
 
   getSessionWaveCount(): number {
@@ -404,9 +422,8 @@ export class GameDungeonService {
       .filter((drop): drop is { materialId: number; name: string; category: string } => Boolean(drop));
 
     resolvedDrops.forEach(drop => {
-      state.dungeonLoot[drop.name] ??= { category: drop.category, qty: 0 };
-      const entry = state.dungeonLoot[drop.name];
-      if (entry) entry.qty = (Number(entry.qty) || 0) + 1;
+      const added = addMaterialQuantityById(state.dungeonLoot, drop.materialId, 1);
+      if (!added) throw new Error(`Dungeon-Drop konnte nicht gespeichert werden: Material-ID ${drop.materialId}.`);
     });
     if (!this.catchupMode) {
       this.addEvent(outcome, `BEUTE EINGESAMMELT – ${resolvedDrops.map(drop => drop.name).join(', ')}.`, 'good');
@@ -469,10 +486,10 @@ export class GameDungeonService {
       .map(id => this.getCharacterById(state, id)?.name)
       .filter((name): name is string => Boolean(name));
     const waves = this.getSessionWaveCount();
-    const loot = Object.entries(state.dungeonLoot ?? {})
-      .filter(([, entry]) => (Number(entry?.qty) || 0) > 0)
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([name, entry]) => `${name} ×${Number(entry?.qty) || 0}`);
+    const loot = getMaterialStorageEntries(state.dungeonLoot)
+      .filter(entry => entry.qty > 0)
+      .sort((a, b) => a.displayName.localeCompare(b.displayName))
+      .map(entry => `${entry.displayName} ×${entry.qty}`);
     const title = reason === 'manual' ? 'Dungeon 1 – Lauf abgebrochen' : 'Dungeon 1 – Lauf beendet';
     const reasonText = reason === 'manual'
       ? 'Grund: Abbruch nach Abschluss der aktuellen Welle.'
@@ -490,7 +507,7 @@ export class GameDungeonService {
   }
 
   private getLootTotal(state: RuntimeDungeonState): number {
-    return Object.values(state.dungeonLoot ?? {}).reduce((sum, entry) => sum + (Number(entry?.qty) || 0), 0);
+    return getMaterialStorageEntries(state.dungeonLoot).reduce((sum, entry) => sum + entry.qty, 0);
   }
 
   private playerAttack(
@@ -674,44 +691,35 @@ export class GameDungeonService {
     const result: RuntimeDungeonDrop[] = [];
     for (const enemy of enemies) {
       const candidates = enemy.lootMaterialIds
-        .map(materialId => {
-          const resolved = getMaterialById(materialId);
-          return resolved ? { materialId, name: resolved[0], material: resolved[1] } : null;
-        })
-        .filter((entry): entry is { materialId: number; name: string; material: NonNullable<ReturnType<typeof getMaterialById>>[1] } => Boolean(entry));
+        .map(materialId => getMaterialReferenceById(materialId))
+        .filter((entry): entry is NonNullable<ReturnType<typeof getMaterialReferenceById>> => Boolean(entry));
       if (!candidates.length) continue;
       const selected = candidates[rollWeightedIndex(
-        candidates.map(candidate => candidate.material.dungeonDropWeight),
+        candidates.map(candidate => candidate.definition.dungeonDropWeight),
         Math.random()
       )];
-      if (selected) {
-        result.push({
-          materialId: selected.materialId,
-          name: selected.name,
-          category: selected.material.category
-        });
-      }
+      if (selected) result.push({ materialId: selected.materialId });
     }
     return result;
   }
 
   private resolveDungeonDrop(drop: RuntimeDungeonDrop): { materialId: number; name: string; category: string } | null {
-    const resolvedById = getMaterialById(drop.materialId);
-    if (resolvedById) {
-      return {
-        materialId: resolvedById[1].materialId,
-        name: resolvedById[0],
-        category: resolvedById[1].category
-      };
+    const referenceById = getMaterialReferenceById(drop.materialId);
+    const legacyName = typeof drop.name === 'string' && drop.name ? drop.name : null;
+    const materialIdByName = getMaterialIdByName(legacyName);
+    if (referenceById && materialIdByName !== null && materialIdByName !== referenceById.materialId) {
+      throw new Error(
+        `Widersprüchliche Materialreferenz im Dungeon-Drop: ${legacyName} verweist auf ID ${materialIdByName}, ` +
+        `der Drop auf ID ${referenceById.materialId}.`
+      );
     }
 
-    const legacyName = String(drop.name ?? '');
-    const legacyDefinition = legacyName ? MATERIALS[legacyName] : null;
-    if (!legacyDefinition) return null;
+    const reference = referenceById ?? getMaterialReferenceById(materialIdByName);
+    if (!reference) return null;
     return {
-      materialId: legacyDefinition.materialId,
-      name: legacyName,
-      category: legacyDefinition.category
+      materialId: reference.materialId,
+      name: reference.displayName,
+      category: reference.definition.category
     };
   }
 

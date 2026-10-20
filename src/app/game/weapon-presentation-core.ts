@@ -11,7 +11,13 @@ export interface WeaponCardStatsLike {
   hitChance?: number | null;
   penetration?: number | null;
   expectedRaw?: number | null;
+  /** Legacy-Snapshotfeld; aktive Präsentation verwendet den Spezialslot per materialId. */
   reinforcementMaterial?: string | null;
+}
+
+export interface WeaponCardSlotLike {
+  slot?: string | null;
+  materialId?: number | null;
 }
 
 export interface WeaponCardLike {
@@ -19,7 +25,7 @@ export interface WeaponCardLike {
   name?: string | null;
   starter?: boolean | null;
   weaponForm?: string | null;
-  slots?: readonly unknown[] | null;
+  slots?: readonly WeaponCardSlotLike[] | null;
   stats?: WeaponCardStatsLike | null;
   valueNickel?: number | null;
 }
@@ -30,8 +36,8 @@ export interface WeaponInventorySortableLike {
 
 export interface WeaponPresentationDependencies {
   resolveFormName(weaponForm: string | null | undefined, starter: boolean): string;
-  rarityFactor(slots: readonly unknown[] | null | undefined): number;
-  reinforcementEffectText(materialName: string | null | undefined): string;
+  rarityFactor(slots: readonly WeaponCardSlotLike[] | null | undefined): number;
+  reinforcementEffectTextById(materialId: number | null | undefined): string;
 }
 
 export interface WeaponTextValuePresentation {
@@ -112,7 +118,8 @@ export function createWeaponPresentationCore(dependencies: WeaponPresentationDep
   ): WeaponCardPresentation {
     const stats = weapon.stats ?? {};
     const compareStats = compareWeapon?.stats ?? null;
-    const reinforcement = dependencies.reinforcementEffectText(stats.reinforcementMaterial);
+    const reinforcementMaterialId = weapon.slots?.find(slot => slot.slot === 'special')?.materialId ?? null;
+    const reinforcement = dependencies.reinforcementEffectTextById(reinforcementMaterialId);
     const starter = Boolean(weapon.starter);
 
     const damagePerHit = numeric(stats.damagePerHit);
@@ -132,7 +139,7 @@ export function createWeaponPresentationCore(dependencies: WeaponPresentationDep
       title: `${weapon.name ?? ''} #${weapon.id ?? ''}`,
       formName: dependencies.resolveFormName(weapon.weaponForm, starter),
       rarityLabel: getRarityLabel(weapon),
-      reinforcementText: reinforcement && reinforcement !== 'Kein Zusatzeffekt' ? reinforcement : '',
+      reinforcementText: reinforcement && reinforcement !== 'Kein Spezialeffekt' ? reinforcement : '',
       stats: [
         {
           key: 'damagePerHit',

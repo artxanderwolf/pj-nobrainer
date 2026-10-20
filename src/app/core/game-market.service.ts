@@ -169,8 +169,8 @@ export class GameMarketService {
 
   private returnJob(state: RuntimeMarketState, job: MarketJob): void {
     if (job.type === 'material') {
-      const materialId = job.materialId ?? getMaterialIdByName(job.name);
-      if (materialId === null || materialId === undefined) throw new Error(`Unbekanntes Material im Marktauftrag: ${job.name}`);
+      const materialId = job.materialId;
+      if (materialId === null || materialId === undefined) throw new Error(`Unbekannte Material-ID im Marktauftrag: ${job.name}`);
       const returned = addMaterialQuantityById(state.inventory, materialId, job.quantity || 1);
       if (!returned) throw new Error(`Material ${job.name} konnte nicht ins Inventar zurückgegeben werden.`);
       return;

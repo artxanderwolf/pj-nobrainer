@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { CONFIG, rarityFactor, reinforcementEffectText } from '../game/game-core';
+import { CONFIG, rarityFactor, reinforcementEffectTextById } from '../game/game-core';
 import { createWeaponPresentationCore, type WeaponPresentationCoreBridge } from '../game/weapon-presentation-core';
 
 declare global {
@@ -12,7 +12,7 @@ const WEAPON_PRESENTATION_CORE_BRIDGE = createWeaponPresentationCore({
   resolveFormName: (weaponForm, starter) =>
     CONFIG.forge.weaponForms[weaponForm ?? '']?.name ?? (starter ? 'Einhänder' : 'Waffe'),
   rarityFactor,
-  reinforcementEffectText
+  reinforcementEffectTextById
 });
 
 const ADAPTED_WEAPON_CARD_PRESENTATION = `function rarityLabelForWeapon(w){

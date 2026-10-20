@@ -8,7 +8,7 @@ import {
 const presentation = createWeaponPresentationCore({
   resolveFormName: (weaponForm, starter) => weaponForm === 'dagger' ? 'Dolch' : starter ? 'Einhänder' : 'Waffe',
   rarityFactor: slots => slots?.length ? 2 : 1,
-  reinforcementEffectText: materialName => materialName === 'Kupfer' ? '+10 Prozentpunkte DS' : 'Kein Zusatzeffekt'
+  reinforcementEffectTextById: materialId => materialId === 5 ? '+10 Prozentpunkte DS' : 'Kein Spezialeffekt'
 });
 
 assert.deepEqual(getComparisonPresentation(10, null), null);
@@ -26,7 +26,7 @@ const compare = {
   id: 1,
   name: 'Alt',
   weaponForm: 'dagger',
-  slots: [{}],
+  slots: [{ slot: 'special', materialId: null }],
   stats: {
     damagePerHit: 8,
     attackSpeed: 1.2,
@@ -42,14 +42,14 @@ const weapon = {
   id: 2,
   name: 'Kupferklinge',
   weaponForm: 'dagger',
-  slots: [{}, {}],
+  slots: [{ slot: 'workingPart', materialId: 5 }, { slot: 'special', materialId: 5 }],
   stats: {
     damagePerHit: 10,
     attackSpeed: 1.2,
     hitChance: 0.6,
     penetration: 0.2,
     expectedRaw: 7.2,
-    reinforcementMaterial: 'Kupfer'
+    reinforcementMaterial: 'Veralteter Anzeigename'
   },
   valueNickel: 250
 };
@@ -85,4 +85,4 @@ assert.deepEqual(starter.stats.at(-1)?.value, { kind: 'text', text: 'Nicht verk�
 const unpriced = presentation.getWeaponCardPresentation({ id: 3, name: 'Unbekannt', stats: {} });
 assert.deepEqual(unpriced.stats.at(-1)?.value, { kind: 'text', text: '–' });
 
-console.log('Weapon-Presentation-Core: Form, Seltenheit, Verstärkung, Werte, Vergleichsdifferenzen und Lagerreihenfolge sind konsistent.');
+console.log('Weapon-Presentation-Core: Form, Seltenheit, ID-basierte Verstärkung, Werte, Vergleichsdifferenzen und Lagerreihenfolge sind konsistent.');

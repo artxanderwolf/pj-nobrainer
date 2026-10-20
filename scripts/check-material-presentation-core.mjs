@@ -117,25 +117,27 @@ const legacyInventory = {
   LegacyFichte: { materialId: 2, category: 'Alt', qty: 4 },
   Unbekannt: { category: 'Sonstiges', qty: 7 }
 };
-assert.equal(normalizeMaterialInventory(legacyInventory), 2, 'Bekannte Legacy-Einträge müssen genau einmal auf stabile IDs normalisiert werden.');
-assert.deepEqual(legacyInventory.Kupfer, { materialId: 5, category: 'Metall', qty: 3 });
-assert.deepEqual(legacyInventory.LegacyFichte, { materialId: 2, category: 'Holz', qty: 4 });
+assert.equal(normalizeMaterialInventory(legacyInventory), 2, 'Bekannte Legacy-Einträge müssen genau einmal auf kanonische ID-Schlüssel migriert werden.');
+assert.equal(legacyInventory.Kupfer, undefined);
+assert.equal(legacyInventory.LegacyFichte, undefined);
+assert.deepEqual(legacyInventory['5'], { materialId: 5, category: 'Metall', qty: 3 });
+assert.deepEqual(legacyInventory['2'], { materialId: 2, category: 'Holz', qty: 4 });
 assert.deepEqual(legacyInventory.Unbekannt, { category: 'Sonstiges', qty: 7 }, 'Unbekannte Legacy-Einträge dürfen nicht stillschweigend gelöscht werden.');
-assert.equal(normalizeMaterialInventory(legacyInventory), 0, 'Bereits normalisierte Lagerdaten dürfen nicht bei jedem Start erneut verändert werden.');
+assert.equal(normalizeMaterialInventory(legacyInventory), 0, 'Bereits ID-keyed Lagerdaten dürfen nicht bei jedem Start erneut verändert werden.');
 
 const copperById = getMaterialStorageEntryById(legacyInventory, 5);
 assert.equal(copperById?.displayName, 'Kupfer');
-assert.equal(copperById?.storageKey, 'Kupfer');
+assert.equal(copperById?.storageKey, '5');
 assert.equal(copperById?.qty, 3);
 const fichteById = getMaterialStorageEntryById(legacyInventory, 2);
-assert.equal(fichteById?.displayName, 'Fichte', 'Die Anzeige muss aus der Material-ID stammen und nicht aus einem alten Lager-Schlüssel.');
-assert.equal(fichteById?.storageKey, 'LegacyFichte');
+assert.equal(fichteById?.displayName, 'Fichte');
+assert.equal(fichteById?.storageKey, '2');
 
 const zinn = addMaterialQuantityById(legacyInventory, 4, 2);
 assert.equal(zinn?.displayName, 'Zinn');
-assert.deepEqual(legacyInventory.Zinn, { materialId: 4, category: 'Metall', qty: 2 });
+assert.deepEqual(legacyInventory['4'], { materialId: 4, category: 'Metall', qty: 2 });
 addMaterialQuantityById(legacyInventory, 5, 2);
-assert.equal(legacyInventory.Kupfer.qty, 5, 'ID-basierte Zugänge müssen vorhandene Bestände erhöhen statt Duplikate anzulegen.');
+assert.equal(legacyInventory['5'].qty, 5, 'ID-basierte Zugänge müssen vorhandene Bestände erhöhen statt Duplikate anzulegen.');
 assert.equal(getMaterialQuantityById(legacyInventory, 5), 5);
 assert.equal(takeMaterialQuantityById(legacyInventory, 5, 2), true);
 assert.equal(getMaterialQuantityById(legacyInventory, 5), 3);
@@ -159,5 +161,10 @@ assert.throws(
   /Widersprüchliche Materialreferenz/,
   'Ein Konflikt zwischen bekanntem Namen und Material-ID muss sichtbar fehlschlagen statt stillschweigend Daten umzudeuten.'
 );
+assert.throws(
+  () => normalizeMaterialInventory({ Kupfer: { qty: 1 }, '5': { materialId: 5, category: 'Metall', qty: 2 } }),
+  /Doppelter Materialbestand/,
+  'Dasselbe Material darf nicht gleichzeitig unter Name und ID persistiert werden.'
+);
 
-console.log('Material-Presentation/Core: Statmatrix, Darstellung, ID-Reservierung und rückwärtskompatible Normalisierung des Materiallagers sind konsistent.');
+console.log('Material-Presentation/Core: Statmatrix, Darstellung, ID-Reservierung und kanonische ID-Key-Migration des Materiallagers sind konsistent.');

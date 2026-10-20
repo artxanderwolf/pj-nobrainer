@@ -3,7 +3,7 @@ import { calculateWeaponValueNickel, formatCurrencyNickel } from '../game/econom
 import {
   CONFIG,
   rarityFactor,
-  reinforcementEffectText,
+  reinforcementEffectTextById,
   type WeaponStats
 } from '../game/game-core';
 import {
@@ -21,7 +21,7 @@ const WEAPON_PRESENTATION = createWeaponPresentationCore({
   resolveFormName: (weaponForm, starter) =>
     CONFIG.forge.weaponForms[weaponForm ?? '']?.name ?? (starter ? 'Einhänder' : 'Waffe'),
   rarityFactor,
-  reinforcementEffectText
+  reinforcementEffectTextById
 });
 
 @Injectable({ providedIn: 'root' })
