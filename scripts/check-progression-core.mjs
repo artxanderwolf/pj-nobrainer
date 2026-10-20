@@ -31,11 +31,11 @@ try {
     const s = state();
     const offer = getRecruitOffer(s, 'fighter');
     assert.equal(offer.ok, true);
-    assert.equal(offer.costNickel, 200);
+    assert.equal(offer.costNickel, 2000);
     assert.equal(offer.number, 1);
     const result = spendRecruitCost(s, 'fighter');
     assert.equal(result.ok, true);
-    assert.equal(s.gold, 99800);
+    assert.equal(s.gold, 98000);
   }
 
   {
@@ -49,23 +49,23 @@ try {
 
   {
     const s = state();
-    s.gold = 199;
+    s.gold = 1999;
     const offer = getRecruitOffer(s, 'recruit');
     assert.equal(offer.ok, false);
     assert.equal(offer.reason, 'insufficient-funds');
     assert.equal(spendRecruitCost(s, 'recruit').ok, false);
-    assert.equal(s.gold, 199);
+    assert.equal(s.gold, 1999);
   }
 
   {
     const s = state();
     const offer = getUpgradeOffer(s, 'inn');
     assert.equal(offer.ok, true);
-    assert.equal(offer.costNickel, 500);
+    assert.equal(offer.costNickel, 5000);
     const result = buyUpgrade(s, 'inn');
     assert.equal(result.ok, true);
     assert.equal(s.upgrades.innCapacity, 3);
-    assert.equal(s.gold, 99500);
+    assert.equal(s.gold, 95000);
   }
 
   {
@@ -80,15 +80,15 @@ try {
 
   {
     const s = state();
-    s.gold = 999;
+    s.gold = 9999;
     const result = buyUpgrade(s, 'marketSlots');
     assert.equal(result.ok, false);
     assert.equal(result.reason, 'insufficient-funds');
     assert.equal(s.upgrades.marketSlots, 1);
-    assert.equal(s.gold, 999);
+    assert.equal(s.gold, 9999);
   }
 
-  console.log('Progression-Core: Rekrutierung, Kapazität, Geldprüfung und Ausbauten sind konsistent.');
+  console.log('Progression-Core: Rekrutierung, Kapazität, Geldprüfung und verteuerte Ausbauten sind konsistent.');
 } finally {
   fs.rmSync(tempDir, { recursive: true, force: true });
 }
