@@ -18,7 +18,7 @@ export interface ForgePreviewPresentationInput {
   valueNickel: number;
   factor: number;
   stats: ForgePreviewStatsLike;
-  reinforcementMaterial: string | null;
+  reinforcementMaterialId: number | null;
 }
 
 export interface ForgePreviewPresentation {
@@ -61,7 +61,7 @@ export interface QueuedForgeJobPresentation {
 
 export type ForgeCurrencyFormatter = (valueNickel: number) => string;
 export type ForgeDurationFormatter = (seconds: number) => string;
-export type ForgeReinforcementFormatter = (materialName: string | null) => string;
+export type ForgeReinforcementFormatter = (materialId: number | null) => string;
 
 export function getForgePreviewPresentation(
   input: ForgePreviewPresentationInput,
@@ -97,7 +97,7 @@ export function getForgePreviewPresentation(
     rawText: stats.expectedRaw.toFixed(2),
     penetrationText: `${Math.round(stats.penetration * 100)} %`,
     rarityText: input.factor.toFixed(2),
-    reinforcementText: `Spezialeffekt: ${formatReinforcement(input.reinforcementMaterial)}`,
+    reinforcementText: `Spezialeffekt: ${formatReinforcement(input.reinforcementMaterialId)}`,
     startDisabled: !input.hasCapacity || !input.hasMaterials
   };
 }
