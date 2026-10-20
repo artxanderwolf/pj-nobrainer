@@ -7,11 +7,16 @@ import { pathToFileURL } from 'node:url';
 const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'nobrainer-character-'));
 const tempPath = path.join(tempDir, 'character-core.node-check.ts');
 const progressionPath = path.join(tempDir, 'character-progression-core.ts');
+const generatedDir = path.join(tempDir, 'data', 'generated');
 const source = fs.readFileSync(path.resolve('src/app/game/character-core.ts'), 'utf8')
   .replace("from './game-core';", "from './game-core.ts';");
+fs.mkdirSync(generatedDir, { recursive: true });
 fs.copyFileSync(path.resolve('src/app/game/armor-core.ts'), path.join(tempDir, 'armor-core.ts'));
 fs.copyFileSync(path.resolve('src/app/game/game-core.ts'), path.join(tempDir, 'game-core.ts'));
+fs.copyFileSync(path.resolve('src/app/game/game-core-v01310-baseline.ts'), path.join(tempDir, 'game-core-v01310-baseline.ts'));
+fs.copyFileSync(path.resolve('src/app/game/data/generated/game-data.generated.ts'), path.join(generatedDir, 'game-data.generated.ts'));
 fs.copyFileSync(path.resolve('src/app/game/character-progression-core.ts'), progressionPath);
+fs.copyFileSync(path.resolve('src/app/game/data/generated/character-progression.generated.ts'), path.join(generatedDir, 'character-progression.generated.ts'));
 fs.writeFileSync(tempPath, source);
 
 try {
