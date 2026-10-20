@@ -30,6 +30,6 @@ const stateBootstrap = app.indexOf('this.gameState.openBootstrapRegistration();'
 assert.ok(bridgeOpen >= 0 && stateBootstrap > bridgeOpen, 'Materialindex-Präsentationsbrücke muss vor dem State-/Legacy-Bootstrap geöffnet werden.');
 assert.match(app, /private readonly gameMaterialIndexPresentation: GameMaterialIndexPresentationService/);
 assert.match(app, /ngOnDestroy\(\): void \{[\s\S]*this\.gameMaterialIndexPresentation\.closeLegacyCompatibilityBridge\(\);/);
-assert.match(app, /const APP_VERSION = '0\.12\.91';/);
+assert.match(app, /const APP_VERSION = APP_UI_VERSION;/);
 
 console.log('Materialindex-Präsentations-Eigentümerschaft: Materialwerte inklusive Prozent-Rüstung und aktuelle Dungeon-Gewichte werden direkt durch Angular aus den gemeinsamen Definitionen gerendert.');
