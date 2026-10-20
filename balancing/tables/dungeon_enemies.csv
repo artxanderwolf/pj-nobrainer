@@ -1,0 +1,5 @@
+dungeon_id,class_id,display_name,xp_drop
+1,recruit,Neuling,10
+1,fighter,Tank,10
+1,archer,Jäger,10
+1,scholar,Lehrling,10
