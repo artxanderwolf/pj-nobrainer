@@ -26,22 +26,29 @@ try {
   } = await import(`${temporaryUrl.href}?check=${Date.now()}`);
 
   assert.equal(formatCurrencyNickel(0), '0 Nickel');
-  assert.equal(formatCurrencyNickel(100), '1 Bronze');
-  assert.equal(formatCurrencyNickel(1_010_101), '1 Gold 1 Silber 1 Bronze 1 Nickel');
-  assert.equal(formatHighestCurrency(250), '2,5 Bronze');
-  assert.equal(formatHighestCurrency(1_250_000), '1,25 Gold');
+  assert.equal(formatCurrencyNickel(100), '100 Nickel');
+  assert.equal(formatCurrencyNickel(1_000), '1 Bronze');
+  assert.equal(formatCurrencyNickel(1_001_001), '1 Kupfer 1 Bronze 1 Nickel');
+  assert.equal(formatCurrencyNickel(1_001_001_001), '1 Silber 1 Kupfer 1 Bronze 1 Nickel');
+  assert.equal(formatCurrencyNickel(1_000_000_000_000), '1 Gold');
+  assert.equal(formatCurrencyNickel(1_000_000_000_000_000), '1 Platin');
+  assert.equal(formatCurrencyNickel(1_000_000_000_000_000_000), '1 Netherit');
+  assert.equal(formatHighestCurrency(250), '250 Nickel');
+  assert.equal(formatHighestCurrency(2_500), '2,5 Bronze');
+  assert.equal(formatHighestCurrency(1_250_000), '1,25 Kupfer');
+  assert.equal(formatHighestCurrency(1_250_000_000_000), '1,25 Gold');
   assert.equal(formatDuration(0), '0 Sek.');
   assert.equal(formatDuration(61), '1 Min. 1 Sek.');
   assert.equal(formatDuration(3661), '1 Std. 1 Min. 1 Sek.');
   assert.equal(formatDuration(1.2), '2 Sek.', 'Dauer muss wie bisher auf volle Sekunden aufrunden.');
 
-  assert.equal(calculateRecruitCost(1), 200, 'Erste zusätzliche Rekrutierung muss 2 Bronze kosten.');
-  assert.equal(calculateRecruitCost(2), 350, 'Zweite zusätzliche Rekrutierung muss mit Faktor 1,75 skalieren.');
-  assert.equal(calculateRecruitCost(3), 613, 'Rekrutierungskosten müssen auf Nickel gerundet werden.');
+  assert.equal(calculateRecruitCost(1), 2000, 'Erste zusätzliche Rekrutierung muss weiterhin 2 Bronze kosten.');
+  assert.equal(calculateRecruitCost(2), 3500, 'Zweite zusätzliche Rekrutierung muss mit Faktor 1,75 skalieren.');
+  assert.equal(calculateRecruitCost(3), 6125, 'Rekrutierungskosten müssen auf Nickel gerundet werden.');
 
-  assert.equal(calculateUpgradeCost('inn', 2), 500, 'Erster Inn-Ausbau muss 5 Bronze kosten.');
-  assert.equal(calculateUpgradeCost('inn', 3), 1000, 'Inn-Ausbau muss sich pro Kauf verdoppeln.');
-  assert.equal(calculateUpgradeCost('forgeQueue', 1), 200, 'Erster Schmiede-Warteschlangenplatz muss 2 Bronze kosten.');
+  assert.equal(calculateUpgradeCost('inn', 2), 5000, 'Erster Inn-Ausbau muss 5 Bronze kosten.');
+  assert.equal(calculateUpgradeCost('inn', 3), 10000, 'Inn-Ausbau muss sich pro Kauf verdoppeln.');
+  assert.equal(calculateUpgradeCost('forgeQueue', 1), 2000, 'Erster Schmiede-Warteschlangenplatz muss 2 Bronze kosten.');
 
   assert.equal(rarityFactorFromRarity(1), 1, 'Legacy-Verkaufsfaktor bleibt für Kompatibilität erhalten.');
   assert.equal(rarityFactorFromRarity(2), 1.1, 'Legacy-Verkaufsfaktor bleibt für Kompatibilität erhalten.');
@@ -108,7 +115,7 @@ try {
     }
   );
 
-  console.log('Economy-Core: Materialwerte, positive SPE, Qualitätswert sowie wertbasierte Herstellungs- und Verkaufszeiten sind konsistent.');
+  console.log('Economy-Core: 1000er-Währungsstaffelung, verteuerte Progressionskosten sowie unveränderte Einkommen und Zeiten sind konsistent.');
 } finally {
   unlinkSync(temporaryUrl);
 }
