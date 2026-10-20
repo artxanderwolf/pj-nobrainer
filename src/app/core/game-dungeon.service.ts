@@ -81,8 +81,11 @@ interface RuntimeDungeonSearch {
 }
 
 interface RuntimeDungeonDrop {
-  name: string;
-  category: string;
+  /** Kanonische Referenz für neue Laufzeitlogik. */
+  materialId?: number | null;
+  /** Kompatibilitätsfelder für bestehende Saves und einen sicheren Rollback. */
+  name?: string;
+  category?: string;
 }
 
 interface RuntimeDungeonLootCollect {
@@ -396,13 +399,17 @@ export class GameDungeonService {
     const collect = state.dungeonLootCollect;
     if (!collect) return;
 
-    collect.drops.forEach(drop => {
+    const resolvedDrops = collect.drops
+      .map(drop => this.resolveDungeonDrop(drop))
+      .filter((drop): drop is { materialId: number; name: string; category: string } => Boolean(drop));
+
+    resolvedDrops.forEach(drop => {
       state.dungeonLoot[drop.name] ??= { category: drop.category, qty: 0 };
       const entry = state.dungeonLoot[drop.name];
       if (entry) entry.qty = (Number(entry.qty) || 0) + 1;
     });
     if (!this.catchupMode) {
-      this.addEvent(outcome, `BEUTE EINGESAMMELT – ${collect.drops.map(drop => drop.name).join(', ')}.`, 'good');
+      this.addEvent(outcome, `BEUTE EINGESAMMELT – ${resolvedDrops.map(drop => drop.name).join(', ')}.`, 'good');
     }
     state.dungeonLootCollect = null;
     outcome.saveRequested = true;
@@ -667,16 +674,45 @@ export class GameDungeonService {
     const result: RuntimeDungeonDrop[] = [];
     for (const enemy of enemies) {
       const candidates = enemy.lootMaterialIds
-        .map(materialId => getMaterialById(materialId))
-        .filter((entry): entry is [string, NonNullable<ReturnType<typeof getMaterialById>>[1]] => Boolean(entry));
+        .map(materialId => {
+          const resolved = getMaterialById(materialId);
+          return resolved ? { materialId, name: resolved[0], material: resolved[1] } : null;
+        })
+        .filter((entry): entry is { materialId: number; name: string; material: NonNullable<ReturnType<typeof getMaterialById>>[1] } => Boolean(entry));
       if (!candidates.length) continue;
       const selected = candidates[rollWeightedIndex(
-        candidates.map(([, material]) => material.dungeonDropWeight),
+        candidates.map(candidate => candidate.material.dungeonDropWeight),
         Math.random()
       )];
-      if (selected) result.push({ name: selected[0], category: selected[1].category });
+      if (selected) {
+        result.push({
+          materialId: selected.materialId,
+          name: selected.name,
+          category: selected.material.category
+        });
+      }
     }
     return result;
+  }
+
+  private resolveDungeonDrop(drop: RuntimeDungeonDrop): { materialId: number; name: string; category: string } | null {
+    const resolvedById = getMaterialById(drop.materialId);
+    if (resolvedById) {
+      return {
+        materialId: resolvedById[1].materialId,
+        name: resolvedById[0],
+        category: resolvedById[1].category
+      };
+    }
+
+    const legacyName = String(drop.name ?? '');
+    const legacyDefinition = legacyName ? MATERIALS[legacyName] : null;
+    if (!legacyDefinition) return null;
+    return {
+      materialId: legacyDefinition.materialId,
+      name: legacyName,
+      category: legacyDefinition.category
+    };
   }
 
   private grantWaveExperience(
