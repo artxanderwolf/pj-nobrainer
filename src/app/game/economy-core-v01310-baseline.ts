@@ -1,4 +1,4 @@
-import { resolveArmor } from './armor-core';
+import { resolveArmor } from './armor-core.ts';
 import {
   CONFIG,
   MATERIALS,
@@ -6,7 +6,7 @@ import {
   rarityFactor,
   type WeaponSlot,
   type WeaponStats
-} from './game-core';
+} from './game-core.ts';
 
 export const CURRENCY_DENOMINATIONS = [
   { name: 'Netherit', valueNickel: 1_000_000_000_000_000_000 },
