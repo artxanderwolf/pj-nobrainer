@@ -34,6 +34,6 @@ const stateBootstrap = app.indexOf('this.gameState.openBootstrapRegistration();'
 assert.ok(bridgeOpen >= 0 && stateBootstrap > bridgeOpen, 'Progressions-Präsentationsbrücke muss vor dem State-/Legacy-Bootstrap geöffnet werden.');
 assert.match(app, /private readonly gameProgressionPresentation: GameProgressionPresentationService/);
 assert.match(app, /ngOnDestroy\(\): void \{[\s\S]*this\.gameProgressionPresentation\.closeLegacyCompatibilityBridge\(\);/);
-assert.match(app, /const APP_VERSION = '0\.12\.91';/);
+assert.match(app, /const APP_VERSION = APP_UI_VERSION;/);
 
 console.log('Progression-Presentation-Eigentümerschaft: Inn-Ausbau sowie direkter Schmiede- und Markt-Ausbau werden durch Angular aus Angular-State und GameProgressionService gerendert.');
