@@ -8,7 +8,7 @@ import {
 const presentation = createWeaponPresentationCore({
   resolveFormName: (weaponForm, starter) => weaponForm === 'dagger' ? 'Dolch' : starter ? 'Einhänder' : 'Waffe',
   rarityFactor: slots => slots?.length ? 2 : 1,
-  reinforcementEffectTextById: materialId => materialId === 5 ? '+10 Prozentpunkte DS' : 'Kein Zusatzeffekt'
+  reinforcementEffectTextById: materialId => materialId === 5 ? '+10 Prozentpunkte DS' : 'Kein Spezialeffekt'
 });
 
 assert.deepEqual(getComparisonPresentation(10, null), null);
