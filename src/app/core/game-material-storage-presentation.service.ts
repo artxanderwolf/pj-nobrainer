@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { formatCurrencyNickel, materialSellData } from '../game/economy-core';
+import { formatCurrencyNickel, materialSellDataById } from '../game/economy-core';
 import {
   getMaterialStorageRowPresentation
 } from '../game/material-presentation-core';
@@ -40,8 +40,8 @@ export class GameMaterialStoragePresentationService {
     empty.style.display = entries.length ? 'none' : 'block';
 
     for (const materialEntry of entries) {
-      const sell = materialSellData(materialEntry.displayName);
-      if (!sell) throw new Error(`Material-Verkaufsdaten fehlen: ${materialEntry.displayName}`);
+      const sell = materialSellDataById(materialEntry.materialId);
+      if (!sell) throw new Error(`Material-Verkaufsdaten fehlen: ID ${materialEntry.materialId}.`);
       const presentation = getMaterialStorageRowPresentation(
         materialEntry.displayName,
         {
