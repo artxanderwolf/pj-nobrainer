@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { CHARACTER_CLASSES, CONFIG, type CharacterClassId } from '../game/game-core';
 import { getDungeonLootPresentation, getDungeonStatusPresentation } from '../game/dungeon-presentation-core';
+import { getMaterialStorageEntries, type MaterialStorageInventory } from '../game/material-storage-core';
 import {
   getDungeonTeamPickerPresentation,
   getDungeonTeamPresentation,
@@ -18,7 +19,7 @@ interface DungeonPresentationState extends MutableGameState {
   dungeonRun: { participantIds: number[]; energyShare: number; enemies: Array<{ name: string; hp: number; maxHp: number; alive?: boolean }> } | null;
   dungeonSearch: { nextCheckAt: number } | null;
   dungeonLootCollect: { enemyCount: number } | null;
-  dungeonLoot: Record<string, { qty: number } | undefined>;
+  dungeonLoot: MaterialStorageInventory;
   dungeonTeamSlots: Array<number | null>;
   dungeonCycleOriginalIds: number[];
   dungeonCycleActiveIds: number[];
@@ -162,7 +163,9 @@ export class GameDungeonPresentationService {
     const box = document.getElementById('dungeonLoot');
     const empty = document.getElementById('dungeonLootEmpty');
     if (!box || !empty) return;
-    const presentation = getDungeonLootPresentation(state.dungeonLoot ?? {});
+    const presentation = getDungeonLootPresentation(
+      getMaterialStorageEntries(state.dungeonLoot).map(entry => ({ name: entry.displayName, qty: entry.qty }))
+    );
     box.innerHTML = '';
     empty.style.display = presentation.empty ? 'block' : 'none';
     if (presentation.empty) return;
@@ -356,7 +359,7 @@ export class GameDungeonPresentationService {
   }
 
   private getLootTotal(state: DungeonPresentationState): number {
-    return Object.values(state.dungeonLoot ?? {}).reduce((sum, entry) => sum + (Number(entry?.qty) || 0), 0);
+    return getMaterialStorageEntries(state.dungeonLoot).reduce((sum, entry) => sum + entry.qty, 0);
   }
 
   private getState(): DungeonPresentationState {
