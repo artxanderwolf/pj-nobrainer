@@ -24,6 +24,13 @@ const fixture = JSON.stringify({
       Fichte: { category: 'Holz', qty: 20 },
       Zinn: { category: 'Metall', qty: 20 },
       Lederfetzen: { category: 'Leder', qty: 20 }
+    },
+    weaponCraftCounts: {
+      dagger: 10,
+      sword: 10,
+      axe1h: 10,
+      sword2h: 10,
+      axe2h: 10
     }
   }
 });
@@ -175,7 +182,7 @@ try {
   assert.equal(result.bowstringHidden, false);
   assert.equal(result.oldBaseMaterialPresent, false);
 
-  console.log('Schmiedeauswahl-Browserregression: Materialwahl, Vorschau-Navigation und Kapazitätsanzeige funktionieren gemeinsam.');
+  console.log('Schmiedeauswahl-Browserregression: freigeschalteter Bogen, Materialwahl, Vorschau-Navigation und Kapazitätsanzeige funktionieren gemeinsam.');
 } finally {
   if (child) await stopBrowser(child);
   rmSync(browserProfile, { recursive: true, force: true });
