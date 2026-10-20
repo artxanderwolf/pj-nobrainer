@@ -57,7 +57,9 @@ export interface DungeonStatusPresentation {
   card: DungeonStatusCardPresentation;
 }
 
+/** Bereits aufgelöste Darstellungsdaten; technische Storage-Keys sind hier bewusst unbekannt. */
 export interface DungeonLootEntryLike {
+  name: string;
   qty: number;
 }
 
@@ -124,14 +126,14 @@ export function getDungeonStatusPresentation(input: DungeonStatusPresentationInp
 }
 
 export function getDungeonLootPresentation(
-  loot: Record<string, DungeonLootEntryLike | null | undefined>
+  loot: readonly DungeonLootEntryLike[]
 ): DungeonLootPresentation {
-  const entries = Object.entries(loot ?? {})
-    .filter(([, entry]) => Number(entry?.qty) > 0)
-    .sort((a, b) => a[0].localeCompare(b[0]))
-    .map(([name, entry]) => ({
-      name,
-      quantityText: `×${Number(entry?.qty) || 0}`
+  const entries = [...(loot ?? [])]
+    .filter(entry => Number(entry?.qty) > 0)
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map(entry => ({
+      name: entry.name,
+      quantityText: `×${Number(entry.qty) || 0}`
     }));
 
   return {
