@@ -81,7 +81,9 @@ interface RuntimeDungeonSearch {
 }
 
 interface RuntimeDungeonDrop {
+  /** Kanonische Referenz für neue Laufzeitlogik. */
   materialId?: number | null;
+  /** Kompatibilitätsfelder für bestehende Saves und einen sicheren Rollback. */
   name?: string;
   category?: string;
 }
@@ -674,15 +676,21 @@ export class GameDungeonService {
       const candidates = enemy.lootMaterialIds
         .map(materialId => {
           const resolved = getMaterialById(materialId);
-          return resolved ? { materialId, material: resolved[1] } : null;
+          return resolved ? { materialId, name: resolved[0], material: resolved[1] } : null;
         })
-        .filter((entry): entry is { materialId: number; material: NonNullable<ReturnType<typeof getMaterialById>>[1] } => Boolean(entry));
+        .filter((entry): entry is { materialId: number; name: string; material: NonNullable<ReturnType<typeof getMaterialById>>[1] } => Boolean(entry));
       if (!candidates.length) continue;
       const selected = candidates[rollWeightedIndex(
         candidates.map(candidate => candidate.material.dungeonDropWeight),
         Math.random()
       )];
-      if (selected) result.push({ materialId: selected.materialId });
+      if (selected) {
+        result.push({
+          materialId: selected.materialId,
+          name: selected.name,
+          category: selected.material.category
+        });
+      }
     }
     return result;
   }
