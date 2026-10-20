@@ -40,7 +40,7 @@ import { LegacySourceAdapterService } from './core/legacy-source-adapter.service
 import { LegacyStateAdapterService } from './core/legacy-state-adapter.service';
 import { LegacyTavernPresentationAdapterService } from './core/legacy-tavern-presentation-adapter.service';
 import { LegacyWeaponPresentationAdapterService } from './core/legacy-weapon-presentation-adapter.service';
-import { APP_SHELL_PAGE_IDS, composeAppShell } from './game/app-shell-presentation-core';
+import { APP_SHELL_PAGE_IDS, APP_UI_VERSION, composeAppShell } from './game/app-shell-presentation-core';
 import { composePageMarkup } from './game/page-markup-presentation-core';
 import { adaptLegacyWeaponScript } from './game/weapon-naming';
 
@@ -207,9 +207,9 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   }
 
   private applyVersionMarker(): void {
-    document.title = `Projekt NoBrainer – Prototype v${APP_VERSION}`;
+    document.title = `Projekt NoBrainer – v${APP_UI_VERSION}`;
     const versionLabel = this.legacyHost.nativeElement.querySelector<HTMLElement>('.brand small');
-    if (versionLabel) versionLabel.textContent = `Prototype v${APP_VERSION}`;
+    if (versionLabel) versionLabel.textContent = `v${APP_UI_VERSION}`;
   }
 
   private installLegacyScript(source: string): void {
