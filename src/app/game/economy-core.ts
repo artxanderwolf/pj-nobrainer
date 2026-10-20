@@ -8,7 +8,18 @@ import {
   type WeaponStats
 } from './game-core';
 
+export const CURRENCY_DENOMINATIONS = [
+  { name: 'Netherit', valueNickel: 1_000_000_000_000_000_000 },
+  { name: 'Platin', valueNickel: 1_000_000_000_000_000 },
+  { name: 'Gold', valueNickel: 1_000_000_000_000 },
+  { name: 'Silber', valueNickel: 1_000_000_000 },
+  { name: 'Kupfer', valueNickel: 1_000_000 },
+  { name: 'Bronze', valueNickel: 1_000 },
+  { name: 'Nickel', valueNickel: 1 }
+] as const;
+
 export const ECONOMY_BALANCE = {
+  progressionCostMultiplier: 10,
   positiveSpecialMaterialValueFactor: 1.10,
   materialSaleBaseSeconds: 15,
   materialSaleSecondsPerNickel: 1.5,
@@ -69,33 +80,24 @@ type UpgradeConfig = {
 
 export function formatCurrencyNickel(value: number): string {
   let remaining = Math.max(0, Math.round(value));
-  const gold = Math.floor(remaining / 1_000_000);
-  remaining %= 1_000_000;
-  const silver = Math.floor(remaining / 10_000);
-  remaining %= 10_000;
-  const bronze = Math.floor(remaining / 100);
-  remaining %= 100;
-
   const parts: string[] = [];
-  if (gold) parts.push(`${gold} Gold`);
-  if (silver) parts.push(`${silver} Silber`);
-  if (bronze) parts.push(`${bronze} Bronze`);
-  if (remaining || !parts.length) parts.push(`${remaining} Nickel`);
-  return parts.join(' ');
+
+  for (const denomination of CURRENCY_DENOMINATIONS) {
+    const amount = Math.floor(remaining / denomination.valueNickel);
+    if (amount > 0) {
+      parts.push(`${amount} ${denomination.name}`);
+      remaining %= denomination.valueNickel;
+    }
+  }
+
+  return parts.length ? parts.join(' ') : '0 Nickel';
 }
 
 export function formatHighestCurrency(value: number): string {
   const nickel = Math.max(0, Math.round(value));
-  if (nickel >= 1_000_000) {
-    return `${(nickel / 1_000_000).toLocaleString('de-DE', { maximumFractionDigits: 2 })} Gold`;
-  }
-  if (nickel >= 10_000) {
-    return `${(nickel / 10_000).toLocaleString('de-DE', { maximumFractionDigits: 2 })} Silber`;
-  }
-  if (nickel >= 100) {
-    return `${(nickel / 100).toLocaleString('de-DE', { maximumFractionDigits: 2 })} Bronze`;
-  }
-  return `${nickel} Nickel`;
+  const denomination = CURRENCY_DENOMINATIONS.find(item => nickel >= item.valueNickel) ?? CURRENCY_DENOMINATIONS.at(-1)!;
+  if (denomination.valueNickel === 1) return `${nickel} Nickel`;
+  return `${(nickel / denomination.valueNickel).toLocaleString('de-DE', { maximumFractionDigits: 2 })} ${denomination.name}`;
 }
 
 export function formatDuration(seconds: number): string {
@@ -112,14 +114,16 @@ export function formatDuration(seconds: number): string {
 
 export function calculateRecruitCost(characterCount: number): number {
   const additional = Math.max(0, characterCount - 1);
-  return Math.round(CONFIG.tavern.recruitBaseNickel * Math.pow(CONFIG.tavern.recruitGrowth, additional));
+  const baseCostNickel = CONFIG.tavern.recruitBaseNickel * ECONOMY_BALANCE.progressionCostMultiplier;
+  return Math.round(baseCostNickel * Math.pow(CONFIG.tavern.recruitGrowth, additional));
 }
 
 export function calculateUpgradeCost(kind: UpgradeKey, current: number): number {
   const config = CONFIG.upgrades[kind] as UpgradeConfig;
   const start = config.startCapacity ?? config.start;
   if (start === undefined) throw new Error(`Unbekannter Ausbau-Startwert: ${kind}`);
-  return Math.round(config.baseCostNickel * Math.pow(config.growth, Math.max(0, current - start)));
+  const baseCostNickel = config.baseCostNickel * ECONOMY_BALANCE.progressionCostMultiplier;
+  return Math.round(baseCostNickel * Math.pow(config.growth, Math.max(0, current - start)));
 }
 
 /** Legacy-Kompatibilität für noch nicht ausgeschnittene Runtime-Stellen. */
