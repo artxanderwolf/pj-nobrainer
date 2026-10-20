@@ -1,0 +1,1 @@
+Phase 1: source tables and generated data only; preserve current IDs, gameplay behavior, save structure, bridges and domain APIs.
