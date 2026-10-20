@@ -159,10 +159,11 @@ const FORGE_PAGE_MARKUP = `<section class="page screen-page" id="forge">
       <span class="menu-card-title">Aufträge</span>
       <span class="menu-card-copy">Herstellungsplätze und Warteschlange</span>
     </button>
-    <button class="menu-card" type="button" onclick="go('forge-upgrade')">
+    <div class="menu-card menu-card-static inline-upgrade-menu-card">
       <span class="menu-card-title">Ausbau</span>
       <span class="menu-card-copy">Kapazität der Schmiede erhöhen</span>
-    </button>
+      <div id="forgeUpgradeCardInline" class="inline-upgrade-card"></div>
+    </div>
   </div>
 </section>`;
 
@@ -257,10 +258,11 @@ const MARKET_PAGE_MARKUP = `<section class="page screen-page" id="market">
       <span class="menu-card-title">Aktive Verkäufe</span>
       <span class="menu-card-copy">Verkaufsplätze und Warteschlange</span>
     </button>
-    <button class="menu-card" type="button" onclick="go('market-upgrade')">
+    <div class="menu-card menu-card-static inline-upgrade-menu-card">
       <span class="menu-card-title">Ausbau</span>
       <span class="menu-card-copy">Verkaufskapazität erhöhen</span>
-    </button>
+      <div id="marketUpgradeCardInline" class="inline-upgrade-card"></div>
+    </div>
   </div>
 </section>`;
 
@@ -298,10 +300,13 @@ const MARKET_UPGRADE_PAGE_MARKUP = `<section class="page screen-page" id="market
 
 const DUNGEON_PAGE_MARKUP = `<section class="page screen-page" id="dungeon">
   <div class="screen-menu compact-menu">
-    <button class="menu-card" type="button" onclick="go('dungeon-select')">
-      <span class="menu-card-title">Dungeon 1</span>
-      <span class="menu-card-copy">Team wählen, Lauf starten und Beute einsammeln</span>
-    </button>
+    <div class="menu-card menu-card-split dungeon-overview-card">
+      <button id="dungeonOverviewOpenBtn" class="menu-card-main" type="button" onclick="go('dungeon-select')">
+        <span class="menu-card-title">Dungeon 1</span>
+        <span class="menu-card-copy">Team wählen, Lauf starten und Beute einsammeln</span>
+      </button>
+      <button id="dungeonOverviewAction" class="btn primary menu-card-side-action" type="button">Lauf starten</button>
+    </div>
   </div>
 </section>`;
 
