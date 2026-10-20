@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
-import { MATERIALS, type WeaponSlot } from '../game/game-core';
+import { getMaterialIdByName, type WeaponSlot } from '../game/game-core';
 import { materialSellData, weaponSellData } from '../game/economy-core';
 import { getWeaponEquipLocation, type EquipmentCharacterLike } from '../game/equipment-core';
+import { addMaterialQuantityById, type MaterialStorageInventory } from '../game/material-storage-core';
 import {
   advanceMarketJobs,
   cancelMarketJob,
@@ -30,7 +31,6 @@ export interface MarketCompletedSale { name: string; valueNickel: number; }
 export interface MarketUpdateResult { completedCount: number; completedSales: MarketCompletedSale[]; }
 
 interface RuntimeMarketUpgrades { marketSlots: number; marketQueue: number; }
-interface RuntimeMarketInventoryEntry { category?: string; qty?: number | null; }
 interface RuntimeMarketWeapon {
   id: number;
   name: string;
@@ -40,7 +40,7 @@ interface RuntimeMarketWeapon {
 }
 
 type RuntimeMarketState = MutableGameState & MarketStateLike & {
-  inventory: Record<string, RuntimeMarketInventoryEntry | undefined>;
+  inventory: MaterialStorageInventory;
   weaponInventory: RuntimeMarketWeapon[];
   characters: EquipmentCharacterLike[];
   upgrades: RuntimeMarketUpgrades;
@@ -132,12 +132,10 @@ export class GameMarketService {
 
   private returnJob(state: RuntimeMarketState, job: MarketJob): void {
     if (job.type === 'material') {
-      const material = MATERIALS[job.name];
-      if (!material) throw new Error(`Unbekanntes Material im Marktauftrag: ${job.name}`);
-      state.inventory[job.name] ??= { category: material.category, qty: 0 };
-      const entry = state.inventory[job.name];
-      if (!entry) throw new Error(`Material ${job.name} konnte nicht ins Inventar zurückgegeben werden.`);
-      entry.qty = (Number(entry.qty) || 0) + (job.quantity || 1);
+      const materialId = getMaterialIdByName(job.name);
+      if (materialId === null) throw new Error(`Unbekanntes Material im Marktauftrag: ${job.name}`);
+      const returned = addMaterialQuantityById(state.inventory, materialId, job.quantity || 1);
+      if (!returned) throw new Error(`Material ${job.name} konnte nicht ins Inventar zurückgegeben werden.`);
       return;
     }
     if (job.weaponSnapshot) state.weaponInventory.unshift(job.weaponSnapshot as RuntimeMarketWeapon);

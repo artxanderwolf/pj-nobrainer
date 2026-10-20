@@ -44,7 +44,7 @@ import { APP_SHELL_PAGE_IDS, APP_UI_VERSION, composeAppShell } from './game/app-
 import { composePageMarkup } from './game/page-markup-presentation-core';
 import { adaptLegacyWeaponScript } from './game/weapon-naming';
 
-const APP_VERSION = '0.12.91';
+const APP_VERSION = APP_UI_VERSION;
 const LEGACY_RUNTIME_PATH = 'legacy/NoBrainer_GitHub_v0.12.2.runtime.js';
 const LEGACY_SCRIPT_ID = 'nobrainer-legacy-script';
 

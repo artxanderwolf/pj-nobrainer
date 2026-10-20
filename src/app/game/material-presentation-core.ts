@@ -48,6 +48,7 @@ export interface MaterialIndexRowPresentation {
 }
 
 export interface MaterialStorageEntryLike {
+  materialId?: number | null;
   category: string;
   qty: number;
 }
