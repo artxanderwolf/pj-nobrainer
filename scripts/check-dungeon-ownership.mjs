@@ -17,6 +17,12 @@ assert.doesNotMatch(dungeonService, /DUNGEON_LOOT_TABLES/, 'Aktive Dungeon-Drops
 assert.doesNotMatch(dungeonService, /NoBrainerDungeonCompatibility|openLegacyCompatibilityBridge|closeLegacyCompatibilityBridge/, 'GameDungeonService enthält weiterhin die alte Dungeon-Kompatibilitätsbrücke.');
 
 assert.match(presentationService, /private renderOverview\(\): void/, 'Die Dungeon-Basiswerte werden nicht durch die Angular-Präsentation gerendert.');
+assert.match(presentationService, /private renderOverviewAction\(\): void/, 'Der Dungeon-Hubstatus wird nicht durch die Angular-Präsentation gerendert.');
+assert.match(presentationService, /button\.dataset\['dungeonOverviewOwner'\] = 'angular'/, 'Browser-nachweisbarer Angular-Marker für den Dungeon-Hubstatus fehlt.');
+assert.match(presentationService, /button\.textContent = 'Läuft'/, 'Aktiver Dungeon wird im Hub nicht als laufend angezeigt.');
+assert.match(presentationService, /button\.textContent = 'Loot sammeln'/, 'Bereite Dungeon-Beute wird im Hub nicht direkt angeboten.');
+assert.match(presentationService, /private handleOverviewAction\(\): void/, 'Die direkte Dungeon-Hubaktion fehlt.');
+assert.match(presentationService, /document\.getElementById\('dungeonOverviewOpenBtn'\)[\s\S]*\.click\(\)/, 'Lauf starten ohne Team führt nicht zur Dungeon-Teamauswahl.');
 assert.match(presentationService, /this\.gameEnergy\.costPerCharacter\(displayedCount\)/, 'Die Angular-Dungeon-Präsentation verwendet für Energiekosten nicht den bestehenden Energy-Service.');
 assert.match(presentationService, /getDungeonStatusPresentation\(/, 'Angular-Dungeon-Präsentation nutzt den Status-Core nicht.');
 assert.match(presentationService, /getDungeonLootPresentation\(/, 'Angular-Dungeon-Präsentation nutzt den Loot-Core nicht.');
@@ -52,4 +58,4 @@ assert.doesNotMatch(registrationMatch[1], /renderResourceHeader\(\)/, 'Ressource
 assert.doesNotMatch(appComponent, /GameDungeonService|NoBrainerDungeonCompatibility|gameDungeon\.openLegacyCompatibilityBridge|gameDungeon\.closeLegacyCompatibilityBridge/, 'AppComponent verwaltet weiterhin die alte Dungeon-Kompatibilitätsbrücke.');
 assert.match(appComponent, /const APP_VERSION = '0\.12\.91';/, 'Die App-Version wurde nicht auf v0.12.91 gesetzt.');
 
-console.log('Dungeon-Eigentümerschaft: Gegnerprofile, Loot, XP/Level, Prozent-Rüstung, Kampf, Status und Team laufen ausschließlich über Angular.');
+console.log('Dungeon-Eigentümerschaft: Gegnerprofile, Loot, XP/Level, Prozent-Rüstung, Kampf, Team und direkter Hubstatus laufen ausschließlich über Angular.');
