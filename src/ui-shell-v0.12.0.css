@@ -179,6 +179,84 @@ body {
   font-size: 13px;
 }
 
+.menu-card-static {
+  cursor: default;
+  justify-content: flex-start;
+}
+
+.menu-card-static:hover {
+  background: var(--panel);
+  outline: none;
+}
+
+.inline-upgrade-menu-card {
+  gap: 8px;
+}
+
+.inline-upgrade-card {
+  width: 100%;
+  margin-top: 4px;
+}
+
+.inline-upgrade-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.inline-upgrade-actions .btn {
+  width: 100%;
+  min-height: 42px;
+}
+
+.menu-card-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  cursor: default;
+}
+
+.menu-card-split:hover {
+  background: var(--panel);
+  outline: none;
+}
+
+.menu-card-main {
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.menu-card-main:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 6px;
+  border-radius: 6px;
+}
+
+.menu-card-side-action {
+  min-width: 150px;
+  min-height: 46px;
+}
+
+.dungeon-overview-card .menu-card-side-action:disabled {
+  opacity: 1;
+  cursor: default;
+  background: var(--panel2);
+  color: var(--text);
+  border-color: var(--line);
+}
+
 .screen-card {
   background: var(--panel);
   border: 1px solid var(--line);
@@ -404,6 +482,17 @@ body {
   .menu-card {
     min-height: clamp(84px, 14dvh, 128px);
     padding: 13px 14px;
+  }
+
+  .menu-card-split {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .menu-card-side-action {
+    width: 100%;
+    min-width: 0;
   }
 
   .compact-stats {
