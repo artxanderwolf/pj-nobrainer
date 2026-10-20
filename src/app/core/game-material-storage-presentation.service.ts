@@ -1,14 +1,16 @@
 import { Injectable } from '@angular/core';
 import { formatCurrencyNickel, materialSellData } from '../game/economy-core';
 import {
-  getMaterialStorageRowPresentation,
-  sortMaterialStorageEntries,
-  type MaterialStorageEntryLike
+  getMaterialStorageRowPresentation
 } from '../game/material-presentation-core';
+import {
+  getMaterialStorageEntries,
+  type MaterialStorageInventory
+} from '../game/material-storage-core';
 import { GameStateService, type MutableGameState } from './game-state.service';
 
 type RuntimeMaterialStorageState = MutableGameState & {
-  inventory: Record<string, MaterialStorageEntryLike>;
+  inventory: MaterialStorageInventory;
 };
 
 interface MaterialStoragePresentationCompatibilityBridge {
@@ -30,17 +32,23 @@ export class GameMaterialStoragePresentationService {
     const empty = document.getElementById('inventoryEmpty');
     if (!(body instanceof HTMLTableSectionElement) || !empty) return;
 
-    const entries = sortMaterialStorageEntries(Object.entries(this.state().inventory));
+    const entries = getMaterialStorageEntries(this.state().inventory)
+      .filter(entry => entry.qty > 0)
+      .sort((a, b) => a.displayName.localeCompare(b.displayName));
     body.innerHTML = '';
     body.dataset['materialStoragePresentationOwner'] = 'angular';
     empty.style.display = entries.length ? 'none' : 'block';
 
-    for (const [name, item] of entries) {
-      const sell = materialSellData(name);
-      if (!sell) throw new Error(`Material-Verkaufsdaten fehlen: ${name}`);
+    for (const materialEntry of entries) {
+      const sell = materialSellData(materialEntry.displayName);
+      if (!sell) throw new Error(`Material-Verkaufsdaten fehlen: ${materialEntry.displayName}`);
       const presentation = getMaterialStorageRowPresentation(
-        name,
-        item,
+        materialEntry.displayName,
+        {
+          materialId: materialEntry.materialId,
+          category: materialEntry.category,
+          qty: materialEntry.qty
+        },
         sell.valueNickel,
         formatCurrencyNickel
       );
