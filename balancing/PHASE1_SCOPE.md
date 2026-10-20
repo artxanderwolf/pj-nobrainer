@@ -1,0 +1,1 @@
+Phase 1 keeps gameplay and save format unchanged. It introduces tabular source data, validation, generated TypeScript data modules, and preserves existing IDs/keys for compatibility.
