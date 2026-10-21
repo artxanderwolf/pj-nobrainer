@@ -25,6 +25,7 @@ assert.equal(/type:\s*'material'[\s\S]{0,220}name:\s*unit\.name/.test(marketServ
 assert.ok(marketService.includes('getMaterialDisplayNameById'), 'Markt-Anzeigenamen müssen aus der stabilen ID aufgelöst werden.');
 
 assert.ok(storageCore.includes('return String(reference.materialId);'), 'Materiallager muss stabile IDs als kanonische JSON-Schlüssel verwenden.');
-assert.ok(dungeonService.includes('return { materialId: reference.materialId };'), 'Neue Dungeon-Drops müssen ID-only gespeichert werden.');
+assert.ok(dungeonService.includes('result.push({ materialId: selected.materialId });'), 'Neue Dungeon-Drops müssen ID-only gespeichert werden.');
+assert.ok(dungeonService.includes('delete drop.name;'), 'Legacy-Dungeon-Drops müssen ihren Anzeigenamen nach der ID-Migration verlieren.');
 
 console.log('Material-ID-Ownership: Lager, Dungeon, Schmiede und Markt bleiben technisch ID-basiert; Namen sind nur Anzeige/Legacy-Migration.');
