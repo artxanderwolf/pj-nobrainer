@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - migration/angular
+      - migration/material-id-finalization-v0140
   pull_request:
     branches:
       - main
