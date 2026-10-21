@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { formatCurrencyNickel } from '../game/economy-core';
 import {
   MATERIAL_REFERENCES_BY_ID,
+  getMaterialReferenceById,
   getWeaponForm,
   reinforcementEffectTextById,
   type MaterialCategory,
@@ -91,7 +92,7 @@ export class GameForgePreviewPresentationService {
     this.setText('forgePenPreview', presentation.penetrationText);
     this.setText('forgeRarityPreview', presentation.rarityText);
     this.setText('forgeReinforcementPreview', presentation.reinforcementText);
-    this.setText('forgeMaterialTotalPreview', `${Object.values(requirements).reduce((sum, qty) => sum + qty, 0)} Materialeinheiten`);
+    this.renderMaterialRequirementSummary(requirements, complete);
     this.renderConstructionInfo(weaponForm);
     // Die Vorschau ist nicht destruktiv und darf immer geöffnet werden.
     // Ob tatsächlich hergestellt werden kann, bleibt ausschließlich am Start-Button validiert.
@@ -217,10 +218,10 @@ export class GameForgePreviewPresentationService {
       for (const reference of available) {
         const stock = getMaterialQuantityById(state.inventory, reference.materialId);
         const reserved = reservedByOthers.get(reference.materialId) || 0;
-        const remaining = stock - reserved;
+        const remainingAfterSelection = stock - reserved - needed;
         const option = document.createElement('option');
         option.value = String(reference.materialId);
-        option.textContent = `${reference.displayName} · S${reference.definition.rarity} · benötigt ${needed} · verfügbar ${remaining}${
+        option.textContent = `${reference.displayName} · S${reference.definition.rarity} · Bestand ${stock} · benötigt ${needed} · danach ${remainingAfterSelection}${
           binding.slot === 'special' ? ` · ${reinforcementEffectTextById(reference.materialId)}` : ''
         }`;
         select.appendChild(option);
@@ -244,6 +245,42 @@ export class GameForgePreviewPresentationService {
     const value = (document.getElementById(selectId) as HTMLSelectElement | null)?.value || '';
     const numeric = Number(value);
     return Number.isInteger(numeric) && numeric > 0 ? numeric : null;
+  }
+
+  private renderMaterialRequirementSummary(requirements: Readonly<Record<number, number>>, complete: boolean): void {
+    const state = this.state();
+    const entries = Object.entries(requirements)
+      .map(([rawMaterialId, rawRequired]) => {
+        const materialId = Number(rawMaterialId);
+        const required = Number(rawRequired) || 0;
+        const reference = getMaterialReferenceById(materialId);
+        if (!reference || required <= 0) return null;
+        return {
+          materialId,
+          name: reference.displayName,
+          required,
+          stock: getMaterialQuantityById(state.inventory, materialId)
+        };
+      })
+      .filter((entry): entry is { materialId: number; name: string; required: number; stock: number } => entry !== null);
+
+    const total = entries.reduce((sum, entry) => sum + entry.required, 0);
+    if (!complete) {
+      this.setText(
+        'forgeMaterialTotalPreview',
+        total > 0 ? `${total} Materialeinheiten ausgewählt · Auswahl unvollständig` : 'Materialauswahl unvollständig'
+      );
+      return;
+    }
+
+    const remaining = entries.map(entry => {
+      const after = entry.stock - entry.required;
+      return after >= 0 ? `${entry.name} ${after}` : `${entry.name} fehlt ${Math.abs(after)}`;
+    });
+    this.setText(
+      'forgeMaterialTotalPreview',
+      `${total} Materialeinheiten${remaining.length ? ` · Rest nach Auftrag: ${remaining.join(' · ')}` : ''}`
+    );
   }
 
   private renderConstructionInfo(weaponForm: string): void {
