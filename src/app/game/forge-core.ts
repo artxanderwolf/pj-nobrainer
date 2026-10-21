@@ -4,6 +4,7 @@ import {
 import {
   CONFIG,
   calculateWeaponStats,
+  canonicalWeaponSlots,
   getWeaponCraftingSlots,
   getWeaponForm,
   getWeaponSelectionQuantity,
@@ -187,11 +188,9 @@ export function calculateWeaponBalanceSnapshot(
   weaponForm: string,
   slots: readonly WeaponSlot[]
 ): WeaponBalanceSnapshot {
-  const normalized = normalizeWeaponSlots(slots);
   const craftingSlots = new Set(getWeaponCraftingSlots(weaponForm));
-  const storedSlots = normalized
-    .filter(slot => craftingSlots.has(slot.slot as WeaponCraftingSlotId))
-    .map(slot => ({ ...slot }));
+  const storedSlots = canonicalWeaponSlots(slots)
+    .filter(slot => craftingSlots.has(slot.slot as WeaponCraftingSlotId));
   const stats = calculateWeaponStats(storedSlots, weaponForm);
   const economy = calculateWeaponEconomy(stats);
   return {

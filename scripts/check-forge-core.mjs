@@ -89,6 +89,7 @@ try {
   assertClose(snapshot.performance, 3.759525);
   assertClose(snapshot.stats.penetration, 0.05);
   assert.ok(snapshot.slots.every(slot => Number.isInteger(slot.materialId)), 'Gespeicherte Schmiedeslots müssen stabile Material-IDs besitzen.');
+  assert.ok(snapshot.slots.every(slot => !Object.prototype.hasOwnProperty.call(slot, 'material')), 'Gespeicherte Schmiedeslots dürfen keine Materialnamen enthalten.');
 
   const job = createForgeJob('sword', '', swordSlots);
   assert.equal(job.weaponName, '1H Schwert');
@@ -98,10 +99,11 @@ try {
   assert.deepEqual(job.slots.map(slot => slot.slot), ['workingPart', 'back', 'gripCore', 'gripWrap', 'special', 'parry']);
   assert.equal(job.slots.some(slot => slot.slot === 'baseMaterial'), false);
   assert.ok(job.slots.every(slot => Number.isInteger(slot.materialId)), 'Schmiedeauftrag persistiert Material-IDs.');
+  assert.ok(job.slots.every(slot => !Object.prototype.hasOwnProperty.call(slot, 'material')), 'Schmiedeauftrag persistiert keine Materialnamen.');
 
   const idJob = createForgeJob('dagger', '', daggerIdSlots);
-  assert.deepEqual(idJob.slots.map(slot => slot.material), ['Zinn', 'Zinn', 'Fichte', 'Lederfetzen', 'Fichte']);
   assert.deepEqual(idJob.slots.map(slot => slot.materialId), [4, 4, 2, 9, 2]);
+  assert.ok(idJob.slots.every(slot => !Object.prototype.hasOwnProperty.call(slot, 'material')));
 
   const staleJob = weaponName => ({
     ...job,
@@ -191,7 +193,7 @@ try {
   assert.equal(isWeaponFormUnlocked('staff', craftCounts), true);
   assert.deepEqual(getVisibleWeaponForms(craftCounts), ['dagger', 'sword', 'axe1h', 'sword2h', 'axe2h', 'bow', 'staff']);
 
-  console.log('Forge-Core: Baupläne, ID-basierte Materialreservierung, Balance, Queue-Timer und Waffen-Freischaltung sind konsistent.');
+  console.log('Forge-Core: Baupläne, ID-basierte Materialreservierung, ID-only Persistenz, Balance, Queue-Timer und Waffen-Freischaltung sind konsistent.');
 } finally {
   unlinkSync(temporaryUrl);
   unlinkSync(temporaryEconomyUrl);

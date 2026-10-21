@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { getMaterialIdByName, type WeaponSlot } from '../game/game-core';
+import { getMaterialDisplayNameById, getMaterialIdByName, type WeaponSlot } from '../game/game-core';
 import { materialSellDataById, weaponSellData } from '../game/economy-core';
 import { getWeaponEquipLocation, type EquipmentCharacterLike } from '../game/equipment-core';
 import {
@@ -85,7 +85,7 @@ export class GameMarketService {
 
     const qty = Math.max(1, Math.min(stock, Math.floor(Number(quantity) || 1)));
     const job: MarketJob = {
-      ...unit,
+      type: 'material',
       materialId: unit.materialId,
       quantity: qty,
       valueNickel: unit.valueNickel * qty,
@@ -123,16 +123,25 @@ export class GameMarketService {
     return { status, name: weapon.name, valueNickel: job.valueNickel };
   }
 
+  displayName(job: MarketJob): string {
+    if (job.type === 'material') {
+      const displayName = getMaterialDisplayNameById(job.materialId);
+      return displayName ?? `Material #${Number(job.materialId) || '?'}`;
+    }
+    return job.name || 'Waffe';
+  }
+
   cancel(kind: 'active' | 'queue', index: number, at = Date.now()): MarketCancelResult | null {
     const state = this.getState();
     const job = cancelMarketJob(state, kind, index, Number(state.upgrades.marketSlots) || 0, at);
     if (!job) return null;
     normalizeMarketMaterialJob(job);
+    const name = this.displayName(job);
     this.returnJob(state, job);
-    return { name: job.name };
+    return { name };
   }
 
-  /** Migriert laufende/wartende Altaufträge auf stabile Material-IDs. */
+  /** Migriert laufende/wartende Altaufträge auf stabile Material-IDs und entfernt persistierte Anzeigenamen. */
   normalizeMaterialReferences(): number {
     return normalizeMarketMaterialJobs(this.getState());
   }
@@ -143,7 +152,7 @@ export class GameMarketService {
     const completedSales: MarketCompletedSale[] = [];
     const completedCount = advanceMarketJobs(state, Number(state.upgrades.marketSlots) || 0, now, (job: MarketJob) => {
       state.gold += job.valueNickel;
-      completedSales.push({ name: job.name, valueNickel: job.valueNickel });
+      completedSales.push({ name: this.displayName(job), valueNickel: job.valueNickel });
     });
     return { completedCount, completedSales };
   }
@@ -170,9 +179,9 @@ export class GameMarketService {
   private returnJob(state: RuntimeMarketState, job: MarketJob): void {
     if (job.type === 'material') {
       const materialId = job.materialId;
-      if (materialId === null || materialId === undefined) throw new Error(`Unbekannte Material-ID im Marktauftrag: ${job.name}`);
+      if (materialId === null || materialId === undefined) throw new Error('Unbekannte Material-ID im Marktauftrag.');
       const returned = addMaterialQuantityById(state.inventory, materialId, job.quantity || 1);
-      if (!returned) throw new Error(`Material ${job.name} konnte nicht ins Inventar zurückgegeben werden.`);
+      if (!returned) throw new Error(`Material-ID ${materialId} konnte nicht ins Inventar zurückgegeben werden.`);
       return;
     }
     if (job.weaponSnapshot) state.weaponInventory.unshift(job.weaponSnapshot as RuntimeMarketWeapon);

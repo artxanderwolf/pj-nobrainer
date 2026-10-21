@@ -2,6 +2,8 @@ import { Injectable } from '@angular/core';
 import { formatCurrencyNickel, formatDuration, materialSellDataById, weaponSellData } from '../game/economy-core';
 import { getWeaponEquipLocation, type EquipmentCharacterLike } from '../game/equipment-core';
 import { getMaterialStorageEntries, type MaterialStorageInventory } from '../game/material-storage-core';
+import { getMaterialDisplayNameById } from '../game/game-core';
+import { type MarketJob } from '../game/market-core';
 import {
   getActiveMarketJobPresentation,
   getMarketMaterialPresentation,
@@ -19,8 +21,8 @@ type RuntimeMarketPresentationState = MutableGameState & {
   inventory: MaterialStorageInventory;
   weaponInventory: RuntimeMarketWeapon[];
   characters: EquipmentCharacterLike[];
-  marketJobs: MarketPresentationJobLike[];
-  marketQueue: MarketPresentationJobLike[];
+  marketJobs: MarketJob[];
+  marketQueue: MarketJob[];
 };
 
 interface MarketPresentationCompatibilityBridge {
@@ -50,7 +52,7 @@ export class GameMarketPresentationService {
     if (active) {
       active.className = state.marketJobs.length ? '' : 'empty';
       active.innerHTML = state.marketJobs.length ? state.marketJobs.map((job, index) => {
-        const presentation = getActiveMarketJobPresentation(job, index, now, formatCurrencyNickel, formatDuration);
+        const presentation = getActiveMarketJobPresentation(this.presentationJob(job), index, now, formatCurrencyNickel, formatDuration);
         return `<div class="sell-row"><div style="width:100%"><strong>${presentation.title}</strong><div class="bar energy"><i style="width:${presentation.progressPercent}%"></i></div><p>${presentation.remainingText} · Ertrag <b>${presentation.revenueValueText}</b></p></div><button class="btn smallbtn" data-market-cancel="active" data-market-index="${index}">Abbrechen</button></div>`;
       }).join('') : 'Kein aktiver Verkauf.';
       active.dataset['marketPresentationOwner'] = 'angular';
@@ -59,7 +61,7 @@ export class GameMarketPresentationService {
     if (queue) {
       queue.className = state.marketQueue.length ? '' : 'empty';
       queue.innerHTML = state.marketQueue.length ? state.marketQueue.map((job, index) => {
-        const presentation = getQueuedMarketJobPresentation(job, index, formatCurrencyNickel, formatDuration);
+        const presentation = getQueuedMarketJobPresentation(this.presentationJob(job), index, formatCurrencyNickel, formatDuration);
         return `<div class="sell-row"><div><strong>${presentation.title}</strong><div class="sell-meta">${presentation.metaText}</div></div><button class="btn smallbtn" data-market-cancel="queue" data-market-index="${index}">Entfernen</button></div>`;
       }).join('') : 'Warteschlange leer.';
       this.bindCancelActions(queue);
@@ -188,6 +190,13 @@ export class GameMarketPresentationService {
       this.combatLog.add(`Verkauf abgebrochen: ${result.name} wurde zurückgegeben.`, 'muted');
       this.renderAll();
     }));
+  }
+
+  private presentationJob(job: MarketJob): MarketPresentationJobLike {
+    const name = job.type === 'material'
+      ? getMaterialDisplayNameById(job.materialId) ?? `Material #${Number(job.materialId) || '?'}`
+      : job.name || 'Waffe';
+    return { ...job, name } as MarketPresentationJobLike;
   }
 
   private state(): RuntimeMarketPresentationState { return this.gameState.getState<RuntimeMarketPresentationState>(); }

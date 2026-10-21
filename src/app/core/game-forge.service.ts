@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { calculateWeaponEconomy } from '../game/economy-core';
 import {
+  canonicalWeaponSlots,
   createStatModifiers,
   getMaterialReferenceById,
   getWeaponForm,
@@ -195,24 +196,24 @@ export class GameForgeService {
     return { status, weaponName: job.weaponName };
   }
 
-  /** Ergänzt bei alten Waffen und Schmiedeaufträgen die stabilen Material-IDs. */
+  /** Migriert alte Namensreferenzen und persistiert Waffen-/Auftragsslots ausschließlich als IDs. */
   normalizeMaterialReferences(): number {
     const state = this.getState();
     let changed = 0;
 
     for (const weapon of state.weaponInventory) {
       if (!Array.isArray(weapon.slots)) continue;
-      const normalized = normalizeWeaponSlots(weapon.slots);
-      if (JSON.stringify(normalized) === JSON.stringify(weapon.slots)) continue;
-      weapon.slots = normalized;
+      const canonical = canonicalWeaponSlots(weapon.slots);
+      if (JSON.stringify(canonical) === JSON.stringify(weapon.slots)) continue;
+      weapon.slots = canonical;
       changed += 1;
     }
 
     for (const job of [...state.forgeJobs, ...state.forgeQueue]) {
       if (!Array.isArray(job.slots)) continue;
-      const normalized = normalizeWeaponSlots(job.slots);
-      if (JSON.stringify(normalized) === JSON.stringify(job.slots)) continue;
-      job.slots = normalized;
+      const canonical = canonicalWeaponSlots(job.slots);
+      if (JSON.stringify(canonical) === JSON.stringify(job.slots)) continue;
+      job.slots = canonical;
       changed += 1;
     }
 
@@ -296,7 +297,7 @@ export class GameForgeService {
       id: state.nextWeaponId++,
       name,
       weaponForm: job.weaponForm,
-      slots: normalizeWeaponSlots(job.slots),
+      slots: canonicalWeaponSlots(job.slots),
       stats: job.stats,
       valueNickel: economy.valueNickel,
       craftedSeconds: job.totalSeconds
