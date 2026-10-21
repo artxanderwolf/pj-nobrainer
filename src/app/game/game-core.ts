@@ -125,7 +125,10 @@ export function canonicalWeaponSlots(slots: readonly WeaponSlot[] | null | undef
 
 export function isWeaponSelectionComplete(slots: readonly WeaponSlot[] | null | undefined, weaponForm: string): boolean {
   const selected = new Map(normalizeWeaponSlots(slots).map(entry => [entry.slot, entry.materialId]));
-  return baseline.getWeaponCraftingSlots(weaponForm).every(slot => Number.isInteger(Number(selected.get(slot))));
+  return baseline.getWeaponCraftingSlots(weaponForm).every(slot => {
+    const materialId = Number(selected.get(slot));
+    return Number.isInteger(materialId) && materialId > 0 && getMaterialReferenceById(materialId) !== null;
+  });
 }
 export function rarityFactor(slots: readonly WeaponSlot[] | null | undefined): number {
   const rarities = normalizeWeaponSlots(slots).filter(entry => entry.slot !== 'baseMaterial').map(entry => getMaterialDefinitionById(entry.materialId)?.rarity).filter((value): value is number => Number.isFinite(value));
