@@ -31,6 +31,8 @@ if (DATA_META.schemaVersion !== 1 || DATA_META.baselineVersion !== '0.13.10') {
 replaceData(baseline.CONFIG, GENERATED_CONFIG);
 replaceData(baseline.CHARACTER_CLASSES, GENERATED_CHARACTER_CLASSES);
 replaceData(baseline.MATERIAL_SALE_RARITY_BONUS, GENERATED_MATERIAL_SALE_RARITY_BONUS);
+// Die alte Baseline benötigt für die noch vorhandene Legacy-Runtime weiterhin eine Namensprojektion.
+// Aktive Angular-Fachlogik greift darunter ausschließlich über MATERIAL_REFERENCES_BY_ID zu.
 replaceData(baseline.MATERIALS, GENERATED_MATERIALS);
 replaceData(baseline.DUNGEON_ENEMY_DEFINITIONS, GENERATED_DUNGEON_ENEMY_DEFINITIONS);
 replaceData(baseline.DUNGEON_LOOT_TABLES, GENERATED_DUNGEON_LOOT_TABLES);
@@ -47,14 +49,24 @@ export interface WeaponSlot extends BaselineWeaponSlot {
   materialId?: number | null;
 }
 
+const generatedMaterialDefinitionsById = new Map<number, MaterialDefinition>();
+for (const definition of Object.values(GENERATED_MATERIALS) as MaterialDefinition[]) {
+  const materialId = Number(definition.materialId);
+  if (!Number.isInteger(materialId) || materialId <= 0) throw new Error('Materialdefinition ohne gültige stabile ID.');
+  if (generatedMaterialDefinitionsById.has(materialId)) throw new Error(`Doppelte Material-ID in generierten Daten: ${materialId}.`);
+  generatedMaterialDefinitionsById.set(materialId, definition);
+}
+
 const materialReferences: MaterialReference[] = GENERATED_MATERIAL_KEYS.map(key => {
-  const definition = baseline.MATERIALS[key.displayName];
-  if (!definition || definition.materialId !== key.materialId) throw new Error(`Ungültige Materialreferenz: ID ${key.materialId} (${key.displayName}).`);
+  const definition = generatedMaterialDefinitionsById.get(key.materialId);
+  if (!definition) throw new Error(`Ungültige Materialreferenz: ID ${key.materialId} (${key.displayName}).`);
   return { materialId: key.materialId, technicalKey: key.technicalKey, displayName: key.displayName, definition };
 });
 
 export const MATERIAL_REFERENCES = Object.freeze([...materialReferences].sort((a, b) => a.materialId - b.materialId)) as readonly MaterialReference[];
 export const MATERIAL_REFERENCES_BY_ID = Object.freeze(Object.fromEntries(MATERIAL_REFERENCES.map(reference => [reference.materialId, reference]))) as Readonly<Record<number, MaterialReference>>;
+export const MATERIAL_DEFINITIONS_BY_ID = Object.freeze(Object.fromEntries(MATERIAL_REFERENCES.map(reference => [reference.materialId, reference.definition]))) as Readonly<Record<number, MaterialDefinition>>;
+/** Ausschließlich an Save-/Legacy-Migrationsgrenzen; aktive Fachlogik adressiert Materialien nie über diesen Index. */
 export const MATERIAL_IDS_BY_NAME = Object.freeze(Object.fromEntries(MATERIAL_REFERENCES.map(reference => [reference.displayName, reference.materialId]))) as Readonly<Record<string, number>>;
 
 export function getMaterialReferenceById(materialId: number | null | undefined): MaterialReference | null {
