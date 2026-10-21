@@ -2,7 +2,8 @@ import { getMaterialIdByName, getMaterialReferenceById } from './game-core.ts';
 
 export interface MarketJob {
   type: 'material' | 'weapon';
-  name: string;
+  /** Waffenname oder Legacy-Migrationsquelle alter Materialaufträge; Materialaufträge persistieren den Namen nicht. */
+  name?: string;
   /** Kanonische Referenz für Materialverkäufe; bei Waffen nicht gesetzt. */
   materialId?: number;
   valueNickel: number;
@@ -21,15 +22,16 @@ export interface MarketStateLike {
   marketQueue: MarketJob[];
 }
 
-/** Ergänzt/prüft die stabile Material-ID eines bestehenden Marktauftrags. */
+/** Migriert alte Materialnamen einmalig und hält Materialaufträge danach ausschließlich ID-basiert. */
 export function normalizeMarketMaterialJob(job: MarketJob): boolean {
   if (job.type !== 'material') return false;
 
   const referenceById = getMaterialReferenceById(job.materialId);
-  const materialIdByName = getMaterialIdByName(job.name);
+  const legacyName = typeof job.name === 'string' && job.name ? job.name : null;
+  const materialIdByName = getMaterialIdByName(legacyName);
   if (referenceById && materialIdByName !== null && materialIdByName !== referenceById.materialId) {
     throw new Error(
-      `Widersprüchliche Materialreferenz im Marktauftrag: ${job.name} verweist auf ID ${materialIdByName}, ` +
+      `Widersprüchliche Materialreferenz im Marktauftrag: ${legacyName} verweist auf ID ${materialIdByName}, ` +
       `der Auftrag auf ID ${referenceById.materialId}.`
     );
   }
@@ -42,8 +44,8 @@ export function normalizeMarketMaterialJob(job: MarketJob): boolean {
     job.materialId = reference.materialId;
     changed = true;
   }
-  if (job.name !== reference.displayName) {
-    job.name = reference.displayName;
+  if (job.name !== undefined) {
+    delete job.name;
     changed = true;
   }
   return changed;
