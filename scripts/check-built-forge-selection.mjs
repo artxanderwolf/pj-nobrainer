@@ -21,9 +21,9 @@ const fixture = JSON.stringify({
   savedAt: Date.now(),
   state: {
     inventory: {
-      Fichte: { category: 'Holz', qty: 20 },
+      Fichte: { category: 'Holz', qty: 7 },
       Zinn: { category: 'Metall', qty: 20 },
-      Lederfetzen: { category: 'Leder', qty: 20 }
+      Lederfetzen: { category: 'Leder', qty: 9 }
     },
     weaponCraftCounts: {
       dagger: 10,
@@ -83,6 +83,7 @@ const probeScript = `<script>
         setTimeout(() => {
           const previewButton = document.getElementById('forgePreviewNextBtn');
           const previewNextDisabled = previewButton instanceof HTMLButtonElement ? previewButton.disabled : null;
+          const materialSummaryBeforeStart = document.getElementById('forgeMaterialTotalPreview')?.textContent || '';
           if (previewButton instanceof HTMLButtonElement) previewButton.click();
           setTimeout(() => {
             const startButton = document.getElementById('forgeStartBtn');
@@ -98,6 +99,7 @@ const probeScript = `<script>
                 selected,
                 finalForm: document.getElementById('weaponForm')?.value || '',
                 timeText: document.getElementById('forgeTimePreview')?.textContent || '',
+                materialSummaryBeforeStart,
                 materialTotalText: document.getElementById('forgeMaterialTotalPreview')?.textContent || '',
                 constructionText: document.getElementById('forgeParryInfo')?.textContent || '',
                 damageText: document.getElementById('forgeDamagePreview')?.textContent || '',
@@ -107,6 +109,13 @@ const probeScript = `<script>
                 forgeJobText: document.getElementById('forgeJobCard')?.textContent?.replace(/\\s+/g, ' ').trim() || '',
                 forgeQueueText: document.getElementById('forgeQueueCard')?.textContent?.replace(/\\s+/g, ' ').trim() || '',
                 afterStartDisabled: document.getElementById('forgeStartBtn')?.disabled ?? null,
+                selectedAfterStart: {
+                  back: document.getElementById('slotBack')?.value || '',
+                  gripCore: document.getElementById('slotGripCore')?.value || '',
+                  gripWrap: document.getElementById('slotGripWrap')?.value || '',
+                  special: document.getElementById('slotSpecial')?.value || '',
+                  bowstring: document.getElementById('slotBowstring')?.value || ''
+                },
                 workingPartHidden: document.getElementById('forgeWorkingPartRow')?.hidden ?? false,
                 parryHidden: document.getElementById('forgeParryRow')?.hidden ?? false,
                 bowstringHidden: document.getElementById('forgeBowstringRow')?.hidden ?? true,
@@ -161,8 +170,8 @@ await new Promise((resolveListen, rejectListen) => { server.once('error', reject
 const browserProfile = mkdtempSync(join(tmpdir(), 'nobrainer-forge-selection-e2e-'));
 let child = null;
 try {
-  const address = server.address(); assert.ok(address && typeof address === 'object');
-  const pageUrl = `http://127.0.0.1:${address.port}${basePath}`;
+  const address=server.address(); assert.ok(address&&typeof address==='object');
+  const pageUrl=`http://127.0.0.1:${address.port}${basePath}`;
   child=spawn(browser,['--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--hide-scrollbars','--no-first-run','--no-default-browser-check',`--user-data-dir=${browserProfile}`,'--virtual-time-budget=6500','--dump-dom',pageUrl],{stdio:['ignore','pipe','pipe']});
   child.stdout.setEncoding('utf8'); child.stderr.setEncoding('utf8');
   let stdout='',stderr=''; child.stdout.on('data',chunk=>{stdout+=chunk;}); child.stderr.on('data',chunk=>{stderr+=chunk;});
@@ -181,13 +190,19 @@ try {
   assert.equal(result.beforeStart.startDisabled,false,'Waffe herstellen muss bei vollständiger Auswahl und ausreichendem Bestand aktiv sein.');
   assert.equal(result.beforeStart.activePage,'forge-preview','Der Vorschau-Button muss zur Waffenvorschau navigieren.');
   assert.match(result.beforeStart.capacityText,/^Schmiede \d+\/\d+ · Warteschlange \d+\/\d+$/,'Die Waffenvorschau muss aktive und maximale Schmiedekapazität anzeigen.');
+  assert.match(result.materialSummaryBeforeStart,/16 Materialeinheiten/,'Die Vorschau muss den gesamten Materialbedarf anzeigen.');
+  assert.match(result.materialSummaryBeforeStart,/Fichte 0/,'Die Vorschau muss den verbleibenden Fichte-Bestand nach dem Auftrag anzeigen.');
+  assert.match(result.materialSummaryBeforeStart,/Lederfetzen 0/,'Die Vorschau muss den verbleibenden Lederfetzen-Bestand nach dem Auftrag anzeigen.');
   assert.match(result.forgeJobText,/Bogen/,'Der Klick auf Waffe herstellen muss einen aktiven Schmiedeauftrag erzeugen.');
+  assert.equal(result.afterStartDisabled,true,'Nach vollständigem Verbrauch der ausgewählten Materialien darf kein weiterer Auftrag möglich sein.');
+  assert.deepEqual(result.selectedAfterStart,{back:'',gripCore:'',gripWrap:'',special:'',bowstring:''},'Verbrauchte Materialauswahlen müssen nach dem Auftrag aus den Selects entfernt werden.');
+  assert.match(result.materialTotalText,/Materialauswahl unvollständig/,'Nach Materialverbrauch muss die Vorschau die unvollständige Auswahl anzeigen.');
   assert.equal(result.workingPartHidden,true);
   assert.equal(result.parryHidden,true);
   assert.equal(result.bowstringHidden,false);
   assert.equal(result.oldBaseMaterialPresent,false);
 
-  console.log('Schmiede-Browserregression: ID-basierte Auswahl, Vorschau und echter Klick auf Waffe herstellen erzeugen gemeinsam einen Schmiedeauftrag.');
+  console.log('Schmiede-Browserregression: ID-Auswahl, Restbestand und vollständiger Materialverbrauch sperren einen unzulässigen Folgeauftrag.');
 } finally {
   if (child) await stopBrowser(child);
   rmSync(browserProfile,{recursive:true,force:true});
