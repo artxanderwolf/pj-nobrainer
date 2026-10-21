@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - migration/angular
-      - fix/forge-material-validation-v0141
   pull_request:
     branches:
       - main
