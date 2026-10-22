@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - migration/angular
-      - feature/dungeon-popup-v0.15.0
   pull_request:
     branches:
       - main
