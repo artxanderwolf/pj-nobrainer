@@ -27,20 +27,20 @@ const prepareStart = runtimeService.indexOf('  prepare(): void {');
 const prepareEnd = runtimeService.indexOf('  startTick(): void {', prepareStart);
 assert.ok(prepareStart >= 0 && prepareEnd > prepareStart, 'Die Angular-Startsequenz konnte nicht isoliert werden.');
 const prepareCycle = runtimeService.slice(prepareStart, prepareEnd);
-const prepareResetIndex = prepareCycle.indexOf('const dungeonSessionReset = this.dungeonSession.close(Date.now());');
+const prepareResetIndex = prepareCycle.indexOf('const dungeonSessionReset = this.dungeonSession.resetLoadedSession(Date.now());');
 const prepareDungeonIndex = prepareCycle.indexOf('const dungeonUpdate = this.dungeonSession.update();');
 const prepareEnergyIndex = prepareCycle.indexOf('this.gameEnergy.update();');
-assert.ok(prepareResetIndex >= 0, 'Beim Start wird ein alter persistierter Dungeon-Lauf nicht verworfen.');
+assert.ok(prepareResetIndex >= 0, 'Beim App-Start wird ein alter persistierter Dungeon-Lauf nicht gezielt verworfen.');
 assert.ok(
   prepareDungeonIndex > prepareResetIndex && prepareEnergyIndex > prepareDungeonIndex,
-  'Beim Start muss die geschlossene Dungeon-Sitzung vor der regulären Energieaktualisierung verarbeitet werden.'
+  'Beim Start muss die bereinigte Dungeon-Sitzung vor der regulären Energieaktualisierung verarbeitet werden.'
 );
 assert.equal(
   (prepareCycle.match(/this\.gameEnergy\.update\(\);/g) ?? []).length,
   1,
   'Die Startsequenz darf den Energie-Zeitstempel nicht mehrfach aktualisieren.'
 );
-assert.doesNotMatch(prepareCycle, /this\.gameDungeon\.update\(\)/, 'Dungeon-Fachlogik darf beim Start nicht außerhalb der Popup-Sitzung offline nachlaufen.');
+assert.doesNotMatch(prepareCycle, /this\.gameDungeon\.update\(\)/, 'Dungeon-Fachlogik darf beim Start nicht außerhalb des Angular-Session-Service offline nachlaufen.');
 
 const tickStart = runtimeService.indexOf('private runTickCycle(): void {');
 const tickEnd = runtimeService.indexOf('private logForgeCompletions(', tickStart);
@@ -57,7 +57,7 @@ assert.match(runtimeService, /private readonly gameEnergy: GameEnergyService/, '
 assert.match(runtimeService, /private readonly gameForge: GameForgeService/, 'Der Angular-Tick besitzt keinen Angular-eigenen Schmiede-Service.');
 assert.match(runtimeService, /private readonly gameMarket: GameMarketService/, 'Der Angular-Tick besitzt keinen Angular-eigenen Markt-Service.');
 assert.match(runtimeService, /private readonly gameDungeon: GameDungeonService/, 'Die Runtime besitzt keinen Angular-eigenen Dungeon-Fachservice für Migration und Loot.');
-assert.match(runtimeService, /private readonly dungeonSession: GameDungeonSessionService/, 'Der Angular-Tick besitzt keinen popupgebundenen Dungeon-Session-Service.');
+assert.match(runtimeService, /private readonly dungeonSession: GameDungeonSessionService/, 'Der Angular-Tick besitzt keinen Angular-eigenen Dungeon-Session-Service.');
 assert.match(runtimeService, /private readonly dungeonPresentation: GameDungeonPresentationService/, 'Der Angular-Tick besitzt keine Angular-eigene Dungeon-Präsentation.');
 assert.doesNotMatch(runtimeService, /\bupdateEnergy\(\): void;/, 'Die Runtime-API stellt weiterhin die Legacy-Energieaktualisierung bereit.');
 assert.doesNotMatch(runtimeService, /runtime\.updateEnergy\(\)/, 'Der Scheduler ruft weiterhin die Legacy-Energieaktualisierung auf.');
@@ -99,13 +99,14 @@ for (const call of orderedRuntimeCalls) {
   assert.ok(index > previousIndex, `Angular-gameTick-Reihenfolge ist ungültig oder Aufruf fehlt: ${call}`);
   previousIndex = index;
 }
-assert.doesNotMatch(tickCycle, /this\.gameDungeon\.update\(\)/, 'Der Tick verarbeitet den Dungeon weiterhin außerhalb des Popup-Session-Gates.');
+assert.doesNotMatch(tickCycle, /this\.gameDungeon\.update\(\)/, 'Der Tick verarbeitet den Dungeon weiterhin außerhalb des Angular-Session-Service.');
+assert.match(tickCycle, /const dungeonUpdate = this\.dungeonSession\.update\(\);/, 'Der Dungeon-Session-Service wird nicht unabhängig vom Popupzustand im zentralen Tick verarbeitet.');
 assert.match(tickCycle, /if \(forgeCompleted\) \{[\s\S]*this\.forgePreviewPresentation\.render\(\);[\s\S]*this\.weaponInventoryPresentation\.render\(\);[\s\S]*\}/, 'Schmiede-Abschluss-Refresh von Angular-Vorschau und Angular-Waffenlager fehlt im Angular-Tick.');
 assert.match(tickCycle, /if \(marketCompleted\) \{[\s\S]*runtime\.renderMarketMaterials\(\);[\s\S]*runtime\.renderMarketWeapons\(\);[\s\S]*this\.resourcePresentation\.render\(\);[\s\S]*\}/, 'Markt-Abschluss-Refresh fehlt im Angular-Tick.');
 assert.match(runtimeService, /this\.runTickCycle\(\);[\s\S]*this\.scheduleNextTick\(\);/, 'Der 250-ms-Scheduler verwendet nicht den Angular-Tick-Zyklus.');
 
 const angularRegistrationMatch = registrationAdapter.match(/const ANGULAR_RUNTIME_REGISTRATION = `([\s\S]*?)`;/);
-assert.ok(angularRegistrationMatch, 'Die Angular-Runtime-Registrierung konnte nicht geprüft werden.');
+assert.ok(angularRegistrationMatch, 'Die Angular-Runtime-Registrierung konnte geprüft werden.');
 const angularRegistration = angularRegistrationMatch[1];
 for (const forbidden of ['tick:gameTick', 'updateEnergy,', 'updateForgeJob,', 'updateMarketJob,', 'updateDungeonAutomation,', 'renderDungeonStatus,', 'renderDungeonLoot,', 'renderTeam:', '\n  addLog,', 'renderRosterIfIdle:', '\n  renderWeaponInventory,', '\n  renderForgeJob,', '\n  renderForgePreview,', 'refreshGold:']) {
   assert.equal(angularRegistration.includes(forbidden), false, `Legacy-Runtime registriert weiterhin ${forbidden}.`);
@@ -125,4 +126,4 @@ const tickAdapterIndex = appComponent.indexOf('adaptedScript = this.legacyGameTi
 const registrationAdapterIndex = appComponent.indexOf('adaptedScript = this.legacyRuntimeRegistrationAdapter.adapt(adaptedScript);');
 assert.ok(sourceAdapterIndex >= 0 && tickAdapterIndex > sourceAdapterIndex && registrationAdapterIndex > tickAdapterIndex, 'Die Adapterreihenfolge für den gameTick-Cutover ist nicht stabil.');
 
-console.log('gameTick-Eigentümerschaft: Der zentrale 250-ms-Zyklus liegt in Angular; Dungeon-Fachlogik läuft nur durch die geöffnete Popup-Sitzung und besitzt keinen Offline-Catch-up.');
+console.log('gameTick-Eigentümerschaft: Der zentrale 250-ms-Zyklus liegt in Angular; aktive Trainingslager-Runs laufen bei geschlossenem Popup weiter, während geladene Alt-Läufe beim App-Start weiterhin ohne Offline-Catch-up verworfen werden.');

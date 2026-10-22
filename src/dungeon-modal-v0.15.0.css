@@ -2,6 +2,10 @@ body.dungeon-modal-active {
   overflow: hidden;
 }
 
+.dungeon-overview-card #dungeonOverviewAction {
+  display: none !important;
+}
+
 .dungeon-modal-page[hidden] {
   display: none !important;
 }
@@ -12,6 +16,7 @@ body.dungeon-modal-active {
   z-index: 1000;
   display: grid;
   place-items: center;
+  overflow: hidden;
   padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
 }
 
@@ -26,7 +31,8 @@ body.dungeon-modal-active {
   position: relative;
   z-index: 1;
   width: min(1080px, 100%);
-  max-height: min(92dvh, 900px);
+  height: min(92dvh, 900px);
+  min-height: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -39,7 +45,7 @@ body.dungeon-modal-active {
 .dungeon-modal-header,
 .dungeon-modal-footer {
   flex: 0 0 auto;
-  padding: 14px 16px;
+  padding: 12px 14px;
   background: rgba(18, 20, 23, .96);
 }
 
@@ -57,8 +63,9 @@ body.dungeon-modal-active {
 }
 
 .dungeon-modal-close {
-  width: 44px;
-  height: 44px;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
   border: 1px solid var(--line);
   border-radius: 12px;
   background: var(--panel2);
@@ -68,41 +75,38 @@ body.dungeon-modal-active {
   line-height: 1;
 }
 
-.dungeon-modal-intro {
-  flex: 0 0 auto;
-  margin: 0;
-  padding: 12px 16px 0;
-}
-
 .dungeon-modal-layout {
   min-height: 0;
   flex: 1 1 auto;
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(300px, .9fr);
-  gap: 12px;
-  padding: 12px 16px;
-  overflow: auto;
-  overscroll-behavior: contain;
+  grid-template-columns: minmax(0, 1.05fr) minmax(300px, .95fr);
+  grid-template-rows: auto auto minmax(0, 1fr);
+  grid-template-areas:
+    "team enemies"
+    "time loot"
+    "log log";
+  gap: 10px;
+  padding: 10px 14px;
+  overflow: hidden;
 }
 
-.dungeon-modal-column {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
+.dungeon-team-panel { grid-area: team; }
+.dungeon-time-panel { grid-area: time; }
+.dungeon-enemy-panel { grid-area: enemies; }
+.dungeon-loot-panel { grid-area: loot; }
+.dungeon-log-panel { grid-area: log; }
 
 .dungeon-panel {
   min-width: 0;
-  padding: 12px;
+  min-height: 0;
+  padding: 10px;
   border: 1px solid var(--line);
   border-radius: 12px;
   background: #171b20;
+  overflow: hidden;
 }
 
-.dungeon-live-column .dungeon-log-panel {
-  min-height: 260px;
-  flex: 1 1 auto;
+.dungeon-log-panel {
   display: flex;
   flex-direction: column;
 }
@@ -114,105 +118,146 @@ body.dungeon-modal-active {
   gap: 10px;
 }
 
-.dungeon-section-head span {
-  color: var(--muted);
-  font-size: 12px;
-}
-
 #dungeonTeamCard .team-slot-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  gap: 7px;
+  margin-top: 7px;
 }
 
 #dungeonTeamCard .team-slot {
-  padding: 10px;
+  position: relative;
+  padding: 8px;
 }
 
 #dungeonTeamCard .team-slot.picker-open {
   grid-column: 1 / -1;
 }
 
+#dungeonTeamCard .team-slot-head {
+  margin-bottom: 5px;
+}
+
 #dungeonTeamCard .empty {
-  padding: 12px 4px;
+  padding: 9px 4px;
 }
 
-#dungeonTeamCard .dungeon-character-stats {
-  grid-template-columns: minmax(0, 1fr);
-  gap: 5px;
-  margin-top: 6px;
-}
-
-#dungeonTeamCard .stat {
-  padding: 6px;
-}
-
-#dungeonTeamCard .stat b {
-  font-size: 13px;
+#dungeonTeamCard .dungeon-character-hp {
+  height: 9px;
+  margin-top: 5px;
 }
 
 #dungeonTeamCard .actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px;
-  margin-top: 8px;
+  gap: 5px;
+  margin-top: 7px;
 }
 
 #dungeonTeamCard .actions .btn {
   width: 100%;
   min-width: 0;
-  min-height: 38px;
-  padding: 7px 8px;
+  min-height: 34px;
+  padding: 6px 7px;
+  font-size: 12px;
 }
 
 #dungeonTeamCard .actions .btn:only-child {
   grid-column: 1 / -1;
 }
 
+#dungeonTeamCard .status-line {
+  margin: 6px 0 0;
+  font-size: 11px;
+}
+
+#dungeonTeamCard .team-slot-picker {
+  max-height: 118px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+#dungeonTeamCard .team-candidate {
+  padding: 6px 0;
+}
+
 .dungeon-time-bar {
-  margin-top: 10px;
+  margin-top: 8px;
   height: 12px;
   color: var(--accent);
 }
 
 .dungeon-enemy-list {
   display: grid;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.dungeon-enemy {
-  padding: 10px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: var(--panel2);
-}
-
-.dungeon-enemy .bar {
-  height: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
   margin-top: 8px;
 }
 
+.dungeon-enemy {
+  min-width: 0;
+  padding: 7px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--panel2);
+}
+
+.dungeon-enemy strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.dungeon-enemy .bar {
+  height: 9px;
+  margin-top: 6px;
+}
+
 .dungeon-live-log {
-  min-height: 180px;
-  max-height: min(46dvh, 520px);
-  margin-top: 10px;
+  min-height: 0;
+  max-height: none;
+  margin-top: 8px;
   flex: 1 1 auto;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+.dungeon-loot-panel #dungeonLoot {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+  margin-top: 7px;
 }
 
 .dungeon-loot-panel .loot-chip {
-  display: inline-flex;
-  margin: 8px 6px 0 0;
+  min-width: 0;
+  margin: 0;
+  padding: 5px 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
 }
 
 .dungeon-compact-empty {
-  padding: 16px 8px;
-  margin-top: 10px;
+  padding: 10px 6px;
+  margin-top: 7px;
+  font-size: 12px;
+}
+
+.dungeon-loot-panel .btn {
+  min-height: 32px;
+  padding: 5px 8px;
+  font-size: 12px;
 }
 
 .dungeon-modal-footer {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(180px, 260px);
-  gap: 12px;
+  gap: 10px;
   align-items: center;
   border-top: 1px solid var(--line);
 }
@@ -224,68 +269,190 @@ body.dungeon-modal-active {
 
 .dungeon-modal-footer .btn {
   width: 100%;
-  min-height: 48px;
+  min-height: 44px;
 }
 
 @media (max-width: 760px) {
   .dungeon-modal-page.dungeon-modal-open {
-    padding: max(6px, env(safe-area-inset-top)) 6px max(6px, env(safe-area-inset-bottom));
+    padding: max(4px, env(safe-area-inset-top)) 4px max(4px, env(safe-area-inset-bottom));
   }
 
   .dungeon-modal-dialog {
-    max-height: 96dvh;
-    border-radius: 13px;
+    width: 100%;
+    height: 98dvh;
+    border-radius: 12px;
   }
 
   .dungeon-modal-header,
   .dungeon-modal-footer {
-    padding: 10px 12px;
+    padding: 8px 10px;
   }
 
-  .dungeon-modal-intro {
-    padding: 10px 12px 0;
+  .dungeon-modal-header h2 {
+    font-size: 18px;
+  }
+
+  .dungeon-modal-close {
+    width: 38px;
+    height: 38px;
   }
 
   .dungeon-modal-layout {
-    grid-template-columns: 1fr;
-    gap: 10px;
-    padding: 10px 12px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: auto auto auto minmax(0, 1fr);
+    grid-template-areas:
+      "time time"
+      "team team"
+      "enemies loot"
+      "log log";
+    gap: 6px;
+    padding: 6px 8px;
   }
 
   .dungeon-panel {
-    padding: 10px;
+    padding: 7px;
+    border-radius: 9px;
+  }
+
+  .dungeon-panel h3,
+  .dungeon-section-head h3 {
+    font-size: 13px;
   }
 
   #dungeonTeamCard .team-slot-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 5px;
+    margin-top: 5px;
   }
 
   #dungeonTeamCard .team-slot {
-    padding: 8px;
+    padding: 6px;
   }
 
   #dungeonTeamCard .team-slot-head {
     align-items: flex-start;
+    margin-bottom: 4px;
+    font-size: 11px;
+  }
+
+  #dungeonTeamCard .team-slot .empty {
+    min-height: 28px;
+    padding: 5px 2px;
+    font-size: 11px;
   }
 
   #dungeonTeamCard .actions {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+    margin-top: 5px;
+  }
+
+  #dungeonTeamCard .actions .btn,
+  #dungeonTeamCard .actions .btn:only-child {
+    grid-column: auto;
+    min-height: 30px;
+    padding: 4px;
+    font-size: 10px;
   }
 
   #dungeonTeamCard .actions .btn:only-child {
-    grid-column: auto;
+    grid-column: 1 / -1;
+  }
+
+  #dungeonTeamCard .team-slot-picker {
+    max-height: 92px;
+  }
+
+  #dungeonTeamCard .team-candidate {
+    gap: 5px;
+    font-size: 11px;
+  }
+
+  .dungeon-enemy-list {
+    grid-template-columns: 1fr;
+    gap: 4px;
+    margin-top: 5px;
+  }
+
+  .dungeon-enemy {
+    padding: 5px;
+  }
+
+  .dungeon-enemy .bar {
+    margin-top: 4px;
+  }
+
+  .dungeon-loot-panel #dungeonLoot {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 3px;
+    margin-top: 5px;
+  }
+
+  .dungeon-loot-panel .loot-chip {
+    padding: 3px 4px;
+    font-size: 9px;
+  }
+
+  .dungeon-compact-empty {
+    padding: 7px 3px;
+    margin-top: 5px;
+    font-size: 10px;
   }
 
   .dungeon-live-log {
-    max-height: 300px;
+    margin-top: 5px;
+    font-size: 11px;
+  }
+
+  .dungeon-live-log div {
+    padding: 4px 2px;
   }
 
   .dungeon-modal-footer {
-    grid-template-columns: 1fr;
-    gap: 8px;
+    grid-template-columns: minmax(0, 1fr) minmax(135px, 190px);
+    gap: 6px;
   }
 
   .dungeon-modal-footer .dungeon-primary-status {
-    text-align: center;
+    text-align: left;
+    font-size: 11px;
+  }
+
+  .dungeon-modal-footer .btn {
+    min-height: 38px;
+  }
+}
+
+@media (max-height: 700px) {
+  .dungeon-modal-dialog {
+    height: 98dvh;
+  }
+
+  .dungeon-modal-header,
+  .dungeon-modal-footer {
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+
+  .dungeon-modal-layout {
+    gap: 5px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+  }
+
+  .dungeon-panel {
+    padding: 6px;
+  }
+
+  #dungeonTeamCard .team-slot {
+    padding: 5px;
+  }
+
+  #dungeonTeamCard .actions .btn {
+    min-height: 28px;
+  }
+
+  .dungeon-time-bar {
+    margin-top: 5px;
   }
 }

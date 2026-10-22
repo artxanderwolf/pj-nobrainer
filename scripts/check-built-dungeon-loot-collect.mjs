@@ -13,7 +13,7 @@ const materialId = 1;
 assert.ok(existsSync(join(distRoot, 'index.html')), 'Der gebaute Angular-Index fehlt.');
 
 const browser = ['google-chrome', 'google-chrome-stable', 'chromium', 'chromium-browser'].find(candidate => {
-  const probe = spawnSync('which', [candidate], { encoding: 'utf8' });
+  const probe = spawnSync('which', [candidate], { encoding:'utf8' });
   return probe.status === 0 && probe.stdout.trim();
 });
 assert.ok(browser, 'Chrome/Chromium wurde für den Loot-E2E-Test nicht gefunden.');
@@ -185,11 +185,11 @@ try {
   assert.equal(result.materialCount, '2', `Der Materialzähler wurde nach dem Einsammeln nicht aktualisiert: ${JSON.stringify(result)}`);
   assert.match(result.storageText, /Morsche Fichte/, `Das Materiallager zeigt den eingesammelten Loot nicht mit Anzeigenamen: ${JSON.stringify(result)}`);
   assert.equal(result.dungeonLootText, '', `Die Dungeon-Lootanzeige wurde nach dem Einsammeln nicht geleert: ${JSON.stringify(result)}`);
-  assert.equal(result.overviewText, 'Dungeon 1 öffnen', `Nach dem Einsammeln muss der unsichtbare Hub-Kompatibilitätsanker wieder das Dungeon-Popup anbieten: ${JSON.stringify(result)}`);
-  assert.equal(result.primaryText, 'Lauf starten', `Nach dem Einsammeln muss der Dungeon-Popup-Button wieder einen neuen Lauf anbieten: ${JSON.stringify(result)}`);
+  assert.equal(result.overviewText, 'Trainingslager öffnen', `Nach dem Einsammeln muss der unsichtbare Hub-Kompatibilitätsanker wieder das Trainingslager-Popup anbieten: ${JSON.stringify(result)}`);
+  assert.equal(result.primaryText, 'Lauf starten', `Nach dem Einsammeln muss der Trainingslager-Popup-Button wieder einen neuen Lauf anbieten: ${JSON.stringify(result)}`);
   assert.equal(result.runtimeError, '', `Die Runtime meldet während des Loot-E2E-Tests einen Fehler: ${JSON.stringify(result)}`);
 
-  console.log('Dungeon-Loot-Browserregression: v9-Namensloot wird zu ID-keyed Save v13 migriert, eingesammelt und im neuen Popup-Pfad korrekt angezeigt.');
+  console.log('Dungeon-Loot-Browserregression: v9-Namensloot wird zu ID-keyed Save v13 migriert, eingesammelt und im Trainingslager-Popup korrekt angezeigt.');
 } finally {
   if (child) await stopBrowser(child);
   rmSync(browserProfile, { recursive: true, force: true });

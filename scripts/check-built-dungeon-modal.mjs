@@ -13,7 +13,7 @@ const browser = ['google-chrome', 'google-chrome-stable', 'chromium', 'chromium-
   const probe = spawnSync('which', [candidate], { encoding: 'utf8' });
   return probe.status === 0 && probe.stdout.trim();
 });
-assert.ok(browser, 'Chrome/Chromium wurde für den Dungeon-Popup-E2E-Test nicht gefunden.');
+assert.ok(browser, 'Chrome/Chromium wurde für den Trainingslager-Popup-E2E-Test nicht gefunden.');
 
 const errorScript = `<script>
 window.__dungeonModalErrors=[];
@@ -35,6 +35,22 @@ const probeScript = `<script>
     });
     document.body.appendChild(node);
   };
+  const layoutSnapshot = () => {
+    const dialog = document.querySelector('.dungeon-modal-dialog');
+    const layout = document.querySelector('.dungeon-modal-layout');
+    const log = document.getElementById('dungeonCombatLog');
+    if (!dialog || !layout || !log) return null;
+    return {
+      dialogClientHeight: dialog.clientHeight,
+      dialogScrollHeight: dialog.scrollHeight,
+      dialogOverflowY: getComputedStyle(dialog).overflowY,
+      layoutClientHeight: layout.clientHeight,
+      layoutScrollHeight: layout.scrollHeight,
+      layoutOverflowY: getComputedStyle(layout).overflowY,
+      logOverflowY: getComputedStyle(log).overflowY,
+      bodyOverflowY: getComputedStyle(document.body).overflowY
+    };
+  };
 
   const started = Date.now();
   const timer = setInterval(() => {
@@ -44,56 +60,68 @@ const probeScript = `<script>
     if (open && primary && modal && !open.getAttribute('onclick')) {
       clearInterval(timer);
       document.querySelector('[data-page="dungeon"]')?.click();
-      open.click();
       setTimeout(() => {
-        const firstTeamText = normalize(document.getElementById('dungeonTeamCard')?.textContent);
-        const first = {
-          modalOpen: modal.classList.contains('dungeon-modal-open') && !modal.hidden,
-          slotCount: document.querySelectorAll('#dungeonTeamCard .team-slot').length,
-          teamText: firstTeamText,
-          timeText: normalize(document.getElementById('dungeonTimeText')?.textContent),
-          timeWidth: document.getElementById('dungeonTimeBar')?.style.width || '',
-          hiddenOverviewAction: Boolean(document.getElementById('dungeonOverviewAction')?.hidden),
-          introText: normalize(modal.querySelector('.dungeon-modal-intro')?.textContent)
-        };
-
-        primary.click();
+        const hubTitle = normalize(document.querySelector('.dungeon-overview-card .menu-card-title')?.textContent);
+        open.click();
         setTimeout(() => {
-          const running = {
-            primaryText: normalize(primary.textContent),
-            disabledTeamActions: document.querySelectorAll('#dungeonTeamCard [data-dungeon-action][disabled]').length,
+          const firstTeamText = normalize(document.getElementById('dungeonTeamCard')?.textContent);
+          const first = {
+            hubTitle,
+            modalOpen: modal.classList.contains('dungeon-modal-open') && !modal.hidden,
+            modalTitle: normalize(document.getElementById('dungeonModalTitle')?.textContent),
+            slotCount: document.querySelectorAll('#dungeonTeamCard .team-slot').length,
+            characterHpBars: document.querySelectorAll('#dungeonTeamCard .dungeon-character-hp').length,
+            teamText: firstTeamText,
             timeText: normalize(document.getElementById('dungeonTimeText')?.textContent),
-            timeWidth: document.getElementById('dungeonTimeBar')?.style.width || ''
+            timeWidth: document.getElementById('dungeonTimeBar')?.style.width || '',
+            hiddenOverviewAction: Boolean(document.getElementById('dungeonOverviewAction')?.hidden),
+            layout: layoutSnapshot()
           };
 
-          document.getElementById('dungeonModalCloseBtn')?.click();
+          primary.click();
           setTimeout(() => {
-            const closed = modal.hidden && !modal.classList.contains('dungeon-modal-open');
-            open.click();
+            const running = {
+              primaryText: normalize(primary.textContent),
+              disabledTeamActions: document.querySelectorAll('#dungeonTeamCard [data-dungeon-action][disabled]').length,
+              timeText: normalize(document.getElementById('dungeonTimeText')?.textContent),
+              timeWidth: document.getElementById('dungeonTimeBar')?.style.width || '',
+              logText: normalize(document.getElementById('dungeonCombatLog')?.textContent)
+            };
+
+            document.getElementById('dungeonModalCloseBtn')?.click();
             setTimeout(() => {
-              const reopenedTeamText = normalize(document.getElementById('dungeonTeamCard')?.textContent);
-              finish({
-                status: 'checked',
-                first,
-                running,
-                closed,
-                reopened: {
-                  modalOpen: modal.classList.contains('dungeon-modal-open') && !modal.hidden,
-                  primaryText: normalize(primary.textContent),
-                  timeText: normalize(document.getElementById('dungeonTimeText')?.textContent),
-                  teamText: reopenedTeamText,
-                  logText: normalize(document.getElementById('dungeonCombatLog')?.textContent),
-                  enemyText: normalize(document.getElementById('dungeonActiveEnemies')?.textContent)
-                }
-              });
-            }, 150);
-          }, 150);
-        }, 450);
-      }, 150);
+              const closed = {
+                hidden: modal.hidden && !modal.classList.contains('dungeon-modal-open'),
+                hubCopy: normalize(document.querySelector('.dungeon-overview-card .menu-card-copy')?.textContent)
+              };
+              open.click();
+              setTimeout(() => {
+                const reopenedTeamText = normalize(document.getElementById('dungeonTeamCard')?.textContent);
+                finish({
+                  status: 'checked',
+                  first,
+                  running,
+                  closed,
+                  reopened: {
+                    modalOpen: modal.classList.contains('dungeon-modal-open') && !modal.hidden,
+                    primaryText: normalize(primary.textContent),
+                    timeText: normalize(document.getElementById('dungeonTimeText')?.textContent),
+                    timeWidth: document.getElementById('dungeonTimeBar')?.style.width || '',
+                    teamText: reopenedTeamText,
+                    logText: normalize(document.getElementById('dungeonCombatLog')?.textContent),
+                    enemyText: normalize(document.getElementById('dungeonActiveEnemies')?.textContent),
+                    layout: layoutSnapshot()
+                  }
+                });
+              }, 300);
+            }, 1700);
+          }, 1300);
+        }, 200);
+      }, 100);
       return;
     }
 
-    if (Date.now() - started > 4000) {
+    if (Date.now() - started > 5000) {
       clearInterval(timer);
       finish({ status: 'runtime-not-ready' });
     }
@@ -149,19 +177,24 @@ async function stopBrowser(child) {
   ]);
   if (!closed && child.exitCode === null) child.kill('SIGKILL');
 }
+function timeToSeconds(value) {
+  const parts = String(value).split(':').map(Number);
+  assert.equal(parts.length, 3, `Ungültige Laufzeitanzeige: ${value}`);
+  return parts[0] * 3600 + parts[1] * 60 + parts[2];
+}
 
 await new Promise((resolveListen, rejectListen) => {
   server.once('error', rejectListen);
   server.listen(0, '127.0.0.1', resolveListen);
 });
 
-const browserProfile = mkdtempSync(join(tmpdir(), 'nobrainer-dungeon-modal-e2e-'));
+const browserProfile = mkdtempSync(join(tmpdir(), 'nobrainer-trainingslager-modal-e2e-'));
 let child = null;
 try {
   const address = server.address();
   assert.ok(address && typeof address === 'object');
   const pageUrl = `http://127.0.0.1:${address.port}${basePath}`;
-  child = spawn(browser, [
+  child=spawn(browser,[
     '--headless=new',
     '--no-sandbox',
     '--disable-gpu',
@@ -169,8 +202,9 @@ try {
     '--hide-scrollbars',
     '--no-first-run',
     '--no-default-browser-check',
+    '--window-size=390,844',
     `--user-data-dir=${browserProfile}`,
-    '--virtual-time-budget=7000',
+    '--virtual-time-budget=10000',
     '--dump-dom',
     pageUrl
   ], { stdio: ['ignore', 'pipe', 'pipe'] });
@@ -185,38 +219,50 @@ try {
     child.once('close', resolveClose);
   });
 
-  assert.equal(code, 0, `Chrome/Chromium beendete den Dungeon-Popup-E2E-Test mit Code ${code}.\n${stderr}`);
+  assert.equal(code, 0, `Chrome/Chromium beendete den Trainingslager-Popup-E2E-Test mit Code ${code}.\n${stderr}`);
   const resultMatch = stdout.match(/<pre id="dungeonModalE2EResult">([^<]+)<\/pre>/);
-  assert.ok(resultMatch, `Der Dungeon-Popup-E2E-Test hat kein Ergebnis erzeugt.\n${stderr}\nDOM-Ausgabe: ${stdout.slice(-5000)}`);
+  assert.ok(resultMatch, `Der Trainingslager-Popup-E2E-Test hat kein Ergebnis erzeugt.\n${stderr}\nDOM-Ausgabe: ${stdout.slice(-5000)}`);
   const decoded = resultMatch[1].replaceAll('&quot;', '"').replaceAll('&amp;', '&');
   const result = JSON.parse(decoded);
 
-  assert.equal(result.status, 'checked', `Dungeon-Popup-Runtime wurde nicht bereit: ${JSON.stringify(result)}`);
-  assert.equal(result.browserErrors.length, 0, `Beim Dungeon-Popup trat ein Browserfehler auf: ${JSON.stringify(result)}`);
-  assert.equal(result.runtimeError, '', `Die Runtime meldet während des Dungeon-Popup-Tests einen Fehler: ${JSON.stringify(result)}`);
-  assert.equal(result.first.modalOpen, true, 'Dungeon 1 öffnet sich nicht als Popup.');
-  assert.equal(result.first.slotCount, 4, 'Dungeon 1 zeigt nicht genau vier Charakterplätze.');
-  assert.equal(/\bEN\b|Energie/i.test(result.first.teamText), false, `Dungeon-Team zeigt weiterhin Energie: ${result.first.teamText}`);
-  assert.equal(result.first.timeText, '05:00:00', 'Dungeon 1 startet nicht mit fünf Stunden Laufzeit.');
-  assert.equal(result.first.timeWidth, '100%', 'Dungeon-Laufzeitbalken startet nicht vollständig gefüllt.');
+  assert.equal(result.status, 'checked', `Trainingslager-Popup-Runtime wurde nicht bereit: ${JSON.stringify(result)}`);
+  assert.equal(result.browserErrors.length, 0, `Beim Trainingslager-Popup trat ein Browserfehler auf: ${JSON.stringify(result)}`);
+  assert.equal(result.runtimeError, '', `Die Runtime meldet während des Trainingslager-Popup-Tests einen Fehler: ${JSON.stringify(result)}`);
+  assert.equal(result.first.hubTitle, 'Trainingslager', 'Dungeon 1 verwendet im Hub nicht den Anzeigenamen Trainingslager.');
+  assert.equal(result.first.modalTitle, 'Trainingslager', 'Das Popup verwendet nicht den Anzeigenamen Trainingslager.');
+  assert.equal(result.first.modalOpen, true, 'Trainingslager öffnet sich nicht als Popup.');
+  assert.equal(result.first.slotCount, 4, 'Trainingslager zeigt nicht genau vier Charakterplätze.');
+  assert.ok(result.first.characterHpBars > 0, 'Belegte Charakterplätze zeigen keinen Lebensbalken.');
+  assert.equal(/\bEN\b|Energie|\bHP\b/i.test(result.first.teamText), false, `Dungeon-Team zeigt weiterhin numerische Ressourcenlabels: ${result.first.teamText}`);
+  assert.equal(result.first.timeText, '05:00:00', 'Trainingslager startet nicht mit fünf Stunden Laufzeit.');
+  assert.equal(result.first.timeWidth, '100%', 'Laufzeitbalken startet nicht vollständig gefüllt.');
   assert.equal(result.first.hiddenOverviewAction, true, 'Der alte zusätzliche Dungeon-Hubknopf ist weiterhin sichtbar.');
-  assert.match(result.first.introText, /5 Stunden/);
-  assert.match(result.first.introText, /manuellen Abbruch/);
+  assert.ok(result.first.layout, 'Layoutmessung fehlt.');
+  assert.equal(result.first.layout.dialogOverflowY, 'hidden', 'Der Trainingslager-Dialog ist weiterhin scrollbar.');
+  assert.equal(result.first.layout.layoutOverflowY, 'hidden', 'Die Trainingslager-Gesamtansicht ist weiterhin scrollbar.');
+  assert.ok(result.first.layout.dialogScrollHeight <= result.first.layout.dialogClientHeight + 2, 'Der Dialog benötigt vertikales Scrollen.');
+  assert.ok(result.first.layout.layoutScrollHeight <= result.first.layout.layoutClientHeight + 2, 'Die Dungeon-Anzeige passt nicht vollständig in die verfügbare Höhe.');
+  assert.equal(result.first.layout.logOverflowY, 'auto', 'Das Protokoll besitzt keinen eigenen Scrollbereich.');
 
-  assert.equal(result.running.primaryText, 'Lauf abbrechen', 'Ein gestarteter Dungeon kann nicht manuell abgebrochen werden.');
-  assert.ok(result.running.disabledTeamActions > 0, 'Teamauswahl bleibt während eines laufenden Dungeons editierbar.');
-  assert.match(result.running.timeText, /^0[0-5]:[0-5]\d:[0-5]\d$/);
-  assert.notEqual(result.running.timeWidth, '', 'Laufzeitbalken wird während des Runs nicht aktualisiert.');
+  assert.equal(result.running.primaryText, 'Lauf abbrechen', 'Ein gestarteter Trainingslager-Run kann nicht manuell abgebrochen werden.');
+  assert.ok(result.running.disabledTeamActions > 0, 'Teamauswahl bleibt während eines laufenden Trainingslagers editierbar.');
+  assert.match(result.running.timeText, /^0[0-4]:[0-5]\d:[0-5]\d$/);
+  assert.ok(timeToSeconds(result.running.timeText) < 5 * 3600, 'Der Countdown läuft nach dem Start nicht herunter.');
+  assert.match(result.running.logText, /Trainingslager/, 'Der Start des Runs erscheint nicht im Live-Protokoll.');
+  assert.equal(/\([\d.,]+\s*HP\)/i.test(result.running.logText), false, `Das Live-Protokoll zeigt weiterhin numerische Rest-HP: ${result.running.logText}`);
 
-  assert.equal(result.closed, true, 'Schließen beendet das Dungeon-Popup nicht.');
-  assert.equal(result.reopened.modalOpen, true, 'Dungeon 1 kann nach dem Schließen nicht erneut geöffnet werden.');
-  assert.equal(result.reopened.primaryText, 'Lauf starten', 'Nach erneutem Öffnen läuft die alte Dungeon-Sitzung weiter.');
-  assert.equal(result.reopened.timeText, '05:00:00', 'Der Countdown wird beim erneuten Öffnen nicht zurückgesetzt.');
-  assert.match(result.reopened.teamText, /Platz 1:/, 'Die zuletzt gewählte Charaktergruppe wird beim erneuten Öffnen nicht wiederverwendet.');
-  assert.match(result.reopened.logText, /Noch kein Lauf gestartet/);
-  assert.match(result.reopened.enemyText, /Keine aktiven Gegner/);
+  assert.equal(result.closed.hidden, true, 'Schließen blendet das Trainingslager-Popup nicht aus.');
+  assert.match(result.closed.hubCopy, /Läuft im Hintergrund/, 'Der Dungeon-Hub zeigt den Hintergrundlauf nicht an.');
+  assert.equal(result.reopened.modalOpen, true, 'Trainingslager kann nach dem Schließen nicht erneut geöffnet werden.');
+  assert.equal(result.reopened.primaryText, 'Lauf abbrechen', 'Schließen des Popups beendet den laufenden Trainingslager-Run.');
+  assert.ok(timeToSeconds(result.reopened.timeText) < timeToSeconds(result.running.timeText), 'Der Countdown ist bei geschlossenem Popup nicht weitergelaufen.');
+  assert.match(result.reopened.teamText, /Platz 1:/, 'Die gewählte Charaktergruppe ist beim erneuten Öffnen nicht mehr vorhanden.');
+  assert.match(result.reopened.logText, /Trainingslager/, 'Das Live-Protokoll desselben Runs wurde beim Schließen verworfen.');
+  assert.doesNotMatch(result.reopened.logText, /^Noch kein Lauf gestartet\.$/, 'Das Live-Protokoll wurde beim erneuten Öffnen zurückgesetzt.');
+  assert.ok(result.reopened.layout.layoutScrollHeight <= result.reopened.layout.layoutClientHeight + 2, 'Die wiedergeöffnete Dungeon-Anzeige ist vertikal scrollbar.');
+  assert.equal(result.reopened.layout.logOverflowY, 'auto', 'Nur das Protokoll soll intern scrollbar bleiben.');
 
-  console.log('Dungeon-Popup-Browserregression: 2x2-Team, energiefreie Ansicht, 5-Stunden-Balken, Run-Sperre und Session-Reset beim Schließen sind konsistent.');
+  console.log('Trainingslager-Popup-Browserregression: 2x2-Team, reine Lebensbalken, einseitiges Layout und fortlaufender 5-Stunden-Run bei geschlossenem Popup sind konsistent.');
 } finally {
   if (child) await stopBrowser(child);
   rmSync(browserProfile, { recursive: true, force: true });

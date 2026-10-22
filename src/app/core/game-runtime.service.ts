@@ -114,8 +114,9 @@ export class GameRuntimeService {
     });
     this.dungeonPresentation.bindActions((result, inventoryChanged) => this.applyDungeonResult(runtime, result, inventoryChanged));
 
-    // Eine gespeicherte alte Dungeon-Laufzeit darf nach einem Neustart nicht offline weiterlaufen.
-    const dungeonSessionReset = this.dungeonSession.close(Date.now());
+    // Ein aus dem Save geladener Alt-Lauf bleibt weiterhin bewusst ohne Offline-Fortsetzung.
+    // Das normale Schließen des Trainingslager-Popups verwendet diesen Reset ausdrücklich nicht.
+    const dungeonSessionReset = this.dungeonSession.resetLoadedSession(Date.now());
     this.applyDungeonResult(runtime, dungeonSessionReset);
 
     const forgeUpdate = this.gameForge.update();
