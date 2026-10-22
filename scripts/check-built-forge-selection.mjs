@@ -64,13 +64,23 @@ const probeScript = `<script>
     return select.value === value;
   };
 
+  const chooseWeapon = value => {
+    const picker = document.getElementById('forgeWeaponPicker');
+    const button = picker?.querySelector('[data-weapon-form="' + value + '"]');
+    if (!(picker instanceof HTMLDetailsElement) || !(button instanceof HTMLButtonElement)) return false;
+    picker.open = true;
+    button.click();
+    return document.getElementById('weaponForm')?.value === value;
+  };
+
   const started = Date.now();
   const timer = setInterval(() => {
     const form = document.getElementById('weaponForm');
+    const picker = document.getElementById('forgeWeaponPicker');
     const back = document.getElementById('slotBack');
-    if (form instanceof HTMLSelectElement && back instanceof HTMLSelectElement && back.options.length > 1) {
+    if (form instanceof HTMLSelectElement && picker instanceof HTMLDetailsElement && back instanceof HTMLSelectElement && back.options.length > 1) {
       clearInterval(timer);
-      const formChosen = choose('weaponForm', 'bow');
+      const formChosen = chooseWeapon('bow');
       setTimeout(() => {
         const selected = {
           back: choose('slotBack', '2'),
@@ -81,9 +91,25 @@ const probeScript = `<script>
           form: formChosen
         };
         setTimeout(() => {
+          const forgePage = document.getElementById('forge-form');
+          const forgeCard = forgePage?.querySelector('.forge-build-card');
+          const slotWrap = forgePage?.querySelector('.forge-slot-wrap');
+          const pickerOptions = document.getElementById('forgeWeaponPickerOptions');
+          const pickerText = picker.textContent?.replace(/\\s+/g, ' ').trim() || '';
           const previewButton = document.getElementById('forgePreviewNextBtn');
           const previewNextDisabled = previewButton instanceof HTMLButtonElement ? previewButton.disabled : null;
-          const materialSummaryBeforeStart = document.getElementById('forgeMaterialTotalPreview')?.textContent || '';
+          const compactUi = {
+            pickerText,
+            completedProgressVisible: /10\\/10/.test(pickerText),
+            oldHeadingsVisible: /1\\. Waffenform wählen|2\\. Materialien wählen|Waffenform bestimmt Bauteile|Materialbedarf:|belegt eine Hand|belegt beide Hände/.test(forgePage?.textContent || ''),
+            materialSummaryPresent: Boolean(document.getElementById('forgeMaterialTotalPreview')),
+            constructionInfoPresent: Boolean(document.getElementById('forgeParryInfo')),
+            cardOverflowY: forgeCard ? getComputedStyle(forgeCard).overflowY : '',
+            cardFits: forgeCard ? forgeCard.scrollHeight <= forgeCard.clientHeight + 1 : false,
+            slotOverflowY: slotWrap ? getComputedStyle(slotWrap).overflowY : '',
+            pickerOverflowY: pickerOptions ? getComputedStyle(pickerOptions).overflowY : '',
+            pickerOwner: picker.dataset.forgeWeaponPickerOwner || ''
+          };
           if (previewButton instanceof HTMLButtonElement) previewButton.click();
           setTimeout(() => {
             const startButton = document.getElementById('forgeStartBtn');
@@ -99,12 +125,10 @@ const probeScript = `<script>
                 selected,
                 finalForm: document.getElementById('weaponForm')?.value || '',
                 timeText: document.getElementById('forgeTimePreview')?.textContent || '',
-                materialSummaryBeforeStart,
-                materialTotalText: document.getElementById('forgeMaterialTotalPreview')?.textContent || '',
-                constructionText: document.getElementById('forgeParryInfo')?.textContent || '',
                 damageText: document.getElementById('forgeDamagePreview')?.textContent || '',
                 speedText: document.getElementById('forgeSpeedPreview')?.textContent || '',
                 previewNextDisabled,
+                compactUi,
                 beforeStart,
                 forgeJobText: document.getElementById('forgeJobCard')?.textContent?.replace(/\\s+/g, ' ').trim() || '',
                 forgeQueueText: document.getElementById('forgeQueueCard')?.textContent?.replace(/\\s+/g, ' ').trim() || '',
@@ -158,7 +182,7 @@ const server = createServer((request, response) => {
   response.end(body);
 });
 
-const delay = ms =>new Promise(resolveDelay => setTimeout(resolveDelay, ms));
+const delay = ms => new Promise(resolveDelay => setTimeout(resolveDelay, ms));
 async function stopBrowser(child) {
   if (child.exitCode !== null) return;
   child.kill('SIGTERM');
@@ -170,41 +194,48 @@ await new Promise((resolveListen, rejectListen) => { server.once('error', reject
 const browserProfile = mkdtempSync(join(tmpdir(), 'nobrainer-forge-selection-e2e-'));
 let child = null;
 try {
-  const address=server.address(); assert.ok(address&&typeof address==='object');
-  const pageUrl=`http://127.0.0.1:${address.port}${basePath}`;
-  child=spawn(browser,['--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--hide-scrollbars','--no-first-run','--no-default-browser-check',`--user-data-dir=${browserProfile}`,'--virtual-time-budget=6500','--dump-dom',pageUrl],{stdio:['ignore','pipe','pipe']});
+  const address = server.address(); assert.ok(address && typeof address === 'object');
+  const pageUrl = `http://127.0.0.1:${address.port}${basePath}`;
+  child = spawn(browser, ['--headless=new', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage', '--hide-scrollbars', '--no-first-run', '--no-default-browser-check', `--user-data-dir=${browserProfile}`, '--window-size=390,844', '--virtual-time-budget=6500', '--dump-dom', pageUrl], { stdio: ['ignore', 'pipe', 'pipe'] });
   child.stdout.setEncoding('utf8'); child.stderr.setEncoding('utf8');
-  let stdout='',stderr=''; child.stdout.on('data',chunk=>{stdout+=chunk;}); child.stderr.on('data',chunk=>{stderr+=chunk;});
-  const code=await new Promise((resolveClose,rejectClose)=>{child.once('error',rejectClose);child.once('close',resolveClose);});
-  assert.equal(code,0,`Chrome/Chromium beendete den Schmiedeauswahl-E2E-Test mit Code ${code}.\n${stderr}`);
-  const resultMatch=stdout.match(/<pre id="forgeSelectionE2EResult">([^<]+)<\/pre>/);
-  assert.ok(resultMatch,`Der Schmiedeauswahl-E2E-Test hat kein Ergebnis erzeugt.\n${stderr}\nDOM-Ausgabe: ${stdout.slice(-5000)}`);
-  const result=JSON.parse(resultMatch[1].replaceAll('&quot;','"').replaceAll('&amp;','&'));
+  let stdout = '', stderr = ''; child.stdout.on('data', chunk => { stdout += chunk; }); child.stderr.on('data', chunk => { stderr += chunk; });
+  const code = await new Promise((resolveClose, rejectClose) => { child.once('error', rejectClose); child.once('close', resolveClose); });
+  assert.equal(code, 0, `Chrome/Chromium beendete den Schmiedeauswahl-E2E-Test mit Code ${code}.\n${stderr}`);
+  const resultMatch = stdout.match(/<pre id="forgeSelectionE2EResult">([^<]+)<\/pre>/);
+  assert.ok(resultMatch, `Der Schmiedeauswahl-E2E-Test hat kein Ergebnis erzeugt.\n${stderr}\nDOM-Ausgabe: ${stdout.slice(-5000)}`);
+  const result = JSON.parse(resultMatch[1].replaceAll('&quot;', '"').replaceAll('&amp;', '&'));
 
-  assert.equal(result.status,'tested',`Die Schmiedeauswahl wurde nicht testbereit: ${JSON.stringify(result)}`);
-  assert.equal(result.browserErrors.length,0,`Bei der Schmiedeauswahl oder beim Schmiedestart trat ein Browserfehler auf: ${JSON.stringify(result)}`);
-  assert.equal(result.runtimeError,'',`Die Runtime meldet bei der Schmiedeauswahl einen Fehler: ${JSON.stringify(result)}`);
-  assert.deepEqual(result.selected,{back:true,gripCore:true,gripWrap:true,special:true,bowstring:true,form:true});
-  assert.equal(result.finalForm,'bow');
-  assert.equal(result.previewNextDisabled,false,'Der Vorschau-Button darf nach der Materialauswahl nicht blockiert bleiben.');
-  assert.equal(result.beforeStart.startDisabled,false,'Waffe herstellen muss bei vollständiger Auswahl und ausreichendem Bestand aktiv sein.');
-  assert.equal(result.beforeStart.activePage,'forge-preview','Der Vorschau-Button muss zur Waffenvorschau navigieren.');
-  assert.match(result.beforeStart.capacityText,/^Schmiede \d+\/\d+ · Warteschlange \d+\/\d+$/,'Die Waffenvorschau muss aktive und maximale Schmiedekapazität anzeigen.');
-  assert.match(result.materialSummaryBeforeStart,/16 Materialeinheiten/,'Die Vorschau muss den gesamten Materialbedarf anzeigen.');
-  assert.match(result.materialSummaryBeforeStart,/Fichte 0/,'Die Vorschau muss den verbleibenden Fichte-Bestand nach dem Auftrag anzeigen.');
-  assert.match(result.materialSummaryBeforeStart,/Lederfetzen 0/,'Die Vorschau muss den verbleibenden Lederfetzen-Bestand nach dem Auftrag anzeigen.');
-  assert.match(result.forgeJobText,/Bogen/,'Der Klick auf Waffe herstellen muss einen aktiven Schmiedeauftrag erzeugen.');
-  assert.equal(result.afterStartDisabled,true,'Nach vollständigem Verbrauch der ausgewählten Materialien darf kein weiterer Auftrag möglich sein.');
-  assert.deepEqual(result.selectedAfterStart,{back:'',gripCore:'',gripWrap:'',special:'',bowstring:''},'Verbrauchte Materialauswahlen müssen nach dem Auftrag aus den Selects entfernt werden.');
-  assert.match(result.materialTotalText,/Materialauswahl unvollständig/,'Nach Materialverbrauch muss die Vorschau die unvollständige Auswahl anzeigen.');
-  assert.equal(result.workingPartHidden,true);
-  assert.equal(result.parryHidden,true);
-  assert.equal(result.bowstringHidden,false);
-  assert.equal(result.oldBaseMaterialPresent,false);
+  assert.equal(result.status, 'tested', `Die Schmiedeauswahl wurde nicht testbereit: ${JSON.stringify(result)}`);
+  assert.equal(result.browserErrors.length, 0, `Bei der Schmiedeauswahl oder beim Schmiedestart trat ein Browserfehler auf: ${JSON.stringify(result)}`);
+  assert.equal(result.runtimeError, '', `Die Runtime meldet bei der Schmiedeauswahl einen Fehler: ${JSON.stringify(result)}`);
+  assert.deepEqual(result.selected, { back: true, gripCore: true, gripWrap: true, special: true, bowstring: true, form: true });
+  assert.equal(result.finalForm, 'bow');
+  assert.equal(result.previewNextDisabled, false, 'Der Vorschau-Button darf nach der Materialauswahl nicht blockiert bleiben.');
+  assert.equal(result.compactUi.pickerOwner, 'angular', 'Die sichtbare Waffenwahl ist nicht Angular-eigen.');
+  assert.equal(result.compactUi.completedProgressVisible, false, 'Abgeschlossene 10/10-Fortschritte dürfen in der Waffenwahl nicht sichtbar bleiben.');
+  assert.equal(result.compactUi.oldHeadingsVisible, false, 'Entfernte Schmiede-Erklärungstexte sind noch sichtbar.');
+  assert.equal(result.compactUi.materialSummaryPresent, false, 'Der entfernte Materialbedarf-Block existiert noch.');
+  assert.equal(result.compactUi.constructionInfoPresent, false, 'Der entfernte 1H/2H-Hinweis existiert noch.');
+  assert.equal(result.compactUi.cardOverflowY, 'hidden', 'Die Waffenherstellungs-Karte darf nicht scrollen.');
+  assert.equal(result.compactUi.cardFits, true, 'Die Waffenherstellung passt auf dem mobilen Testviewport nicht vollständig in ihre feste Karte.');
+  assert.notEqual(result.compactUi.slotOverflowY, 'auto', 'Die Materialauswahl darf nicht scrollbar sein.');
+  assert.notEqual(result.compactUi.slotOverflowY, 'scroll', 'Die Materialauswahl darf nicht scrollbar sein.');
+  assert.notEqual(result.compactUi.pickerOverflowY, 'auto', 'Die Waffenwahl darf nicht scrollbar sein.');
+  assert.notEqual(result.compactUi.pickerOverflowY, 'scroll', 'Die Waffenwahl darf nicht scrollbar sein.');
+  assert.equal(result.beforeStart.startDisabled, false, 'Waffe herstellen muss bei vollständiger Auswahl und ausreichendem Bestand aktiv sein.');
+  assert.equal(result.beforeStart.activePage, 'forge-preview', 'Der Vorschau-Button muss zur Waffenvorschau navigieren.');
+  assert.match(result.beforeStart.capacityText, /^Schmiede \d+\/\d+ · Warteschlange \d+\/\d+$/, 'Die Waffenvorschau muss aktive und maximale Schmiedekapazität anzeigen.');
+  assert.match(result.forgeJobText, /Bogen/, 'Der Klick auf Waffe herstellen muss einen aktiven Schmiedeauftrag erzeugen.');
+  assert.equal(result.afterStartDisabled, true, 'Nach vollständigem Verbrauch der ausgewählten Materialien darf kein weiterer Auftrag möglich sein.');
+  assert.deepEqual(result.selectedAfterStart, { back: '', gripCore: '', gripWrap: '', special: '', bowstring: '' }, 'Verbrauchte Materialauswahlen müssen nach dem Auftrag aus den Selects entfernt werden.');
+  assert.equal(result.workingPartHidden, true);
+  assert.equal(result.parryHidden, true);
+  assert.equal(result.bowstringHidden, false);
+  assert.equal(result.oldBaseMaterialPresent, false);
 
-  console.log('Schmiede-Browserregression: ID-Auswahl, Restbestand und vollständiger Materialverbrauch sperren einen unzulässigen Folgeauftrag.');
+  console.log('Schmiede-Browserregression: kompakte nicht-scrollende Auswahl, ausgeblendete 10/10-Fortschritte, ID-Materialwahl und Auftragserstellung sind konsistent.');
 } finally {
   if (child) await stopBrowser(child);
-  rmSync(browserProfile,{recursive:true,force:true});
-  await new Promise(resolveClose=>server.close(resolveClose));
+  rmSync(browserProfile, { recursive: true, force: true });
+  await new Promise(resolveClose => server.close(resolveClose));
 }
