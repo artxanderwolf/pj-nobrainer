@@ -36,6 +36,7 @@ export const INDEX_PAGE_MARKUP = `<section class="page" id="index">
 
         <div class="card span-12">
           <h2>Waffenbaupläne</h2>
+          <p class="index-note">Die Seite „Waffe herstellen“ zeigt Waffenwahl, benötigte Bauteile und „Weiter zur Vorschau“ gemeinsam in einer kompakten, nicht scrollenden Ansicht. Auch die Waffenwahl selbst besitzt keinen Scrollbereich. Solange eine Waffenform noch für die nächste Freischaltung gefertigt werden muss, steht der Fortschritt als x/10 am Namen; sobald 10/10 erreicht und die nächste Stufe freigeschaltet ist, wird dieser Fortschritt ausgeblendet.</p>
           <p class="index-note"><strong>Einhändig</strong> ist reine Ausrüstungsmetadaten und kein Bauslot: 1 = belegt eine Hand, 0 = belegt beide Hände.</p>
           <div class="table-wrap mobile-stack"><table>
             <thead><tr><th>Waffe</th><th>Einhändig</th><th>Schneide</th><th>Kern</th><th>Griff</th><th>Wicklung</th><th>Spezial</th><th>Parierstange</th><th>Sehne</th><th>Gesamt</th></tr></thead>
@@ -83,7 +84,7 @@ export const INDEX_PAGE_MARKUP = `<section class="page" id="index">
               <tr><td>Rekrut</td><td>30</td><td>100</td><td>2 %</td><td>10 %</td><td>1,00</td><td>1,00</td><td>50</td><td>5 %</td><td>150 %</td><td>0</td><td>5/min</td><td>100 %</td><td>0 %</td><td>0 %</td></tr>
               <tr><td>Kämpfer</td><td>35</td><td>100</td><td>3 %</td><td>8 %</td><td>1,10</td><td>0,95</td><td>100</td><td>4 %</td><td>160 %</td><td>0</td><td>5/min</td><td>100 %</td><td>0 %</td><td>0 %</td></tr>
               <tr><td>Bogner</td><td>26</td><td>100</td><td>1 %</td><td>15 %</td><td>0,95</td><td>1,15</td><td>33</td><td>10 %</td><td>150 %</td><td>0</td><td>5/min</td><td>100 %</td><td>0 %</td><td>0 %</td></tr>
-              <tr><td>Gelehrter</td><td>22</td><td>100</td><td>0 %</td><td>5 %</td><td>1,15</td><td>1,10</td><td>25</td><td>5 %</td><td>175 %</td><td>0</td><td>5/min</td><td>100 %</td><td>0 %</td></tr>
+              <tr><td>Gelehrter</td><td>22</td><td>100</td><td>0 %</td><td>5 %</td><td>1,15</td><td>1,10</td><td>25</td><td>5 %</td><td>175 %</td><td>0</td><td>5/min</td><td>100 %</td><td>0 %</td><td>0 %</td></tr>
             </tbody>
           </table></div>
           <div class="formula">Zielwahrscheinlichkeit = eigene Bedrohung ÷ Summe der Bedrohung aller lebenden Ziele</div>
