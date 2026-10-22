@@ -30,6 +30,8 @@ Trainingslager-Sitzungsdaten wie aktiver Kampf, Gegner, Countdown und Live-Proto
 
 Die Werte aus v0.13.10 wurden ursprünglich 1:1 in Tabellen übertragen. Die v0.13.10-Baseline-Dateien dienen weiterhin als eingefrorene Logik-/Kompatibilitätsschicht, sind aber keine zweite Balancequelle. Balanceänderungen gehören ausschließlich in `balancing/tables/`; generierte Dateien werden nicht manuell bearbeitet.
 
+Seit v0.15.2 sind die `base_cost_nickel`-Werte aller fünf Ausbauarten in `upgrades.csv` halbiert. Die Wachstumsfaktoren bleiben unverändert; dadurch halbiert sich jede Preisstufe eines Ausbaus, während Rekrutierungskosten unverändert bleiben.
+
 Dungeon-spezifische Laufzeit-, Anzeigenamen- und Kostenwerte gehören ebenfalls in `balancing/tables/dungeons.csv`. Dungeon-ID 1 besitzt `display_name = Trainingslager`, `duration_ms = 18000000` für fünf Stunden und `energy_cost = 0`, weil Energie im Dungeon vorerst weder verbraucht noch als Start-/Abbruchbedingung verwendet wird.
 
 Die vollständige Entfernung der verbleibenden Legacy-Runtime ist ein eigener Angular-Cutover und unabhängig von der ID-Architektur. Sie soll nicht mit Balanceänderungen vermischt werden.
