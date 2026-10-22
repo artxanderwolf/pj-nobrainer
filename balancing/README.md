@@ -32,6 +32,8 @@ Die Werte aus v0.13.10 wurden ursprünglich 1:1 in Tabellen übertragen. Die v0.
 
 Seit v0.15.2 sind die `base_cost_nickel`-Werte aller fünf Ausbauarten in `upgrades.csv` halbiert. Die Wachstumsfaktoren bleiben unverändert; dadurch halbiert sich jede Preisstufe eines Ausbaus, während Rekrutierungskosten unverändert bleiben.
 
+Seit v0.15.3 enthält `character_progression.csv` die stat-spezifischen Level-Faktoren. Der bisherige Standardfaktor `1,10` bleibt für HP, E, R, AW, K-C, HP-R, E-R, LR und DS bestehen. SF, P/PRÄ und K-S skalieren mit `1,01` pro Level, ERF mit `1,00` und damit gar nicht mehr durch Level. Bedrohung bleibt wie zuvor vollständig levelunabhängig; die XP-Anforderung skaliert unverändert mit `1,40`.
+
 Dungeon-spezifische Laufzeit-, Anzeigenamen- und Kostenwerte gehören ebenfalls in `balancing/tables/dungeons.csv`. Dungeon-ID 1 besitzt `display_name = Trainingslager`, `duration_ms = 18000000` für fünf Stunden und `energy_cost = 0`, weil Energie im Dungeon vorerst weder verbraucht noch als Start-/Abbruchbedingung verwendet wird.
 
 Die vollständige Entfernung der verbleibenden Legacy-Runtime ist ein eigener Angular-Cutover und unabhängig von der ID-Architektur. Sie soll nicht mit Balanceänderungen vermischt werden.
