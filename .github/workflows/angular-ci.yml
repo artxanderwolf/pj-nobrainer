@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - migration/angular
-      - feature/trainingslager-background-v0.15.1
   pull_request:
     branches:
       - main
