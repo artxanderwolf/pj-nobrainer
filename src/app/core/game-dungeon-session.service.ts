@@ -231,6 +231,7 @@ export class GameDungeonSessionService {
         .replace(/Dungeon-1/g, displayName)
         .replace(/Dungeon 1/g, displayName)
         .replace(/\s*·\s*[\d.,]+\s*EN je Charakter/g, '')
+        .replace(/\s*\([\d.,]+\s*HP\)/g, '')
         .replace(/\s+\./g, '.')
     }));
     const alertMessage = result.alertMessage
