@@ -89,7 +89,6 @@ export class GameDungeonPresentationService {
     this.renderEnemies();
     this.renderLoot();
     this.renderPrimaryAction();
-    if (this.dungeonSession.isOpen()) this.renderLiveLog();
   }
 
   addEvent(text: string, className = ''): void {
@@ -97,7 +96,24 @@ export class GameDungeonPresentationService {
     if (this.liveLogEntries.length > this.maxVisibleLogEntries) {
       this.liveLogEntries.length = this.maxVisibleLogEntries;
     }
-    if (this.dungeonSession.isOpen()) this.renderLiveLog();
+    if (!this.dungeonSession.isOpen()) return;
+
+    const log = document.getElementById('dungeonCombatLog');
+    if (!log) return;
+    const previousScrollTop = log.scrollTop;
+    const previousScrollHeight = log.scrollHeight;
+    if (log.dataset['placeholder'] === 'true') {
+      log.innerHTML = '';
+      delete log.dataset['placeholder'];
+    }
+    const row = document.createElement('div');
+    row.className = className;
+    row.textContent = text;
+    log.prepend(row);
+    while (log.children.length > this.maxVisibleLogEntries) log.lastElementChild?.remove();
+    if (previousScrollTop > 0) {
+      log.scrollTop = previousScrollTop + Math.max(0, log.scrollHeight - previousScrollHeight);
+    }
   }
 
   private installModalMarkup(): void {
@@ -118,7 +134,7 @@ export class GameDungeonPresentationService {
       <div class="dungeon-modal-dialog">
         <div class="dungeon-modal-header">
           <div>
-            <div class="ui-version">DUNGEON 1</div>
+            <div class="ui-version">DUNGEON</div>
             <h2 id="dungeonModalTitle">${this.getDisplayName()}</h2>
           </div>
           <button id="dungeonModalCloseBtn" class="dungeon-modal-close" type="button" aria-label="Trainingslager schließen">×</button>
