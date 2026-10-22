@@ -63,6 +63,10 @@ export function validateGameData(tables) {
   if (asNumber(progression[0].xp_base, 'character_progression.xp_base') <= 0) fail('xp_base muss größer 0 sein.');
   if (asNumber(progression[0].xp_growth, 'character_progression.xp_growth') <= 0) fail('xp_growth muss größer 0 sein.');
   if (asNumber(progression[0].stat_growth, 'character_progression.stat_growth') <= 0) fail('stat_growth muss größer 0 sein.');
+  if (asNumber(progression[0].strength_factor_growth, 'character_progression.strength_factor_growth') <= 0) fail('strength_factor_growth muss größer 0 sein.');
+  if (asNumber(progression[0].precision_growth, 'character_progression.precision_growth') <= 0) fail('precision_growth muss größer 0 sein.');
+  if (asNumber(progression[0].crit_damage_growth, 'character_progression.crit_damage_growth') <= 0) fail('crit_damage_growth muss größer 0 sein.');
+  if (asNumber(progression[0].experience_factor_growth, 'character_progression.experience_factor_growth') <= 0) fail('experience_factor_growth muss größer 0 sein.');
 
   const materials = tables.materials.rows;
   assertUnique(materials, 'material_id', 'materials');
