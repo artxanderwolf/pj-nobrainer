@@ -83,7 +83,7 @@ export const INDEX_PAGE_MARKUP = `<section class="page" id="index">
               <tr><td>Rekrut</td><td>30</td><td>100</td><td>2 %</td><td>10 %</td><td>1,00</td><td>1,00</td><td>50</td><td>5 %</td><td>150 %</td><td>0</td><td>5/min</td><td>100 %</td><td>0 %</td><td>0 %</td></tr>
               <tr><td>Kämpfer</td><td>35</td><td>100</td><td>3 %</td><td>8 %</td><td>1,10</td><td>0,95</td><td>100</td><td>4 %</td><td>160 %</td><td>0</td><td>5/min</td><td>100 %</td><td>0 %</td><td>0 %</td></tr>
               <tr><td>Bogner</td><td>26</td><td>100</td><td>1 %</td><td>15 %</td><td>0,95</td><td>1,15</td><td>33</td><td>10 %</td><td>150 %</td><td>0</td><td>5/min</td><td>100 %</td><td>0 %</td><td>0 %</td></tr>
-              <tr><td>Gelehrter</td><td>22</td><td>100</td><td>0 %</td><td>5 %</td><td>1,15</td><td>1,10</td><td>25</td><td>5 %</td><td>175 %</td><td>0</td><td>5/min</td><td>100 %</td><td>0 %</td><td>0 %</td></tr>
+              <tr><td>Gelehrter</td><td>22</td><td>100</td><td>0 %</td><td>5 %</td><td>1,15</td><td>1,10</td><td>25</td><td>5 %</td><td>175 %</td><td>0</td><td>5/min</td><td>100 %</td><td>0 %</td></tr>
             </tbody>
           </table></div>
           <div class="formula">Zielwahrscheinlichkeit = eigene Bedrohung ÷ Summe der Bedrohung aller lebenden Ziele</div>
@@ -93,9 +93,11 @@ export const INDEX_PAGE_MARKUP = `<section class="page" id="index">
           <h2>Level & Erfahrung</h2>
           <div class="formula">Start: Level 1 · 0 XP · Maximallevel 20</div>
           <div class="formula">XP für Level L → L+1 = gerundet(100 × 1,4^(L−1))</div>
-          <div class="formula">Skalierbarer Nicht-null-Klassenwert auf Level L = Level-1-Grundwert × 1,1^(L−1)</div>
+          <div class="formula">HP, E, R, AW, K-C, HP-R, E-R, LR und DS: Level-1-Grundwert × 1,1^(L−1)</div>
+          <div class="formula">SF, P (PRÄ) und K-S: Level-1-Grundwert × 1,01^(L−1)</div>
+          <div class="formula">ERF und B (BED) werden durch Levelaufstiege nicht erhöht</div>
           <div class="formula">Finaler Stat = skalierter Klassen-Grundwert + Ausrüstungsboni; R wird anschließend auf maximal 80 % begrenzt</div>
-          <p class="index-note">XP-Anforderung und Statwachstum sind bewusst getrennt: Die benötigten XP steigen pro Level mit Faktor 1,4, die nicht-null Klassen-Grundwerte weiterhin nur mit Faktor 1,1. Null-Grundwerte bleiben auch beim Levelaufstieg 0. Bedrohung (B) ist die bewusste Ausnahme und bleibt auf ihrem Klassen-Grundwert konstant. Ausrüstungsboni selbst werden nicht mit dem Level multipliziert.</p>
+          <p class="index-note">Die XP-Anforderung bleibt unabhängig von der Stat-Skalierung bei Faktor 1,4. Der bisherige Level-Faktor 1,1 bleibt für die nicht ausdrücklich reduzierten, von null verschiedenen Klassen-Grundwerte erhalten. SF, Präzision und Krit-Schaden wachsen nur noch mit Faktor 1,01. ERF bleibt auf dem Klassen-Grundwert; Bedrohung war bereits zuvor levelunabhängig. Null-Grundwerte bleiben 0 und Ausrüstungsboni werden nicht mit dem Level multipliziert.</p>
           <p class="index-note">Dungeon-XP: Jeder Gegner in Dungeon 1 besitzt aktuell 10 Basis-XP. Die Summe der besiegten Gegner-XP wird möglichst gleichmäßig auf alle Teilnehmer der gewonnenen Welle verteilt und anschließend mit dem jeweiligen ERF-Faktor des Charakters multipliziert. 10 XP bleiben vorerst der Test-/Vergleichswert.</p>
         </div>
 
