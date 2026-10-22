@@ -1,11 +1,11 @@
-import { clampArmorPercent } from './armor-core';
+import { clampArmorPercent } from './armor-core.ts';
 import {
   CHARACTER_CRIT_DAMAGE_GROWTH,
   CHARACTER_EXPERIENCE_FACTOR_GROWTH,
   CHARACTER_PRECISION_GROWTH,
   CHARACTER_STAT_GROWTH,
   CHARACTER_STRENGTH_FACTOR_GROWTH
-} from './character-progression-core';
+} from './character-progression-core.ts';
 import { GENERATED_CHARACTER_CLASSES } from './data/generated/game-data.generated.ts';
 import {
   createStatModifiers,
