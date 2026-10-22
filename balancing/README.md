@@ -22,8 +22,12 @@ Alte Saves mit Namensreferenzen bleiben ladbar. Beim Laden werden bekannte Mater
 
 Kanonische Materialbestände verwenden `String(materialId)` als JSON-Schlüssel und tragen die `materialId` zusätzlich im Eintrag. Waffenslots und Schmiede-/Marktreferenzen besitzen `materialId` als technische Referenz. Sichtbare Namen dürfen als Anzeige-Snapshot vorkommen, sind aber nicht maßgeblich für Identität, Berechnung oder Zuordnung.
 
+Dungeon-1-Sitzungsdaten wie aktiver Kampf, Gegner, Countdown und Live-Protokoll sind bewusst transient und werden nicht als neue Save-Struktur eingeführt. Die persistierte `dungeonTeamSlots`-Auswahl bleibt dagegen bestehen und kann beim nächsten Öffnen wiederverwendet werden.
+
 ## Balancequelle
 
 Die Werte aus v0.13.10 wurden ursprünglich 1:1 in Tabellen übertragen. Die v0.13.10-Baseline-Dateien dienen weiterhin als eingefrorene Logik-/Kompatibilitätsschicht, sind aber keine zweite Balancequelle. Balanceänderungen gehören ausschließlich in `balancing/tables/`; generierte Dateien werden nicht manuell bearbeitet.
+
+Dungeon-spezifische Laufzeit- und Kostenwerte gehören ebenfalls in `balancing/tables/dungeons.csv`. Seit v0.15.0 besitzt Dungeon 1 dort `duration_ms = 18000000` für fünf Stunden und `energy_cost = 0`, weil Energie im Dungeon vorerst weder verbraucht noch als Start-/Abbruchbedingung verwendet wird.
 
 Die vollständige Entfernung der verbleibenden Legacy-Runtime ist ein eigener Angular-Cutover und unabhängig von der ID-Architektur. Sie soll nicht mit Balanceänderungen vermischt werden.
