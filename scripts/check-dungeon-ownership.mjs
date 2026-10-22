@@ -43,7 +43,7 @@ assert.doesNotMatch(sessionService, /if \(!this\.modalOpen\) return \{ events: \
 assert.match(sessionService, /if \(now - this\.runStartedAt >= this\.getDurationMs\(\)\)/, '5-Stunden-Ende wird nicht im Session-Service geprüft.');
 assert.match(sessionService, /finishSession\(state, 'manual', at\)/, 'Manueller Abbruch endet nicht sofort über den Session-Service.');
 assert.match(sessionService, /isRunActive\(\): boolean \{\n    return this\.hasActiveRun\(this\.getState\(\)\);/, 'Run-Aktivität hängt weiterhin fälschlich vom Popup-Zustand ab.');
-assert.match(sessionService, /\.replace\(\/\\s\*\\\([\\d\.,]\+\\s\*HP\\\)\/g, ''\)/, 'Numerische Rest-HP werden nicht aus dem Trainingslager-Protokoll ausgeblendet.');
+assert.ok(sessionService.includes(String.raw`.replace(/\s*\([\d.,]+\s*HP\)/g, '')`), 'Numerische Rest-HP werden nicht aus dem Trainingslager-Protokoll ausgeblendet.');
 assert.doesNotMatch(sessionService, /state\.dungeonTeamSlots\s*=\s*\[null/, 'Session-Ende darf die gespeicherte Teamauswahl nicht leeren.');
 
 assert.match(presentationService, /installModalMarkup\(\)/, 'Dungeon 1 wird nicht in ein Angular-eigenes Popup überführt.');
