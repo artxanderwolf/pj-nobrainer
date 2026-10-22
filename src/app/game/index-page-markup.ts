@@ -144,6 +144,7 @@ export const INDEX_PAGE_MARKUP = `<section class="page" id="index">
 
         <div class="card span-12">
           <h2>Wirtschaft, Herstellung & Verkauf</h2>
+          <p class="index-note">Ausbaupreise für Unterkunft, Schmiede und Markt verwenden halbierte Basispreise; die jeweiligen Wachstumsfaktoren bleiben unverändert. Rekrutierungskosten sind davon nicht betroffen.</p>
           <div class="formula">Materialwert = 10 Nickel × Seltenheit</div>
           <div class="formula">Positiver SPE auf einem Material → Materialwert × 1,10</div>
           <div class="formula">Material-Verkaufszeit = auf nächste 5 s aufrunden(15 s + 1,5 s × Materialwert)</div>
