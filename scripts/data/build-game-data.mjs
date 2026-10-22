@@ -84,6 +84,7 @@ function buildGameData(tables) {
     dungeon: {
       id: dungeonId,
       energyCost: n(dungeon.energy_cost),
+      durationMs: n(dungeon.duration_ms),
       enemyBase: {
         damage: n(dungeon.enemy_base_damage), speed: n(dungeon.enemy_base_speed),
         hitChance: n(dungeon.enemy_base_hit_chance), penetration: n(dungeon.enemy_base_penetration)
@@ -196,7 +197,7 @@ function buildEconomy(tables) {
     weaponForgeBaseSeconds: n(values.weaponForgeBaseSeconds),
     weaponForgeSecondsPerNickel: n(values.weaponForgeSecondsPerNickel),
     weaponSaleBaseSeconds: n(values.weaponSaleBaseSeconds),
-    weaponSaleSecondsPerNickel: n(values.weaponSaleSecondsPerNickel),
+    weaponSaleSecondsPerNickel: n(values.weapon_sale_seconds_per_nickel),
     timeRoundStepSeconds: n(values.timeRoundStepSeconds)
   };
 }
