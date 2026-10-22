@@ -1,11 +1,24 @@
 import {
+  CHARACTER_CRIT_DAMAGE_GROWTH,
+  CHARACTER_EXPERIENCE_FACTOR_GROWTH,
   CHARACTER_LEVEL_MAX,
+  CHARACTER_PRECISION_GROWTH,
   CHARACTER_STAT_GROWTH,
+  CHARACTER_STRENGTH_FACTOR_GROWTH,
   CHARACTER_XP_BASE,
   CHARACTER_XP_GROWTH
 } from './data/generated/character-progression.generated.ts';
 
-export { CHARACTER_LEVEL_MAX, CHARACTER_STAT_GROWTH, CHARACTER_XP_BASE, CHARACTER_XP_GROWTH };
+export {
+  CHARACTER_CRIT_DAMAGE_GROWTH,
+  CHARACTER_EXPERIENCE_FACTOR_GROWTH,
+  CHARACTER_LEVEL_MAX,
+  CHARACTER_PRECISION_GROWTH,
+  CHARACTER_STAT_GROWTH,
+  CHARACTER_STRENGTH_FACTOR_GROWTH,
+  CHARACTER_XP_BASE,
+  CHARACTER_XP_GROWTH
+};
 
 export interface CharacterProgressionLike {
   level?: number | null;
@@ -19,6 +32,14 @@ export interface CharacterProgressionPresentation {
   maxLevel: number;
   atMaxLevel: boolean;
   progress: number;
+}
+
+export interface CharacterLevelStatMultipliers {
+  default: number;
+  strengthFactor: number;
+  precision: number;
+  critDamage: number;
+  experienceFactor: number;
 }
 
 export interface ExperienceGrantResult {
@@ -40,6 +61,17 @@ export function normalizeCharacterXp(xp: number | null | undefined): number {
 
 export function characterStatLevelMultiplier(level: number | null | undefined): number {
   return Math.pow(CHARACTER_STAT_GROWTH, normalizeCharacterLevel(level) - 1);
+}
+
+export function characterLevelStatMultipliers(level: number | null | undefined): CharacterLevelStatMultipliers {
+  const exponent = normalizeCharacterLevel(level) - 1;
+  return {
+    default: Math.pow(CHARACTER_STAT_GROWTH, exponent),
+    strengthFactor: Math.pow(CHARACTER_STRENGTH_FACTOR_GROWTH, exponent),
+    precision: Math.pow(CHARACTER_PRECISION_GROWTH, exponent),
+    critDamage: Math.pow(CHARACTER_CRIT_DAMAGE_GROWTH, exponent),
+    experienceFactor: Math.pow(CHARACTER_EXPERIENCE_FACTOR_GROWTH, exponent)
+  };
 }
 
 export function experienceRequiredForNextLevel(level: number): number {
@@ -100,9 +132,14 @@ export const CHARACTER_PROGRESSION_CORE_BRIDGE = {
   CHARACTER_XP_BASE,
   CHARACTER_XP_GROWTH,
   CHARACTER_STAT_GROWTH,
+  CHARACTER_STRENGTH_FACTOR_GROWTH,
+  CHARACTER_PRECISION_GROWTH,
+  CHARACTER_CRIT_DAMAGE_GROWTH,
+  CHARACTER_EXPERIENCE_FACTOR_GROWTH,
   normalizeCharacterLevel,
   normalizeCharacterXp,
   characterStatLevelMultiplier,
+  characterLevelStatMultipliers,
   experienceRequiredForNextLevel,
   getCharacterProgression,
   grantCharacterExperience
