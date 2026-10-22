@@ -30,8 +30,9 @@ function scaled(value: number, multiplier: number): number {
 }
 
 function growthExponentFromDefaultMultiplier(baseStatMultiplier: number): number {
-  if (CHARACTER_STAT_GROWTH === 1) return 0;
-  const exponent = Math.log(baseStatMultiplier) / Math.log(CHARACTER_STAT_GROWTH);
+  const standardGrowth = Number(CHARACTER_STAT_GROWTH);
+  if (standardGrowth === 1) return 0;
+  const exponent = Math.log(baseStatMultiplier) / Math.log(standardGrowth);
   return Number.isFinite(exponent) ? exponent : 0;
 }
 
