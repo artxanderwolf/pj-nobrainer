@@ -7,7 +7,7 @@ import type {
   WeaponSlot as BaselineWeaponSlot,
   WeaponStats
 } from './game-core-v01310-baseline.ts';
-import { calculateCharacterStats } from './character-level-stats-core';
+import { calculateCharacterStats } from './character-level-stats-core.ts';
 import {
   DATA_META,
   GENERATED_CHARACTER_CLASSES,
