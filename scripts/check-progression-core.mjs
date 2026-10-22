@@ -64,11 +64,11 @@ try {
     const s = state();
     const offer = getUpgradeOffer(s, 'inn');
     assert.equal(offer.ok, true);
-    assert.equal(offer.costNickel, 5000);
+    assert.equal(offer.costNickel, 2500);
     const result = buyUpgrade(s, 'inn');
     assert.equal(result.ok, true);
     assert.equal(s.upgrades.innCapacity, 3);
-    assert.equal(s.gold, 95000);
+    assert.equal(s.gold, 97500);
   }
 
   {
@@ -83,15 +83,15 @@ try {
 
   {
     const s = state();
-    s.gold = 9999;
+    s.gold = 4999;
     const result = buyUpgrade(s, 'marketSlots');
     assert.equal(result.ok, false);
     assert.equal(result.reason, 'insufficient-funds');
     assert.equal(s.upgrades.marketSlots, 1);
-    assert.equal(s.gold, 9999);
+    assert.equal(s.gold, 4999);
   }
 
-  console.log('Progression-Core: Rekrutierung, Kapazität, Geldprüfung und verteuerte Ausbauten sind konsistent.');
+  console.log('Progression-Core: Rekrutierung, Kapazität, Geldprüfung und halbierte Ausbaupreise sind konsistent.');
 } finally {
   fs.rmSync(tempDir, { recursive: true, force: true });
 }
