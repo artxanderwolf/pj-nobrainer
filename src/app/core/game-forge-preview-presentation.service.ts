@@ -2,13 +2,16 @@ import { Injectable } from '@angular/core';
 import { formatCurrencyNickel } from '../game/economy-core';
 import {
   MATERIAL_REFERENCES_BY_ID,
-  getMaterialReferenceById,
   getWeaponForm,
   reinforcementEffectTextById,
   type MaterialCategory,
   type WeaponCraftingSlotId,
   type WeaponSlot
 } from '../game/game-core';
+import {
+  WEAPON_CRAFT_UNLOCK_TARGET,
+  type WeaponUnlockState
+} from '../game/forge-core';
 import { getForgePreviewPresentation } from '../game/forge-presentation-core';
 import { getMaterialQuantityById, type MaterialStorageInventory } from '../game/material-storage-core';
 import { GameForgeService } from './game-forge.service';
@@ -92,8 +95,6 @@ export class GameForgePreviewPresentationService {
     this.setText('forgePenPreview', presentation.penetrationText);
     this.setText('forgeRarityPreview', presentation.rarityText);
     this.setText('forgeReinforcementPreview', presentation.reinforcementText);
-    this.renderMaterialRequirementSummary(requirements, complete);
-    this.renderConstructionInfo(weaponForm);
     // Die Vorschau ist nicht destruktiv und darf immer geöffnet werden.
     // Ob tatsächlich hergestellt werden kann, bleibt ausschließlich am Start-Button validiert.
     if (previewNextButton) previewNextButton.disabled = false;
@@ -121,26 +122,11 @@ export class GameForgePreviewPresentationService {
     select.innerHTML = '';
 
     for (const weaponForm of visibleWeaponForms) {
-      const form = getWeaponForm(weaponForm);
       const unlock = this.gameForge.unlockState(weaponForm);
       const option = document.createElement('option');
       option.value = weaponForm;
       option.disabled = !unlock.unlocked;
-
-      if (!unlock.unlocked) {
-        const requirementText = unlock.prerequisites
-          .map(requirement => {
-            const current = Math.min(requirement.current, requirement.target);
-            return `${getWeaponForm(requirement.weaponForm).name} ${current}/${requirement.target}`;
-          })
-          .join(' · ');
-        option.textContent = `${form.name} · gesperrt (${requirementText})`;
-      } else if (this.gameForge.isProgressionSource(weaponForm)) {
-        const current = Math.min(this.gameForge.craftCount(weaponForm), 10);
-        option.textContent = `${form.name} · ${current}/10`;
-      } else {
-        option.textContent = form.name;
-      }
+      option.textContent = this.weaponFormOptionText(weaponForm, unlock);
       select.appendChild(option);
     }
 
@@ -149,7 +135,86 @@ export class GameForgePreviewPresentationService {
     select.value = previousStillUnlocked ? previous : fallback;
     select.dataset['weaponUnlockOwner'] = 'angular';
     select.dataset['visibleWeaponForms'] = visibleWeaponForms.join(',');
+    this.renderWeaponFormPicker(select, visibleWeaponForms);
     return select.value || fallback;
+  }
+
+  private weaponFormOptionText(weaponForm: string, unlock: WeaponUnlockState): string {
+    const form = getWeaponForm(weaponForm);
+    if (!unlock.unlocked) {
+      const requirementText = unlock.prerequisites
+        .map(requirement => {
+          const current = Math.min(requirement.current, requirement.target);
+          return `${getWeaponForm(requirement.weaponForm).name} ${current}/${requirement.target}`;
+        })
+        .join(' · ');
+      return `${form.name} · gesperrt (${requirementText})`;
+    }
+
+    if (this.gameForge.isProgressionSource(weaponForm)) {
+      const current = Math.min(this.gameForge.craftCount(weaponForm), WEAPON_CRAFT_UNLOCK_TARGET);
+      if (current < WEAPON_CRAFT_UNLOCK_TARGET) return `${form.name} · ${current}/${WEAPON_CRAFT_UNLOCK_TARGET}`;
+    }
+
+    return form.name;
+  }
+
+  private renderWeaponFormPicker(select: HTMLSelectElement, visibleWeaponForms: readonly string[]): void {
+    let picker = document.getElementById('forgeWeaponPicker') as HTMLDetailsElement | null;
+    if (!picker) {
+      picker = document.createElement('details');
+      picker.id = 'forgeWeaponPicker';
+      picker.className = 'forge-weapon-picker';
+
+      const summary = document.createElement('summary');
+      summary.className = 'btn full-control forge-weapon-picker-summary';
+      summary.setAttribute('aria-label', 'Waffenform wählen');
+
+      const label = document.createElement('span');
+      label.id = 'forgeWeaponPickerLabel';
+      label.className = 'forge-weapon-picker-label';
+      summary.appendChild(label);
+
+      const marker = document.createElement('span');
+      marker.className = 'forge-weapon-picker-marker';
+      marker.setAttribute('aria-hidden', 'true');
+      marker.textContent = '⌄';
+      summary.appendChild(marker);
+
+      const options = document.createElement('div');
+      options.id = 'forgeWeaponPickerOptions';
+      options.className = 'forge-weapon-picker-options';
+      picker.append(summary, options);
+      select.insertAdjacentElement('afterend', picker);
+    }
+
+    const label = document.getElementById('forgeWeaponPickerLabel');
+    const options = document.getElementById('forgeWeaponPickerOptions');
+    if (!label || !options) return;
+
+    const selected = select.value || visibleWeaponForms[0] || 'dagger';
+    label.textContent = this.weaponFormOptionText(selected, this.gameForge.unlockState(selected));
+    options.replaceChildren();
+
+    for (const weaponForm of visibleWeaponForms) {
+      const unlock = this.gameForge.unlockState(weaponForm);
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'forge-weapon-option';
+      button.dataset['weaponForm'] = weaponForm;
+      button.disabled = !unlock.unlocked;
+      button.setAttribute('aria-pressed', String(weaponForm === selected));
+      button.textContent = this.weaponFormOptionText(weaponForm, unlock);
+      button.addEventListener('click', () => {
+        if (button.disabled) return;
+        select.value = weaponForm;
+        picker!.open = false;
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+      options.appendChild(button);
+    }
+
+    picker.dataset['forgeWeaponPickerOwner'] = 'angular';
   }
 
   private populateForgeSelects(weaponForm: string): void {
@@ -245,54 +310,6 @@ export class GameForgePreviewPresentationService {
     const value = (document.getElementById(selectId) as HTMLSelectElement | null)?.value || '';
     const numeric = Number(value);
     return Number.isInteger(numeric) && numeric > 0 ? numeric : null;
-  }
-
-  private renderMaterialRequirementSummary(requirements: Readonly<Record<number, number>>, complete: boolean): void {
-    const state = this.state();
-    const entries = Object.entries(requirements)
-      .map(([rawMaterialId, rawRequired]) => {
-        const materialId = Number(rawMaterialId);
-        const required = Number(rawRequired) || 0;
-        const reference = getMaterialReferenceById(materialId);
-        if (!reference || required <= 0) return null;
-        return {
-          materialId,
-          name: reference.displayName,
-          required,
-          stock: getMaterialQuantityById(state.inventory, materialId)
-        };
-      })
-      .filter((entry): entry is { materialId: number; name: string; required: number; stock: number } => entry !== null);
-
-    const total = entries.reduce((sum, entry) => sum + entry.required, 0);
-    if (!complete) {
-      this.setText(
-        'forgeMaterialTotalPreview',
-        total > 0 ? `${total} Materialeinheiten ausgewählt · Auswahl unvollständig` : 'Materialauswahl unvollständig'
-      );
-      return;
-    }
-
-    const remaining = entries.map(entry => {
-      const after = entry.stock - entry.required;
-      return after >= 0 ? `${entry.name} ${after}` : `${entry.name} fehlt ${Math.abs(after)}`;
-    });
-    this.setText(
-      'forgeMaterialTotalPreview',
-      `${total} Materialeinheiten${remaining.length ? ` · Rest nach Auftrag: ${remaining.join(' · ')}` : ''}`
-    );
-  }
-
-  private renderConstructionInfo(weaponForm: string): void {
-    const form = getWeaponForm(weaponForm);
-    const parry = form.parts.find(part => part.id === 'parry');
-    const bowstring = form.parts.find(part => part.id === 'bowstring');
-    const details = [
-      form.oneHanded ? '1H · belegt eine Hand' : '2H · belegt beide Hände',
-      parry ? `${parry.quantity}× Parierstange · Wirkung R + AW` : '',
-      bowstring ? `${bowstring.quantity}× Sehne · Leder · Wirkung SF + DS` : ''
-    ].filter(Boolean);
-    this.setText('forgeParryInfo', details.join(' · '));
   }
 
   private setText(id: string, value: string): void {
