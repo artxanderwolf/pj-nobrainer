@@ -15,7 +15,7 @@ const requiredPageAnchors = {
   'storage-materials': ['inventoryRows', 'inventoryEmpty'],
   'storage-weapons': ['weaponInventory', 'weaponInventoryEmpty'],
   forge: ['forgeUpgradeCardInline'],
-  'forge-form': ['weaponForm', 'slotWorkingPart', 'slotBack', 'slotGripCore', 'slotGripWrap', 'slotSpecial', 'slotParry', 'slotBowstring', 'forgeParryInfo', 'forgeMaterialTotalPreview', 'forgePreviewNextBtn'],
+  'forge-form': ['weaponForm', 'slotWorkingPart', 'slotBack', 'slotGripCore', 'slotGripWrap', 'slotSpecial', 'slotParry', 'slotBowstring', 'forgePreviewNextBtn'],
   'forge-preview': ['forgeWeaponName', 'forgeTimePreview', 'forgeValuePreview', 'forgeDamagePreview', 'forgeSpeedPreview', 'forgeHitPreview', 'forgeRawPreview', 'forgePenPreview', 'forgeRarityPreview', 'forgeReinforcementPreview', 'forgeStartBtn'],
   'forge-jobs': ['forgeJobCard', 'forgeQueueCard'],
   'forge-upgrade': ['forgeUpgradeCard'],
@@ -59,9 +59,10 @@ for (const option of ['Dolch', '1H Schwert', '1H Axt', '2H Schwert', '2H Axt', '
 for (const obsolete of ['slotBaseMaterial', 'slotBlade', 'slotGripShape', 'slotGripMaterial', 'slotReinforcementMaterial']) {
   assert.doesNotMatch(forgeForm, new RegExp(`id="${obsolete}"`), `Alter Schmiede-Renderanker ${obsolete} darf nicht mehr verwendet werden.`);
 }
-assert.match(forgeForm, /<h2>1\. Waffenform wählen<\/h2>/);
-assert.match(forgeForm, /<h2>2\. Materialien wählen<\/h2>/);
-assert.match(forgeForm, /Waffenform bestimmt Bauteile und 1H\/2H-Nutzung\./);
+assert.match(forgeForm, /id="weaponForm" class="forge-weapon-native"[^>]*aria-hidden="true"[^>]*tabindex="-1"/, 'Der technische Waffenform-Anker muss unsichtbar erhalten bleiben.');
+assert.doesNotMatch(forgeForm, /1\. Waffenform wählen|2\. Materialien wählen|Waffenform bestimmt Bauteile und 1H\/2H-Nutzung|Materialbedarf:|forgeParryInfo|forgeMaterialTotalPreview/, 'Die entfernten Schmiede-Erklärungselemente sind noch sichtbar im Forge-Form-Markup vorhanden.');
+assert.match(forgeForm, /class="forge-slot-wrap"/, 'Die kompakte Materialtabelle fehlt.');
+assert.doesNotMatch(forgeForm, /forge-slot-wrap scroll-region/, 'Die Materialauswahl darf keinen eigenen Scrollbereich mehr besitzen.');
 assert.match(forgeForm, /id="forgeParryRow"/);
 assert.match(forgeForm, /id="forgeBowstringRow"/);
 assert.match(forgeForm, /id="forgePreviewNextBtn"[^>]*disabled/);
@@ -99,4 +100,4 @@ assert.match(appComponent, /composePageMarkup\(APP_SHELL_PAGE_IDS\)/, 'Der App-C
 assert.match(appComponent, /composeAppShell\(pageMarkup\)/, 'Das Angular-eigene Seitenmarkup wird nicht in die Angular-Shell eingesetzt.');
 assert.doesNotMatch(appComponent, /DOMParser/, 'Angular-eigenes Seitenmarkup darf nicht aus Legacy-HTML geparst werden.');
 
-console.log('Seiten-Markup: Dungeonstatus sowie Schmiede- und Markt-Ausbau sind direkt in den Bereichskarten verfügbar.');
+console.log('Seiten-Markup: kompakte nicht-scrollende Waffenherstellung sowie Dungeonstatus und direkte Ausbaukarten sind Angular-eigen.');
