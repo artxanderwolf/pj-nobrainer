@@ -33,8 +33,14 @@ assert.match(service, /this\.populateWeaponFormSelect\(\)/, 'Die Schmiede bereit
 assert.match(service, /this\.gameForge\.visibleWeaponForms\(\)/, 'Die Waffenform-Auswahl bezieht die Sichtbarkeit nicht aus der Angular-Freischaltlogik.');
 assert.match(service, /this\.gameForge\.unlockState\(weaponForm\)/, 'Die Waffenform-Auswahl bezieht den Sperrstatus nicht aus der Angular-Freischaltlogik.');
 assert.match(service, /option\.disabled = !unlock\.unlocked/, 'Sichtbare, noch gesperrte Waffenformen werden nicht deaktiviert dargestellt.');
+assert.match(service, /current < WEAPON_CRAFT_UNLOCK_TARGET/, 'Abgeschlossene 10\/10-Fortschritte werden nicht aus der sichtbaren Waffenbezeichnung entfernt.');
+assert.match(service, /picker\.id = 'forgeWeaponPicker'/, 'Die kompakte Waffenwahl fehlt.');
+assert.match(service, /button\.dataset\['weaponForm'\] = weaponForm/, 'Die kompakte Waffenwahl besitzt keine stabilen Form-IDs an ihren Buttons.');
+assert.match(service, /select\.dispatchEvent\(new Event\('change', \{ bubbles: true \}\)\)/, 'Die kompakte Waffenwahl reicht die Auswahl nicht an den bestehenden Schmiedepfad weiter.');
+assert.match(service, /picker\.dataset\['forgeWeaponPickerOwner'\] = 'angular'/, 'Browser-nachweisbarer Angular-Ownership-Marker der kompakten Waffenwahl fehlt.');
 assert.match(service, /select\.dataset\['weaponUnlockOwner'\] = 'angular'/, 'Browser-nachweisbarer Angular-Ownership-Marker für Waffenfreischaltungen fehlt.');
 assert.match(service, /select\.dataset\['visibleWeaponForms'\] = visibleWeaponForms\.join\(','\)/, 'Browser-nachweisbare Liste sichtbarer Waffenformen fehlt.');
+assert.doesNotMatch(service, /renderMaterialRequirementSummary|renderConstructionInfo/, 'Entfernte sichtbare Schmiede-Erklärungstexte werden weiterhin berechnet.');
 assert.match(service, /document\.getElementById\('forgePreviewNextBtn'\)/, 'Angular-Schmiedevorschau verwaltet den Weiter-zur-Vorschau-Button nicht.');
 assert.match(service, /previewNextButton\.disabled = false/, 'Vorschau-Navigation darf nicht durch Herstellungsvalidierung blockiert werden.');
 assert.doesNotMatch(service, /previewNextButton\.disabled = !complete/, 'Vorschau-Navigation darf nicht erneut an die Vollständigkeitsprüfung gekoppelt werden.');
@@ -43,7 +49,7 @@ assert.match(service, /row\.hidden = !active/, 'Optionale Bauplanzeilen werden n
 for (const id of [
   'forgeTimePreview', 'forgeValuePreview', 'forgeDamagePreview', 'forgeDamageBaseInfo',
   'forgeSpeedPreview', 'forgeSpeedBaseInfo', 'forgeHitPreview', 'forgeRawPreview',
-  'forgePenPreview', 'forgeRarityPreview', 'forgeReinforcementPreview', 'forgeParryInfo', 'forgeMaterialTotalPreview'
+  'forgePenPreview', 'forgeRarityPreview', 'forgeReinforcementPreview'
 ]) assert.match(service, new RegExp(`'${id}'`), `Angular-Schmiedevorschau rendert ${id} nicht.`);
 assert.match(service, /startButton\.dataset\['forgePreviewPresentationOwner'\] = 'angular'/, 'Browser-nachweisbarer Angular-Ownership-Marker fehlt.');
 assert.match(service, /window\.NoBrainerForgePreviewPresentationCompatibility = \{ render: \(\) => this\.render\(\) \};/);
@@ -67,4 +73,4 @@ assert.ok(bridgeOpen >= 0 && stateBootstrap > bridgeOpen, 'Schmiedevorschau-Prä
 assert.match(app, /private readonly gameForgePreviewPresentation: GameForgePreviewPresentationService/);
 assert.match(app, /const APP_VERSION = APP_UI_VERSION;/);
 
-console.log('Forge-Preview-Presentation: Materialauswahl und Spezialeffekte arbeiten per ID; Waffenfreischaltung, Bauplan-Auswahl und Herstellungsvalidierung bleiben Angular-eigen.');
+console.log('Forge-Preview-Presentation: ID-basierte Materialauswahl, kompakte nicht-scrollende Waffenwahl und abgeschlossene Unlock-Anzeigen bleiben Angular-eigen.');
