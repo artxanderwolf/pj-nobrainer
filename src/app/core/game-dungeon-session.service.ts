@@ -45,16 +45,21 @@ export class GameDungeonSessionService {
     private readonly gameDungeon: GameDungeonService
   ) {}
 
-  open(at = Date.now()): DungeonActionResult {
-    const state = this.getState();
-    const changed = this.hasRuntimeState(state);
-    this.resetRuntimeState(state);
+  open(_at = Date.now()): DungeonActionResult {
     this.modalOpen = true;
-    this.runStartedAt = null;
-    return { events: [], saveRequested: changed };
+    return { events: [], saveRequested: false };
   }
 
-  close(at = Date.now()): DungeonActionResult {
+  close(_at = Date.now()): DungeonActionResult {
+    this.modalOpen = false;
+    return { events: [], saveRequested: false };
+  }
+
+  /**
+   * Verwirft ausschließlich einen aus einem Save geladenen Alt-Lauf.
+   * Ein normales Schließen des Popups darf den aktiven Trainingslager-Run nicht beenden.
+   */
+  resetLoadedSession(_at = Date.now()): DungeonActionResult {
     const state = this.getState();
     const changed = this.hasRuntimeState(state);
     this.resetRuntimeState(state);
@@ -68,7 +73,7 @@ export class GameDungeonSessionService {
       return {
         events: [],
         saveRequested: false,
-        alertMessage: 'Dungeon 1 kann nur im geöffneten Dungeon-Fenster gestartet werden.'
+        alertMessage: 'Das Trainingslager kann nur im geöffneten Dungeon-Fenster gestartet oder abgebrochen werden.'
       };
     }
 
@@ -82,14 +87,15 @@ export class GameDungeonSessionService {
 
   update(now = Date.now()): DungeonUpdateResult {
     const state = this.getState();
-    if (!this.modalOpen) return { events: [], saveRequested: false, catchingUp: false };
+    if (!this.hasActiveRun(state)) {
+      this.runStartedAt = null;
+      return { events: [], saveRequested: false, catchingUp: false };
+    }
 
-    if (this.hasActiveRun(state)) {
-      if (this.runStartedAt === null) this.runStartedAt = now;
-      if (now - this.runStartedAt >= this.getDurationMs()) {
-        const finished = this.finishSession(state, 'timeout', now);
-        return { ...finished, catchingUp: false };
-      }
+    if (this.runStartedAt === null) this.runStartedAt = now;
+    if (now - this.runStartedAt >= this.getDurationMs()) {
+      const finished = this.finishSession(state, 'timeout', now);
+      return { ...finished, catchingUp: false };
     }
 
     const result = this.sanitizeResult(this.gameDungeon.update(now));
@@ -104,7 +110,7 @@ export class GameDungeonSessionService {
   getTiming(now = Date.now()): DungeonSessionTiming {
     const totalMs = this.getDurationMs();
     const state = this.getState();
-    const active = this.modalOpen && this.hasActiveRun(state) && this.runStartedAt !== null;
+    const active = this.hasActiveRun(state) && this.runStartedAt !== null;
     const elapsed = active ? Math.max(0, now - Number(this.runStartedAt)) : 0;
     const remainingMs = active ? Math.max(0, totalMs - elapsed) : totalMs;
     return {
@@ -120,13 +126,13 @@ export class GameDungeonSessionService {
   }
 
   isRunActive(): boolean {
-    return this.modalOpen && this.hasActiveRun(this.getState());
+    return this.hasActiveRun(this.getState());
   }
 
   getDurationMs(): number {
     const configured = Number((CONFIG.dungeon as typeof CONFIG.dungeon & { durationMs?: number }).durationMs);
     if (!Number.isFinite(configured) || configured <= 0) {
-      throw new Error('Dungeon 1 benötigt eine positive durationMs-Konfiguration.');
+      throw new Error('Das Trainingslager benötigt eine positive durationMs-Konfiguration.');
     }
     return configured;
   }
@@ -151,7 +157,7 @@ export class GameDungeonSessionService {
     const reasonText = reason === 'manual'
       ? 'Grund: Manueller Abbruch.'
       : 'Grund: Maximale Laufzeit von 5 Stunden erreicht.';
-    const title = reason === 'manual' ? 'Dungeon 1 – Lauf abgebrochen' : 'Dungeon 1 – Lauf beendet';
+    const title = reason === 'manual' ? 'Trainingslager – Lauf abgebrochen' : 'Trainingslager – Lauf beendet';
     const teamNames = teamIds
       .map(id => state.characters.find(character => character.id === id))
       .filter((character): character is DungeonSessionCharacter => Boolean(character))
@@ -160,8 +166,8 @@ export class GameDungeonSessionService {
     return {
       events: [{
         text: reason === 'manual'
-          ? 'Dungeon-1-Lauf manuell abgebrochen.'
-          : 'Dungeon-1-Lauf nach 5 Stunden beendet.',
+          ? 'Trainingslager-Lauf manuell abgebrochen.'
+          : 'Trainingslager-Lauf nach 5 Stunden beendet.',
         className: reason === 'manual' ? 'muted' : 'good'
       }],
       saveRequested: true,
@@ -215,10 +221,15 @@ export class GameDungeonSessionService {
     const events = result.events.map(event => ({
       ...event,
       text: event.text
+        .replace(/Dungeon-1/g, 'Trainingslager')
+        .replace(/Dungeon 1/g, 'Trainingslager')
         .replace(/\s*·\s*[\d.,]+\s*EN je Charakter/g, '')
         .replace(/\s+\./g, '.')
     }));
-    return { ...result, events };
+    const alertMessage = result.alertMessage
+      ?.replace(/Dungeon-1/g, 'Trainingslager')
+      .replace(/Dungeon 1/g, 'Trainingslager');
+    return { ...result, events, ...(alertMessage ? { alertMessage } : {}) };
   }
 
   private getState(): DungeonSessionState {
