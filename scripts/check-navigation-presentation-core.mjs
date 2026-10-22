@@ -24,15 +24,25 @@ assert.deepEqual(getNavigationPresentation('forge-form'), {
 assert.deepEqual(getNavigationPresentation('forge-preview'), {
   pageId: 'forge-preview', title: 'Waffenvorschau', parentPageId: 'forge-form', sectionId: 'storage'
 });
-assert.deepEqual(getNavigationPresentation('dungeon-select'), {
-  pageId: 'dungeon-select', title: 'Dungeon 1', parentPageId: 'dungeon', sectionId: 'dungeon'
+assert.deepEqual(getNavigationPresentation('dungeon'), {
+  pageId: 'dungeon', title: 'Dungeon', parentPageId: 'base', sectionId: 'dungeon'
 });
-assert.deepEqual(getNavigationPresentation('dungeon-log'), {
-  pageId: 'dungeon-log', title: 'Kampfprotokoll', parentPageId: 'dungeon-expedition', sectionId: 'dungeon'
-});
+assert.deepEqual(
+  getNavigationPresentation('dungeon-select'),
+  getNavigationPresentation('base'),
+  'Dungeon 1 darf nicht mehr als normale Unterseite erreichbar sein.'
+);
+assert.deepEqual(
+  getNavigationPresentation('dungeon-log'),
+  getNavigationPresentation('base'),
+  'Das alte Dungeon-Protokoll darf nicht mehr als eigene Seite erreichbar sein.'
+);
 assert.ok(NAVIGATION_SCREEN_IDS.includes('character-capacity'));
 assert.ok(NAVIGATION_SCREEN_IDS.includes('market-upgrade'));
 assert.equal(NAVIGATION_SCREEN_IDS.includes('forge-materials'), false);
+for (const obsoleteDungeonPage of ['dungeon-select', 'dungeon-team', 'dungeon-expedition', 'dungeon-loot', 'dungeon-log']) {
+  assert.equal(NAVIGATION_SCREEN_IDS.includes(obsoleteDungeonPage), false, `${obsoleteDungeonPage} ist weiterhin Teil der Navigationshierarchie.`);
+}
 assert.deepEqual(getNavigationPresentation('unknown'), getNavigationPresentation('base'));
 
-console.log('Navigation-Presentation-Core: vier Hauptbereiche, Dungeon 1 als direkte Unterseite und Zurück-Hierarchie sind konsistent.');
+console.log('Navigation-Presentation-Core: vier Hauptbereiche bleiben erhalten; Dungeon 1 ist ausschließlich Popup-Inhalt und keine navigierbare Unterseite mehr.');
