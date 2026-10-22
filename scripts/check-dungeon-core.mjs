@@ -29,12 +29,13 @@ try {
   const character = { id: 1, name: 'Test', hp: 20, maxHp: 30, alive: true, energy: 100 };
   const check = checkDungeonStart([character]);
   assert.equal(check.ok, true);
-  assert.equal(check.share, 4);
+  assert.equal(check.share, 0, 'Dungeon 1 darf keine Energie pro Charakter berechnen.');
+  assert.equal(check.totalCost, 0, 'Dungeon 1 darf keine Gesamtenergiekosten berechnen.');
   payDungeonEnergy(check.participants, check.share);
-  assert.equal(character.energy, 96);
+  assert.equal(character.energy, 100, 'Dungeon 1 darf Charakterenergie nicht verändern.');
 
-  character.energy = 3.9;
-  assert.equal(checkDungeonStart([character]).ok, false);
+  character.energy = 0;
+  assert.equal(checkDungeonStart([character]).ok, true, 'Energie darf den Dungeonstart nicht blockieren.');
   character.energy = 100;
   character.hp = 10;
   assert.equal(resolveSearchStep([character], 0.5), 'miss');
@@ -120,7 +121,7 @@ try {
   assert.equal(character.hp, 30);
   assert.equal(character.alive, true);
 
-  console.log('Dungeon-Core: Suche, Energie, Gegnerprofile, 2H-Angriffspunkte, Waffenwechsel-Timeline, Phasen und Niederlagen-Reset sind konsistent.');
+  console.log('Dungeon-Core: Suche, energiefreier Start, Gegnerprofile, 2H-Angriffspunkte, Waffenwechsel-Timeline, Phasen und Niederlagen-Reset sind konsistent.');
 } finally {
   unlinkSync(temporaryUrl);
 }
