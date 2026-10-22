@@ -175,7 +175,7 @@ try {
   const decoded = resultMatch[1].replaceAll('&quot;', '"').replaceAll('&amp;', '&');
   const result = JSON.parse(decoded);
 
-  assert.equal(result.status, 'clicked', `Der direkte Dungeon-Hubbutton wurde zum Einsammeln nicht verwendbar: ${JSON.stringify(result)}`);
+  assert.equal(result.status, 'clicked', `Der unsichtbare Dungeon-Loot-Kompatibilitätsanker wurde zum Einsammeln nicht verwendbar: ${JSON.stringify(result)}`);
   assert.equal(result.saveVersion, 13, `Der migrierte Altstand wurde nicht als Save v13 persistiert: ${JSON.stringify(result)}`);
   assert.equal(result.inventoryQty, 2, `Dungeon-Loot wurde nicht in das ID-keyed gespeicherte Inventar übertragen: ${JSON.stringify(result)}`);
   assert.equal(result.canonicalMaterialId, materialId, `Der kanonische Lagereintrag trägt nicht die erwartete Material-ID: ${JSON.stringify(result)}`);
@@ -185,11 +185,11 @@ try {
   assert.equal(result.materialCount, '2', `Der Materialzähler wurde nach dem Einsammeln nicht aktualisiert: ${JSON.stringify(result)}`);
   assert.match(result.storageText, /Morsche Fichte/, `Das Materiallager zeigt den eingesammelten Loot nicht mit Anzeigenamen: ${JSON.stringify(result)}`);
   assert.equal(result.dungeonLootText, '', `Die Dungeon-Lootanzeige wurde nach dem Einsammeln nicht geleert: ${JSON.stringify(result)}`);
-  assert.equal(result.overviewText, 'Lauf starten', `Nach dem Einsammeln muss die Dungeon-Hubaktion wieder einen neuen Lauf anbieten: ${JSON.stringify(result)}`);
-  assert.equal(result.primaryText, 'Lauf starten', `Nach dem Einsammeln muss auch der Dungeon-Detailbutton wieder einen neuen Lauf anbieten: ${JSON.stringify(result)}`);
+  assert.equal(result.overviewText, 'Dungeon 1 öffnen', `Nach dem Einsammeln muss der unsichtbare Hub-Kompatibilitätsanker wieder das Dungeon-Popup anbieten: ${JSON.stringify(result)}`);
+  assert.equal(result.primaryText, 'Lauf starten', `Nach dem Einsammeln muss der Dungeon-Popup-Button wieder einen neuen Lauf anbieten: ${JSON.stringify(result)}`);
   assert.equal(result.runtimeError, '', `Die Runtime meldet während des Loot-E2E-Tests einen Fehler: ${JSON.stringify(result)}`);
 
-  console.log('Dungeon-Loot-Browserregression: v9-Namensloot wird zu ID-keyed Save v13 migriert, eingesammelt und weiterhin korrekt angezeigt.');
+  console.log('Dungeon-Loot-Browserregression: v9-Namensloot wird zu ID-keyed Save v13 migriert, eingesammelt und im neuen Popup-Pfad korrekt angezeigt.');
 } finally {
   if (child) await stopBrowser(child);
   rmSync(browserProfile, { recursive: true, force: true });
