@@ -7,6 +7,7 @@ import type {
   WeaponSlot as BaselineWeaponSlot,
   WeaponStats
 } from './game-core-v01310-baseline.ts';
+import { calculateCharacterStats } from './character-level-stats-core';
 import {
   DATA_META,
   GENERATED_CHARACTER_CLASSES,
@@ -178,9 +179,10 @@ export function calculateWeaponStats(slots: readonly WeaponSlot[] | null | undef
 
 export const GAME_CORE_BRIDGE = {
   ...baseline.GAME_CORE_BRIDGE,
+  calculateCharacterStats,
   getMaterialById, normalizeWeaponSlots, canonicalWeaponSlots, isWeaponSelectionComplete, rarityFactor,
   reinforcementEffectText, reinforcementEffectTextById, calculateWeaponCharacterModifiers, calculateWeaponStats
 };
 
-export { DATA_META, GENERATED_MATERIAL_KEYS as MATERIAL_KEYS };
+export { DATA_META, GENERATED_MATERIAL_KEYS as MATERIAL_KEYS, calculateCharacterStats };
 export * from './game-core-v01310-baseline.ts';
