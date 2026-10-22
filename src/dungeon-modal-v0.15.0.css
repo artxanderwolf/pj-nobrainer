@@ -1,0 +1,291 @@
+body.dungeon-modal-active {
+  overflow: hidden;
+}
+
+.dungeon-modal-page[hidden] {
+  display: none !important;
+}
+
+.dungeon-modal-page.dungeon-modal-open {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
+}
+
+.dungeon-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 7, 10, .82);
+  backdrop-filter: blur(6px);
+}
+
+.dungeon-modal-dialog {
+  position: relative;
+  z-index: 1;
+  width: min(1080px, 100%);
+  max-height: min(92dvh, 900px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--panel);
+  box-shadow: 0 22px 70px rgba(0, 0, 0, .45);
+}
+
+.dungeon-modal-header,
+.dungeon-modal-footer {
+  flex: 0 0 auto;
+  padding: 14px 16px;
+  background: rgba(18, 20, 23, .96);
+}
+
+.dungeon-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.dungeon-modal-header h2,
+.dungeon-panel h3 {
+  margin: 0;
+}
+
+.dungeon-modal-close {
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel2);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.dungeon-modal-intro {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 12px 16px 0;
+}
+
+.dungeon-modal-layout {
+  min-height: 0;
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(300px, .9fr);
+  gap: 12px;
+  padding: 12px 16px;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.dungeon-modal-column {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dungeon-panel {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #171b20;
+}
+
+.dungeon-live-column .dungeon-log-panel {
+  min-height: 260px;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.dungeon-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.dungeon-section-head span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+#dungeonTeamCard .team-slot-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+#dungeonTeamCard .team-slot {
+  padding: 10px;
+}
+
+#dungeonTeamCard .team-slot.picker-open {
+  grid-column: 1 / -1;
+}
+
+#dungeonTeamCard .empty {
+  padding: 12px 4px;
+}
+
+#dungeonTeamCard .dungeon-character-stats {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 5px;
+  margin-top: 6px;
+}
+
+#dungeonTeamCard .stat {
+  padding: 6px;
+}
+
+#dungeonTeamCard .stat b {
+  font-size: 13px;
+}
+
+#dungeonTeamCard .actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 8px;
+}
+
+#dungeonTeamCard .actions .btn {
+  width: 100%;
+  min-width: 0;
+  min-height: 38px;
+  padding: 7px 8px;
+}
+
+#dungeonTeamCard .actions .btn:only-child {
+  grid-column: 1 / -1;
+}
+
+.dungeon-time-bar {
+  margin-top: 10px;
+  height: 12px;
+  color: var(--accent);
+}
+
+.dungeon-enemy-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.dungeon-enemy {
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel2);
+}
+
+.dungeon-enemy .bar {
+  height: 10px;
+  margin-top: 8px;
+}
+
+.dungeon-live-log {
+  min-height: 180px;
+  max-height: min(46dvh, 520px);
+  margin-top: 10px;
+  flex: 1 1 auto;
+}
+
+.dungeon-loot-panel .loot-chip {
+  display: inline-flex;
+  margin: 8px 6px 0 0;
+}
+
+.dungeon-compact-empty {
+  padding: 16px 8px;
+  margin-top: 10px;
+}
+
+.dungeon-modal-footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 260px);
+  gap: 12px;
+  align-items: center;
+  border-top: 1px solid var(--line);
+}
+
+.dungeon-modal-footer .dungeon-primary-status {
+  margin: 0;
+  text-align: left;
+}
+
+.dungeon-modal-footer .btn {
+  width: 100%;
+  min-height: 48px;
+}
+
+@media (max-width: 760px) {
+  .dungeon-modal-page.dungeon-modal-open {
+    padding: max(6px, env(safe-area-inset-top)) 6px max(6px, env(safe-area-inset-bottom));
+  }
+
+  .dungeon-modal-dialog {
+    max-height: 96dvh;
+    border-radius: 13px;
+  }
+
+  .dungeon-modal-header,
+  .dungeon-modal-footer {
+    padding: 10px 12px;
+  }
+
+  .dungeon-modal-intro {
+    padding: 10px 12px 0;
+  }
+
+  .dungeon-modal-layout {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 10px 12px;
+  }
+
+  .dungeon-panel {
+    padding: 10px;
+  }
+
+  #dungeonTeamCard .team-slot-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #dungeonTeamCard .team-slot {
+    padding: 8px;
+  }
+
+  #dungeonTeamCard .team-slot-head {
+    align-items: flex-start;
+  }
+
+  #dungeonTeamCard .actions {
+    grid-template-columns: 1fr;
+  }
+
+  #dungeonTeamCard .actions .btn:only-child {
+    grid-column: auto;
+  }
+
+  .dungeon-live-log {
+    max-height: 300px;
+  }
+
+  .dungeon-modal-footer {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .dungeon-modal-footer .dungeon-primary-status {
+    text-align: center;
+  }
+}
