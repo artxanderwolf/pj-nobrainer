@@ -85,6 +85,7 @@ function buildGameData(tables) {
   const config = {
     dungeon: {
       id: dungeonId,
+      displayName: String(dungeon.display_name),
       energyCost: n(dungeon.energy_cost),
       durationMs: dungeonDurationMs,
       enemyBase: {
