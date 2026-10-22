@@ -213,16 +213,23 @@ closeTo(levelTwoRecruit.maxHp, 33);
 closeTo(levelTwoRecruit.maxEnergy, 110);
 closeTo(levelTwoRecruit.armor, 6.2);
 closeTo(levelTwoRecruit.dodge, 0.13);
-closeTo(levelTwoRecruit.strengthFactor, 1.20);
-closeTo(levelTwoRecruit.precision, 1.15);
+closeTo(levelTwoRecruit.strengthFactor, 1.11, 'SF soll pro Level nur mit Faktor 1,01 skalieren.');
+closeTo(levelTwoRecruit.precision, 1.06, 'PRÄ soll pro Level nur mit Faktor 1,01 skalieren.');
 closeTo(levelTwoRecruit.threat, 50, 'Bedrohung bleibt unabhängig vom Level auf dem Klassen-Grundwert.');
 closeTo(levelTwoRecruit.critChance, 0.075);
-closeTo(levelTwoRecruit.critDamage, 1.75);
+closeTo(levelTwoRecruit.critDamage, 1.615, 'K-S soll pro Level nur mit Faktor 1,01 skalieren.');
 closeTo(levelTwoRecruit.hpRegenPerMinute, 0, 'Null-Grundwerte dürfen durch Levelanstieg nicht entstehen.');
 closeTo(levelTwoRecruit.energyRegenPerMinute, 5.5);
-closeTo(levelTwoRecruit.experienceFactor, 1.1);
+closeTo(levelTwoRecruit.experienceFactor, 1, 'ERF darf sich durch Levelaufstiege nicht mehr verändern.');
 closeTo(levelTwoRecruit.lifeSteal, 0);
 closeTo(levelTwoRecruit.penetration, 0.10, 'Ausrüstungsbonus wird erst nach der Grundwertskalierung addiert.');
+
+const levelThreeRecruit = calculateCharacterStats('recruit', [], 1.21);
+closeTo(levelThreeRecruit.maxHp, 36.3);
+closeTo(levelThreeRecruit.strengthFactor, 1.0201);
+closeTo(levelThreeRecruit.precision, 1.0201);
+closeTo(levelThreeRecruit.critDamage, 1.53015);
+closeTo(levelThreeRecruit.experienceFactor, 1);
 
 const cappedArmorCharacter = calculateCharacterStats('fighter', [{
   id: 999,
@@ -241,4 +248,4 @@ closeTo(armored.effectiveArmor, 72);
 closeTo(armored.reduction, 0.72);
 closeTo(armored.afterArmor, armored.raw * 0.28);
 
-console.log('Game-Core: Material-SPE v0.13.9, Waffenbau, Dungeonwerte, 2H-Deduplizierung, Levelskalierung und Kampfübergabe sind konsistent.');
+console.log('Game-Core: Material-SPE, Waffenbau, stat-spezifische Levelskalierung, 2H-Deduplizierung und Kampfübergabe sind konsistent.');
