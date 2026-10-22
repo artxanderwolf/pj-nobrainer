@@ -14,6 +14,7 @@ fs.mkdirSync(generatedDir, { recursive: true });
 fs.copyFileSync(path.resolve('src/app/game/armor-core.ts'), path.join(tempDir, 'armor-core.ts'));
 fs.copyFileSync(path.resolve('src/app/game/game-core.ts'), path.join(tempDir, 'game-core.ts'));
 fs.copyFileSync(path.resolve('src/app/game/game-core-v01310-baseline.ts'), path.join(tempDir, 'game-core-v01310-baseline.ts'));
+fs.copyFileSync(path.resolve('src/app/game/character-level-stats-core.ts'), path.join(tempDir, 'character-level-stats-core.ts'));
 fs.copyFileSync(path.resolve('src/app/game/data/generated/game-data.generated.ts'), path.join(generatedDir, 'game-data.generated.ts'));
 fs.copyFileSync(path.resolve('src/app/game/character-progression-core.ts'), progressionPath);
 fs.copyFileSync(path.resolve('src/app/game/data/generated/character-progression.generated.ts'), path.join(generatedDir, 'character-progression.generated.ts'));
@@ -22,9 +23,14 @@ fs.writeFileSync(tempPath, source);
 try {
   const { createCharacter, createRecruit } = await import(`${pathToFileURL(tempPath).href}?t=${Date.now()}`);
   const {
+    CHARACTER_CRIT_DAMAGE_GROWTH,
+    CHARACTER_EXPERIENCE_FACTOR_GROWTH,
     CHARACTER_LEVEL_MAX,
-    CHARACTER_XP_GROWTH,
+    CHARACTER_PRECISION_GROWTH,
     CHARACTER_STAT_GROWTH,
+    CHARACTER_STRENGTH_FACTOR_GROWTH,
+    CHARACTER_XP_GROWTH,
+    characterLevelStatMultipliers,
     characterStatLevelMultiplier,
     experienceRequiredForNextLevel,
     getCharacterProgression,
@@ -42,9 +48,32 @@ try {
   assert.equal(CHARACTER_LEVEL_MAX, 20);
   assert.equal(CHARACTER_XP_GROWTH, 1.4);
   assert.equal(CHARACTER_STAT_GROWTH, 1.1);
+  assert.equal(CHARACTER_STRENGTH_FACTOR_GROWTH, 1.01);
+  assert.equal(CHARACTER_PRECISION_GROWTH, 1.01);
+  assert.equal(CHARACTER_CRIT_DAMAGE_GROWTH, 1.01);
+  assert.equal(CHARACTER_EXPERIENCE_FACTOR_GROWTH, 1);
   assert.equal(characterStatLevelMultiplier(1), 1);
   assert.ok(Math.abs(characterStatLevelMultiplier(2) - 1.1) < 1e-12);
   assert.ok(Math.abs(characterStatLevelMultiplier(3) - 1.21) < 1e-12);
+  assert.deepEqual(characterLevelStatMultipliers(1), {
+    default: 1,
+    strengthFactor: 1,
+    precision: 1,
+    critDamage: 1,
+    experienceFactor: 1
+  });
+  const levelTwoMultipliers = characterLevelStatMultipliers(2);
+  assert.ok(Math.abs(levelTwoMultipliers.default - 1.1) < 1e-12);
+  assert.ok(Math.abs(levelTwoMultipliers.strengthFactor - 1.01) < 1e-12);
+  assert.ok(Math.abs(levelTwoMultipliers.precision - 1.01) < 1e-12);
+  assert.ok(Math.abs(levelTwoMultipliers.critDamage - 1.01) < 1e-12);
+  assert.equal(levelTwoMultipliers.experienceFactor, 1);
+  const levelThreeMultipliers = characterLevelStatMultipliers(3);
+  assert.ok(Math.abs(levelThreeMultipliers.default - 1.21) < 1e-12);
+  assert.ok(Math.abs(levelThreeMultipliers.strengthFactor - 1.0201) < 1e-12);
+  assert.ok(Math.abs(levelThreeMultipliers.precision - 1.0201) < 1e-12);
+  assert.ok(Math.abs(levelThreeMultipliers.critDamage - 1.0201) < 1e-12);
+  assert.equal(levelThreeMultipliers.experienceFactor, 1);
   assert.equal(experienceRequiredForNextLevel(1), 100);
   assert.equal(experienceRequiredForNextLevel(2), 140);
   assert.equal(experienceRequiredForNextLevel(3), 196);
@@ -89,7 +118,7 @@ try {
   assert.equal(fallback.classId, 'recruit');
   assert.equal(fallback.maxHp, 30);
 
-  console.log('Character-Core: Klassenwerte, getrennte XP-/Stat-Steigung, Level/XP, volle Startressourcen, Starterwaffe und Legacy-Fallback sind konsistent.');
+  console.log('Character-Core: Klassenwerte, XP-Kurve und stat-spezifische Level-Faktoren sind konsistent.');
 } finally {
   fs.rmSync(tempDir, { recursive: true, force: true });
 }
