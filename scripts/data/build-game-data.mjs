@@ -211,7 +211,11 @@ function buildProgression(tables) {
     CHARACTER_LEVEL_MAX: n(row.max_level),
     CHARACTER_XP_BASE: n(row.xp_base),
     CHARACTER_XP_GROWTH: n(row.xp_growth),
-    CHARACTER_STAT_GROWTH: n(row.stat_growth)
+    CHARACTER_STAT_GROWTH: n(row.stat_growth),
+    CHARACTER_STRENGTH_FACTOR_GROWTH: n(row.strength_factor_growth),
+    CHARACTER_PRECISION_GROWTH: n(row.precision_growth),
+    CHARACTER_CRIT_DAMAGE_GROWTH: n(row.crit_damage_growth),
+    CHARACTER_EXPERIENCE_FACTOR_GROWTH: n(row.experience_factor_growth)
   };
 }
 
