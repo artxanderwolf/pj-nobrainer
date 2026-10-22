@@ -169,9 +169,7 @@ const FORGE_PAGE_MARKUP = `<section class="page screen-page" id="forge">
 
 const FORGE_FORM_PAGE_MARKUP = `<section class="page screen-page" id="forge-form">
   <div class="screen-card screen-card-fill forge-build-card">
-    <h2>1. Waffenform wählen</h2>
-    <label class="field-label" for="weaponForm">Waffenform</label>
-    <select id="weaponForm" class="btn full-control" onchange="renderForgePreview()">
+    <select id="weaponForm" class="forge-weapon-native" onchange="renderForgePreview()" aria-hidden="true" tabindex="-1">
       <option value="dagger">Dolch</option>
       <option value="sword">1H Schwert</option>
       <option value="axe1h">1H Axt</option>
@@ -180,9 +178,7 @@ const FORGE_FORM_PAGE_MARKUP = `<section class="page screen-page" id="forge-form
       <option value="bow">Bogen</option>
       <option value="staff">Stab</option>
     </select>
-    <p class="screen-intro">Waffenform bestimmt Bauteile und 1H/2H-Nutzung.</p>
-    <h2>2. Materialien wählen</h2>
-    <div class="forge-slot-wrap scroll-region">
+    <div class="forge-slot-wrap">
       <table>
         <thead><tr><th>Bauteil</th><th>Material</th></tr></thead>
         <tbody>
@@ -196,8 +192,6 @@ const FORGE_FORM_PAGE_MARKUP = `<section class="page screen-page" id="forge-form
         </tbody>
       </table>
     </div>
-    <p id="forgeParryInfo" class="status-line">–</p>
-    <p class="status-line"><strong>Materialbedarf:</strong> <span id="forgeMaterialTotalPreview">–</span></p>
     <div class="wizard-actions"><button id="forgePreviewNextBtn" class="btn primary" type="button" onclick="go('forge-preview')" disabled>Weiter zur Vorschau</button></div>
   </div>
 </section>`;
