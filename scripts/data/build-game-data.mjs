@@ -67,6 +67,8 @@ function buildGameData(tables) {
 
   const dungeon = tables.dungeons.rows[0];
   const dungeonId = n(dungeon.dungeon_id);
+  const dungeonDurationMs = n(dungeon.duration_ms);
+  if (dungeonDurationMs <= 0) throw new Error('Dungeon-Daten: duration_ms muss größer 0 sein.');
   const classWeights = Object.fromEntries(
     tables.dungeon_enemy_weights.rows
       .filter(row => n(row.dungeon_id) === dungeonId)
@@ -84,6 +86,7 @@ function buildGameData(tables) {
     dungeon: {
       id: dungeonId,
       energyCost: n(dungeon.energy_cost),
+      durationMs: dungeonDurationMs,
       enemyBase: {
         damage: n(dungeon.enemy_base_damage), speed: n(dungeon.enemy_base_speed),
         hitChance: n(dungeon.enemy_base_hit_chance), penetration: n(dungeon.enemy_base_penetration)
@@ -177,7 +180,7 @@ function buildGameData(tables) {
   return {
     meta: { schemaVersion: n(meta.schema_version), contentRevision: n(meta.content_revision), baselineVersion: String(meta.baseline_version) },
     config, classes, materials, rarityBonus, enemyDefinitions, legacyLoot, materialKeys: tables.materials.rows.map(row => ({
-      materialId: n(row.material_id), technicalKey: String(row.technical_key), displayName: String(row.display_name)
+      materialId: n(row.material_id), technicalKey: String(row.technical_key), displayName: row.display_name
     }))
   };
 }

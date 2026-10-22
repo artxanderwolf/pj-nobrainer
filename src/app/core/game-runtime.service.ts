@@ -8,6 +8,7 @@ import { GameCombatLogService } from './game-combat-log.service';
 import { GameDungeonEquipmentSyncService } from './game-dungeon-equipment-sync.service';
 import { GameDungeonService, type DungeonActionResult } from './game-dungeon.service';
 import { GameDungeonPresentationService } from './game-dungeon-presentation.service';
+import { GameDungeonSessionService } from './game-dungeon-session.service';
 import { GameEnergyService } from './game-energy.service';
 import { GameForgeJobPresentationService } from './game-forge-job-presentation.service';
 import { GameForgePreviewPresentationService } from './game-forge-preview-presentation.service';
@@ -67,6 +68,7 @@ export class GameRuntimeService {
     private readonly gameForge: GameForgeService,
     private readonly gameMarket: GameMarketService,
     private readonly gameDungeon: GameDungeonService,
+    private readonly dungeonSession: GameDungeonSessionService,
     private readonly dungeonEquipmentSync: GameDungeonEquipmentSyncService,
     private readonly dungeonPresentation: GameDungeonPresentationService
   ) {}
@@ -111,11 +113,16 @@ export class GameRuntimeService {
       runtime.renderMarketWeapons();
     });
     this.dungeonPresentation.bindActions((result, inventoryChanged) => this.applyDungeonResult(runtime, result, inventoryChanged));
+
+    // Eine gespeicherte alte Dungeon-Laufzeit darf nach einem Neustart nicht offline weiterlaufen.
+    const dungeonSessionReset = this.dungeonSession.close(Date.now());
+    this.applyDungeonResult(runtime, dungeonSessionReset);
+
     const forgeUpdate = this.gameForge.update();
     this.logForgeCompletions(forgeUpdate.completedNames);
     const marketUpdate = this.gameMarket.update();
     this.logMarketCompletions(marketUpdate.completedSales);
-    const dungeonUpdate = this.gameDungeon.update();
+    const dungeonUpdate = this.dungeonSession.update();
     this.applyDungeonResult(runtime, dungeonUpdate);
     this.gameEnergy.update();
 
@@ -123,7 +130,7 @@ export class GameRuntimeService {
       runtime.save(false);
       const after = this.saveStorage.readSnapshot();
       if (after) this.offlineProgress.showSummary(before, after);
-    } else if (materialReferencesChanged) {
+    } else if (materialReferencesChanged || dungeonSessionReset.saveRequested) {
       runtime.save(false);
     }
 
@@ -194,7 +201,7 @@ export class GameRuntimeService {
     const marketUpdate = this.gameMarket.update();
     const marketCompleted = marketUpdate.completedCount > 0;
     this.logMarketCompletions(marketUpdate.completedSales);
-    const dungeonUpdate = this.gameDungeon.update();
+    const dungeonUpdate = this.dungeonSession.update();
     this.applyDungeonResult(runtime, dungeonUpdate);
     this.gameEnergy.update();
 
@@ -236,7 +243,7 @@ export class GameRuntimeService {
 
   private applyDungeonResult(runtime: GameRuntimeApi, result: DungeonActionResult, inventoryChanged = false): void {
     for (const event of result.events) {
-      this.combatLog.add(event.text, event.className);
+      this.dungeonPresentation.addEvent(event.text, event.className);
     }
     if (inventoryChanged) {
       this.normalizeMaterialStorage();
