@@ -41,12 +41,7 @@ const SCREEN_PRESENTATIONS: Record<string, NavigationPresentation> = {
   'market-jobs': { pageId: 'market-jobs', title: 'Aktive Verkäufe', parentPageId: 'market', sectionId: 'storage' },
   'market-upgrade': { pageId: 'market-upgrade', title: 'Verkaufsausbau', parentPageId: 'market', sectionId: 'storage' },
 
-  dungeon: { pageId: 'dungeon', title: 'Dungeon', parentPageId: 'base', sectionId: 'dungeon' },
-  'dungeon-select': { pageId: 'dungeon-select', title: 'Dungeon 1', parentPageId: 'dungeon', sectionId: 'dungeon' },
-  'dungeon-team': { pageId: 'dungeon-team', title: 'Dungeon-Team', parentPageId: 'dungeon', sectionId: 'dungeon' },
-  'dungeon-expedition': { pageId: 'dungeon-expedition', title: 'Aktuelle Expedition', parentPageId: 'dungeon', sectionId: 'dungeon' },
-  'dungeon-loot': { pageId: 'dungeon-loot', title: 'Dungeon-Beute', parentPageId: 'dungeon', sectionId: 'dungeon' },
-  'dungeon-log': { pageId: 'dungeon-log', title: 'Kampfprotokoll', parentPageId: 'dungeon-expedition', sectionId: 'dungeon' }
+  dungeon: { pageId: 'dungeon', title: 'Dungeon', parentPageId: 'base', sectionId: 'dungeon' }
 };
 
 export const NAVIGATION_SCREEN_IDS = Object.freeze(Object.keys(SCREEN_PRESENTATIONS));
