@@ -1,22 +1,20 @@
 import { Injectable } from '@angular/core';
-import { CHARACTER_CLASSES, CONFIG, type CharacterClassId } from '../game/game-core';
-import { getDungeonLootPresentation, getDungeonStatusPresentation } from '../game/dungeon-presentation-core';
+import { CHARACTER_CLASSES, type CharacterClassId } from '../game/game-core';
 import { getMaterialStorageEntries, type MaterialStorageInventory } from '../game/material-storage-core';
 import {
-  getDungeonTeamPickerPresentation,
   getDungeonTeamPresentation,
   type DungeonTeamPresentationCharacterLike
 } from '../game/character-presentation-core';
-import { GameDungeonService, type DungeonActionResult } from './game-dungeon.service';
-import { GameEnergyService } from './game-energy.service';
+import { type DungeonActionResult } from './game-dungeon.service';
+import { GameDungeonSessionService } from './game-dungeon-session.service';
 import { GameStateService, type MutableGameState } from './game-state.service';
 
 interface DungeonPresentationCharacter extends DungeonTeamPresentationCharacterLike { classId?: string | null; }
+interface DungeonPresentationEnemy { name: string; hp: number; maxHp: number; alive?: boolean; }
 interface DungeonPresentationState extends MutableGameState {
   characters: DungeonPresentationCharacter[];
   dungeonAuto: boolean;
-  dungeonStopRequested?: boolean;
-  dungeonRun: { participantIds: number[]; energyShare: number; enemies: Array<{ name: string; hp: number; maxHp: number; alive?: boolean }> } | null;
+  dungeonRun: { participantIds: number[]; enemies: DungeonPresentationEnemy[] } | null;
   dungeonSearch: { nextCheckAt: number } | null;
   dungeonLootCollect: { enemyCount: number } | null;
   dungeonLoot: MaterialStorageInventory;
@@ -31,228 +29,213 @@ export class GameDungeonPresentationService {
   private openTeamPickerSlot: number | null = null;
   private actionsBound = false;
   private actionHandler: ((result: DungeonActionResult, inventoryChanged: boolean) => void) | null = null;
+  private readonly maxVisibleLogEntries = 1000;
 
   constructor(
     private readonly gameState: GameStateService,
-    private readonly gameDungeon: GameDungeonService,
-    private readonly gameEnergy: GameEnergyService
+    private readonly dungeonSession: GameDungeonSessionService
   ) {}
 
   bindActions(handler: (result: DungeonActionResult, inventoryChanged: boolean) => void): void {
     this.actionHandler = handler;
     if (this.actionsBound) return;
 
+    this.installModalMarkup();
+    this.installHelpSection();
+
+    const openButton = document.getElementById('dungeonOverviewOpenBtn');
+    const overviewAction = document.getElementById('dungeonOverviewAction') as HTMLButtonElement | null;
     const primaryButton = document.getElementById('dungeonPrimaryBtn');
-    const primaryTeamCard = document.getElementById('dungeonTeamCard');
-    const overviewAction = document.getElementById('dungeonOverviewAction');
-    if (!primaryButton || !primaryTeamCard || !overviewAction) {
-      throw new Error('Angular-Dungeon-Präsentation konnte die Dungeon-1-Bedienelemente nicht finden.');
+    const teamCard = document.getElementById('dungeonTeamCard');
+    const collectButton = document.getElementById('dungeonCollectLootBtn');
+    const closeButton = document.getElementById('dungeonModalCloseBtn');
+    const backdrop = document.getElementById('dungeonModalBackdrop');
+    if (!openButton || !overviewAction || !primaryButton || !teamCard || !collectButton || !closeButton || !backdrop) {
+      throw new Error('Angular-Dungeon-Präsentation konnte die Dungeon-1-Popup-Bedienelemente nicht finden.');
     }
 
-    primaryButton.addEventListener('click', () => this.handlePrimaryAction());
-    primaryTeamCard.addEventListener('click', event => this.handleTeamClick(event));
+    openButton.removeAttribute('onclick');
+    openButton.addEventListener('click', () => this.openModal());
+
+    // Der alte zweite Hub-Knopf bleibt nur als unsichtbarer Kompatibilitätsanker für Altstand-/Browserchecks bestehen.
+    overviewAction.hidden = true;
+    overviewAction.tabIndex = -1;
+    overviewAction.setAttribute('aria-hidden', 'true');
     overviewAction.addEventListener('click', () => this.handleOverviewAction());
 
-    const legacyAutoButton = document.getElementById('autoDungeonBtn');
-    const legacyCollectButton = document.getElementById('collectLootBtn');
-    const legacyTeamCard = document.getElementById('teamCard');
-    if (legacyAutoButton) {
-      legacyAutoButton.removeAttribute('onclick');
-      legacyAutoButton.addEventListener('click', () => this.handleResult(this.gameDungeon.toggleAuto(Date.now())));
-    }
-    if (legacyCollectButton) {
-      legacyCollectButton.removeAttribute('onclick');
-      legacyCollectButton.addEventListener('click', () => {
-        const result = this.gameDungeon.collectLoot();
-        this.handleResult(result, result.events.length > 0);
-      });
-    }
-    if (legacyTeamCard) legacyTeamCard.addEventListener('click', event => this.handleTeamClick(event));
+    primaryButton.addEventListener('click', () => this.handlePrimaryAction());
+    teamCard.addEventListener('click', event => this.handleTeamClick(event));
+    collectButton.addEventListener('click', () => this.handleCollectLoot());
+    closeButton.addEventListener('click', () => this.closeModal());
+    backdrop.addEventListener('click', () => this.closeModal());
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && this.dungeonSession.isOpen()) this.closeModal();
+    });
 
     this.actionsBound = true;
   }
 
   render(): void {
-    this.renderOverview();
-    this.renderOverviewAction();
-    this.renderStatus();
+    this.renderHub();
+    this.renderTeam();
+    this.renderTiming();
+    this.renderEnemies();
     this.renderLoot();
-    this.renderTeamInto('dungeonTeamCard');
-    this.renderTeamInto('teamCard');
     this.renderPrimaryAction();
   }
 
-  private renderOverview(): void {
-    const state = this.getState();
-    const displayedCount = state.dungeonRun?.participantIds?.length || this.getSelectedIds(state).length;
-    const enemyHp = document.getElementById('enemyHp');
-    const enemyArmor = document.getElementById('enemyArmor');
-    const enemyDamage = document.getElementById('enemyDamage');
-    const energyCost = document.getElementById('energyCost');
-
-    if (enemyHp) enemyHp.textContent = `${CONFIG.dungeon.enemyBase.damage} Basis-SCH`;
-    if (enemyArmor) enemyArmor.textContent = `${Math.round(CONFIG.dungeon.enemyBase.hitChance * 100)} % Basis-TRF`;
-    if (enemyDamage) enemyDamage.textContent = `${CONFIG.dungeon.enemyBase.speed.toFixed(2)} Basis-GES`;
-    if (energyCost) {
-      const share = this.gameEnergy.costPerCharacter(displayedCount);
-      energyCost.textContent = displayedCount ? `${share} je Char. (${share * displayedCount} gesamt)` : '–';
+  addEvent(text: string, className = ''): void {
+    if (!this.dungeonSession.isOpen()) return;
+    const log = document.getElementById('dungeonCombatLog');
+    if (!log) return;
+    if (log.dataset['placeholder'] === 'true') {
+      log.innerHTML = '';
+      delete log.dataset['placeholder'];
     }
+    const row = document.createElement('div');
+    row.className = className;
+    row.textContent = text;
+    log.prepend(row);
+    while (log.children.length > this.maxVisibleLogEntries) log.lastElementChild?.remove();
   }
 
-  private renderOverviewAction(): void {
-    const state = this.getState();
-    const button = document.getElementById('dungeonOverviewAction') as HTMLButtonElement | null;
-    if (!button) return;
-
-    button.dataset['dungeonOverviewOwner'] = 'angular';
-    const sessionBusy = Boolean(
-      state.dungeonAuto || state.dungeonRun || state.dungeonSearch || state.dungeonLootCollect || state.dungeonStopRequested
-    );
-
-    if (sessionBusy) {
-      button.textContent = 'Läuft';
-      button.disabled = true;
-      return;
+  private installModalMarkup(): void {
+    for (const id of ['dungeon-team', 'dungeon-expedition', 'dungeon-loot']) {
+      document.getElementById(id)?.remove();
     }
 
-    if (this.getLootTotal(state) > 0) {
-      button.textContent = 'Loot sammeln';
-      button.disabled = false;
-      return;
-    }
-
-    button.textContent = 'Lauf starten';
-    button.disabled = false;
+    const modal = document.getElementById('dungeon-select');
+    if (!modal) throw new Error('Dungeon-1-Detailseite fehlt für den Popup-Cutover.');
+    modal.className = 'dungeon-modal-page';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-labelledby', 'dungeonModalTitle');
+    modal.setAttribute('aria-hidden', 'true');
+    modal.hidden = true;
+    modal.innerHTML = `
+      <div id="dungeonModalBackdrop" class="dungeon-modal-backdrop"></div>
+      <div class="dungeon-modal-dialog">
+        <div class="dungeon-modal-header">
+          <div>
+            <div class="ui-version">DUNGEON</div>
+            <h2 id="dungeonModalTitle">Dungeon 1</h2>
+          </div>
+          <button id="dungeonModalCloseBtn" class="dungeon-modal-close" type="button" aria-label="Dungeon schließen">×</button>
+        </div>
+        <p class="screen-intro dungeon-modal-intro">Bis zu vier Charaktere auswählen. Ein Lauf endet nach maximal 5 Stunden oder durch manuellen Abbruch.</p>
+        <div class="dungeon-modal-layout">
+          <div class="dungeon-modal-column">
+            <section class="dungeon-panel">
+              <h3>Team</h3>
+              <div id="dungeonTeamCard" class="dungeon-team-region"></div>
+            </section>
+            <section class="dungeon-panel">
+              <div class="dungeon-section-head"><h3>Laufzeit</h3><strong id="dungeonTimeText">05:00:00</strong></div>
+              <div class="bar dungeon-time-bar" role="progressbar" aria-label="Verbleibende Dungeon-Laufzeit" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><i id="dungeonTimeBar" style="width:100%"></i></div>
+            </section>
+            <section class="dungeon-panel dungeon-loot-panel">
+              <div class="dungeon-section-head"><h3>Beute</h3><button id="dungeonCollectLootBtn" class="btn" type="button">Einsammeln</button></div>
+              <div id="dungeonLoot"></div>
+              <div id="dungeonLootEmpty" class="empty dungeon-compact-empty">Noch keine Beute gesammelt.</div>
+            </section>
+          </div>
+          <div class="dungeon-modal-column dungeon-live-column">
+            <section class="dungeon-panel">
+              <h3>Aktive Gegner</h3>
+              <div id="dungeonActiveEnemies" class="dungeon-enemy-list"></div>
+            </section>
+            <section class="dungeon-panel dungeon-log-panel">
+              <h3>Dungeon-1-Protokoll</h3>
+              <div id="dungeonCombatLog" class="log dungeon-live-log" data-placeholder="true"><div class="muted">Noch kein Lauf gestartet.</div></div>
+            </section>
+          </div>
+        </div>
+        <div class="dungeon-modal-footer">
+          <p id="dungeonPrimaryStatus" class="status-line dungeon-primary-status">Team wählen und Lauf starten.</p>
+          <button id="dungeonPrimaryBtn" class="btn primary" type="button">Lauf starten</button>
+        </div>
+      </div>`;
   }
 
-  private renderStatus(): void {
-    const state = this.getState();
-    const box = document.getElementById('dungeonRunCard');
-    const autoButton = document.getElementById('autoDungeonBtn') as HTMLButtonElement | null;
-    const collectButton = document.getElementById('collectLootBtn') as HTMLButtonElement | null;
-    const waveCounter = document.getElementById('runDuration');
-    if (waveCounter) waveCounter.textContent = `${this.gameDungeon.getSessionWaveCount()} besiegt`;
-    if (!box || !autoButton || !collectButton) return;
-
-    const presentation = getDungeonStatusPresentation({
-      auto: Boolean(state.dungeonAuto),
-      selectedCharacterCount: this.getSelectedIds(state).length,
-      run: state.dungeonRun,
-      lootCollect: state.dungeonLootCollect,
-      lootTotal: this.getLootTotal(state)
-    });
-    autoButton.textContent = presentation.autoButtonText;
-    autoButton.disabled = presentation.autoButtonDisabled;
-    collectButton.textContent = presentation.collectButtonText;
-    collectButton.disabled = presentation.collectButtonDisabled;
-    const card = presentation.card;
-    box.className = card.className;
-    if (card.mode === 'active') {
-      box.innerHTML = `<strong>${card.title}</strong><p>${card.aliveText}</p><p class="muted small">${card.metaText}</p><div class="statrow">${card.enemies.map(enemy => `<div class="stat"><span>${enemy.name}</span><b>${enemy.hpText}</b></div>`).join('')}</div>`;
-      return;
-    }
-    if (card.mode === 'collecting' || card.mode === 'searching') {
-      box.innerHTML = `<strong>${card.title}</strong><br><span class="small">${card.detailText}</span>`;
-      return;
-    }
-    if (card.mode === 'idle') box.textContent = card.text;
+  private installHelpSection(): void {
+    const grid = document.querySelector<HTMLElement>('#index .grid');
+    if (!grid || grid.querySelector('[data-dungeon-session-help]')) return;
+    const card = document.createElement('div');
+    card.className = 'card span-12';
+    card.dataset['dungeonSessionHelp'] = 'true';
+    card.innerHTML = `
+      <h2>Dungeon 1 – Ablauf</h2>
+      <p class="index-note">Dungeon 1 wird ausschließlich über die Dungeon-1-Karte als Popup geöffnet. Die zuletzt gewählte Gruppe bleibt gespeichert und wird beim nächsten Öffnen wiederverwendet.</p>
+      <div class="formula">Maximale Laufzeit: 5 Stunden · Ende: Zeitablauf oder manueller Abbruch</div>
+      <p class="index-note">Energie wird in Dungeon 1 derzeit weder angezeigt noch verbraucht. Schließen des Popups beendet den aktuellen Lauf sofort; Gegner, Countdown und Live-Protokoll beginnen beim nächsten Öffnen wieder neu. Bereits vollständig eingesammelte Dungeon-Beute bleibt erhalten.</p>
+      <p class="index-note">Das Live-Protokoll zeigt die tatsächlich berechneten Kampfereignisse wie Angriffe, Fehlschläge, Ausweichen, verursachten Schaden, verbleibende HP und besiegte Ziele. Aktive Gegner werden mit Name und Lebensbalken angezeigt.</p>`;
+    grid.prepend(card);
   }
 
-  private renderLoot(): void {
-    const state = this.getState();
-    const box = document.getElementById('dungeonLoot');
-    const empty = document.getElementById('dungeonLootEmpty');
-    if (!box || !empty) return;
-    const presentation = getDungeonLootPresentation(
-      getMaterialStorageEntries(state.dungeonLoot).map(entry => ({ name: entry.displayName, qty: entry.qty }))
-    );
-    box.innerHTML = '';
-    empty.style.display = presentation.empty ? 'block' : 'none';
-    if (presentation.empty) return;
-    const grid = document.createElement('div');
-    grid.className = 'loot-grid';
-    for (const entry of presentation.entries) {
-      const chip = document.createElement('div');
-      chip.className = 'loot-chip';
-      chip.innerHTML = `${entry.name}<b>${entry.quantityText}</b>`;
-      grid.appendChild(chip);
-    }
-    box.appendChild(grid);
+  private openModal(): void {
+    const modal = document.getElementById('dungeon-select');
+    if (!modal) return;
+    const result = this.dungeonSession.open(Date.now());
+    modal.hidden = false;
+    modal.classList.add('dungeon-modal-open');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('dungeon-modal-active');
+    this.openTeamPickerSlot = null;
+    this.clearLiveLog('Noch kein Lauf gestartet.');
+    this.handleResult(result);
+    (document.getElementById('dungeonModalCloseBtn') as HTMLButtonElement | null)?.focus();
   }
 
-  private renderPrimaryAction(): void {
-    const state = this.getState();
-    const button = document.getElementById('dungeonPrimaryBtn') as HTMLButtonElement | null;
-    const status = document.getElementById('dungeonPrimaryStatus');
-    if (!button || !status) return;
-
-    const selectedCount = this.getSelectedIds(state).length;
-    const lootTotal = this.getLootTotal(state);
-    const sessionBusy = Boolean(
-      state.dungeonAuto || state.dungeonRun || state.dungeonSearch || state.dungeonLootCollect || state.dungeonStopRequested
-    );
-
-    if (state.dungeonStopRequested) {
-      button.textContent = 'Abbruch läuft …';
-      button.disabled = true;
-      status.textContent = state.dungeonRun
-        ? 'Abbruch angefordert. Die aktuelle Welle wird noch beendet.'
-        : 'Abbruch angefordert. Die aktuelle Beute wird noch eingesammelt.';
-      return;
-    }
-
-    if (sessionBusy) {
-      button.textContent = 'Lauf abbrechen';
-      button.disabled = false;
-      if (state.dungeonRun) status.textContent = `Welle aktiv · ${this.gameDungeon.getSessionWaveCount()} besiegt`;
-      else if (state.dungeonLootCollect) status.textContent = 'Beute der aktuellen Welle wird eingesammelt …';
-      else status.textContent = `Dungeon wird durchsucht · ${this.gameDungeon.getSessionWaveCount()} besiegt`;
-      return;
-    }
-
-    if (lootTotal > 0) {
-      button.textContent = `Beute einsammeln (${lootTotal})`;
-      button.disabled = false;
-      status.textContent = `${lootTotal} Beute liegt zum Einsammeln bereit.`;
-      return;
-    }
-
-    button.textContent = 'Lauf starten';
-    button.disabled = selectedCount <= 0;
-    status.textContent = selectedCount > 0
-      ? `${selectedCount} von 4 Charakterplätzen belegt.`
-      : 'Team wählen und Lauf starten.';
+  private closeModal(): void {
+    const modal = document.getElementById('dungeon-select');
+    if (!modal || !this.dungeonSession.isOpen()) return;
+    const result = this.dungeonSession.close(Date.now());
+    modal.classList.remove('dungeon-modal-open');
+    modal.setAttribute('aria-hidden', 'true');
+    modal.hidden = true;
+    document.body.classList.remove('dungeon-modal-active');
+    this.openTeamPickerSlot = null;
+    this.clearLiveLog('Noch kein Lauf gestartet.');
+    this.handleResult(result);
+    (document.getElementById('dungeonOverviewOpenBtn') as HTMLButtonElement | null)?.focus();
   }
 
-  private renderTeamInto(rootId: string): void {
+  private renderHub(): void {
     const state = this.getState();
-    const root = document.getElementById(rootId);
+    const overviewAction = document.getElementById('dungeonOverviewAction') as HTMLButtonElement | null;
+    if (overviewAction) {
+      const lootTotal = this.getLootTotal(state);
+      overviewAction.textContent = lootTotal > 0 ? 'Loot sammeln' : 'Dungeon 1 öffnen';
+      overviewAction.disabled = false;
+      overviewAction.dataset['dungeonOverviewOwner'] = 'angular';
+    }
+    const copy = document.querySelector<HTMLElement>('.dungeon-overview-card .menu-card-copy');
+    if (copy) copy.textContent = '5 Stunden Laufzeit · Team, Gegner und Kampfprotokoll im Popup';
+  }
+
+  private renderTeam(): void {
+    const state = this.getState();
+    const root = document.getElementById('dungeonTeamCard');
     if (!root) return;
     const characters = this.presentationCharacters(state);
-    const locked = Boolean(
-      state.dungeonRun || state.dungeonAuto || state.dungeonSearch || state.dungeonLootCollect || state.dungeonStopRequested
-    );
-    const cycleActive = Boolean(
-      state.dungeonAuto || state.dungeonRun || state.dungeonSearch || state.dungeonLootCollect ||
-      state.dungeonStopRequested || state.dungeonCycleOriginalIds?.length
-    );
+    const locked = this.dungeonSession.isRunActive();
     const presentation = getDungeonTeamPresentation(
       state.dungeonTeamSlots,
       characters,
       locked,
       state.dungeonCycleActiveIds ?? [],
-      cycleActive
+      locked
     );
     const slots = presentation.slots.map(slot => {
       const picker = this.teamPickerHtml(state, characters, slot.slotIndex);
       const pickerOpen = this.openTeamPickerSlot === slot.slotIndex ? ' picker-open' : '';
       if (!slot.occupied) {
-        return `<div class="team-slot${pickerOpen}"><div class="team-slot-head"><strong>${slot.title}</strong></div><div class="empty">${slot.emptyText}</div><div class="actions"><button class="btn primary" data-dungeon-action="picker" data-slot="${slot.slotIndex}" ${presentation.locked ? 'disabled' : ''}>${slot.addLabel}</button></div>${picker}</div>`;
+        return `<div class="team-slot${pickerOpen}"><div class="team-slot-head"><strong>${slot.title}</strong></div><div class="empty">${slot.emptyText}</div><div class="actions"><button class="btn primary" data-dungeon-action="picker" data-slot="${slot.slotIndex}" ${locked ? 'disabled' : ''}>${slot.addLabel}</button></div>${picker}</div>`;
       }
       const fallen = slot.fallen ? `<span class="tag temp">${slot.fallenLabel}</span>` : '';
-      return `<div class="team-slot${pickerOpen}"><div class="team-slot-head"><strong>${slot.title}</strong>${fallen}</div><div class="statrow"><div class="stat"><span>HP</span><b>${slot.hpValue}</b></div><div class="stat"><span>EN</span><b>${slot.energyValue}</b></div></div><div class="actions"><button class="btn" data-dungeon-action="remove" data-slot="${slot.slotIndex}" ${presentation.locked ? 'disabled' : ''}>${slot.removeLabel}</button><button class="btn" data-dungeon-action="picker" data-slot="${slot.slotIndex}" ${presentation.locked ? 'disabled' : ''}>${slot.switchLabel}</button></div>${picker}</div>`;
+      return `<div class="team-slot${pickerOpen}"><div class="team-slot-head"><strong>${slot.title}</strong>${fallen}</div><div class="statrow dungeon-character-stats"><div class="stat"><span>HP</span><b>${slot.hpValue}</b></div></div><div class="actions"><button class="btn" data-dungeon-action="remove" data-slot="${slot.slotIndex}" ${locked ? 'disabled' : ''}>${slot.removeLabel}</button><button class="btn" data-dungeon-action="picker" data-slot="${slot.slotIndex}" ${locked ? 'disabled' : ''}>${slot.switchLabel}</button></div>${picker}</div>`;
     }).join('');
-    root.innerHTML = `<div class="team-slot-grid">${slots}</div>${presentation.locked ? `<p class="status-line">${presentation.lockedText}</p>` : ''}`;
+    root.innerHTML = `<div class="team-slot-grid">${slots}</div>${locked ? '<p class="status-line">Teamzuweisung ist während eines laufenden Dungeon-Runs gesperrt.</p>' : ''}`;
   }
 
   private teamPickerHtml(
@@ -260,61 +243,112 @@ export class GameDungeonPresentationService {
     characters: DungeonTeamPresentationCharacterLike[],
     slot: number
   ): string {
-    const presentation = getDungeonTeamPickerPresentation(state.dungeonTeamSlots, characters, slot, this.openTeamPickerSlot);
-    if (!presentation.open) return '';
-    if (!presentation.candidates.length) return `<div class="team-slot-picker muted small">${presentation.emptyText}</div>`;
-    return `<div class="team-slot-picker">${presentation.candidates.map(candidate => `<div class="team-candidate"><div><strong>${candidate.name}</strong><div class="sell-meta">${candidate.meta}</div></div><button class="btn smallbtn primary" data-dungeon-action="assign" data-slot="${slot}" data-character-id="${candidate.id}">${candidate.assignLabel}</button></div>`).join('')}</div>`;
+    if (this.openTeamPickerSlot !== slot) return '';
+    const used = new Set(state.dungeonTeamSlots.filter((id, index): id is number => index !== slot && typeof id === 'number'));
+    const candidates = characters.filter(character => !used.has(character.id));
+    if (!candidates.length) return '<div class="team-slot-picker muted small">Keine weiteren Charaktere verfügbar.</div>';
+    return `<div class="team-slot-picker">${candidates.map(candidate => `<div class="team-candidate"><div><strong>${candidate.name}</strong><div class="sell-meta">${candidate.className} · HP ${this.formatNumber(candidate.hp)}</div></div><button class="btn smallbtn primary" data-dungeon-action="assign" data-slot="${slot}" data-character-id="${candidate.id}">Zuweisen</button></div>`).join('')}</div>`;
+  }
+
+  private renderTiming(): void {
+    const text = document.getElementById('dungeonTimeText');
+    const bar = document.getElementById('dungeonTimeBar') as HTMLElement | null;
+    const progress = bar?.parentElement;
+    if (!text || !bar || !progress) return;
+    const timing = this.dungeonSession.getTiming(Date.now());
+    text.textContent = this.formatDuration(timing.remainingMs);
+    const percent = Math.round(timing.progress * 10000) / 100;
+    bar.style.width = `${percent}%`;
+    progress.setAttribute('aria-valuenow', String(Math.round(percent)));
+  }
+
+  private renderEnemies(): void {
+    const root = document.getElementById('dungeonActiveEnemies');
+    if (!root) return;
+    const state = this.getState();
+    const enemies = (state.dungeonRun?.enemies ?? []).filter(enemy => enemy.alive !== false && enemy.hp > 0);
+    if (!enemies.length) {
+      root.innerHTML = `<div class="empty dungeon-compact-empty">${this.dungeonSession.isRunActive() ? 'Dungeon wird durchsucht …' : 'Keine aktiven Gegner.'}</div>`;
+      return;
+    }
+    root.innerHTML = enemies.map(enemy => {
+      const maxHp = Math.max(0.0001, Number(enemy.maxHp) || 0.0001);
+      const hp = Math.max(0, Number(enemy.hp) || 0);
+      const percent = Math.max(0, Math.min(100, hp / maxHp * 100));
+      return `<div class="dungeon-enemy"><div class="dungeon-section-head"><strong>${enemy.name}</strong><span>${hp.toFixed(1)} / ${maxHp.toFixed(1)} HP</span></div><div class="bar hp" role="progressbar" aria-label="Leben ${enemy.name}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(percent)}"><i style="width:${percent}%"></i></div></div>`;
+    }).join('');
+  }
+
+  private renderLoot(): void {
+    const state = this.getState();
+    const box = document.getElementById('dungeonLoot');
+    const empty = document.getElementById('dungeonLootEmpty');
+    const collect = document.getElementById('dungeonCollectLootBtn') as HTMLButtonElement | null;
+    if (!box || !empty || !collect) return;
+    const entries = getMaterialStorageEntries(state.dungeonLoot).filter(entry => entry.qty > 0);
+    box.innerHTML = entries.map(entry => `<span class="loot-chip">${entry.displayName}<b>×${entry.qty}</b></span>`).join('');
+    empty.style.display = entries.length ? 'none' : 'block';
+    collect.textContent = entries.length ? `Einsammeln (${entries.reduce((sum, entry) => sum + entry.qty, 0)})` : 'Einsammeln';
+    collect.disabled = !entries.length || this.dungeonSession.isRunActive();
+  }
+
+  private renderPrimaryAction(): void {
+    const state = this.getState();
+    const button = document.getElementById('dungeonPrimaryBtn') as HTMLButtonElement | null;
+    const status = document.getElementById('dungeonPrimaryStatus');
+    if (!button || !status) return;
+    const selectedCount = this.getSelectedIds(state).length;
+    const lootTotal = this.getLootTotal(state);
+    if (this.dungeonSession.isRunActive()) {
+      button.textContent = 'Lauf abbrechen';
+      button.disabled = false;
+      status.textContent = state.dungeonRun
+        ? `Kampf aktiv · ${this.getAliveEnemyCount(state)} Gegner aktiv`
+        : state.dungeonLootCollect
+          ? 'Beute der aktuellen Welle wird eingesammelt …'
+          : 'Dungeon wird durchsucht …';
+      return;
+    }
+    button.textContent = 'Lauf starten';
+    button.disabled = selectedCount <= 0 || lootTotal > 0;
+    status.textContent = lootTotal > 0
+      ? 'Vor einem neuen Lauf zuerst die vorhandene Beute einsammeln.'
+      : selectedCount > 0
+        ? `${selectedCount} von 4 Charakterplätzen belegt.`
+        : 'Team wählen und Lauf starten.';
+  }
+
+  private handlePrimaryAction(): void {
+    if (this.getLootTotal(this.getState()) > 0 && !this.dungeonSession.isRunActive()) return;
+    this.handleResult(this.dungeonSession.toggleRun(Date.now()));
+  }
+
+  private handleCollectLoot(): void {
+    if (this.dungeonSession.isRunActive()) return;
+    const result = this.dungeonSession.collectLoot();
+    this.handleResult(result, result.events.length > 0);
   }
 
   private handleOverviewAction(): void {
     const state = this.getState();
-    const sessionBusy = Boolean(
-      state.dungeonAuto || state.dungeonRun || state.dungeonSearch || state.dungeonLootCollect || state.dungeonStopRequested
-    );
-    if (sessionBusy) return;
-
     if (this.getLootTotal(state) > 0) {
-      const result = this.gameDungeon.collectLoot();
+      const result = this.dungeonSession.collectLoot();
       this.handleResult(result, result.events.length > 0);
       return;
     }
-
-    if (this.getSelectedIds(state).length <= 0) {
-      (document.getElementById('dungeonOverviewOpenBtn') as HTMLButtonElement | null)?.click();
-      return;
-    }
-
-    this.handleResult(this.gameDungeon.toggleAuto(Date.now()));
-  }
-
-  private handlePrimaryAction(): void {
-    const state = this.getState();
-    if (state.dungeonStopRequested) return;
-    const sessionBusy = Boolean(state.dungeonAuto || state.dungeonRun || state.dungeonSearch || state.dungeonLootCollect);
-    if (sessionBusy) {
-      this.handleResult(this.gameDungeon.toggleAuto(Date.now()));
-      return;
-    }
-    if (this.getLootTotal(state) > 0) {
-      const result = this.gameDungeon.collectLoot();
-      this.handleResult(result, result.events.length > 0);
-      return;
-    }
-    this.handleResult(this.gameDungeon.toggleAuto(Date.now()));
+    this.openModal();
   }
 
   private handleTeamClick(event: Event): void {
     const target = event.target instanceof Element ? event.target.closest<HTMLElement>('[data-dungeon-action]') : null;
-    if (!target) return;
+    if (!target || this.dungeonSession.isRunActive()) return;
     const state = this.getState();
-    if (state.dungeonRun || state.dungeonAuto || state.dungeonSearch || state.dungeonLootCollect || state.dungeonStopRequested) return;
     const slot = Number(target.dataset['slot']);
     if (!Number.isInteger(slot) || slot < 0 || slot >= 4) return;
     const action = target.dataset['dungeonAction'];
     if (action === 'picker') {
       this.openTeamPickerSlot = this.openTeamPickerSlot === slot ? null : slot;
-      this.renderTeamInto('dungeonTeamCard');
-      this.renderTeamInto('teamCard');
+      this.renderTeam();
       return;
     }
     if (action === 'remove') {
@@ -342,6 +376,13 @@ export class GameDungeonPresentationService {
     this.render();
   }
 
+  private clearLiveLog(message: string): void {
+    const log = document.getElementById('dungeonCombatLog');
+    if (!log) return;
+    log.dataset['placeholder'] = 'true';
+    log.innerHTML = `<div class="muted">${message}</div>`;
+  }
+
   private presentationCharacters(state: DungeonPresentationState): DungeonTeamPresentationCharacterLike[] {
     return state.characters.map(character => ({
       id: character.id,
@@ -360,6 +401,22 @@ export class GameDungeonPresentationService {
 
   private getLootTotal(state: DungeonPresentationState): number {
     return getMaterialStorageEntries(state.dungeonLoot).reduce((sum, entry) => sum + entry.qty, 0);
+  }
+
+  private getAliveEnemyCount(state: DungeonPresentationState): number {
+    return (state.dungeonRun?.enemies ?? []).filter(enemy => enemy.alive !== false && enemy.hp > 0).length;
+  }
+
+  private formatDuration(ms: number): string {
+    const totalSeconds = Math.max(0, Math.ceil(Number(ms) / 1000));
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return [hours, minutes, seconds].map(value => String(value).padStart(2, '0')).join(':');
+  }
+
+  private formatNumber(value: number): string {
+    return Number(value).toFixed(1).replace(/\.0$/, '');
   }
 
   private getState(): DungeonPresentationState {
