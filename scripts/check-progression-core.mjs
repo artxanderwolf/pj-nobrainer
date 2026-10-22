@@ -15,10 +15,13 @@ fs.mkdirSync(generatedDir, { recursive: true });
 fs.copyFileSync(path.resolve('src/app/game/armor-core.ts'), path.join(tempDir, 'armor-core.ts'));
 fs.copyFileSync(path.resolve('src/app/game/game-core.ts'), path.join(tempDir, 'game-core.ts'));
 fs.copyFileSync(path.resolve('src/app/game/game-core-v01310-baseline.ts'), path.join(tempDir, 'game-core-v01310-baseline.ts'));
+fs.copyFileSync(path.resolve('src/app/game/character-level-stats-core.ts'), path.join(tempDir, 'character-level-stats-core.ts'));
+fs.copyFileSync(path.resolve('src/app/game/character-progression-core.ts'), path.join(tempDir, 'character-progression-core.ts'));
 fs.copyFileSync(path.resolve('src/app/game/economy-core.ts'), path.join(tempDir, 'economy-core.ts'));
 fs.copyFileSync(path.resolve('src/app/game/economy-core-v01310-baseline.ts'), path.join(tempDir, 'economy-core-v01310-baseline.ts'));
 fs.copyFileSync(path.resolve('src/app/game/data/generated/game-data.generated.ts'), path.join(generatedDir, 'game-data.generated.ts'));
 fs.copyFileSync(path.resolve('src/app/game/data/generated/economy-balance.generated.ts'), path.join(generatedDir, 'economy-balance.generated.ts'));
+fs.copyFileSync(path.resolve('src/app/game/data/generated/character-progression.generated.ts'), path.join(generatedDir, 'character-progression.generated.ts'));
 fs.writeFileSync(tempPath, source);
 
 try {
