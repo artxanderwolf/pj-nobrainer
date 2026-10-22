@@ -47,6 +47,7 @@ export interface DungeonRunLike {
   dungeonId: number;
   startedAt: number;
   participantIds: number[];
+  /** Kompatibilitätsfelder für bestehende Laufzeit-/Save-Strukturen; Dungeon 1 verbraucht keine Energie mehr. */
   energyShare: number;
   totalEnergyCost: number;
   enemies: DungeonEnemy[];
@@ -59,26 +60,25 @@ export interface DungeonStartCheck<TCharacter extends DungeonCharacterLike> {
   ok: boolean;
   reason: string;
   participants: TCharacter[];
+  /** Bleibt aus Kompatibilitätsgründen erhalten und ist für Dungeon 1 immer 0. */
   share: number;
+  /** Bleibt aus Kompatibilitätsgründen erhalten und ist für Dungeon 1 immer 0. */
   totalCost: number;
 }
 
-export function getEnergyCostPerCharacter(count: number): number {
-  return count > 0 ? Math.ceil(CONFIG.dungeon.energyCost / count) : 0;
+/** Dungeon 1 verwendet Energie nicht mehr als Kosten- oder Abbruchsystem. */
+export function getEnergyCostPerCharacter(_count: number): number {
+  return 0;
 }
 
 export function checkDungeonStart<TCharacter extends DungeonCharacterLike>(participants: readonly TCharacter[]): DungeonStartCheck<TCharacter> {
   const alive = participants.filter(character => character.alive && character.hp > 0);
   if (!alive.length) return { ok: false, reason: 'Kein Charakter im aktiven Dungeon-Team verfügbar.', participants: [], share: 0, totalCost: 0 };
-  const share = getEnergyCostPerCharacter(alive.length);
-  const low = alive.find(character => character.energy + 1e-9 < share);
-  if (low) return { ok: false, reason: `Warte auf Energie: ${share} EN pro Charakter benötigt (${low.name ?? low.id} hat ${low.energy.toFixed(1)}).`, participants: alive, share, totalCost: share * alive.length };
-  return { ok: true, reason: 'Bereit', participants: alive, share, totalCost: share * alive.length };
+  return { ok: true, reason: 'Bereit', participants: alive, share: 0, totalCost: 0 };
 }
 
-export function payDungeonEnergy<TCharacter extends DungeonCharacterLike>(participants: readonly TCharacter[], share: number): void {
-  participants.forEach(character => { character.energy = Math.max(0, character.energy - share); });
-}
+/** Kompatibilitätsfunktion: Dungeon 1 zieht keine Charakterenergie mehr ab. */
+export function payDungeonEnergy<TCharacter extends DungeonCharacterLike>(_participants: readonly TCharacter[], _share: number): void {}
 
 export function resetDungeonCycle<TCharacter extends SearchParticipantLike>(characters: readonly TCharacter[]): void {
   characters.forEach(character => { character.hp = character.maxHp; character.alive = true; });
@@ -207,7 +207,7 @@ export function createDungeonRun<TCharacter extends DungeonCharacterLike>(
   if (!check.ok) throw new Error(check.reason);
   return {
     dungeonId: CONFIG.dungeon.id, startedAt: at, participantIds: check.participants.map(character => character.id),
-    energyShare: check.share, totalEnergyCost: check.totalCost, enemies,
+    energyShare: 0, totalEnergyCost: 0, enemies,
     attackPoints: createDungeonAttackPoints(check.participants, enemies, at, getAttackPoints)
   };
 }
