@@ -1,2 +1,2 @@
-max_level,xp_base,xp_growth,stat_growth
-20,100,1.4,1.1
+max_level,xp_base,xp_growth,stat_growth,strength_factor_growth,precision_growth,crit_damage_growth,experience_factor_growth
+20,100,1.4,1.1,1.01,1.01,1.01,1
