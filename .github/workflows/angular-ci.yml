@@ -44,3 +44,6 @@ jobs:
 
       - name: Test Dungeon loot collection in browser
         run: node scripts/check-built-dungeon-loot-collect.mjs
+
+      - name: Test Dungeon 1 popup lifecycle in browser
+        run: node scripts/check-built-dungeon-modal.mjs
