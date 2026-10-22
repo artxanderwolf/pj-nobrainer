@@ -1,0 +1,175 @@
+.modular-ui #forge-form .forge-weapon-native {
+  display: none;
+}
+
+.modular-ui #forge-form {
+  overflow: hidden;
+}
+
+.modular-ui .forge-build-card {
+  gap: 8px;
+}
+
+.modular-ui .forge-build-card .forge-slot-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  overflow: hidden;
+}
+
+.modular-ui .forge-build-card .forge-slot-wrap table {
+  height: 100%;
+}
+
+.modular-ui .forge-build-card .forge-slot-wrap th,
+.modular-ui .forge-build-card .forge-slot-wrap td {
+  padding: clamp(4px, .7dvh, 8px) 6px;
+}
+
+.modular-ui .forge-build-card .forge-select {
+  min-height: clamp(34px, 5dvh, 40px);
+  padding: 6px 8px;
+  font-size: clamp(11px, 2.8vw, 14px);
+}
+
+.modular-ui .forge-build-card .wizard-actions {
+  flex: 0 0 auto;
+  margin-top: 0;
+}
+
+.modular-ui .forge-build-card .wizard-actions .btn {
+  min-height: 44px;
+}
+
+.modular-ui .forge-weapon-picker {
+  position: relative;
+  flex: 0 0 auto;
+  z-index: 12;
+}
+
+.modular-ui .forge-weapon-picker summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  user-select: none;
+}
+
+.modular-ui .forge-weapon-picker summary::-webkit-details-marker {
+  display: none;
+}
+
+.modular-ui .forge-weapon-picker summary::marker {
+  content: '';
+}
+
+.modular-ui .forge-weapon-picker-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.modular-ui .forge-weapon-picker-marker {
+  flex: 0 0 auto;
+  transition: transform .15s ease;
+}
+
+.modular-ui .forge-weapon-picker[open] .forge-weapon-picker-marker {
+  transform: rotate(180deg);
+}
+
+.modular-ui .forge-weapon-picker-options {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 70;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel2);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .35);
+  overflow: visible;
+}
+
+.modular-ui .forge-weapon-picker:not([open]) .forge-weapon-picker-options {
+  display: none;
+}
+
+.modular-ui .forge-weapon-option {
+  min-width: 0;
+  min-height: 38px;
+  padding: 7px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #171b20;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.modular-ui .forge-weapon-option[aria-pressed="true"] {
+  border-color: var(--accent);
+  outline: 1px solid var(--accent);
+}
+
+.modular-ui .forge-weapon-option:disabled {
+  opacity: .48;
+  cursor: not-allowed;
+}
+
+@media (max-width: 560px) {
+  .modular-ui .forge-build-card {
+    padding: 8px;
+    gap: 6px;
+  }
+
+  .modular-ui .forge-build-card .forge-slot-wrap th,
+  .modular-ui .forge-build-card .forge-slot-wrap td {
+    padding: 3px 4px;
+  }
+
+  .modular-ui .forge-build-card .forge-slot-wrap th:first-child,
+  .modular-ui .forge-build-card .forge-slot-wrap td:first-child {
+    width: 30%;
+  }
+
+  .modular-ui .forge-build-card .forge-slot-wrap th:last-child,
+  .modular-ui .forge-build-card .forge-slot-wrap td:last-child {
+    width: 70%;
+  }
+
+  .modular-ui .forge-build-card .forge-select {
+    min-height: 32px;
+    padding: 4px 6px;
+    font-size: 11px;
+  }
+
+  .modular-ui .forge-weapon-picker-summary {
+    min-height: 38px;
+    padding: 7px 9px;
+  }
+
+  .modular-ui .forge-weapon-picker-options {
+    gap: 4px;
+    padding: 6px;
+  }
+
+  .modular-ui .forge-weapon-option {
+    min-height: 34px;
+    padding: 5px 6px;
+    font-size: 11px;
+  }
+
+  .modular-ui .forge-build-card .wizard-actions .btn {
+    min-height: 42px;
+  }
+}
