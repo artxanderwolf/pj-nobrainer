@@ -18,6 +18,26 @@ Unused slot tiles are transparent. `special` is intentionally not represented vi
 - bowstring: `#1DB7C1`
 - outline: black / near-black source pixels
 
+## V1 material colors
+
+Runtime material colors are addressed only through the stable `materialId`; display names below are documentation only and must never be used as technical keys.
+
+| materialId | display name | color |
+|---:|---|---|
+| 1 | Morsche Fichte | `#6A4B31` |
+| 2 | Fichte | `#7E5835` |
+| 3 | Tanne | `#946038` |
+| 4 | Zinn | `#9AA3B0` |
+| 5 | Kupfer | `#B66A47` |
+| 6 | Aluminium | `#AAB6C2` |
+| 7 | Hasen-Leder | `#7D5B43` |
+| 8 | Fuchs-Leder | `#9B5A32` |
+| 9 | Lederfetzen | `#705340` |
+
+Fallback silhouette color: `#8A8A8A`. Outline color: `#000000`.
+
+A complete non-starter weapon falls back to its fully gray form silhouette when one of its required visible slots is missing, duplicated or uses an unknown material ID. Forge preview mode may instead render unresolved individual slots gray while already selected slots use their material colors. Starter weapons use the gray fallback. `special` never contributes a visible color in v1.
+
 ## Validation
 
 All seven source masters are 64×64 RGBA PNGs. All visible pixels were assigned to exactly one expected slot or outline; no visible pixel remained unassigned. Source alpha is retained in the mask alpha channel.
