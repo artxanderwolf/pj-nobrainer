@@ -60,3 +60,38 @@
 .weapon-card-image {
   flex: 0 0 64px;
 }
+
+.roster-emblem-stage {
+  min-height: 274px;
+  padding-bottom: 96px;
+}
+
+.roster-equipment-slot.has-weapon {
+  min-height: 80px;
+  grid-template-columns: 64px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+
+.roster-equipment-copy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.roster-equipped-weapon-image {
+  flex: 0 0 64px;
+}
+
+@media (max-width: 760px) {
+  .roster-emblem-stage {
+    min-height: 254px;
+    padding-bottom: 94px;
+  }
+
+  .roster-equipment-slot.has-weapon {
+    min-height: 80px;
+    gap: 6px;
+    padding: 6px;
+  }
+}
