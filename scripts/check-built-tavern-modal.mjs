@@ -49,7 +49,9 @@ window.addEventListener('unhandledrejection',event=>window.__tavernModalErrors.p
     const beforeModal = Boolean(document.querySelector('[data-character-modal="recruitment"]'));
     const smallEmblem = firstOffer.querySelector('.class-emblem-small');
     const smallClassId = smallEmblem?.getAttribute('data-class-id') || '';
-    const smallStyle = smallEmblem ? getComputedStyle(smallEmblem) : null;
+    const smallComputed = smallEmblem ? getComputedStyle(smallEmblem) : null;
+    const smallBackground = smallComputed?.backgroundImage || '';
+    const smallBackgroundSize = smallComputed?.backgroundSize || '';
     const rosterCountBefore = document.querySelectorAll('#rosterCard .roster-list-item').length;
     const goldBefore = document.querySelector('#gold')?.textContent?.trim() || '';
     firstOffer.click();
@@ -57,8 +59,12 @@ window.addEventListener('unhandledrejection',event=>window.__tavernModalErrors.p
     setTimeout(() => {
       const modal = document.querySelector('[data-character-modal="recruitment"]');
       const largeEmblem = modal?.querySelector('.class-emblem-large');
-      const largeStyle = largeEmblem ? getComputedStyle(largeEmblem) : null;
+      const largeComputed = largeEmblem ? getComputedStyle(largeEmblem) : null;
+      const largeBackground = largeComputed?.backgroundImage || '';
+      const largeBackgroundSize = largeComputed?.backgroundSize || '';
       const largeRect = largeEmblem?.getBoundingClientRect();
+      const largeWidth = largeRect?.width || 0;
+      const largeHeight = largeRect?.height || 0;
       const largeClassId = largeEmblem?.getAttribute('data-class-id') || '';
       const recruitButton = modal?.querySelector('[data-tavern-action="recruit"]');
       const hasLegacyOnclick = Boolean(recruitButton?.getAttribute('onclick'));
@@ -71,12 +77,8 @@ window.addEventListener('unhandledrejection',event=>window.__tavernModalErrors.p
         const goldAfter = document.querySelector('#gold')?.textContent?.trim() || '';
         finish({
           status: 'tested', beforeModal, smallClassId, largeClassId,
-          smallBackground: smallStyle?.backgroundImage || '',
-          smallBackgroundSize: smallStyle?.backgroundSize || '',
-          largeBackground: largeStyle?.backgroundImage || '',
-          largeBackgroundSize: largeStyle?.backgroundSize || '',
-          largeWidth: largeRect?.width || 0,
-          largeHeight: largeRect?.height || 0,
+          smallBackground, smallBackgroundSize, largeBackground, largeBackgroundSize,
+          largeWidth, largeHeight,
           hasLegacyOnclick, recruitEnabled, modalAfterRecruit,
           rosterCountBefore, rosterCountAfter, goldBefore, goldAfter
         });
