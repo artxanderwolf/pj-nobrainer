@@ -10,18 +10,6 @@ const RECRUIT_BLOCK = `function recruitCharacter(classId="recruit"){
   addLog(\`${'${c.name}'} wurde für \${formatCurrencyNickel(cost)} angeworben.\`,"good");render();
 }`;
 
-const RECRUIT_BRIDGE = `function recruitCharacter(classId="recruit"){
-  const progressionCompatibility=window.NoBrainerProgressionCompatibility;
-  if(!progressionCompatibility)throw new Error("NoBrainer-Progression-Kompatibilitätsbrücke fehlt.");
-  const result=progressionCompatibility.recruit(classId);
-  if(!result.ok){
-    if(result.reason==="inn-full")alert("Das Inn ist voll. Bitte zuerst einen weiteren Kaderplatz ausbauen.");
-    else if(result.reason==="insufficient-funds")alert(\`Nicht genügend Geld. Benötigt: \${formatCurrencyNickel(result.costNickel)}.\`);
-    return;
-  }
-  addLog(\`${'${result.character.name}'} wurde für \${formatCurrencyNickel(result.costNickel)} angeworben.\`,"good");render();
-}`;
-
 const UPGRADE_BLOCK = `function buyUpgrade(kind){
   const map={
     inn:["innCapacity","inn","Kaderplatz"],forgeSlots:["forgeSlots","forgeSlots","Herstellungsplatz"],
@@ -50,7 +38,7 @@ const UPGRADE_BRIDGE = `function buyUpgrade(kind){
 @Injectable({ providedIn: 'root' })
 export class LegacyProgressionAdapterService {
   adapt(source: string): string {
-    let adapted = this.replaceOnce(source, RECRUIT_BLOCK, RECRUIT_BRIDGE, 'Rekrutierungsablauf');
+    let adapted = this.replaceOnce(source, RECRUIT_BLOCK, '', 'Rekrutierungsablauf');
     adapted = this.replaceOnce(adapted, UPGRADE_BLOCK, UPGRADE_BRIDGE, 'Ausbaukauf');
     return adapted;
   }
