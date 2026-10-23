@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - migration/angular
+      - feature/weapon-image-assets-v0.17.0
   pull_request:
     branches:
       - main
@@ -35,6 +36,9 @@ jobs:
 
       - name: Smoke test built runtime
         run: node scripts/check-built-runtime-startup.mjs
+
+      - name: Test weapon image pilot in browser
+        run: node --no-warnings --experimental-strip-types scripts/check-built-weapon-image-pilot.mjs
 
       - name: Test roster in browser
         run: node scripts/check-built-roster.mjs
