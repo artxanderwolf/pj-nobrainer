@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - migration/angular
+      - feature/weapon-image-assets-v0.17.0
   pull_request:
     branches:
       - main
