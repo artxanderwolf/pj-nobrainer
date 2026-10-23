@@ -13,7 +13,7 @@ const browser = ['google-chrome', 'google-chrome-stable', 'chromium', 'chromium-
   const probe = spawnSync('which', [candidate], { encoding: 'utf8' });
   return probe.status === 0 && probe.stdout.trim();
 });
-assert.ok(browser, 'Chrome/Chromium wurde für den gemeinsamen Waffenkarten-Browsertest nicht gefunden.');
+assert.ok(browser, 'Chrome/Chromium wurde für den gemeinsamen Waffenbild-Browsertest nicht gefunden.');
 
 const probeScript = `<script>
 window.__sharedWeaponCardErrors=[];
@@ -57,31 +57,29 @@ window.addEventListener('unhandledrejection',event=>window.__sharedWeaponCardErr
     };
   };
 
-  const inspectPickerAndEquip = () => {
-    const pickerCards = [...document.querySelectorAll('.roster-weapon-picker .weapon-card')];
-    const enabledCards = pickerCards.filter(card => {
-      const action = card.querySelector('[data-roster-action="equip-weapon"]');
-      return action instanceof HTMLButtonElement && !action.disabled;
-    });
-    const preferred = enabledCards.find(card => {
-      const form = card.querySelector('.weapon-card-image')?.getAttribute('data-weapon-form') || '';
-      return !['sword2h', 'axe2h', 'bow', 'staff'].includes(form);
-    }) || enabledCards[0] || null;
-    if (!preferred) {
-      finish({ status: 'no-equip-target' });
-      return;
-    }
+  const findInventoryCard = title => [...document.querySelectorAll('#weaponInventory .weapon-card')]
+    .find(card => card.querySelector('.weapon-card-title')?.textContent?.trim() === title) || null;
 
-    const title = preferred.querySelector('.weapon-card-title')?.textContent?.trim() || '';
-    const pickerImage = preferred.querySelector('.weapon-card-image');
-    const pickerAction = preferred.querySelector('[data-roster-action="equip-weapon"]');
-    const inventoryCards = [...document.querySelectorAll('#weaponInventory .weapon-card')];
-    const inventoryCard = inventoryCards.find(card => card.querySelector('.weapon-card-title')?.textContent?.trim() === title) || null;
+  const inspectAndEquipTarget = title => {
+    const pickerCards = [...document.querySelectorAll('.roster-weapon-picker .weapon-card')];
+    const pickerCard = pickerCards.find(card => card.querySelector('.weapon-card-title')?.textContent?.trim() === title) || null;
+    const pickerImage = pickerCard?.querySelector('.weapon-card-image') || null;
+    const pickerAction = pickerCard?.querySelector('[data-roster-action="equip-weapon"]') || null;
+    const inventoryCard = findInventoryCard(title);
     const inventoryImage = inventoryCard?.querySelector('.weapon-card-image') || null;
     const inventoryAction = inventoryCard?.querySelector('[data-weapon-inventory-action]') || null;
 
-    if (!(pickerAction instanceof HTMLButtonElement) || pickerAction.disabled || !inventoryCard || !inventoryImage || !inventoryAction) {
+    if (!pickerCard || !pickerImage || !(pickerAction instanceof HTMLButtonElement) || !inventoryCard || !inventoryImage || !inventoryAction) {
       finish({ status: 'matching-card-not-ready', title });
+      return;
+    }
+    if (pickerAction.disabled) {
+      finish({
+        status: 'target-disabled',
+        title,
+        pickerStatus: pickerAction.textContent?.trim() || '',
+        pickerForm: pickerImage.getAttribute('data-weapon-form') || ''
+      });
       return;
     }
 
@@ -105,13 +103,13 @@ window.addEventListener('unhandledrejection',event=>window.__sharedWeaponCardErr
         equippedName: equippedSlot?.querySelector('strong')?.textContent?.trim() || '',
         pickerClosedAfterEquip: !document.querySelector('.roster-weapon-picker')
       });
-    }, 120);
+    }, 140);
   };
 
-  const openPickerAfterOptionalClear = () => {
+  const openLeftPickerWithFreeHand = title => {
     const leftSlot = document.querySelector('.roster-equipment-slot[data-hand="leftHand"]');
     if (!(leftSlot instanceof HTMLButtonElement)) {
-      finish({ status: 'left-slot-missing' });
+      finish({ status: 'left-slot-missing', title });
       return;
     }
     leftSlot.click();
@@ -122,16 +120,56 @@ window.addEventListener('unhandledrejection',event=>window.__sharedWeaponCardErr
         setTimeout(() => {
           const refreshedLeftSlot = document.querySelector('.roster-equipment-slot[data-hand="leftHand"]');
           if (!(refreshedLeftSlot instanceof HTMLButtonElement)) {
-            finish({ status: 'left-slot-missing-after-clear' });
+            finish({ status: 'left-slot-missing-after-clear', title });
             return;
           }
           refreshedLeftSlot.click();
-          setTimeout(inspectPickerAndEquip, 100);
-        }, 100);
+          setTimeout(() => inspectAndEquipTarget(title), 120);
+        }, 120);
         return;
       }
-      inspectPickerAndEquip();
-    }, 100);
+      inspectAndEquipTarget(title);
+    }, 120);
+  };
+
+  const openRosterForTarget = title => {
+    const characterNav = document.querySelector('#nav button[data-page="character"]');
+    const rosterMenu = document.querySelector('#character .menu-card[onclick*="roster"]');
+    if (!(characterNav instanceof HTMLElement) || !(rosterMenu instanceof HTMLElement)) {
+      finish({ status: 'roster-navigation-missing', title });
+      return;
+    }
+    characterNav.click();
+    rosterMenu.click();
+    setTimeout(() => {
+      const firstRow = document.querySelector('#rosterCard .roster-list-item');
+      if (!(firstRow instanceof HTMLElement)) {
+        finish({ status: 'roster-row-missing', title });
+        return;
+      }
+      firstRow.click();
+      setTimeout(() => openLeftPickerWithFreeHand(title), 100);
+    }, 80);
+  };
+
+  const prepareTarget = () => {
+    const cards = [...document.querySelectorAll('#weaponInventory .weapon-card')];
+    const oneHandedForms = new Set(['generic', 'dagger', 'sword', 'axe1h']);
+    const targetCard = cards.find(card => oneHandedForms.has(card.querySelector('.weapon-card-image')?.getAttribute('data-weapon-form') || '')) || cards[0] || null;
+    const title = targetCard?.querySelector('.weapon-card-title')?.textContent?.trim() || '';
+    const action = targetCard?.querySelector('[data-weapon-inventory-action]') || null;
+    if (!targetCard || !title || !(action instanceof HTMLButtonElement)) {
+      finish({ status: 'target-inventory-card-missing' });
+      return;
+    }
+
+    const actionName = action.getAttribute('data-weapon-inventory-action') || '';
+    if (actionName === 'unequip' && !action.disabled) {
+      action.click();
+      setTimeout(() => openRosterForTarget(title), 140);
+      return;
+    }
+    openRosterForTarget(title);
   };
 
   const started = Date.now();
@@ -150,13 +188,7 @@ window.addEventListener('unhandledrejection',event=>window.__sharedWeaponCardErr
     }
 
     clearInterval(timer);
-    characterNav.click();
-    rosterMenu.click();
-
-    setTimeout(() => {
-      document.querySelector('#rosterCard .roster-list-item')?.click();
-      setTimeout(openPickerAfterOptionalClear, 80);
-    }, 50);
+    prepareTarget();
   }, 50);
 })();
 </script>`;
@@ -195,13 +227,13 @@ let child = null;
 try {
   const address = server.address(); assert.ok(address && typeof address === 'object');
   const pageUrl = `http://127.0.0.1:${address.port}${basePath}`;
-  child=spawn(browser,['--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--hide-scrollbars','--no-first-run','--no-default-browser-check',`--user-data-dir=${browserProfile}`,'--window-size=390,844','--virtual-time-budget=9000','--dump-dom',pageUrl],{stdio:['ignore','pipe','pipe']});
+  child=spawn(browser,['--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--hide-scrollbars','--no-first-run','--no-default-browser-check',`--user-data-dir=${browserProfile}`,'--window-size=390,844','--virtual-time-budget=9500','--dump-dom',pageUrl],{stdio:['ignore','pipe','pipe']});
   child.stdout.setEncoding('utf8'); child.stderr.setEncoding('utf8');
   let stdout = '', stderr = ''; child.stdout.on('data', chunk => { stdout += chunk; }); child.stderr.on('data', chunk => { stderr += chunk; });
   const code = await new Promise((resolveClose, rejectClose) => { child.once('error', rejectClose); child.once('close', resolveClose); });
-  assert.equal(code, 0, `Chrome/Chromium beendete den gemeinsamen Waffenkarten-Browsertest mit Code ${code}.\n${stderr}`);
+  assert.equal(code, 0, `Chrome/Chromium beendete den gemeinsamen Waffenbild-Browsertest mit Code ${code}.\n${stderr}`);
   const match = stdout.match(/<pre id="sharedWeaponCardResult">([^<]+)<\/pre>/);
-  assert.ok(match, `Der gemeinsame Waffenkarten-Browsertest hat kein Ergebnis erzeugt.\n${stderr}\nDOM-Ausgabe: ${stdout.slice(-7000)}`);
+  assert.ok(match, `Der gemeinsame Waffenbild-Browsertest hat kein Ergebnis erzeugt.\n${stderr}\nDOM-Ausgabe: ${stdout.slice(-7000)}`);
   const result = JSON.parse(match[1].replaceAll('&quot;', '"').replaceAll('&amp;', '&'));
 
   assert.equal(result.status, 'tested', JSON.stringify(result));
@@ -222,7 +254,7 @@ try {
   assert.deepEqual(result.picker.layers, result.inventory.layers, 'Waffenlager und Kader-Picker rendern dieselbe Waffe unterschiedlich.');
   assert.equal(result.picker.genericColor, result.inventory.genericColor, 'Fallback-Darstellung unterscheidet sich zwischen Waffenlager und Kader-Picker.');
   assert.equal(result.pickerActionPresent, true, 'Die bestehende Ausrüsten-Aktion im Kader-Picker ging beim Bildumbau verloren.');
-  assert.equal(result.pickerActionEnabled, true, 'Der Test konnte keine tatsächlich ausrüstbare Waffe auswählen.');
+  assert.equal(result.pickerActionEnabled, true, 'Die gezielt freigegebene Waffe lässt sich im Kader-Picker nicht ausrüsten.');
 
   assert.ok(result.equipped, 'Im ausgerüsteten Kader-Hand-Slot fehlt das zentrale Waffenbild.');
   assert.equal(result.equipped.cssWidth, '64px');
