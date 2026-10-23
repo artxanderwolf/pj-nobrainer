@@ -107,6 +107,57 @@ assert.equal(bow.kind, 'materials');
 assert.deepEqual(bow.layers.map(layer => layer.slot), ['back', 'gripCore', 'gripWrap', 'bowstring']);
 assert.equal(bow.layers.at(-1)?.atlasCell, 7);
 
+const remainingForms = [
+  {
+    weaponForm: 'axe1h',
+    slots: [
+      { slot: 'workingPart', materialId: 4 },
+      { slot: 'back', materialId: 5 },
+      { slot: 'gripCore', materialId: 1 },
+      { slot: 'gripWrap', materialId: 9 }
+    ],
+    expectedSlots: ['workingPart', 'back', 'gripCore', 'gripWrap']
+  },
+  {
+    weaponForm: 'sword2h',
+    slots: [
+      { slot: 'workingPart', materialId: 6 },
+      { slot: 'back', materialId: 4 },
+      { slot: 'gripCore', materialId: 3 },
+      { slot: 'gripWrap', materialId: 8 },
+      { slot: 'parry', materialId: 5 }
+    ],
+    expectedSlots: ['workingPart', 'back', 'gripCore', 'gripWrap', 'parry']
+  },
+  {
+    weaponForm: 'axe2h',
+    slots: [
+      { slot: 'workingPart', materialId: 5 },
+      { slot: 'back', materialId: 6 },
+      { slot: 'gripCore', materialId: 2 },
+      { slot: 'gripWrap', materialId: 7 }
+    ],
+    expectedSlots: ['workingPart', 'back', 'gripCore', 'gripWrap']
+  },
+  {
+    weaponForm: 'staff',
+    slots: [
+      { slot: 'back', materialId: 3 },
+      { slot: 'gripCore', materialId: 1 },
+      { slot: 'gripWrap', materialId: 8 }
+    ],
+    expectedSlots: ['back', 'gripCore', 'gripWrap']
+  }
+];
+
+for (const entry of remainingForms) {
+  const plan = getWeaponImageRenderPlan(entry);
+  assert.equal(plan.kind, 'materials', `${entry.weaponForm}: vollständige Materialdaten müssen materialbasiert rendern.`);
+  assert.equal(plan.weaponForm, entry.weaponForm);
+  assert.deepEqual(plan.layers.map(layer => layer.slot), entry.expectedSlots, `${entry.weaponForm}: sichtbare Slotreihenfolge stimmt nicht.`);
+  assert.equal(plan.layers.every(layer => layer.fallback === false), true, `${entry.weaponForm}: vollständige Materialdaten dürfen keinen grauen Slot erzeugen.`);
+}
+
 const partialPreview = getWeaponImageRenderPlan({
   weaponForm: 'dagger',
   slots: [
@@ -171,4 +222,4 @@ assert.equal(unknownForm.weaponForm, null);
 assert.equal(unknownForm.fallbackReason, 'unknown-form');
 assert.equal(unknownForm.silhouetteColor, WEAPON_FALLBACK_COLOR);
 
-console.log('Weapon-Image-Presentation-Core: ID-Farben, Form-/Slot-Mapping, Atlas-Protokoll, Preview und Fallbacks sind konsistent.');
+console.log('Weapon-Image-Presentation-Core: ID-Farben, alle sieben Form-/Slot-Mappings, Atlas-Protokoll, Preview und Fallbacks sind konsistent.');
