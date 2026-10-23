@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - migration/angular
-      - feature/roster-overlay-v0.15.5
   pull_request:
     branches:
       - main
