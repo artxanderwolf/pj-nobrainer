@@ -40,6 +40,37 @@ const cases = [
     colors: ['rgb(170, 182, 194)', 'rgb(182, 106, 71)', 'rgb(148, 96, 56)', 'rgb(125, 91, 67)', 'rgb(154, 163, 176)', 'rgb(0, 0, 0)']
   },
   {
+    id: 'axe1h', label: '1H-Axt', atlasName: 'axe1h-mask-atlas-64',
+    weapon: { weaponForm: 'axe1h', slots: [
+      { slot: 'workingPart', materialId: 4 }, { slot: 'back', materialId: 5 },
+      { slot: 'gripCore', materialId: 1 }, { slot: 'gripWrap', materialId: 9 }
+    ] },
+    layers: ['workingPart', 'back', 'gripCore', 'gripWrap', 'outline'],
+    positions: ['-128px', '-192px', '-256px', '-320px', '-64px'],
+    colors: ['rgb(154, 163, 176)', 'rgb(182, 106, 71)', 'rgb(106, 75, 49)', 'rgb(112, 83, 64)', 'rgb(0, 0, 0)']
+  },
+  {
+    id: 'sword2h', label: '2H-Schwert', atlasName: 'sword2h-mask-atlas-64',
+    weapon: { weaponForm: 'sword2h', slots: [
+      { slot: 'workingPart', materialId: 6 }, { slot: 'back', materialId: 4 },
+      { slot: 'gripCore', materialId: 3 }, { slot: 'gripWrap', materialId: 8 },
+      { slot: 'parry', materialId: 5 }
+    ] },
+    layers: ['workingPart', 'back', 'gripCore', 'gripWrap', 'parry', 'outline'],
+    positions: ['-128px', '-192px', '-256px', '-320px', '-384px', '-64px'],
+    colors: ['rgb(170, 182, 194)', 'rgb(154, 163, 176)', 'rgb(148, 96, 56)', 'rgb(155, 90, 50)', 'rgb(182, 106, 71)', 'rgb(0, 0, 0)']
+  },
+  {
+    id: 'axe2h', label: '2H-Axt', atlasName: 'axe2h-mask-atlas-64',
+    weapon: { weaponForm: 'axe2h', slots: [
+      { slot: 'workingPart', materialId: 5 }, { slot: 'back', materialId: 6 },
+      { slot: 'gripCore', materialId: 2 }, { slot: 'gripWrap', materialId: 7 }
+    ] },
+    layers: ['workingPart', 'back', 'gripCore', 'gripWrap', 'outline'],
+    positions: ['-128px', '-192px', '-256px', '-320px', '-64px'],
+    colors: ['rgb(182, 106, 71)', 'rgb(170, 182, 194)', 'rgb(126, 88, 53)', 'rgb(125, 91, 67)', 'rgb(0, 0, 0)']
+  },
+  {
     id: 'bow', label: 'Bogen', atlasName: 'bow-mask-atlas-64',
     weapon: { weaponForm: 'bow', slots: [
       { slot: 'back', materialId: 3 }, { slot: 'gripCore', materialId: 2 },
@@ -48,6 +79,16 @@ const cases = [
     layers: ['back', 'gripCore', 'gripWrap', 'bowstring', 'outline'],
     positions: ['-192px', '-256px', '-320px', '-448px', '-64px'],
     colors: ['rgb(148, 96, 56)', 'rgb(126, 88, 53)', 'rgb(112, 83, 64)', 'rgb(125, 91, 67)', 'rgb(0, 0, 0)']
+  },
+  {
+    id: 'staff', label: 'Stab', atlasName: 'staff-mask-atlas-64',
+    weapon: { weaponForm: 'staff', slots: [
+      { slot: 'back', materialId: 3 }, { slot: 'gripCore', materialId: 1 },
+      { slot: 'gripWrap', materialId: 8 }
+    ] },
+    layers: ['back', 'gripCore', 'gripWrap', 'outline'],
+    positions: ['-192px', '-256px', '-320px', '-64px'],
+    colors: ['rgb(148, 96, 56)', 'rgb(106, 75, 49)', 'rgb(155, 90, 50)', 'rgb(0, 0, 0)']
   }
 ];
 
@@ -164,7 +205,7 @@ try {
     assert.ok(actual.assets[0].size > 1000, `${expectedCase.id}: Atlas ist unerwartet klein.`);
   }
 
-  console.log('Waffenbild-Pilotbrowser: Dolch, 1H-Schwert und Bogen rendern im echten Angular-Build mit korrekten Materialfarben, parry/bowstring-Layern, Maskenpositionen und geladenen PNG-Atlanten.');
+  console.log('Waffenbild-Browserregression: Alle sieben Waffenformen rendern im echten Angular-Build mit korrekten Materialfarben, Slot-Layern, Maskenpositionen und geladenen PNG-Atlanten.');
 } finally {
   if (child) await stopBrowser(child);
   rmSync(browserProfile, { recursive: true, force: true });
