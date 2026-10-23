@@ -61,10 +61,7 @@
               "buildTarget": "nobrainer:build:production"
             },
             "development": {
-              "baseHref": "/",
-              "optimization": false,
-              "extractLicenses": false,
-              "sourceMap": true
+              "buildTarget": "nobrainer:build:development"
             }
           },
           "defaultConfiguration": "development"
