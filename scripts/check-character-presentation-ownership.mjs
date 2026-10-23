@@ -43,7 +43,7 @@ assert.doesNotMatch(service, /className\s*===|name\s*===\s*['"](?:Rekrut|Kämpfe
 
 for (const classId of ['archer', 'scholar', 'recruit', 'fighter']) {
   assert.match(characterCss, new RegExp(`class-emblem-small\\[data-class-id=\\"${classId}\\"\\][^}]*${classId}-small\\.png`), `Kleines Einzelasset für ${classId} fehlt.`);
-  assert.match(characterCss, new RegExp(`class-emblem-large\\[data-class-id=\\"${classId}\\"\\][^}]*${classId}-large\\.png`), `Großes Einzelasset für ${classId} fehlt.`);
+  assert.match(characterCss, new RegExp(`class-emblem-large\\[data-class-id=\\"${classId}\\"\\][^}]*${classId}-large-v0\\.16\\.1\\.png`), `Großes v0.16.1-Einzelasset für ${classId} fehlt.`);
 }
 assert.match(characterCss, /background-size:\s*contain/, 'Klassenembleme werden nicht vollständig skaliert.');
 assert.doesNotMatch(characterCss, /class-emblems-(?:compact|detail)\.png|background-position:\s*-/, 'Das fehleranfällige Sprite-Cropping ist noch aktiv.');
