@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { MATERIAL_REFERENCES } from '../src/app/game/game-core.ts';
+import { readFileSync } from 'node:fs';
 import {
   VISIBLE_WEAPON_IMAGE_SLOTS_BY_FORM,
   WEAPON_MASK_ATLAS_CELL_INDEX,
@@ -42,10 +42,17 @@ assert.equal(resolveWeaponImageForm('unbekannt'), null);
 assert.deepEqual(getVisibleWeaponImageSlots('bow'), ['back', 'gripCore', 'gripWrap', 'bowstring']);
 assert.deepEqual(getVisibleWeaponImageSlots('unbekannt'), []);
 
-const currentMaterialIds = MATERIAL_REFERENCES.map(reference => reference.materialId).sort((a, b) => a - b);
+const materialsCsv = readFileSync(new URL('../balancing/tables/materials.csv', import.meta.url), 'utf8').trim();
+const currentMaterialIds = materialsCsv
+  .split(/\r?\n/)
+  .slice(1)
+  .filter(Boolean)
+  .map(line => Number(line.split(',')[0]))
+  .filter(Number.isInteger)
+  .sort((a, b) => a - b);
 assert.deepEqual(Object.keys(WEAPON_MATERIAL_COLORS_BY_ID).map(Number).sort((a, b) => a - b), currentMaterialIds);
-for (const reference of MATERIAL_REFERENCES) {
-  assert.match(getWeaponMaterialColorById(reference.materialId) ?? '', /^#[0-9A-F]{6}$/i);
+for (const materialId of currentMaterialIds) {
+  assert.match(getWeaponMaterialColorById(materialId) ?? '', /^#[0-9A-F]{6}$/i);
 }
 assert.equal(getWeaponMaterialColorById(null), null);
 assert.equal(getWeaponMaterialColorById(999), null);
