@@ -34,22 +34,22 @@ window.addEventListener('unhandledrejection',event=>window.__sharedWeaponCardErr
 
   const describeImage = image => {
     if (!(image instanceof HTMLElement)) return null;
-    const rect = image.getBoundingClientRect();
+    const style = getComputedStyle(image);
     const layers = [...image.querySelectorAll('.weapon-image-layer')].map(layer => {
-      const style = getComputedStyle(layer);
+      const layerStyle = getComputedStyle(layer);
       return {
         name: layer.getAttribute('data-weapon-image-layer') || '',
-        color: style.backgroundColor,
-        maskImage: style.maskImage && style.maskImage !== 'none' ? style.maskImage : style.webkitMaskImage,
-        maskPosition: style.maskPosition && style.maskPosition !== '0% 0%' ? style.maskPosition : style.webkitMaskPosition
+        color: layerStyle.backgroundColor,
+        maskImage: layerStyle.maskImage && layerStyle.maskImage !== 'none' ? layerStyle.maskImage : layerStyle.webkitMaskImage,
+        maskPosition: layerStyle.maskPosition && layerStyle.maskPosition !== '0% 0%' ? layerStyle.maskPosition : layerStyle.webkitMaskPosition
       };
     });
     const generic = image.querySelector('.weapon-image-generic-shape');
     return {
       form: image.getAttribute('data-weapon-form') || '',
       kind: image.getAttribute('data-weapon-image-kind') || '',
-      width: rect.width,
-      height: rect.height,
+      cssWidth: style.width,
+      cssHeight: style.height,
       layers,
       genericColor: generic ? getComputedStyle(generic).backgroundColor : ''
     };
@@ -135,7 +135,7 @@ let child = null;
 try {
   const address = server.address(); assert.ok(address && typeof address === 'object');
   const pageUrl = `http://127.0.0.1:${address.port}${basePath}`;
-  child = spawn(browser, ['--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--hide-scrollbars','--no-first-run','--no-default-browser-check',`--user-data-dir=${browserProfile}`,'--window-size=390,844','--virtual-time-budget=8000','--dump-dom',pageUrl], { stdio: ['ignore','pipe','pipe'] });
+  child=spawn(browser,['--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--hide-scrollbars','--no-first-run','--no-default-browser-check',`--user-data-dir=${browserProfile}`,'--window-size=390,844','--virtual-time-budget=8000','--dump-dom',pageUrl],{stdio:['ignore','pipe','pipe']});
   child.stdout.setEncoding('utf8'); child.stderr.setEncoding('utf8');
   let stdout = '', stderr = ''; child.stdout.on('data', chunk => { stdout += chunk; }); child.stderr.on('data', chunk => { stderr += chunk; });
   const code = await new Promise((resolveClose, rejectClose) => { child.once('error', rejectClose); child.once('close', resolveClose); });
@@ -149,15 +149,15 @@ try {
   assert.equal(result.runtimeError, '', `Runtimefehler: ${JSON.stringify(result)}`);
   assert.ok(result.title, 'Die geprüfte Waffe besitzt keinen Kartentitel.');
   assert.ok(result.inventory, 'Im Waffenlager fehlt das zentrale Waffenbild.');
-  assert.equal(result.inventory.width, 64);
-  assert.equal(result.inventory.height, 64);
+  assert.equal(result.inventory.cssWidth, '64px');
+  assert.equal(result.inventory.cssHeight, '64px');
   assert.ok(result.inventory.form, 'Das Waffenlagerbild besitzt keine technische Waffenform.');
   assert.ok(result.inventory.kind, 'Das Waffenlagerbild besitzt keinen Renderkind.');
   assert.ok(['equip', 'unequip'].includes(result.inventoryAction), 'Die bestehende Waffenlageraktion ging beim Bildumbau verloren.');
   assert.equal(result.pickerCardFound, true, 'Dieselbe Waffenkarte wurde im Kader-Waffenpicker nicht gefunden.');
   assert.ok(result.picker, 'Im Kader-Waffenpicker fehlt das zentrale Waffenbild.');
-  assert.equal(result.picker.width, 64);
-  assert.equal(result.picker.height, 64);
+  assert.equal(result.picker.cssWidth, '64px');
+  assert.equal(result.picker.cssHeight, '64px');
   assert.equal(result.picker.form, result.inventory.form, 'Waffenlager und Kader-Picker verwenden nicht dieselbe Waffenform.');
   assert.equal(result.picker.kind, result.inventory.kind, 'Waffenlager und Kader-Picker verwenden nicht denselben Renderplan.');
   assert.deepEqual(result.picker.layers, result.inventory.layers, 'Waffenlager und Kader-Picker rendern dieselbe Waffe unterschiedlich.');
