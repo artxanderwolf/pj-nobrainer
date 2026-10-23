@@ -48,7 +48,7 @@ export const WEAPON_MASK_ATLAS_CELL_INDEX = Object.freeze({
   gripWrap: 5,
   parry: 6,
   bowstring: 7
-}) as const;
+} as const);
 
 export const VISIBLE_WEAPON_IMAGE_SLOTS_BY_FORM = Object.freeze({
   dagger: Object.freeze(['workingPart', 'back', 'gripCore', 'gripWrap']),
