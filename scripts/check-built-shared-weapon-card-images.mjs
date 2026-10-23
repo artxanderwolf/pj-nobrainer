@@ -50,9 +50,88 @@ window.addEventListener('unhandledrejection',event=>window.__sharedWeaponCardErr
       kind: image.getAttribute('data-weapon-image-kind') || '',
       cssWidth: style.width,
       cssHeight: style.height,
+      role: image.getAttribute('role') || '',
+      aria: image.getAttribute('aria-label') || '',
       layers,
       genericColor: generic ? getComputedStyle(generic).backgroundColor : ''
     };
+  };
+
+  const inspectPickerAndEquip = () => {
+    const pickerCards = [...document.querySelectorAll('.roster-weapon-picker .weapon-card')];
+    const enabledCards = pickerCards.filter(card => {
+      const action = card.querySelector('[data-roster-action="equip-weapon"]');
+      return action instanceof HTMLButtonElement && !action.disabled;
+    });
+    const preferred = enabledCards.find(card => {
+      const form = card.querySelector('.weapon-card-image')?.getAttribute('data-weapon-form') || '';
+      return !['sword2h', 'axe2h', 'bow', 'staff'].includes(form);
+    }) || enabledCards[0] || null;
+    if (!preferred) {
+      finish({ status: 'no-equip-target' });
+      return;
+    }
+
+    const title = preferred.querySelector('.weapon-card-title')?.textContent?.trim() || '';
+    const pickerImage = preferred.querySelector('.weapon-card-image');
+    const pickerAction = preferred.querySelector('[data-roster-action="equip-weapon"]');
+    const inventoryCards = [...document.querySelectorAll('#weaponInventory .weapon-card')];
+    const inventoryCard = inventoryCards.find(card => card.querySelector('.weapon-card-title')?.textContent?.trim() === title) || null;
+    const inventoryImage = inventoryCard?.querySelector('.weapon-card-image') || null;
+    const inventoryAction = inventoryCard?.querySelector('[data-weapon-inventory-action]') || null;
+
+    if (!(pickerAction instanceof HTMLButtonElement) || pickerAction.disabled || !inventoryCard || !inventoryImage || !inventoryAction) {
+      finish({ status: 'matching-card-not-ready', title });
+      return;
+    }
+
+    const picker = describeImage(pickerImage);
+    const inventory = describeImage(inventoryImage);
+    pickerAction.click();
+
+    setTimeout(() => {
+      const equippedSlot = document.querySelector('.roster-equipment-slot[data-hand="leftHand"]');
+      const equippedImage = equippedSlot?.querySelector('.roster-equipped-weapon-image') || null;
+      finish({
+        status: 'tested',
+        title,
+        inventory,
+        picker,
+        equipped: describeImage(equippedImage),
+        inventoryAction: inventoryAction.getAttribute('data-weapon-inventory-action') || '',
+        pickerActionPresent: true,
+        pickerActionEnabled: true,
+        equippedSlotHasWeapon: Boolean(equippedSlot?.classList.contains('has-weapon')),
+        equippedName: equippedSlot?.querySelector('strong')?.textContent?.trim() || '',
+        pickerClosedAfterEquip: !document.querySelector('.roster-weapon-picker')
+      });
+    }, 120);
+  };
+
+  const openPickerAfterOptionalClear = () => {
+    const leftSlot = document.querySelector('.roster-equipment-slot[data-hand="leftHand"]');
+    if (!(leftSlot instanceof HTMLButtonElement)) {
+      finish({ status: 'left-slot-missing' });
+      return;
+    }
+    leftSlot.click();
+    setTimeout(() => {
+      const clear = document.querySelector('.roster-weapon-picker [data-roster-action="clear-hand"]');
+      if (clear instanceof HTMLButtonElement && !clear.disabled) {
+        clear.click();
+        setTimeout(() => {
+          const refreshedLeftSlot = document.querySelector('.roster-equipment-slot[data-hand="leftHand"]');
+          if (!(refreshedLeftSlot instanceof HTMLButtonElement)) {
+            finish({ status: 'left-slot-missing-after-clear' });
+            return;
+          }
+          refreshedLeftSlot.click();
+          setTimeout(inspectPickerAndEquip, 100);
+        }, 100);
+        return;
+      }
+      inspectPickerAndEquip();
+    }, 100);
   };
 
   const started = Date.now();
@@ -71,31 +150,12 @@ window.addEventListener('unhandledrejection',event=>window.__sharedWeaponCardErr
     }
 
     clearInterval(timer);
-    const title = inventoryCard.querySelector('.weapon-card-title')?.textContent?.trim() || '';
-    const inventory = describeImage(inventoryImage);
     characterNav.click();
     rosterMenu.click();
 
     setTimeout(() => {
       document.querySelector('#rosterCard .roster-list-item')?.click();
-      setTimeout(() => {
-        document.querySelector('.roster-equipment-slot[data-hand="leftHand"]')?.click();
-        setTimeout(() => {
-          const pickerCards = [...document.querySelectorAll('.roster-weapon-picker .weapon-card')];
-          const pickerCard = pickerCards.find(card => card.querySelector('.weapon-card-title')?.textContent?.trim() === title) || null;
-          const pickerImage = pickerCard?.querySelector('.weapon-card-image') || null;
-          const pickerAction = pickerCard?.querySelector('[data-roster-action="equip-weapon"]') || null;
-          finish({
-            status: 'tested',
-            title,
-            inventory,
-            picker: describeImage(pickerImage),
-            inventoryAction: inventoryAction.getAttribute('data-weapon-inventory-action') || '',
-            pickerActionPresent: Boolean(pickerAction),
-            pickerCardFound: Boolean(pickerCard)
-          });
-        }, 100);
-      }, 80);
+      setTimeout(openPickerAfterOptionalClear, 80);
     }, 50);
   }, 50);
 })();
@@ -135,7 +195,7 @@ let child = null;
 try {
   const address = server.address(); assert.ok(address && typeof address === 'object');
   const pageUrl = `http://127.0.0.1:${address.port}${basePath}`;
-  child=spawn(browser,['--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--hide-scrollbars','--no-first-run','--no-default-browser-check',`--user-data-dir=${browserProfile}`,'--window-size=390,844','--virtual-time-budget=8000','--dump-dom',pageUrl],{stdio:['ignore','pipe','pipe']});
+  child=spawn(browser,['--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--hide-scrollbars','--no-first-run','--no-default-browser-check',`--user-data-dir=${browserProfile}`,'--window-size=390,844','--virtual-time-budget=9000','--dump-dom',pageUrl],{stdio:['ignore','pipe','pipe']});
   child.stdout.setEncoding('utf8'); child.stderr.setEncoding('utf8');
   let stdout = '', stderr = ''; child.stdout.on('data', chunk => { stdout += chunk; }); child.stderr.on('data', chunk => { stderr += chunk; });
   const code = await new Promise((resolveClose, rejectClose) => { child.once('error', rejectClose); child.once('close', resolveClose); });
@@ -154,7 +214,6 @@ try {
   assert.ok(result.inventory.form, 'Das Waffenlagerbild besitzt keine technische Waffenform.');
   assert.ok(result.inventory.kind, 'Das Waffenlagerbild besitzt keinen Renderkind.');
   assert.ok(['equip', 'unequip'].includes(result.inventoryAction), 'Die bestehende Waffenlageraktion ging beim Bildumbau verloren.');
-  assert.equal(result.pickerCardFound, true, 'Dieselbe Waffenkarte wurde im Kader-Waffenpicker nicht gefunden.');
   assert.ok(result.picker, 'Im Kader-Waffenpicker fehlt das zentrale Waffenbild.');
   assert.equal(result.picker.cssWidth, '64px');
   assert.equal(result.picker.cssHeight, '64px');
@@ -163,8 +222,22 @@ try {
   assert.deepEqual(result.picker.layers, result.inventory.layers, 'Waffenlager und Kader-Picker rendern dieselbe Waffe unterschiedlich.');
   assert.equal(result.picker.genericColor, result.inventory.genericColor, 'Fallback-Darstellung unterscheidet sich zwischen Waffenlager und Kader-Picker.');
   assert.equal(result.pickerActionPresent, true, 'Die bestehende Ausrüsten-Aktion im Kader-Picker ging beim Bildumbau verloren.');
+  assert.equal(result.pickerActionEnabled, true, 'Der Test konnte keine tatsächlich ausrüstbare Waffe auswählen.');
 
-  console.log('Gemeinsame Waffenkarten-Browserregression: Waffenlager und Kader-Waffenpicker zeigen dieselbe 64x64-Waffe über den zentralen Materialbild-Renderer; bestehende Ausrüstungsaktionen bleiben erhalten.');
+  assert.ok(result.equipped, 'Im ausgerüsteten Kader-Hand-Slot fehlt das zentrale Waffenbild.');
+  assert.equal(result.equipped.cssWidth, '64px');
+  assert.equal(result.equipped.cssHeight, '64px');
+  assert.equal(result.equipped.form, result.inventory.form, 'Ausgerüsteter Slot und Waffenlager verwenden nicht dieselbe Waffenform.');
+  assert.equal(result.equipped.kind, result.inventory.kind, 'Ausgerüsteter Slot und Waffenlager verwenden nicht denselben Renderplan.');
+  assert.deepEqual(result.equipped.layers, result.inventory.layers, 'Ausgerüsteter Slot und Waffenlager rendern dieselbe Waffe unterschiedlich.');
+  assert.equal(result.equipped.genericColor, result.inventory.genericColor, 'Fallback-Darstellung unterscheidet sich im ausgerüsteten Slot.');
+  assert.equal(result.equipped.role, 'img', 'Das direkt ausgerüstete Waffenbild ist nicht als Bild ausgezeichnet.');
+  assert.ok(result.equipped.aria, 'Das direkt ausgerüstete Waffenbild besitzt keine zugängliche Beschriftung.');
+  assert.equal(result.equippedSlotHasWeapon, true, 'Der belegte Hand-Slot besitzt den Bildlayout-Marker nicht.');
+  assert.ok(result.equippedName, 'Der Waffenname ging beim Hand-Slot-Umbau verloren.');
+  assert.equal(result.pickerClosedAfterEquip, true, 'Der Waffenpicker schließt nach erfolgreichem Ausrüsten nicht mehr.');
+
+  console.log('Gemeinsame Waffenbild-Browserregression: Waffenlager, Kader-Waffenpicker und direkt ausgerüsteter Hand-Slot zeigen dieselbe 64x64-Waffe über den zentralen Materialbild-Renderer; Equipment-Aktionen bleiben erhalten.');
 } finally {
   if (child) await stopBrowser(child);
   rmSync(browserProfile, { recursive: true, force: true });
