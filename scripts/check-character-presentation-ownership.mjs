@@ -17,7 +17,7 @@ assert.match(service, /constructor\([\s\S]*private readonly gameState: GameState
 assert.match(service, /getCharacterCardPresentation\(/, 'Angular-Kaderdarstellung nutzt den Character-Presentation-Core nicht.');
 assert.match(service, /calculateCharacterStats\([\s\S]*character\.classId,[\s\S]*this\.getEquippedWeapons\(character\),[\s\S]*characterStatLevelMultiplier\(character\.level\)[\s\S]*\)/, 'Angular-Kader löst Level-, Klassen- und Waffenboni nicht über das gemeinsame Statmodell auf.');
 assert.match(weaponPresentationService, /createWeaponPresentationCore\(/, 'Gemeinsame Angular-Waffenpräsentation nutzt den Weapon-Presentation-Core nicht.');
-assert.match(weaponPresentationService, /renderImage\([\s\S]*weaponImagePresentation\.render\(weapon, 'complete'/, 'Gemeinsame Angular-Waffenpräsentation stellt keinen zentralen Bildrenderer bereit.');
+assert.match(weaponPresentationService, /mode: WeaponImageRenderMode = 'complete'[\s\S]*weaponImagePresentation\.render\(weapon, mode/, 'Gemeinsame Angular-Waffenpräsentation stellt keinen zentralen Bildrenderer bereit.');
 assert.match(service, /weaponPresentation\.renderCard\(/, 'Angular-Kader nutzt die gemeinsame Waffenkarten-Präsentation nicht.');
 assert.match(service, /weaponPresentation\.renderImage\([\s\S]*'roster-equipped-weapon-image'/, 'Ausgerüstete Kaderwaffen verwenden nicht den gemeinsamen Waffenbild-Renderer.');
 assert.doesNotMatch(service, /GameWeaponImagePresentationService|getWeaponImageRenderPlan|getWeaponImageMarkup/, 'Der Kader darf keine eigene Waffenbildlogik aufbauen.');
