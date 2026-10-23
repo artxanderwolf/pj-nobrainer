@@ -123,10 +123,10 @@
 .class-emblem-small[data-class-id="recruit"] { background-image: url('./class-emblems/recruit-small.png'); }
 .class-emblem-small[data-class-id="scholar"] { background-image: url('./class-emblems/scholar-small.png'); }
 .class-emblem-small[data-class-id="fighter"] { background-image: url('./class-emblems/fighter-small.png'); }
-.class-emblem-large[data-class-id="archer"] { background-image: url('./class-emblems/archer-large.png'); }
-.class-emblem-large[data-class-id="recruit"] { background-image: url('./class-emblems/recruit-large.png'); }
-.class-emblem-large[data-class-id="scholar"] { background-image: url('./class-emblems/scholar-large.png'); }
-.class-emblem-large[data-class-id="fighter"] { background-image: url('./class-emblems/fighter-large.png'); }
+.class-emblem-large[data-class-id="archer"] { background-image: url('./class-emblems/archer-large-v0.16.1.png'); }
+.class-emblem-large[data-class-id="recruit"] { background-image: url('./class-emblems/recruit-large-v0.16.1.png'); }
+.class-emblem-large[data-class-id="scholar"] { background-image: url('./class-emblems/scholar-large-v0.16.1.png'); }
+.class-emblem-large[data-class-id="fighter"] { background-image: url('./class-emblems/fighter-large-v0.16.1.png'); }
 
 .character-modal {
   position: fixed;
