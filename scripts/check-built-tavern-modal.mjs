@@ -7,6 +7,7 @@ import { extname, join, normalize, resolve } from 'node:path';
 
 const distRoot = resolve('dist/nobrainer/browser');
 const basePath = '/pj-nobrainer/';
+const saveKey = 'nobrainer_save_v1';
 assert.ok(existsSync(join(distRoot, 'index.html')), 'Der gebaute Angular-Index fehlt.');
 
 const browser = ['google-chrome', 'google-chrome-stable', 'chromium', 'chromium-browser'].find(candidate => {
@@ -14,6 +15,17 @@ const browser = ['google-chrome', 'google-chrome-stable', 'chromium', 'chromium-
   return probe.status === 0 && probe.stdout.trim();
 });
 assert.ok(browser, 'Chrome/Chromium wurde für den Rekrutierungs-E2E-Test nicht gefunden.');
+
+const fixture = JSON.stringify({
+  saveVersion: 13,
+  savedAt: Date.now(),
+  state: {
+    gold: 100000,
+    upgrades: { innCapacity: 4 }
+  }
+});
+
+const seedScript = `<script>localStorage.setItem(${JSON.stringify(saveKey)},${JSON.stringify(fixture)});</script>`;
 
 const probeScript = `<script>
 window.__tavernModalErrors=[];
@@ -102,7 +114,11 @@ const server = createServer((request, response) => {
   const filePath = join(distRoot, safePath);
   if (!existsSync(filePath)) { response.writeHead(404).end('Not found'); return; }
   let body = readFileSync(filePath);
-  if (safePath === 'index.html') body = Buffer.from(body.toString('utf8').replace('</body>', `${probeScript}</body>`), 'utf8');
+  if (safePath === 'index.html') {
+    let html = body.toString('utf8');
+    html = html.replace('</head>', `${seedScript}</head>`).replace('</body>', `${probeScript}</body>`);
+    body = Buffer.from(html, 'utf8');
+  }
   response.writeHead(200, { 'content-type': contentTypes.get(extname(filePath)) ?? 'application/octet-stream', 'cache-control': 'no-store' });
   response.end(body);
 });
@@ -141,7 +157,7 @@ try {
   assert.equal(result.largeBackgroundSize, 'contain');
   assert.ok(result.largeWidth >= 120 && result.largeHeight >= 120, `Das große Rekrutierungsbild ist abgeschnitten oder kollabiert: ${JSON.stringify(result)}`);
   assert.equal(result.hasLegacyOnclick, false, 'Das Rekrutierungsmodal hängt noch an einem Legacy-onclick.');
-  assert.equal(result.recruitEnabled, true, 'Die Standard-Rekrutierung ist im Teststand unerwartet deaktiviert.');
+  assert.equal(result.recruitEnabled, true, 'Rekrutierung ist trotz Test-Fixture mit genügend Geld und freiem Kaderplatz deaktiviert.');
   assert.equal(result.modalAfterRecruit, false, 'Das Rekrutierungsmodal bleibt nach erfolgreichem Anwerben offen.');
   assert.equal(result.rosterCountAfter, result.rosterCountBefore + 1, 'Erfolgreiches Anwerben aktualisiert den Kader nicht.');
   assert.notEqual(result.goldAfter, result.goldBefore, 'Erfolgreiches Anwerben aktualisiert die Geldanzeige nicht.');
