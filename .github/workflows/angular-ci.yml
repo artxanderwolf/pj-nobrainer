@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - migration/angular
+      - feature/character-modals-v0.16.0
   pull_request:
     branches:
       - main
@@ -38,6 +39,9 @@ jobs:
 
       - name: Test roster in browser
         run: node scripts/check-built-roster.mjs
+
+      - name: Test recruitment modal in browser
+        run: node scripts/check-built-tavern-modal.mjs
 
       - name: Test forge selection in browser
         run: node scripts/check-built-forge-selection.mjs
