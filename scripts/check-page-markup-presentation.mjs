@@ -80,9 +80,13 @@ assert.match(dungeonOne, /id="dungeonTeamCard"/, 'Dungeon 1 enthält keine direk
 assert.match(dungeonOne, /id="dungeonPrimaryBtn"[^>]*>Lauf starten<\/button>/, 'Dungeon 1 enthält keine zentrale Laufaktion.');
 
 const indexMarkup = getAngularOwnedPageMarkup('index') ?? '';
-for (const heading of ['Materialindex – gemeinsames Stat-System', 'Klassen-Grundwerte', 'Dungeon 1 – Gegner & Belohnungen', 'Kampfberechnung', 'Wirtschaft, Herstellung & Verkauf']) {
+for (const heading of ['Materialindex – gemeinsames Stat-System', 'Kader & Ausrüstung', 'Klassen-Grundwerte', 'Dungeon 1 – Gegner & Belohnungen', 'Kampfberechnung', 'Wirtschaft, Herstellung & Verkauf']) {
   assert.ok(indexMarkup.includes(`<h2>${heading}</h2>`), `Index-Abschnitt ${heading} fehlt.`);
 }
+assert.match(indexMarkup, /Kader zeigt oben alle vorhandenen Charaktere kompakt mit Klassenemblem, Name und Level/);
+assert.match(indexMarkup, /Stift-Symbol neben dem Namen schaltet die Namensbearbeitung ein/);
+assert.match(indexMarkup, /Ausrüstungsleiste liegt direkt am Klassenbild/);
+assert.match(indexMarkup, /Pfeile unter den Werten wechseln ausschließlich die Werteseite/);
 assert.match(indexMarkup, /Rüstung = additive Prozentpunkte, begrenzt auf maximal 80 %/);
 assert.match(indexMarkup, /Materialwert = 10 Nickel × Seltenheit/);
 assert.match(indexMarkup, /40 Nickel \+ 6 × Leistungswert/);
@@ -100,4 +104,4 @@ assert.match(appComponent, /composePageMarkup\(APP_SHELL_PAGE_IDS\)/, 'Der App-C
 assert.match(appComponent, /composeAppShell\(pageMarkup\)/, 'Das Angular-eigene Seitenmarkup wird nicht in die Angular-Shell eingesetzt.');
 assert.doesNotMatch(appComponent, /DOMParser/, 'Angular-eigenes Seitenmarkup darf nicht aus Legacy-HTML geparst werden.');
 
-console.log('Seiten-Markup: kompakte nicht-scrollende Waffenherstellung sowie Dungeonstatus und direkte Ausbaukarten sind Angular-eigen.');
+console.log('Seiten-Markup: Kaderhilfe, kompakte nicht-scrollende Waffenherstellung sowie Dungeonstatus und direkte Ausbaukarten sind Angular-eigen.');
