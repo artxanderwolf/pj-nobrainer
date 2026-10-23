@@ -58,15 +58,17 @@ window.addEventListener('unhandledrejection',event=>window.__tavernModalErrors.p
     characterNav.click();
     recruitMenu.click();
 
+    const currentOffer = document.querySelector('#tavernOffer .recruitment-list-item');
+    if (!currentOffer) { finish({ status: 'offer-missing-after-navigation' }); return; }
     const beforeModal = Boolean(document.querySelector('[data-character-modal="recruitment"]'));
-    const smallEmblem = firstOffer.querySelector('.class-emblem-small');
+    const smallEmblem = currentOffer.querySelector('.class-emblem-small');
     const smallClassId = smallEmblem?.getAttribute('data-class-id') || '';
     const smallComputed = smallEmblem ? getComputedStyle(smallEmblem) : null;
     const smallBackground = smallComputed?.backgroundImage || '';
     const smallBackgroundSize = smallComputed?.backgroundSize || '';
     const rosterCountBefore = document.querySelectorAll('#rosterCard .roster-list-item').length;
     const goldBefore = document.querySelector('#gold')?.textContent?.trim() || '';
-    firstOffer.click();
+    currentOffer.click();
 
     setTimeout(() => {
       const modal = document.querySelector('[data-character-modal="recruitment"]');
