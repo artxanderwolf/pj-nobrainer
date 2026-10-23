@@ -76,11 +76,12 @@ export const INDEX_PAGE_MARKUP = `<section class="page" id="index">
         </div>
 
         <div class="card span-12">
-          <h2>Kader & Ausrüstung</h2>
-          <p class="index-note">Der Kader zeigt oben alle vorhandenen Charaktere kompakt mit Klassenemblem, Name und Level. Antippen einer Zeile öffnet darunter die Detailansicht dieses Charakters.</p>
-          <p class="index-note">Das große Emblem in der Detailansicht zeigt die Klasse. Das Stift-Symbol neben dem Namen schaltet die Namensbearbeitung ein; Enter oder ✓ speichert den neuen Namen, Escape oder × verwirft die Eingabe.</p>
-          <p class="index-note">Die Ausrüstungsleiste liegt direkt am Klassenbild. Linke und rechte Hand zeigen die aktuell ausgerüstete Waffe; Antippen öffnet die bestehende Waffenauswahl für genau diese Hand. Die technischen Ausrüstungsregeln für 1H- und 2H-Waffen bleiben unverändert.</p>
-          <p class="index-note">Die Charakterwerte sind auf zwei Seiten mit je bis zu acht Werten verteilt. Die Pfeile unter den Werten wechseln ausschließlich die Werteseite; der ausgewählte Charakter wird weiterhin über die Kaderliste gewechselt.</p>
+          <h2>Kader, Charakterdetails & Rekrutierung</h2>
+          <p class="index-note">Die Kaderseite zeigt ausschließlich die vorhandenen Charaktere als kompakte Liste mit Klassenemblem, Name, Klasse und Level. Antippen eines Eintrags öffnet die Charakterdetails in einem eigenen Popup; nach dem Schließen bleibt die Kaderliste als Seite bestehen.</p>
+          <p class="index-note">Im Charakter-Popup zeigt das große Emblem die Klasse. Das Stift-Symbol neben dem Namen schaltet die Namensbearbeitung ein; Enter oder ✓ speichert den neuen Namen, Escape oder × verwirft die Eingabe.</p>
+          <p class="index-note">Die Ausrüstungsleiste liegt direkt am Klassenbild im Charakter-Popup. Linke und rechte Hand zeigen die aktuell ausgerüstete Waffe; Antippen öffnet die bestehende Waffenauswahl für genau diese Hand. Die technischen Ausrüstungsregeln für 1H- und 2H-Waffen bleiben unverändert.</p>
+          <p class="index-note">Die Charakterwerte sind im Popup auf zwei Seiten mit je bis zu acht Werten verteilt. Die Pfeile unter den Werten wechseln ausschließlich die Werteseite. Das Popup wird über ×, Escape oder den abgedunkelten Hintergrund geschlossen.</p>
+          <p class="index-note">Die Rekrutierungsseite verwendet dasselbe Bedienmuster: Eine kompakte Klassenliste öffnet beim Antippen ein Rekrutierungs-Popup mit großem Klassenemblem, den bestehenden Klassenwerten und der Aktion „Anwerben“. Rekrutierungskosten, Kaderkapazität und Klassenwerte bleiben unverändert.</p>
         </div>
 
         <div class="card span-12">
