@@ -7,6 +7,10 @@ import {
   type WeaponStats
 } from '../game/game-core';
 import {
+  type WeaponImageLike,
+  type WeaponImageRenderMode
+} from '../game/weapon-image-presentation-core';
+import {
   createWeaponPresentationCore,
   type WeaponCardLike
 } from '../game/weapon-presentation-core';
@@ -34,11 +38,12 @@ export class GameWeaponPresentationService {
   }
 
   renderImage(
-    weapon: RuntimeWeaponPresentation,
+    weapon: WeaponImageLike,
     className = '',
-    ariaLabel: string | null = null
+    ariaLabel: string | null = null,
+    mode: WeaponImageRenderMode = 'complete'
   ): string {
-    return this.weaponImagePresentation.render(weapon, 'complete', { className, ariaLabel });
+    return this.weaponImagePresentation.render(weapon, mode, { className, ariaLabel });
   }
 
   renderCard(
