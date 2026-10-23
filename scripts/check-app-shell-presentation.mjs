@@ -8,7 +8,7 @@ const packageJson = JSON.parse(readFileSync('package.json', 'utf8'));
 const probePage = '<section class="page" id="probe">Probe</section>';
 const shell = composeAppShell(probePage);
 
-assert.equal(APP_UI_VERSION, '0.16.1', 'Die gemeinsame sichtbare App-Version muss v0.16.0 sein.');
+assert.equal(APP_UI_VERSION, '0.16.1', 'Die gemeinsame sichtbare App-Version muss v0.16.1 sein.');
 assert.equal(packageJson.version, APP_UI_VERSION, 'package.json und sichtbare App-Version dürfen nicht auseinanderlaufen.');
 assert.equal(APP_SHELL_PAGE_IDS[0], 'base');
 for (const required of ['character', 'storage', 'forge-preview', 'market-jobs', 'dungeon-select', 'index']) {
