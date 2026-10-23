@@ -83,6 +83,30 @@
   flex: 0 0 64px;
 }
 
+.forge-weapon-image-preview {
+  min-height: 72px;
+  display: grid;
+  place-items: center;
+  margin: 0 0 6px;
+}
+
+.forge-preview-weapon-image,
+.forge-job-weapon-image,
+.forge-queue-weapon-image {
+  flex: 0 0 64px;
+}
+
+.forge-job-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.forge-job-copy {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
 @media (max-width: 760px) {
   .roster-emblem-stage {
     min-height: 254px;
@@ -93,5 +117,9 @@
     min-height: 80px;
     gap: 6px;
     padding: 6px;
+  }
+
+  .forge-job-row {
+    gap: 6px;
   }
 }
