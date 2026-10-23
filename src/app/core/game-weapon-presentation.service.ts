@@ -33,6 +33,14 @@ export class GameWeaponPresentationService {
     return WEAPON_PRESENTATION.sortWeaponInventory(weapons);
   }
 
+  renderImage(
+    weapon: RuntimeWeaponPresentation,
+    className = '',
+    ariaLabel: string | null = null
+  ): string {
+    return this.weaponImagePresentation.render(weapon, 'complete', { className, ariaLabel });
+  }
+
   renderCard(
     weapon: RuntimeWeaponPresentation,
     compareWeapon: RuntimeWeaponPresentation | null = null,
@@ -42,7 +50,7 @@ export class GameWeaponPresentationService {
     const pricedWeapon = this.withCurrentEconomyValue(weapon);
     const pricedCompareWeapon = compareWeapon ? this.withCurrentEconomyValue(compareWeapon) : null;
     const presentation = WEAPON_PRESENTATION.getWeaponCardPresentation(pricedWeapon, pricedCompareWeapon);
-    const imageHtml = this.weaponImagePresentation.render(pricedWeapon, 'complete', { className: 'weapon-card-image' });
+    const imageHtml = this.renderImage(pricedWeapon, 'weapon-card-image');
     const statHtml = presentation.stats.map(stat => {
       const value = stat.value.kind === 'currency' ? formatCurrencyNickel(stat.value.nickel) : stat.value.text;
       const diff = stat.diff ? ` <span class="weapon-diff ${stat.diff.tone}">${stat.diff.text}</span>` : '';
