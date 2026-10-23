@@ -61,7 +61,7 @@ export const INDEX_PAGE_MARKUP = `<section class="page" id="index">
               <tr><td>1H Schwert</td><td>10</td><td>1,00</td><td>55 %</td><td>0 %</td><td>0</td><td>+1 %-Pkt.</td><td>0</td><td>+0,05</td><td>0</td><td>0</td><td>+10 %-Pkt.</td><td>0</td></tr>
               <tr><td>1H Axt</td><td>12</td><td>0,85</td><td>52 %</td><td>0 %</td><td>0</td><td>0</td><td>0</td><td>+0,08</td><td>0</td><td>0</td><td>+15 %-Pkt.</td><td>+5 %-Pkt.</td></tr>
               <tr><td>2H Schwert</td><td>16</td><td>0,80</td><td>55 %</td><td>0 %</td><td>0</td><td>+2 %-Pkt.</td><td>0</td><td>+0,10</td><td>0</td><td>0</td><td>+15 %-Pkt.</td><td>0</td></tr>
-              <tr><td>2H Axt</td><td>20</td><td>0,70</td><td>50 %</td><td>0 %</td><td>0</td><td>0</td><td>0</td><td>+0,15</td><td>−0,05</td><td>0</td><td>+25 %-Pkt.</td><td>+10 %-Pkt.</td></tr>
+              <tr><td>2H Axt</td><td>20</td><td>0,70</td><td>50 %</td><td>0 %</td><td>0</td><td>0</td><td>0</td><td>+0,15</td><td>−0,05</td><td>0</td><td>0</td><td>+25 %-Pkt.</td><td>+10 %-Pkt.</td></tr>
               <tr><td>Bogen</td><td>11</td><td>0,90</td><td>65 %</td><td>0 %</td><td>0</td><td>0</td><td>+2 %-Pkt.</td><td>0</td><td>+0,10</td><td>+8 %-Pkt.</td><td>0</td><td>0</td></tr>
               <tr><td>Stab</td><td>10</td><td>1,00</td><td>60 %</td><td>0 %</td><td>+10</td><td>0</td><td>0</td><td>+0,05</td><td>+0,10</td><td>0</td><td>+15 %-Pkt.</td><td>0</td></tr>
             </tbody>
@@ -76,6 +76,14 @@ export const INDEX_PAGE_MARKUP = `<section class="page" id="index">
         </div>
 
         <div class="card span-12">
+          <h2>Kader & Ausrüstung</h2>
+          <p class="index-note">Der Kader zeigt oben alle vorhandenen Charaktere kompakt mit Klassenemblem, Name und Level. Antippen einer Zeile öffnet darunter die Detailansicht dieses Charakters.</p>
+          <p class="index-note">Das große Emblem in der Detailansicht zeigt die Klasse. Das Stift-Symbol neben dem Namen schaltet die Namensbearbeitung ein; Enter oder ✓ speichert den neuen Namen, Escape oder × verwirft die Eingabe.</p>
+          <p class="index-note">Die Ausrüstungsleiste liegt direkt am Klassenbild. Linke und rechte Hand zeigen die aktuell ausgerüstete Waffe; Antippen öffnet die bestehende Waffenauswahl für genau diese Hand. Die technischen Ausrüstungsregeln für 1H- und 2H-Waffen bleiben unverändert.</p>
+          <p class="index-note">Die Charakterwerte sind auf zwei Seiten mit je bis zu acht Werten verteilt. Die Pfeile unter den Werten wechseln ausschließlich die Werteseite; der ausgewählte Charakter wird weiterhin über die Kaderliste gewechselt.</p>
+        </div>
+
+        <div class="card span-12">
           <h2>Klassen-Grundwerte</h2>
           <p class="index-note">Der Rekrut bleibt der Allrounder. Kämpfer, Bogner und Gelehrter sind stärker spezialisiert. Bedrohung ist fest an die Klasse gebunden, wird nicht durch Ausrüstung verändert und bleibt über alle Level konstant.</p>
           <div class="table-wrap mobile-stack"><table>
@@ -83,7 +91,7 @@ export const INDEX_PAGE_MARKUP = `<section class="page" id="index">
             <tbody>
               <tr><td>Rekrut</td><td>30</td><td>100</td><td>2 %</td><td>10 %</td><td>1,00</td><td>1,00</td><td>50</td><td>5 %</td><td>150 %</td><td>0</td><td>5/min</td><td>100 %</td><td>0 %</td><td>0 %</td></tr>
               <tr><td>Kämpfer</td><td>35</td><td>100</td><td>3 %</td><td>8 %</td><td>1,10</td><td>0,95</td><td>100</td><td>4 %</td><td>160 %</td><td>0</td><td>5/min</td><td>100 %</td><td>0 %</td><td>0 %</td></tr>
-              <tr><td>Bogner</td><td>26</td><td>100</td><td>1 %</td><td>15 %</td><td>0,95</td><td>1,15</td><td>33</td><td>10 %</td><td>150 %</td><td>0</td><td>5/min</td><td>100 %</td><td>0 %</td><td>0 %</td></tr>
+              <tr><td>Bogner</td><td>26</td><td>100</td><td>1 %</td><td>15 %</td><td>0,95</td><td>1,15</td><td>33</td><td>10 %</td><td>150 %</td><td>0</td><td>5/min</td><td>100 %</td><td>0 %</td></tr>
               <tr><td>Gelehrter</td><td>22</td><td>100</td><td>0 %</td><td>5 %</td><td>1,15</td><td>1,10</td><td>25</td><td>5 %</td><td>175 %</td><td>0</td><td>5/min</td><td>100 %</td><td>0 %</td><td>0 %</td></tr>
             </tbody>
           </table></div>
@@ -134,14 +142,14 @@ export const INDEX_PAGE_MARKUP = `<section class="page" id="index">
         <div class="card span-5">
           <h2>Stat-Legende & Displayposition</h2>
           <table><thead><tr><th>Stat</th><th>Funktion</th><th>Position</th></tr></thead><tbody>
-            <tr><td>HP</td><td>Lebenspunkte</td><td>S1L1</td></tr><tr><td>E</td><td>Energie</td><td>S1R1</td></tr>
-            <tr><td>R</td><td>Rüstung in % Schadensreduktion, max. 80 %</td><td>S1L2</td></tr><tr><td>AW</td><td>Ausweichen</td><td>S1R2</td></tr>
-            <tr><td>SF</td><td>Schadensfaktor</td><td>S1L3</td></tr><tr><td>P</td><td>Präzision</td><td>S1L4</td></tr>
-            <tr><td>B</td><td>Bedrohung</td><td>S2L1</td></tr><tr><td>K-C</td><td>Krit-Chance</td><td>S1R3</td></tr>
-            <tr><td>K-S</td><td>Krit-Schaden</td><td>S1R4</td></tr><tr><td>HP-R</td><td>Lebenregeneration</td><td>S2L2</td></tr>
-            <tr><td>E-R</td><td>Energieregeneration</td><td>S2R2</td></tr><tr><td>ERF</td><td>Erfahrung</td><td>S2R3</td></tr>
-            <tr><td>LR</td><td>Lebensraub</td><td>S2L3</td></tr><tr><td>DS</td><td>Durchschlag</td><td>S2R1</td></tr>
-            <tr><td>SPE</td><td>Spezialeffekt</td><td>S3</td></tr><tr><td>SPE%</td><td>Stärke des Spezialeffekts</td><td>S3</td></tr>
+            <tr><td>HP</td><td>Lebenspunkte</td><td>Kader S1R1</td></tr><tr><td>E</td><td>Energie</td><td>Kader S1L2</td></tr>
+            <tr><td>R</td><td>Rüstung in % Schadensreduktion, max. 80 %</td><td>Kader S1R2</td></tr><tr><td>AW</td><td>Ausweichen</td><td>Kader S1L3</td></tr>
+            <tr><td>SF</td><td>Schadensfaktor</td><td>Kader S1R3</td></tr><tr><td>P</td><td>Präzision</td><td>Kader S1R4</td></tr>
+            <tr><td>B</td><td>Bedrohung</td><td>Kader S2R1</td></tr><tr><td>K-C</td><td>Krit-Chance</td><td>Kader S1L4</td></tr>
+            <tr><td>K-S</td><td>Krit-Schaden</td><td>Kader S2L1</td></tr><tr><td>HP-R</td><td>Lebenregeneration</td><td>Kader S2R2</td></tr>
+            <tr><td>E-R</td><td>Energieregeneration</td><td>Kader S2L3</td></tr><tr><td>ERF</td><td>Erfahrung</td><td>Kader S2L4</td></tr>
+            <tr><td>LR</td><td>Lebensraub</td><td>Kader S2R3</td></tr><tr><td>DS</td><td>Durchschlag</td><td>Kader S2L2</td></tr>
+            <tr><td>SPE</td><td>Spezialeffekt</td><td>Waffen-/Materialanzeige</td></tr><tr><td>SPE%</td><td>Stärke des Spezialeffekts</td><td>Waffen-/Materialanzeige</td></tr>
           </tbody></table>
         </div>
 
