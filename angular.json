@@ -27,7 +27,7 @@
             "styles": [
               "src/styles.css",
               "src/ui-shell-v0.12.0.css",
-              "src/roster-compact-v0.15.5.css",
+              "src/character-selection-v0.16.0.css",
               "src/forge-compact-v0.15.4.css",
               "src/dungeon-modal-v0.15.0.css"
             ]

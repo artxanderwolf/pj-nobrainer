@@ -7,6 +7,7 @@ import {
 } from '../game/game-core';
 import { type CharacterState } from '../game/character-core';
 import { characterStatLevelMultiplier } from '../game/character-progression-core';
+import { resolveCharacterAssetId } from '../game/character-class-asset-presentation';
 import {
   getCharacterCardPresentation,
   getWeaponPickerKey,
@@ -25,9 +26,6 @@ type RuntimeCharacterPresentationState = MutableGameState & {
   weaponInventory: RuntimeWeaponPresentation[];
 };
 
-type CharacterAssetId = 'recruit' | 'fighter' | 'archer' | 'scholar';
-
-const CHARACTER_ASSET_IDS: readonly CharacterAssetId[] = ['recruit', 'fighter', 'archer', 'scholar'];
 const CHARACTER_NAME_MAX_LENGTH = 32;
 const STATS_PER_PAGE = 8;
 
@@ -35,6 +33,7 @@ const STATS_PER_PAGE = 8;
 export class GameCharacterPresentationService {
   private openWeaponPickerHand: string | null = null;
   private selectedCharacterId: number | null = null;
+  private detailOpen = false;
   private renamingCharacterId: number | null = null;
   private statPageIndex = 0;
   private boundRoot: HTMLElement | null = null;
@@ -58,22 +57,24 @@ export class GameCharacterPresentationService {
 
     const state = this.state();
     const selectedCharacter = this.resolveSelectedCharacter(state.characters);
-    if (!selectedCharacter) {
-      root.innerHTML = '<div class="empty">Noch keine Charaktere im Kader.</div>';
+    if (!state.characters.length) {
+      this.closeDetailState();
+      root.innerHTML = '<div class="character-selection-page" data-roster-presentation-owner="angular"><div class="empty">Noch keine Charaktere im Kader.</div></div>';
       return;
     }
 
-    const selectorScrollTop = root.querySelector<HTMLElement>('.roster-list-panel')?.scrollTop ?? 0;
-    const detailScrollTop = root.querySelector<HTMLElement>('.roster-detail-panel')?.scrollTop ?? 0;
-    root.innerHTML = `<div class="roster-layout" data-roster-presentation-owner="angular">
-      ${this.renderRosterList(state.characters, selectedCharacter.id)}
-      ${this.renderCharacterDetail(selectedCharacter)}
-    </div>`;
+    const listScrollTop = root.querySelector<HTMLElement>('.character-list-scroll')?.scrollTop ?? 0;
+    const modalScrollTop = root.querySelector<HTMLElement>('.character-modal-body')?.scrollTop ?? 0;
+    const activeId = this.detailOpen ? selectedCharacter?.id ?? null : null;
+    root.innerHTML = `<div class="character-selection-page roster-selection-page" data-roster-presentation-owner="angular">
+      ${this.renderRosterList(state.characters, activeId)}
+    </div>
+    ${this.detailOpen && selectedCharacter ? this.renderCharacterModal(selectedCharacter) : ''}`;
 
-    const selector = root.querySelector<HTMLElement>('.roster-list-panel');
-    const detail = root.querySelector<HTMLElement>('.roster-detail-panel');
-    if (selector) selector.scrollTop = selectorScrollTop;
-    if (detail) detail.scrollTop = detailScrollTop;
+    const listScroll = root.querySelector<HTMLElement>('.character-list-scroll');
+    const modalBody = root.querySelector<HTMLElement>('.character-modal-body');
+    if (listScroll) listScroll.scrollTop = listScrollTop;
+    if (modalBody) modalBody.scrollTop = modalScrollTop;
   }
 
   renderIfIdle(): void {
@@ -83,21 +84,37 @@ export class GameCharacterPresentationService {
     if (!rosterIsBeingUsed && !this.openWeaponPickerHand && this.renamingCharacterId === null) this.render();
   }
 
-  private renderRosterList(characters: CharacterState[], selectedCharacterId: number): string {
+  private renderRosterList(characters: CharacterState[], selectedCharacterId: number | null): string {
     const rows = characters.map(character => {
-      const assetId = this.assetId(character.classId);
+      const assetId = resolveCharacterAssetId(character.classId);
       const level = Number.isFinite(Number(character.level)) ? Math.max(1, Math.floor(Number(character.level))) : 1;
       const selected = character.id === selectedCharacterId;
-      return `<button class="roster-list-item${selected ? ' selected' : ''}" type="button" data-roster-action="select-character" data-character-id="${character.id}" aria-pressed="${selected}">
+      const characterClass = CHARACTER_CLASSES[character.classId] ?? CHARACTER_CLASSES.recruit;
+      return `<button class="character-list-item roster-list-item${selected ? ' selected' : ''}" type="button" data-roster-action="select-character" data-character-id="${character.id}" aria-pressed="${selected}">
         <span class="class-emblem class-emblem-small" data-class-id="${assetId}" aria-hidden="true"></span>
-        <span class="roster-list-name">${this.escapeHtml(character.name)}</span>
-        <span class="roster-list-level">LVL ${level}</span>
+        <span class="character-list-copy"><strong>${this.escapeHtml(character.name)}</strong><span>${this.escapeHtml(characterClass.name)}</span></span>
+        <span class="character-list-meta">LVL ${level}</span>
       </button>`;
     }).join('');
 
-    return `<div class="roster-list-panel" aria-label="Kaderauswahl">
-      <div class="roster-list-head"><span>Klasse</span><span>Name</span><span>LVL</span></div>
-      <div class="roster-list">${rows}</div>
+    return `<section class="character-list-panel" aria-label="Kaderauswahl">
+      <div class="character-list-head"><span>Klasse / Name</span><span>LVL</span></div>
+      <div class="character-list-scroll">${rows}</div>
+    </section>`;
+  }
+
+  private renderCharacterModal(character: CharacterState): string {
+    return `<div class="character-modal roster-character-modal" data-character-modal="roster">
+      <button class="character-modal-backdrop" type="button" data-roster-action="close-detail" aria-label="Charakterdetails schließen"></button>
+      <section class="character-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="rosterModalTitle">
+        <header class="character-modal-header">
+          <h2 id="rosterModalTitle">Charakterdetails</h2>
+          <button class="character-modal-close" type="button" data-roster-action="close-detail" aria-label="Charakterdetails schließen">×</button>
+        </header>
+        <div class="character-modal-body">
+          ${this.renderCharacterDetail(character)}
+        </div>
+      </section>
     </div>`;
   }
 
@@ -111,7 +128,7 @@ export class GameCharacterPresentationService {
       this.effectiveOffense(character, effectiveStats),
       this.openWeaponPickerHand
     );
-    const assetId = this.assetId(character.classId);
+    const assetId = resolveCharacterAssetId(character.classId);
     const levelStat = presentation.stats.find(stat => stat.label === 'LVL');
     const pagedStats = presentation.stats.filter(stat => stat.label !== 'LVL');
     const pageCount = Math.max(1, Math.ceil(pagedStats.length / STATS_PER_PAGE));
@@ -122,19 +139,17 @@ export class GameCharacterPresentationService {
     );
     const picker = presentation.hands.find(hand => hand.pickerOpen);
 
-    return `<div class="roster-detail-panel">
-      <article class="roster-detail-card" data-character-id="${character.id}">
-        ${this.renderCharacterHeader(character, characterClass.name, levelStat?.value ?? `${character.level ?? 1}`)}
-        <div class="roster-emblem-stage">
-          <span class="class-emblem class-emblem-large" data-class-id="${assetId}" role="img" aria-label="Klassenemblem ${this.escapeHtml(characterClass.name)}"></span>
-          <div class="roster-equipment-layer" aria-label="Ausrüstung">
-            ${presentation.hands.map(hand => this.renderEquipmentSlot(character, hand)).join('')}
-          </div>
+    return `<article class="roster-detail-card" data-character-id="${character.id}">
+      ${this.renderCharacterHeader(character, characterClass.name, levelStat?.value ?? `${character.level ?? 1}`)}
+      <div class="roster-emblem-stage">
+        <span class="class-emblem class-emblem-large" data-class-id="${assetId}" role="img" aria-label="Klassenemblem ${this.escapeHtml(characterClass.name)}"></span>
+        <div class="roster-equipment-layer" aria-label="Ausrüstung">
+          ${presentation.hands.map(hand => this.renderEquipmentSlot(character, hand)).join('')}
         </div>
-        ${picker ? this.renderWeaponPicker(character, picker) : ''}
-        ${this.renderStatPage(pageStats, this.statPageIndex, pageCount)}
-      </article>
-    </div>`;
+      </div>
+      ${picker ? this.renderWeaponPicker(character, picker) : ''}
+      ${this.renderStatPage(pageStats, this.statPageIndex, pageCount)}
+    </article>`;
   }
 
   private renderCharacterHeader(character: CharacterState, className: string, levelValue: string): string {
@@ -230,13 +245,10 @@ export class GameCharacterPresentationService {
       this.selectedCharacterId = null;
       return null;
     }
+    if (this.selectedCharacterId === null) return characters[0];
     const selected = characters.find(character => character.id === this.selectedCharacterId) ?? characters[0];
     this.selectedCharacterId = selected.id;
     return selected;
-  }
-
-  private assetId(classId: string): CharacterAssetId {
-    return CHARACTER_ASSET_IDS.includes(classId as CharacterAssetId) ? classId as CharacterAssetId : 'recruit';
   }
 
   private ensureActionBinding(root = document.getElementById('rosterCard')): void {
@@ -255,9 +267,12 @@ export class GameCharacterPresentationService {
     const button = event.target.closest<HTMLButtonElement>('button[data-roster-action]');
     if (!button || button.disabled) return;
     const action = button.dataset['rosterAction'];
-    const characterId = Number(button.dataset['characterId']);
-    const hand = button.dataset['hand'] ?? '';
 
+    if (action === 'close-detail') {
+      this.closeDetailState();
+      this.render();
+      return;
+    }
     if (action === 'stat-page-prev') {
       this.statPageIndex = Math.max(0, this.statPageIndex - 1);
       this.render();
@@ -268,14 +283,21 @@ export class GameCharacterPresentationService {
       this.render();
       return;
     }
+
+    const characterId = Number(button.dataset['characterId']);
+    const hand = button.dataset['hand'] ?? '';
     if (!Number.isFinite(characterId)) return;
 
     if (action === 'select-character') {
       this.selectedCharacterId = characterId;
+      this.detailOpen = true;
       this.openWeaponPickerHand = null;
       this.renamingCharacterId = null;
       this.statPageIndex = 0;
       this.render();
+      window.requestAnimationFrame(() => {
+        document.querySelector<HTMLButtonElement>('[data-character-modal="roster"] .character-modal-close')?.focus();
+      });
       return;
     }
 
@@ -332,15 +354,23 @@ export class GameCharacterPresentationService {
   };
 
   private readonly handleKeyDown = (event: KeyboardEvent): void => {
-    if (!(event.target instanceof HTMLInputElement) || !event.target.matches('[data-roster-name-input]')) return;
-    const characterId = Number(event.target.dataset['characterId']);
-    if (!Number.isFinite(characterId)) return;
-    if (event.key === 'Enter') {
+    if (event.target instanceof HTMLInputElement && event.target.matches('[data-roster-name-input]')) {
+      const characterId = Number(event.target.dataset['characterId']);
+      if (!Number.isFinite(characterId)) return;
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        this.saveName(characterId);
+      } else if (event.key === 'Escape') {
+        event.preventDefault();
+        this.renamingCharacterId = null;
+        this.render();
+      }
+      return;
+    }
+
+    if (event.key === 'Escape' && this.detailOpen) {
       event.preventDefault();
-      this.saveName(characterId);
-    } else if (event.key === 'Escape') {
-      event.preventDefault();
-      this.renamingCharacterId = null;
+      this.closeDetailState();
       this.render();
     }
   };
@@ -358,6 +388,14 @@ export class GameCharacterPresentationService {
     character.name = nextName;
     this.renamingCharacterId = null;
     this.render();
+  }
+
+  private closeDetailState(): void {
+    this.detailOpen = false;
+    this.selectedCharacterId = null;
+    this.openWeaponPickerHand = null;
+    this.renamingCharacterId = null;
+    this.statPageIndex = 0;
   }
 
   private finishEquipmentChange(): void {

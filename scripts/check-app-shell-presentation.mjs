@@ -8,15 +8,15 @@ const packageJson = JSON.parse(readFileSync('package.json', 'utf8'));
 const probePage = '<section class="page" id="probe">Probe</section>';
 const shell = composeAppShell(probePage);
 
-assert.equal(APP_UI_VERSION, '0.15.5', 'Die gemeinsame sichtbare App-Version muss v0.15.5 sein.');
+assert.equal(APP_UI_VERSION, '0.16.0', 'Die gemeinsame sichtbare App-Version muss v0.16.0 sein.');
 assert.equal(packageJson.version, APP_UI_VERSION, 'package.json und sichtbare App-Version dürfen nicht auseinanderlaufen.');
 assert.equal(APP_SHELL_PAGE_IDS[0], 'base');
 for (const required of ['character', 'storage', 'forge-preview', 'market-jobs', 'dungeon-select', 'index']) {
   assert.ok(APP_SHELL_PAGE_IDS.includes(required), `Modulare Seite ${required} fehlt in der Shell-Seitenliste.`);
 }
-assert.match(shell, /^<div class="app modular-ui" data-ui-version="0\.15\.5">/, 'Die modulare UI-v0.15.5-Shell fehlt.');
+assert.match(shell, /^<div class="app modular-ui" data-ui-version="0\.16\.0">/, 'Die modulare UI-v0.16.0-Shell fehlt.');
 assert.match(shell, /id="backBtn"[\s\S]*onclick="goBack\(\)"/, 'Der globale Zurück-Button fehlt.');
-assert.match(shell, /<div class="ui-version">NO BRAINER · v0\.15\.5<\/div>/, 'Die sichtbare Versionsanzeige ist nicht v0.15.5.');
+assert.match(shell, /<div class="ui-version">NO BRAINER · v0\.16\.0<\/div>/, 'Die sichtbare Versionsanzeige ist nicht v0.16.0.');
 assert.match(shell, /<h1 id="pageTitle">Übersicht<\/h1>/, 'Der Seitentitel-Anker fehlt.');
 assert.match(shell, /id="gold"/, 'Der Geld-Anker fehlt.');
 assert.match(shell, /class="help-btn"[\s\S]*onclick="go\('index'\)"/, 'Der Hilfezugang fehlt.');
@@ -40,7 +40,8 @@ assert.doesNotMatch(shell, /onclick="resetSave\(\)"/, 'Spielstand-Reset soll nic
 const styles = angularConfig.projects?.nobrainer?.architect?.build?.options?.styles ?? [];
 assert.ok(styles.includes('src/styles.css'));
 assert.ok(styles.includes('src/ui-shell-v0.12.0.css'), 'Das responsive modulare UI-Stylesheet ist nicht registriert.');
-assert.ok(styles.includes('src/roster-compact-v0.15.5.css'), 'Das kompakte Kader-Stylesheet ist nicht registriert.');
+assert.ok(styles.includes('src/character-selection-v0.16.0.css'), 'Das gemeinsame Kader-/Rekrutierungs-Modal-Stylesheet ist nicht registriert.');
+assert.ok(!styles.includes('src/roster-compact-v0.15.5.css'), 'Das abgelöste v0.15.5-Kader-Stylesheet darf nicht mehr registriert sein.');
 assert.ok(styles.includes('src/forge-compact-v0.15.4.css'), 'Das kompakte Waffenherstellungs-Stylesheet ist nicht registriert.');
 assert.ok(styles.includes('src/dungeon-modal-v0.15.0.css'), 'Das Trainingslager-Popup-Stylesheet ist nicht registriert.');
 
@@ -49,4 +50,4 @@ assert.match(appComponent, /composeAppShell\(pageMarkup\)/, 'Der App-Component b
 assert.doesNotMatch(appComponent, /DOMParser/, 'Der App-Component parst weiterhin die Legacy-HTML.');
 assert.match(appComponent, /const LEGACY_RUNTIME_PATH = 'legacy\/NoBrainer_GitHub_v0\.12\.2\.runtime\.js';/, 'Der App-Component verweist nicht auf das eigenständige Runtime-Asset.');
 
-console.log('App-Shell-Präsentation: responsive UI v0.15.5 mit kompaktem Kader, Waffenherstellung, Trainingslager-Popup, Topbar, Zurück-Button und vierteiliger Bottom-Navigation ist Angular-eigen.');
+console.log('App-Shell-Präsentation: responsive UI v0.16.0 mit gemeinsamen Kader-/Rekrutierungsmodals, Waffenherstellung, Trainingslager-Popup, Topbar, Zurück-Button und vierteiliger Bottom-Navigation ist Angular-eigen.');

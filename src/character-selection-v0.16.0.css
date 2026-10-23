@@ -1,0 +1,526 @@
+#rosterCard.scroll-region,
+#tavernOffer.scroll-region {
+  min-height: 0;
+  max-height: none;
+  overflow: visible;
+}
+
+.character-selection-page {
+  min-width: 0;
+}
+
+.character-list-panel {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #14191e;
+}
+
+.character-list-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 34px;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.character-list-scroll {
+  max-height: min(62dvh, 620px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+.character-list-item {
+  width: 100%;
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 9px 12px;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, .055);
+  border-left: 3px solid transparent;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.character-list-item:last-child {
+  border-bottom: 0;
+}
+
+.character-list-item:hover,
+.character-list-item:focus-visible,
+.character-list-item.selected {
+  background: var(--panel2);
+}
+
+.character-list-item.selected {
+  border-left-color: var(--accent);
+}
+
+.character-list-copy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.character-list-copy strong,
+.character-list-copy span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.character-list-copy strong {
+  font-size: 15px;
+}
+
+.character-list-copy span,
+.character-list-meta {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.character-list-meta {
+  white-space: nowrap;
+  text-align: right;
+}
+
+.class-emblem {
+  display: block;
+  flex: 0 0 auto;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+
+.class-emblem-small {
+  width: 30px;
+  height: 30px;
+}
+
+.class-emblem-large {
+  width: 168px;
+  height: 168px;
+  max-width: 42vw;
+  max-height: 42vw;
+}
+
+.class-emblem-small[data-class-id="archer"] { background-image: url('./class-emblems/archer-small.png'); }
+.class-emblem-small[data-class-id="recruit"] { background-image: url('./class-emblems/recruit-small.png'); }
+.class-emblem-small[data-class-id="scholar"] { background-image: url('./class-emblems/scholar-small.png'); }
+.class-emblem-small[data-class-id="fighter"] { background-image: url('./class-emblems/fighter-small.png'); }
+.class-emblem-large[data-class-id="archer"] { background-image: url('./class-emblems/archer-large.png'); }
+.class-emblem-large[data-class-id="recruit"] { background-image: url('./class-emblems/recruit-large.png'); }
+.class-emblem-large[data-class-id="scholar"] { background-image: url('./class-emblems/scholar-large.png'); }
+.class-emblem-large[data-class-id="fighter"] { background-image: url('./class-emblems/fighter-large.png'); }
+
+.character-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: grid;
+  place-items: center;
+  padding: max(10px, env(safe-area-inset-top)) 10px max(10px, env(safe-area-inset-bottom));
+}
+
+.character-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: rgba(5, 7, 10, .84);
+  backdrop-filter: blur(6px);
+  cursor: default;
+}
+
+.character-modal-dialog {
+  position: relative;
+  z-index: 1;
+  width: min(760px, 100%);
+  max-height: min(94dvh, 900px);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--panel);
+  box-shadow: 0 24px 76px rgba(0, 0, 0, .55);
+}
+
+.character-modal-header {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(18, 20, 23, .98);
+}
+
+.character-modal-header h2 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.character-modal-close,
+.roster-icon-btn,
+.roster-page-btn {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel2);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.character-modal-close {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.character-modal-body {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  padding: 12px;
+}
+
+.roster-detail-card,
+.recruitment-detail-card {
+  min-width: 0;
+}
+
+.roster-detail-head {
+  padding-bottom: 9px;
+  border-bottom: 1px solid var(--line);
+}
+
+.roster-name-display,
+.roster-name-edit,
+.roster-character-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.roster-name-display {
+  justify-content: space-between;
+}
+
+.roster-name-display strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 20px;
+}
+
+.roster-name-edit .roster-name-input {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.roster-icon-btn {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  padding: 0;
+  font-size: 18px;
+}
+
+.roster-icon-btn.confirm {
+  border-color: var(--accent);
+}
+
+.roster-character-meta {
+  justify-content: space-between;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.roster-emblem-stage {
+  position: relative;
+  min-height: 252px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 14px 6px 78px;
+}
+
+.roster-equipment-layer {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  bottom: 6px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.roster-equipment-slot {
+  min-width: 0;
+  min-height: 62px;
+  display: grid;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--panel2);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.roster-equipment-slot.active {
+  border-color: var(--accent);
+}
+
+.roster-equipment-slot strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #fff;
+  font-size: 13px;
+}
+
+.roster-equipment-label,
+.roster-equipment-action {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.roster-weapon-picker {
+  margin: 4px 0 12px;
+}
+
+.roster-weapon-picker .weapon-card-list {
+  max-height: min(34dvh, 310px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.roster-stats {
+  border-top: 1px solid var(--line);
+  padding-top: 6px;
+}
+
+.roster-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 10px;
+}
+
+.roster-stat {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 34px;
+  padding: 6px;
+  border-bottom: 1px solid var(--line);
+}
+
+.roster-stat span {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.roster-stat b {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  text-align: right;
+}
+
+.roster-stat-pagination {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) 48px;
+  align-items: center;
+  gap: 8px;
+  padding-top: 9px;
+}
+
+.roster-stat-pagination > span {
+  text-align: center;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.roster-page-btn {
+  min-height: 36px;
+  font-size: 20px;
+}
+
+.roster-page-btn:disabled {
+  opacity: .35;
+  cursor: default;
+}
+
+.recruitment-status-line {
+  margin: 10px 2px 0;
+}
+
+.recruitment-detail-head > div {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.recruitment-detail-head strong {
+  font-size: 21px;
+}
+
+.recruitment-emblem-stage {
+  min-height: 194px;
+  display: grid;
+  place-items: center;
+  padding: 12px 0;
+}
+
+.recruitment-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.recruitment-stat {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 38px;
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--panel2);
+}
+
+.recruitment-stat span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.recruitment-stat b {
+  font-size: 12px;
+}
+
+.recruitment-modal-status {
+  margin: 10px 0 0;
+  text-align: center;
+}
+
+.recruitment-primary-action {
+  width: 100%;
+  min-height: 46px;
+  margin-top: 12px;
+}
+
+@media (max-width: 760px) {
+  .character-list-scroll {
+    max-height: 66dvh;
+  }
+
+  .character-modal {
+    padding: max(4px, env(safe-area-inset-top)) 4px max(4px, env(safe-area-inset-bottom));
+  }
+
+  .character-modal-dialog {
+    width: 100%;
+    max-height: 98dvh;
+    border-radius: 12px;
+  }
+
+  .character-modal-header,
+  .character-modal-body {
+    padding: 8px 10px;
+  }
+
+  .character-modal-header h2 {
+    font-size: 16px;
+  }
+
+  .character-modal-close {
+    width: 38px;
+    height: 38px;
+  }
+
+  .roster-emblem-stage {
+    min-height: 230px;
+    padding-top: 8px;
+    padding-bottom: 76px;
+  }
+
+  .class-emblem-large {
+    width: 150px;
+    height: 150px;
+    max-width: 45vw;
+    max-height: 45vw;
+  }
+
+  .roster-equipment-layer {
+    gap: 6px;
+  }
+
+  .roster-equipment-slot {
+    min-height: 58px;
+    padding: 7px 8px;
+  }
+
+  .roster-stat-grid,
+  .recruitment-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 430px) {
+  .character-list-item {
+    grid-template-columns: 32px minmax(0, 1fr) auto;
+    gap: 8px;
+    padding-left: 9px;
+    padding-right: 9px;
+  }
+
+  .class-emblem-small {
+    width: 26px;
+    height: 26px;
+  }
+
+  .roster-name-display strong,
+  .recruitment-detail-head strong {
+    font-size: 18px;
+  }
+
+  .roster-stat {
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+}
