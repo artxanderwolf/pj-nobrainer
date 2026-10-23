@@ -1,0 +1,147 @@
+name: Stage class emblems v0.16.1
+
+on:
+  push:
+    branches:
+      - fix/large-class-emblems-v0.16.1-manual-assets
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect and normalize uploaded assets
+        id: assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p src/class-emblems
+          normalize_asset() {
+            local target="$1"
+            shift
+            if [[ -f "src/class-emblems/$target" ]]; then
+              return 0
+            fi
+            for candidate in "$@"; do
+              if [[ -f "$candidate" ]]; then
+                mv "$candidate" "src/class-emblems/$target"
+                return 0
+              fi
+            done
+            return 1
+          }
+
+          ready=true
+          normalize_asset archer-large-v0.16.1.png \
+            bogner_emblem_512_opt.png src/class-emblems/bogner_emblem_512_opt.png || ready=false
+          normalize_asset fighter-large-v0.16.1.png \
+            krieger_emblem_512_opt.png src/class-emblems/krieger_emblem_512_opt.png || ready=false
+          normalize_asset recruit-large-v0.16.1.png \
+            rekrut_emblem_512_opt.png src/class-emblems/rekrut_emblem_512_opt.png || ready=false
+          normalize_asset scholar-large-v0.16.1.png \
+            scholar_emblem_512_opt.png src/class-emblems/scholar_emblem_512_opt.png || ready=false
+
+          if [[ "$ready" != true ]]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "Noch nicht alle vier Original-PNGs vorhanden; keine Projektdateien werden geändert."
+            exit 0
+          fi
+
+          echo "59a0da0a447d16c16f17f255d80e3ef15d3222b48d1fca17f34005fe4b7f80d3  src/class-emblems/archer-large-v0.16.1.png" | sha256sum -c -
+          echo "63a0d664e3b520b910b0f35ac50aa0c314aab33595d193352545dccae52949aa  src/class-emblems/fighter-large-v0.16.1.png" | sha256sum -c -
+          echo "77e6a4a6f34674c8f260c017e9c14caa7093245cd11d00fcc0c510a753724066  src/class-emblems/recruit-large-v0.16.1.png" | sha256sum -c -
+          echo "c5398e5516406922ff64ded97cf2cfc5bcdf2b6b77835bb525ad540a986ca884  src/class-emblems/scholar-large-v0.16.1.png" | sha256sum -c -
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+
+      - name: Apply v0.16.1 asset references and version
+        if: steps.assets.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          css = Path('src/character-selection-v0.16.0.css')
+          text = css.read_text()
+          replacements = {
+              "./class-emblems/archer-large.png": "./class-emblems/archer-large-v0.16.1.png",
+              "./class-emblems/fighter-large.png": "./class-emblems/fighter-large-v0.16.1.png",
+              "./class-emblems/recruit-large.png": "./class-emblems/recruit-large-v0.16.1.png",
+              "./class-emblems/scholar-large.png": "./class-emblems/scholar-large-v0.16.1.png",
+          }
+          for old, new in replacements.items():
+              if old not in text:
+                  raise SystemExit(f'Erwarteter alter Asset-Pfad fehlt: {old}')
+              text = text.replace(old, new)
+          css.write_text(text)
+
+          pkg_path = Path('package.json')
+          pkg = json.loads(pkg_path.read_text())
+          if pkg.get('version') != '0.16.0':
+              raise SystemExit(f'Unerwartete Ausgangsversion: {pkg.get("version")}')
+          pkg['version'] = '0.16.1'
+          pkg_path.write_text(json.dumps(pkg, ensure_ascii=False, indent=2) + '\n')
+
+          shell_path = Path('src/app/game/app-shell-presentation-core.ts')
+          shell = shell_path.read_text()
+          old = "export const APP_UI_VERSION = '0.16.0';"
+          new = "export const APP_UI_VERSION = '0.16.1';"
+          if old not in shell:
+              raise SystemExit('APP_UI_VERSION v0.16.0 nicht gefunden.')
+          shell_path.write_text(shell.replace(old, new, 1))
+
+          check_path = Path('scripts/check-app-shell-presentation.mjs')
+          check = check_path.read_text()
+          check = check.replace("APP_UI_VERSION, '0.16.0'", "APP_UI_VERSION, '0.16.1'")
+          check = check.replace('data-ui-version="0\\.16\\.0"', 'data-ui-version="0\\.16\\.1"')
+          check = check.replace('NO BRAINER · v0\\.16\\.0', 'NO BRAINER · v0\\.16\\.1')
+          check = check.replace('v0.16.0-Shell', 'v0.16.1-Shell')
+          check = check.replace('nicht v0.16.0', 'nicht v0.16.1')
+          check = check.replace('responsive UI v0.16.0 ', 'responsive UI v0.16.1 ')
+          check_path.write_text(check)
+          PY
+
+          grep -Fq "archer-large-v0.16.1.png" src/character-selection-v0.16.0.css
+          grep -Fq "fighter-large-v0.16.1.png" src/character-selection-v0.16.0.css
+          grep -Fq "recruit-large-v0.16.1.png" src/character-selection-v0.16.0.css
+          grep -Fq "scholar-large-v0.16.1.png" src/character-selection-v0.16.0.css
+
+      - name: Setup Node
+        if: steps.assets.outputs.ready == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+
+      - name: Install dependencies
+        if: steps.assets.outputs.ready == 'true'
+        run: |
+          npm install --global npm@11.6.0 --no-audit --no-fund
+          npm install --no-package-lock --no-audit --no-fund
+
+      - name: Build and browser regressions
+        if: steps.assets.outputs.ready == 'true'
+        run: |
+          npm run build
+          node scripts/check-built-runtime-startup.mjs
+          node scripts/check-built-roster.mjs
+          node scripts/check-built-tavern-modal.mjs
+
+      - name: Commit verified fix
+        if: steps.assets.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f package-lock.json
+          rm -f .github/workflows/stage-class-emblems-v0.16.1.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "v0.16.1: große Klassenembleme repariert"
+          git push
