@@ -61,7 +61,7 @@ export const INDEX_PAGE_MARKUP = `<section class="page" id="index">
               <tr><td>1H Schwert</td><td>10</td><td>1,00</td><td>55 %</td><td>0 %</td><td>0</td><td>+1 %-Pkt.</td><td>0</td><td>+0,05</td><td>0</td><td>0</td><td>+10 %-Pkt.</td><td>0</td></tr>
               <tr><td>1H Axt</td><td>12</td><td>0,85</td><td>52 %</td><td>0 %</td><td>0</td><td>0</td><td>0</td><td>+0,08</td><td>0</td><td>0</td><td>+15 %-Pkt.</td><td>+5 %-Pkt.</td></tr>
               <tr><td>2H Schwert</td><td>16</td><td>0,80</td><td>55 %</td><td>0 %</td><td>0</td><td>+2 %-Pkt.</td><td>0</td><td>+0,10</td><td>0</td><td>0</td><td>+15 %-Pkt.</td><td>0</td></tr>
-              <tr><td>2H Axt</td><td>20</td><td>0,70</td><td>50 %</td><td>0 %</td><td>0</td><td>0</td><td>0</td><td>+0,15</td><td>−0,05</td><td>0</td><td>0</td><td>+25 %-Pkt.</td><td>+10 %-Pkt.</td></tr>
+              <tr><td>2H Axt</td><td>20</td><td>0,70</td><td>50 %</td><td>0 %</td><td>0</td><td>0</td><td>0</td><td>+0,15</td><td>−0,05</td><td>0</td><td>+25 %-Pkt.</td><td>+10 %-Pkt.</td></tr>
               <tr><td>Bogen</td><td>11</td><td>0,90</td><td>65 %</td><td>0 %</td><td>0</td><td>0</td><td>+2 %-Pkt.</td><td>0</td><td>+0,10</td><td>+8 %-Pkt.</td><td>0</td><td>0</td></tr>
               <tr><td>Stab</td><td>10</td><td>1,00</td><td>60 %</td><td>0 %</td><td>+10</td><td>0</td><td>0</td><td>+0,05</td><td>+0,10</td><td>0</td><td>+15 %-Pkt.</td><td>0</td></tr>
             </tbody>
@@ -91,7 +91,7 @@ export const INDEX_PAGE_MARKUP = `<section class="page" id="index">
             <tbody>
               <tr><td>Rekrut</td><td>30</td><td>100</td><td>2 %</td><td>10 %</td><td>1,00</td><td>1,00</td><td>50</td><td>5 %</td><td>150 %</td><td>0</td><td>5/min</td><td>100 %</td><td>0 %</td><td>0 %</td></tr>
               <tr><td>Kämpfer</td><td>35</td><td>100</td><td>3 %</td><td>8 %</td><td>1,10</td><td>0,95</td><td>100</td><td>4 %</td><td>160 %</td><td>0</td><td>5/min</td><td>100 %</td><td>0 %</td><td>0 %</td></tr>
-              <tr><td>Bogner</td><td>26</td><td>100</td><td>1 %</td><td>15 %</td><td>0,95</td><td>1,15</td><td>33</td><td>10 %</td><td>150 %</td><td>0</td><td>5/min</td><td>100 %</td><td>0 %</td></tr>
+              <tr><td>Bogner</td><td>26</td><td>100</td><td>1 %</td><td>15 %</td><td>0,95</td><td>1,15</td><td>33</td><td>10 %</td><td>150 %</td><td>0</td><td>5/min</td><td>100 %</td><td>0 %</td><td>0 %</td></tr>
               <tr><td>Gelehrter</td><td>22</td><td>100</td><td>0 %</td><td>5 %</td><td>1,15</td><td>1,10</td><td>25</td><td>5 %</td><td>175 %</td><td>0</td><td>5/min</td><td>100 %</td><td>0 %</td><td>0 %</td></tr>
             </tbody>
           </table></div>
