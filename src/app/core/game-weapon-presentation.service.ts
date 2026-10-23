@@ -10,6 +10,7 @@ import {
   createWeaponPresentationCore,
   type WeaponCardLike
 } from '../game/weapon-presentation-core';
+import { GameWeaponImagePresentationService } from './game-weapon-image-presentation.service';
 
 export type RuntimeWeaponPresentation = WeaponCardLike & {
   id: number;
@@ -26,6 +27,8 @@ const WEAPON_PRESENTATION = createWeaponPresentationCore({
 
 @Injectable({ providedIn: 'root' })
 export class GameWeaponPresentationService {
+  constructor(private readonly weaponImagePresentation: GameWeaponImagePresentationService) {}
+
   sortWeaponInventory<TWeapon extends WeaponCardLike>(weapons: readonly TWeapon[]): TWeapon[] {
     return WEAPON_PRESENTATION.sortWeaponInventory(weapons);
   }
@@ -39,6 +42,7 @@ export class GameWeaponPresentationService {
     const pricedWeapon = this.withCurrentEconomyValue(weapon);
     const pricedCompareWeapon = compareWeapon ? this.withCurrentEconomyValue(compareWeapon) : null;
     const presentation = WEAPON_PRESENTATION.getWeaponCardPresentation(pricedWeapon, pricedCompareWeapon);
+    const imageHtml = this.weaponImagePresentation.render(pricedWeapon, 'complete', { className: 'weapon-card-image' });
     const statHtml = presentation.stats.map(stat => {
       const value = stat.value.kind === 'currency' ? formatCurrencyNickel(stat.value.nickel) : stat.value.text;
       const diff = stat.diff ? ` <span class="weapon-diff ${stat.diff.tone}">${stat.diff.text}</span>` : '';
@@ -47,7 +51,7 @@ export class GameWeaponPresentationService {
     const reinforcement = presentation.reinforcementText ? ` · ${presentation.reinforcementText}` : '';
     const statusHtml = status ? `<span class="tag fixed">${status}</span>` : '';
 
-    return `<div class="weapon-card"><div class="weapon-card-head"><div><div class="weapon-card-title">${presentation.title}</div><div class="weapon-card-sub">${presentation.formName} · ${presentation.rarityLabel}${reinforcement}</div></div>${statusHtml}</div><div class="weapon-stats">${statHtml}</div>${actions}</div>`;
+    return `<div class="weapon-card"><div class="weapon-card-head"><div class="weapon-card-head-main">${imageHtml}<div class="weapon-card-copy"><div class="weapon-card-title">${presentation.title}</div><div class="weapon-card-sub">${presentation.formName} · ${presentation.rarityLabel}${reinforcement}</div></div></div>${statusHtml}</div><div class="weapon-stats">${statHtml}</div>${actions}</div>`;
   }
 
   private withCurrentEconomyValue(weapon: RuntimeWeaponPresentation): RuntimeWeaponPresentation {
