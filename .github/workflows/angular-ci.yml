@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - migration/angular
-      - feature/character-modals-v0.16.0
   pull_request:
     branches:
       - main
