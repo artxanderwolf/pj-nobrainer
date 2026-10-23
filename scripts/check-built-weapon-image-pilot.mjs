@@ -135,7 +135,17 @@ window.addEventListener('unhandledrejection',event=>window.__weaponImagePilotErr
     node.textContent=JSON.stringify({support:CSS.supports('mask-image','url("x")')||CSS.supports('-webkit-mask-image','url("x")'),browserErrors:window.__weaponImagePilotErrors,results});
     document.body.appendChild(node);
   };
-  requestAnimationFrame(()=>requestAnimationFrame(()=>finish()));
+  const layoutStarted=Date.now();
+  const waitForLayout=()=>{
+    const ready=expected.every(entry=>{
+      const root=document.querySelector('[data-weapon-image-pilot="'+entry.id+'"] .weapon-image');
+      const rect=root?.getBoundingClientRect();
+      return rect?.width===64&&rect?.height===64;
+    });
+    if(ready||Date.now()-layoutStarted>2000){finish();return;}
+    setTimeout(waitForLayout,50);
+  };
+  requestAnimationFrame(()=>requestAnimationFrame(()=>waitForLayout()));
 })();
 </script>`;
 
@@ -156,7 +166,7 @@ const server = createServer((request, response) => {
   if (safePath === 'index.html') {
     body = Buffer.from(body.toString('utf8').replace('</body>', `<div id="weaponImagePilot" style="position:fixed;left:0;top:0;z-index:99999;background:#fff">${pilotMarkup}</div>${probeScript}</body>`), 'utf8');
   }
-  response.writeHead(200, { 'content-type': contentTypes.get(extname(filePath)) ?? 'application/octet-stream', 'cache-control': 'no-store' });
+  response.writeHead(200, { 'content-type': contentTypes.get(extname(filePath)) ?? 'application/octet-stream', 'cache-control':'no-store' });
   response.end(body);
 });
 
