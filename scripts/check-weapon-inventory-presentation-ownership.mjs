@@ -14,11 +14,12 @@ assert.match(weaponPresentationService, /createWeaponPresentationCore\(/, 'Der g
 assert.match(weaponPresentationService, /renderCard\(/, 'Der gemeinsame Angular-Waffenpräsentationsservice rendert keine Waffenkarten.');
 assert.match(weaponPresentationService, /GameWeaponImagePresentationService/, 'Der gemeinsame Waffenpräsentationsservice bindet den Waffenbild-Service nicht ein.');
 assert.match(weaponPresentationService, /private readonly weaponImagePresentation: GameWeaponImagePresentationService/, 'Der Waffenbild-Service wird nicht zentral in die Waffenpräsentation injiziert.');
-assert.match(weaponPresentationService, /this\.weaponImagePresentation\.render\(pricedWeapon, 'complete', \{ className: 'weapon-card-image' \}\)/, 'Waffenkarten rendern das Materialbild nicht über den gemeinsamen Bild-Service.');
+assert.match(weaponPresentationService, /renderImage\([\s\S]*this\.weaponImagePresentation\.render\(weapon, 'complete', \{ className, ariaLabel \}\)/, 'Der gemeinsame Waffenpräsentationsservice stellt keinen zentralen Waffenbildpfad bereit.');
+assert.match(weaponPresentationService, /const imageHtml = this\.renderImage\(pricedWeapon, 'weapon-card-image'\)/, 'Waffenkarten verwenden nicht den gemeinsamen Waffenbildpfad.');
 assert.match(weaponPresentationService, /weapon-card-head-main/, 'Das gemeinsame Waffenkartenlayout besitzt keinen Bild-/Text-Kopf.');
 assert.match(characterPresentationService, /private readonly weaponPresentation: GameWeaponPresentationService/, 'Der Kader verwendet den gemeinsamen Angular-Waffenpräsentationsservice nicht.');
 assert.doesNotMatch(characterPresentationService, /createWeaponPresentationCore\(/, 'Der Kader erzeugt weiterhin einen zweiten Weapon-Presentation-Core.');
-assert.doesNotMatch(characterPresentationService, /GameWeaponImagePresentationService/, 'Der Kader darf keine eigene Waffenbild-Sonderlogik aufbauen.');
+assert.doesNotMatch(characterPresentationService, /GameWeaponImagePresentationService|getWeaponImageRenderPlan|getWeaponImageMarkup/, 'Der Kader darf keine eigene Waffenbild-Sonderlogik aufbauen.');
 assert.doesNotMatch(inventoryService, /GameWeaponImagePresentationService/, 'Das Waffenlager darf keine eigene Waffenbild-Sonderlogik aufbauen.');
 
 assert.match(inventoryService, /private readonly gameState: GameStateService/, 'Waffenlager-Präsentation liest nicht aus dem Angular-State.');
