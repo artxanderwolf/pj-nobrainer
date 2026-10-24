@@ -14,6 +14,7 @@ interface SaveReplacementRecord {
 @Injectable({ providedIn: 'root' })
 export class SaveStorageService {
   read(): string | null {
+    this.applyPendingReplacement();
     return localStorage.getItem(SAVE_KEY);
   }
 
