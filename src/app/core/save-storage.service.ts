@@ -4,8 +4,9 @@ import { SaveSnapshot } from './offline-progress.service';
 
 const SAVE_KEY = 'nobrainer_save_v1';
 const IMPORT_BACKUP_KEY = 'nobrainer_save_import_backup_v1';
+const PENDING_REPLACEMENT_KEY = 'nobrainer_save_pending_replacement_v1';
 
-interface ImportBackupRecord {
+interface SaveReplacementRecord {
   hadSave: boolean;
   raw: string | null;
 }
@@ -40,34 +41,50 @@ export class SaveStorageService {
   }
 
   writeImportBackup(currentRaw: string | null): void {
-    const record: ImportBackupRecord = {
+    this.writeRecord(IMPORT_BACKUP_KEY, {
       hadSave: currentRaw !== null,
       raw: currentRaw
-    };
-    localStorage.setItem(IMPORT_BACKUP_KEY, JSON.stringify(record));
+    });
   }
 
   hasImportBackup(): boolean {
-    return this.readImportBackup() !== null;
+    return this.readRecord(IMPORT_BACKUP_KEY) !== null;
   }
 
-  restoreImportBackup(): boolean {
-    const backup = this.readImportBackup();
+  stageImportedSave(raw: string): void {
+    this.writeRecord(PENDING_REPLACEMENT_KEY, { hadSave: true, raw });
+  }
+
+  stageImportBackupRestore(): boolean {
+    const backup = this.readRecord(IMPORT_BACKUP_KEY);
     if (!backup) return false;
 
-    if (backup.hadSave && typeof backup.raw === 'string') this.write(backup.raw);
-    else this.remove();
-
+    this.writeRecord(PENDING_REPLACEMENT_KEY, backup);
     localStorage.removeItem(IMPORT_BACKUP_KEY);
     return true;
   }
 
-  private readImportBackup(): ImportBackupRecord | null {
-    const raw = localStorage.getItem(IMPORT_BACKUP_KEY);
+  applyPendingReplacement(): boolean {
+    const pending = this.readRecord(PENDING_REPLACEMENT_KEY);
+    if (!pending) return false;
+
+    if (pending.hadSave && typeof pending.raw === 'string') this.write(pending.raw);
+    else this.remove();
+
+    localStorage.removeItem(PENDING_REPLACEMENT_KEY);
+    return true;
+  }
+
+  private writeRecord(key: string, record: SaveReplacementRecord): void {
+    localStorage.setItem(key, JSON.stringify(record));
+  }
+
+  private readRecord(key: string): SaveReplacementRecord | null {
+    const raw = localStorage.getItem(key);
     if (!raw) return null;
 
     try {
-      const parsed = JSON.parse(raw) as Partial<ImportBackupRecord>;
+      const parsed = JSON.parse(raw) as Partial<SaveReplacementRecord>;
       if (typeof parsed?.hadSave !== 'boolean') return null;
       if (parsed.hadSave && typeof parsed.raw !== 'string') return null;
       if (!parsed.hadSave && parsed.raw !== null) return null;
