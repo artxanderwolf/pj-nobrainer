@@ -56,14 +56,22 @@ export class GameDungeonSessionService {
   }
 
   /**
-   * Verwirft ausschließlich einen aus einem Save geladenen Alt-Lauf.
-   * Ein normales Schließen des Popups darf den aktiven Dungeon-Run nicht beenden.
+   * Bereitet einen aus dem Save geladenen Dungeonzustand vor.
+   * Moderne Läufe mit persistierter Endzeit bleiben erhalten; alte oder verwaiste
+   * Laufzustände ohne belastbare Endzeit werden einmal sauber zurückgesetzt.
    */
-  resetLoadedSession(_at = Date.now()): DungeonActionResult {
+  prepareLoadedSession(_at = Date.now()): DungeonActionResult {
     const state = this.getState();
-    const changed = this.hasRuntimeState(state);
-    this.resetRuntimeState(state);
     this.modalOpen = false;
+
+    const active = this.hasActiveRun(state);
+    const endsAt = this.getSessionEndsAt(state);
+    if (active && endsAt !== null) {
+      return { events: [], saveRequested: false };
+    }
+
+    const changed = this.hasRuntimeState(state);
+    if (changed) this.resetRuntimeState(state);
     return { events: [], saveRequested: changed };
   }
 
@@ -96,8 +104,9 @@ export class GameDungeonSessionService {
 
     const endsAt = this.getSessionEndsAt(state);
     if (endsAt === null) {
-      // Der Migrationsschritt für ältere persistierte Läufe folgt separat.
-      // Neue Läufe erhalten ihre Endzeit bereits beim Start in toggleRun().
+      // Ein geladener Altstand ohne Endzeit wird bereits in prepareLoadedSession()
+      // entfernt. Dieser Schutz verhindert weiterhin, dass ihm stillschweigend
+      // eine neue Fünf-Stunden-Frist gegeben wird.
       return { events: [], saveRequested: false, catchingUp: false };
     }
 
