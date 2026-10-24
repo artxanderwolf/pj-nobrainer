@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - migration/angular
+      - feature/save-transfer-v0.17.2
   pull_request:
     branches:
       - main
