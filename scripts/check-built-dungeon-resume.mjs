@@ -29,6 +29,7 @@ if(new URLSearchParams(location.search).get('phase')==='legacy'){
       const parsed=JSON.parse(raw);
       const state=parsed&&parsed.state&&typeof parsed.state==='object'?parsed.state:parsed;
       if(state&&typeof state==='object')delete state.dungeonSessionEndsAt;
+      if(parsed&&typeof parsed==='object'&&'state' in parsed)parsed.saveVersion=13;
       if(parsed&&typeof parsed==='object'&&'savedAt' in parsed)parsed.savedAt=Date.now();
       localStorage.setItem('${saveKey}',JSON.stringify(parsed));
     }
@@ -40,11 +41,13 @@ const probeScript = `<script>
 (() => {
   const phase=new URLSearchParams(location.search).get('phase')||'start';
   const normalizeText=value=>String(value||'').replace(/\\s+/g,' ').trim();
-  const readState=()=>{
+  const readSave=()=>{
     const raw=localStorage.getItem('${saveKey}');
-    if(!raw)return null;
+    if(!raw)return {state:null,saveVersion:null};
     const parsed=JSON.parse(raw);
-    return parsed&&parsed.state&&typeof parsed.state==='object'?parsed.state:parsed;
+    const state=parsed&&parsed.state&&typeof parsed.state==='object'?parsed.state:parsed;
+    const saveVersion=parsed&&typeof parsed==='object'&&Number.isFinite(Number(parsed.saveVersion))?Number(parsed.saveVersion):null;
+    return {state,saveVersion};
   };
   const active=state=>Boolean(state?.dungeonAuto||state?.dungeonRun||state?.dungeonSearch||state?.dungeonLootCollect);
   const finish=result=>{
@@ -79,13 +82,15 @@ const probeScript = `<script>
         if(phase==='start'){
           primary.click();
           setTimeout(()=>{
-            const state=readState();
+            const save=readSave();
+            const state=save.state;
             const endsAt=Number(state?.dungeonSessionEndsAt);
             finish({
               status:'checked',
               primaryText:normalizeText(primary.textContent),
               timeText:normalizeText(document.getElementById('dungeonTimeText')?.textContent),
               stateActive:active(state),
+              saveVersion:save.saveVersion,
               endsAt:Number.isFinite(endsAt)?endsAt:null,
               remainingMs:Number.isFinite(endsAt)?endsAt-Date.now():null,
               teamSlots:Array.isArray(state?.dungeonTeamSlots)?state.dungeonTeamSlots:[],
@@ -96,13 +101,15 @@ const probeScript = `<script>
         }
 
         setTimeout(()=>{
-          const state=readState();
+          const save=readSave();
+          const state=save.state;
           const endsAt=Number(state?.dungeonSessionEndsAt);
           finish({
             status:'checked',
             primaryText:normalizeText(primary.textContent),
             timeText:normalizeText(document.getElementById('dungeonTimeText')?.textContent),
             stateActive:active(state),
+            saveVersion:save.saveVersion,
             endsAt:Number.isFinite(endsAt)?endsAt:null,
             remainingMs:Number.isFinite(endsAt)?endsAt-Date.now():null,
             dungeonAuto:Boolean(state?.dungeonAuto),
@@ -214,6 +221,7 @@ try {
   assert.equal(first.runtimeError, '', `Runtimefehler beim Dungeonstart: ${JSON.stringify(first)}`);
   assert.equal(first.primaryText, 'Lauf abbrechen', 'Der Trainingslagerlauf wurde nicht gestartet.');
   assert.equal(first.stateActive, true, 'Der gestartete Dungeon ist im Save nicht aktiv.');
+  assert.equal(first.saveVersion, 14, 'Ein neuer persistenter Dungeonlauf wird nicht als Save-Version 14 gespeichert.');
   assert.ok(Number.isFinite(first.endsAt) && first.endsAt > Date.now(), 'Der gestartete Dungeon besitzt keine zukünftige persistierte Endzeit.');
   assert.ok(first.remainingMs > 4.9 * 60 * 60 * 1000, 'Die gespeicherte Restzeit startet nicht nahe fünf Stunden.');
 
@@ -224,6 +232,7 @@ try {
   assert.equal(resumed.runtimeError, '', `Runtimefehler nach Neustart: ${JSON.stringify(resumed)}`);
   assert.equal(resumed.primaryText, 'Lauf abbrechen', 'Browser-Neustart beendet den modernen Trainingslagerlauf.');
   assert.equal(resumed.stateActive, true, 'Der moderne Dungeon ist nach Browser-Neustart im Save nicht mehr aktiv.');
+  assert.equal(resumed.saveVersion, 14, 'Der fortgesetzte Dungeon verliert die Save-Version 14.');
   assert.equal(resumed.endsAt, first.endsAt, 'Browser-Neustart vergibt dem Dungeon eine neue Endzeit.');
   assert.ok(resumed.remainingMs > 0 && resumed.remainingMs <= first.remainingMs, 'Die Restzeit wird nach Browser-Neustart nicht aus derselben Endzeit fortgeführt.');
   assert.deepEqual(resumed.teamSlots, first.teamSlots, 'Die Dungeon-Teamauswahl verändert sich beim Browser-Neustart.');
@@ -233,8 +242,9 @@ try {
   assert.equal(legacy.status, 'checked', `Altstand-Migration wurde nicht geprüft: ${JSON.stringify(legacy)}`);
   assert.equal(legacy.browserErrors.length, 0, `Browserfehler bei Altstand-Migration: ${JSON.stringify(legacy)}`);
   assert.equal(legacy.runtimeError, '', `Runtimefehler bei Altstand-Migration: ${JSON.stringify(legacy)}`);
-  assert.equal(legacy.primaryText, 'Lauf starten', 'Ein aktiver Altstand ohne Endzeit wird nicht einmalig beendet.');
-  assert.equal(legacy.stateActive, false, 'Altstand ohne Endzeit bleibt nach Migration aktiv.');
+  assert.equal(legacy.primaryText, 'Lauf starten', 'Ein aktiver v13-Altstand ohne Endzeit wird nicht einmalig beendet.');
+  assert.equal(legacy.stateActive, false, 'v13-Altstand ohne Endzeit bleibt nach Migration aktiv.');
+  assert.equal(legacy.saveVersion, 14, 'Ein migrierter v13-Dungeonstand wird nicht als Save-Version 14 zurückgeschrieben.');
   assert.equal(legacy.dungeonAuto, false, 'Altstand-Migration lässt dungeonAuto aktiv.');
   assert.equal(legacy.hasRun, false, 'Altstand-Migration lässt eine aktive Kampfwelle bestehen.');
   assert.equal(legacy.hasSearch, false, 'Altstand-Migration lässt eine aktive Suche bestehen.');
@@ -243,7 +253,7 @@ try {
   assert.deepEqual(legacy.teamSlots, first.teamSlots, 'Altstand-Migration löscht die gespeicherte Teamauswahl.');
   assert.equal(legacy.weaponCount, first.weaponCount, 'Altstand-Migration verändert das Waffeninventar.');
 
-  console.log('Dungeon-Neustart-Browserregression: moderne Läufe behalten ihre absolute Endzeit über Browserprozesse; aktive Altstände ohne Endzeit werden einmalig bereinigt, Team und Inventar bleiben erhalten.');
+  console.log('Dungeon-Neustart-Browserregression: Save v14 persistiert die absolute Endzeit über Browserprozesse; aktive v13-Altstände ohne Endzeit werden einmalig bereinigt und als v14 zurückgeschrieben, Team und Inventar bleiben erhalten.');
 } finally {
   rmSync(profile, { recursive: true, force: true });
   await new Promise(resolveClose => server.close(resolveClose));
