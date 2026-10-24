@@ -30,17 +30,24 @@ assert.match(dungeonData, /^1,Trainingslager,0,18000000,/m, 'Dungeon-ID 1 muss d
 assert.match(dataGenerator, /displayName: String\(dungeon\.display_name\)/, 'Der Anzeigename wird nicht aus der kanonischen Dungeon-Datenquelle generiert.');
 
 assert.match(sessionService, /private modalOpen = false;/, 'Dungeon-Sitzung besitzt keinen expliziten Popup-Zustand.');
+assert.match(sessionService, /dungeonSessionEndsAt\?: number \| null;/, 'Dungeon-Sitzung besitzt keine persistierbare absolute Endzeit.');
+assert.doesNotMatch(sessionService, /runStartedAt/, 'Die 5-Stunden-Uhr hängt weiterhin an einem rein flüchtigen Service-Zeitstempel.');
 assert.match(sessionService, /open\(_at = Date\.now\(\)\)[\s\S]*this\.modalOpen = true;[\s\S]*saveRequested: false/, 'Öffnen des Popups ist nicht vom Run-Lebenszyklus getrennt.');
 assert.match(sessionService, /close\(_at = Date\.now\(\)\)[\s\S]*this\.modalOpen = false;[\s\S]*saveRequested: false/, 'Schließen des Popups ist nicht vom Run-Lebenszyklus getrennt.');
 const closeStart = sessionService.indexOf('  close(_at = Date.now()): DungeonActionResult {');
 const closeEnd = sessionService.indexOf('  /**', closeStart);
 assert.ok(closeStart >= 0 && closeEnd > closeStart, 'Popup-Close-Methode konnte nicht isoliert werden.');
 const closeBody = sessionService.slice(closeStart, closeEnd);
-assert.doesNotMatch(closeBody, /resetRuntimeState|runStartedAt = null/, 'Schließen des Popups beendet oder setzt den aktiven Run weiterhin zurück.');
+assert.doesNotMatch(closeBody, /resetRuntimeState|dungeonSessionEndsAt\s*=/, 'Schließen des Popups beendet den Run oder verändert weiterhin seine persistente Endzeit.');
 assert.match(sessionService, /resetLoadedSession\(_at = Date\.now\(\)\)/, 'Ein separater Start-/Altstand-Reset für persistierte Laufzustände fehlt.');
 assert.match(sessionService, /if \(!this\.hasActiveRun\(state\)\)/, 'Dungeon-Update hängt nicht am tatsächlichen Run-Zustand.');
 assert.doesNotMatch(sessionService, /if \(!this\.modalOpen\) return \{ events: \[\], saveRequested: false, catchingUp: false \};/, 'Dungeon-Update wird bei geschlossenem Popup weiterhin gestoppt.');
-assert.match(sessionService, /if \(now - this\.runStartedAt >= this\.getDurationMs\(\)\)/, '5-Stunden-Ende wird nicht im Session-Service geprüft.');
+assert.match(sessionService, /state\.dungeonSessionEndsAt = at \+ this\.getDurationMs\(\);/, 'Neue Dungeon-Sitzungen persistieren ihre absolute Endzeit nicht.');
+assert.match(sessionService, /const updateAt = Math\.min\(now, endsAt\);[\s\S]*this\.gameDungeon\.update\(updateAt\)/, 'Dungeon-Catch-up wird nicht auf die ursprüngliche Sitzungs-Endzeit begrenzt.');
+assert.match(sessionService, /if \(now >= endsAt\) \{[\s\S]*this\.finishSession\(state, 'timeout', endsAt\)/, '5-Stunden-Ende wird nicht anhand der persistierten absoluten Endzeit abgeschlossen.');
+assert.match(sessionService, /const remainingMs = active \? Math\.max\(0, Number\(endsAt\) - now\) : totalMs;/, 'Restzeit wird nicht direkt aus der persistierten Endzeit berechnet.');
+assert.match(sessionService, /if \(endsAt === null\)[\s\S]*return \{ events: \[\], saveRequested: false, catchingUp: false \};/, 'Fehlende Altstand-Endzeiten werden vor der separaten Migration stillschweigend neu gestartet.');
+assert.match(sessionService, /state\.dungeonSessionEndsAt = null;/, 'Dungeon-Sitzungsende löscht die persistierte Endzeit nicht.');
 assert.match(sessionService, /finishSession\(state, 'manual', at\)/, 'Manueller Abbruch endet nicht sofort über den Session-Service.');
 assert.match(sessionService, /isRunActive\(\): boolean \{\n    return this\.hasActiveRun\(this\.getState\(\)\);/, 'Run-Aktivität hängt weiterhin fälschlich vom Popup-Zustand ab.');
 assert.ok(sessionService.includes(String.raw`.replace(/\s*\([\d.,]+\s*HP\)/g, '')`), 'Numerische Rest-HP werden nicht aus dem Trainingslager-Protokoll ausgeblendet.');
@@ -84,4 +91,4 @@ assert.doesNotMatch(registrationMatch[1], /renderDungeonStatus,|renderDungeonLoo
 assert.doesNotMatch(appComponent, /GameDungeonService|NoBrainerDungeonCompatibility|gameDungeon\.openLegacyCompatibilityBridge|gameDungeon\.closeLegacyCompatibilityBridge/, 'AppComponent verwaltet weiterhin die alte Dungeon-Kompatibilitätsbrücke.');
 assert.match(appComponent, /const APP_VERSION = APP_UI_VERSION;/, 'Der Dungeon-Cutover verwendet nicht die gemeinsame App-Version.');
 
-console.log('Dungeon-Eigentümerschaft: Kampf/Loot bleiben Angular-Fachlogik; Trainingslager-Anzeigename, Hintergrund-Session, 5-Stunden-Limit, reine HP-Balken und popup-unabhängiges Live-Protokoll liegen in Angular-Session/Präsentation.');
+console.log('Dungeon-Eigentümerschaft: Kampf/Loot bleiben Angular-Fachlogik; Trainingslager-Anzeigename, persistente 5-Stunden-Endzeit, Hintergrund-Session, reine HP-Balken und popup-unabhängiges Live-Protokoll liegen in Angular-Session/Präsentation.');
