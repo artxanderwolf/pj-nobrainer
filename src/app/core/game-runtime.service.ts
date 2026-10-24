@@ -15,6 +15,7 @@ import { GameForgePreviewPresentationService } from './game-forge-preview-presen
 import { GameForgeService } from './game-forge.service';
 import { GameMarketService } from './game-market.service';
 import { GameResourcePresentationService } from './game-resource-presentation.service';
+import { GameSaveTransferService } from './game-save-transfer.service';
 import { GameStateService, type MutableGameState } from './game-state.service';
 import { GameWeaponInventoryPresentationService } from './game-weapon-inventory-presentation.service';
 
@@ -70,7 +71,8 @@ export class GameRuntimeService {
     private readonly gameDungeon: GameDungeonService,
     private readonly dungeonSession: GameDungeonSessionService,
     private readonly dungeonEquipmentSync: GameDungeonEquipmentSyncService,
-    private readonly dungeonPresentation: GameDungeonPresentationService
+    private readonly dungeonPresentation: GameDungeonPresentationService,
+    private readonly saveTransfer: GameSaveTransferService
   ) {}
 
   openBootstrapRegistration(): void {
@@ -97,6 +99,7 @@ export class GameRuntimeService {
 
     const before = this.saveStorage.readSnapshot();
     runtime.prepare();
+    this.saveTransfer.bindActions(() => runtime.save(true));
     const materialStorageChanged = this.normalizeMaterialStorage() > 0;
     const dungeonMaterialReferencesChanged = this.gameDungeon.normalizeMaterialReferences() > 0;
     const forgeMaterialReferencesChanged = this.gameForge.normalizeMaterialReferences() > 0;
