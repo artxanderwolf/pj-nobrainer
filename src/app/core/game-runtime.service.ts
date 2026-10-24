@@ -114,10 +114,10 @@ export class GameRuntimeService {
     });
     this.dungeonPresentation.bindActions((result, inventoryChanged) => this.applyDungeonResult(runtime, result, inventoryChanged));
 
-    // Ein aus dem Save geladener Alt-Lauf bleibt weiterhin bewusst ohne Offline-Fortsetzung.
-    // Das normale Schließen des Trainingslager-Popups verwendet diesen Reset ausdrücklich nicht.
-    const dungeonSessionReset = this.dungeonSession.resetLoadedSession(Date.now());
-    this.applyDungeonResult(runtime, dungeonSessionReset);
+    // Moderne Dungeon-Sitzungen mit persistierter Endzeit bleiben beim Laden aktiv.
+    // Alte oder verwaiste Laufzustände ohne belastbare Endzeit werden einmalig bereinigt.
+    const dungeonSessionPreparation = this.dungeonSession.prepareLoadedSession(Date.now());
+    this.applyDungeonResult(runtime, dungeonSessionPreparation);
 
     const forgeUpdate = this.gameForge.update();
     this.logForgeCompletions(forgeUpdate.completedNames);
@@ -131,7 +131,7 @@ export class GameRuntimeService {
       runtime.save(false);
       const after = this.saveStorage.readSnapshot();
       if (after) this.offlineProgress.showSummary(before, after);
-    } else if (materialReferencesChanged || dungeonSessionReset.saveRequested) {
+    } else if (materialReferencesChanged || dungeonSessionPreparation.saveRequested) {
       runtime.save(false);
     }
 
