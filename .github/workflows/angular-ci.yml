@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - migration/angular
-      - feature/save-tab-hotfix-v0.17.3
   pull_request:
     branches:
       - main
