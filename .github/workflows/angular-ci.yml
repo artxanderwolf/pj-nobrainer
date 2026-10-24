@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - migration/angular
+      - feature/dungeon-resume-2h-swap-v0.17.1
   pull_request:
     branches:
       - main
@@ -62,3 +63,6 @@ jobs:
 
       - name: Test Trainingslager popup lifecycle in browser
         run: node scripts/check-built-dungeon-modal.mjs
+
+      - name: Test Trainingslager resume across browser restart
+        run: node scripts/check-built-dungeon-resume.mjs
