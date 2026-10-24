@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - migration/angular
+      - feature/dungeon-resume-2h-swap-v0.17.1
   pull_request:
     branches:
       - main
