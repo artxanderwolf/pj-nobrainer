@@ -80,11 +80,7 @@ export function getFreeWeaponEquipTargets(
   const handCount = weaponId === undefined ? 1 : resolveHandCount(weaponId);
   for (const character of characters) {
     if (handCount === 2) {
-      const bothHandsEmpty = character.equipment.leftHand === null && character.equipment.rightHand === null;
-      const replaceableTwoHandedWeapon = getEquippedTwoHandedWeapon(character, resolveHandCount) !== null;
-      if (bothHandsEmpty || replaceableTwoHandedWeapon) {
-        targets.push({ characterId: character.id, hand: 'leftHand', label: 'Beide Hände' });
-      }
+      targets.push({ characterId: character.id, hand: 'leftHand', label: 'Beide Hände' });
       continue;
     }
     if (character.equipment.leftHand === null) targets.push({ characterId: character.id, hand: 'leftHand', label: 'Linke Hand' });
