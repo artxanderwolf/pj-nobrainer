@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - migration/angular
-      - fix/v0.17.3-save-tab
   pull_request:
     branches:
       - main
