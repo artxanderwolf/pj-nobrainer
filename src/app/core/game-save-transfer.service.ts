@@ -219,9 +219,9 @@ export class GameSaveTransferService {
 
     try {
       this.saveStorage.writeImportBackup(this.saveStorage.read());
-      this.saveStorage.write(raw);
+      this.saveStorage.stageImportedSave(raw);
     } catch {
-      this.setStatus('Der importierte Spielstand konnte nicht lokal gespeichert werden.', true);
+      this.setStatus('Der importierte Spielstand konnte nicht lokal vorgemerkt werden.', true);
       return;
     }
 
@@ -239,12 +239,12 @@ export class GameSaveTransferService {
     }
 
     try {
-      if (!this.saveStorage.restoreImportBackup()) {
+      if (!this.saveStorage.stageImportBackupRestore()) {
         this.setStatus('Die Import-Sicherung ist nicht mehr verfügbar.', true);
         return;
       }
     } catch {
-      this.setStatus('Die Import-Sicherung konnte nicht wiederhergestellt werden.', true);
+      this.setStatus('Die Import-Sicherung konnte nicht zur Wiederherstellung vorgemerkt werden.', true);
       return;
     }
     window.location.reload();
