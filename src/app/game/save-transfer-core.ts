@@ -1,4 +1,4 @@
-import { decodeSave, SAVE_VERSION } from './save-codec';
+import { decodeSave, SAVE_VERSION } from './save-codec.ts';
 
 export const MIN_IMPORT_SAVE_VERSION = 8;
 export const MAX_IMPORT_FILE_BYTES = 5_000_000;
