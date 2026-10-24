@@ -64,6 +64,7 @@ export class GameSaveTransferService {
     savePanel.id = 'indexSavePanel';
     savePanel.className = 'grid';
     savePanel.hidden = true;
+    savePanel.style.display = 'none';
     savePanel.setAttribute('role', 'tabpanel');
     savePanel.setAttribute('aria-labelledby', 'indexSaveTab');
     savePanel.innerHTML = `
@@ -123,8 +124,14 @@ export class GameSaveTransferService {
     const saveTab = this.boundPage.querySelector<HTMLButtonElement>('#indexSaveTab');
     const saveActive = tab === 'save';
 
-    if (infoPanel) infoPanel.hidden = saveActive;
-    if (savePanel) savePanel.hidden = !saveActive;
+    if (infoPanel) {
+      infoPanel.hidden = saveActive;
+      infoPanel.style.display = saveActive ? 'none' : '';
+    }
+    if (savePanel) {
+      savePanel.hidden = !saveActive;
+      savePanel.style.display = saveActive ? '' : 'none';
+    }
     if (infoTab) {
       infoTab.classList.toggle('primary', !saveActive);
       infoTab.setAttribute('aria-selected', String(!saveActive));
