@@ -16,6 +16,7 @@ import { getForgePreviewPresentation } from '../game/forge-presentation-core';
 import { getMaterialQuantityById, type MaterialStorageInventory } from '../game/material-storage-core';
 import { GameForgeService } from './game-forge.service';
 import { GameStateService, type MutableGameState } from './game-state.service';
+import { GameWeaponPresentationService } from './game-weapon-presentation.service';
 
 type RuntimeForgePreviewState = MutableGameState & {
   inventory: MaterialStorageInventory;
@@ -51,7 +52,8 @@ const FORGE_SLOT_BINDINGS: readonly { id: string; rowId: string; slot: WeaponCra
 export class GameForgePreviewPresentationService {
   constructor(
     private readonly gameState: GameStateService,
-    private readonly gameForge: GameForgeService
+    private readonly gameForge: GameForgeService,
+    private readonly weaponPresentation: GameWeaponPresentationService
   ) {}
 
   render(): void {
@@ -84,6 +86,7 @@ export class GameForgePreviewPresentationService {
       reinforcementEffectTextById
     );
 
+    this.renderWeaponImagePreview(preview.weaponForm, preview.slots, preview.form.name);
     this.setText('forgeTimePreview', presentation.timeText);
     this.setText('forgeValuePreview', presentation.valueText);
     this.setText('forgeDamagePreview', presentation.damageText);
@@ -111,6 +114,34 @@ export class GameForgePreviewPresentationService {
 
   closeLegacyCompatibilityBridge(): void {
     delete window.NoBrainerForgePreviewPresentationCompatibility;
+  }
+
+  private renderWeaponImagePreview(weaponForm: string, slots: readonly WeaponSlot[], formName: string): void {
+    const host = this.ensureWeaponImagePreviewHost();
+    if (!host) return;
+    host.innerHTML = this.weaponPresentation.renderImage(
+      { weaponForm, slots },
+      'forge-preview-weapon-image',
+      `Waffenvorschau ${formName}`,
+      'preview'
+    );
+    host.dataset['forgeWeaponImageOwner'] = 'angular';
+  }
+
+  private ensureWeaponImagePreviewHost(): HTMLElement | null {
+    const existing = document.getElementById('forgeWeaponImagePreview');
+    if (existing) return existing;
+
+    const previewPage = document.getElementById('forge-preview');
+    const card = previewPage?.querySelector<HTMLElement>('.screen-card');
+    const scrollRegion = card?.querySelector<HTMLElement>('.scroll-region');
+    if (!card || !scrollRegion) return null;
+
+    const host = document.createElement('div');
+    host.id = 'forgeWeaponImagePreview';
+    host.className = 'forge-weapon-image-preview';
+    scrollRegion.insertAdjacentElement('beforebegin', host);
+    return host;
   }
 
   private populateWeaponFormSelect(): string {

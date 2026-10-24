@@ -1,3 +1,5 @@
+import './check-weapon-image-presentation-core.mjs';
+import './check-weapon-image-markup-presentation.mjs';
 import assert from 'node:assert/strict';
 import {
   createWeaponPresentationCore,

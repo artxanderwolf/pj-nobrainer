@@ -9,6 +9,7 @@ const registration = readFileSync('src/app/core/legacy-runtime-registration-adap
 
 assert.match(service, /private readonly gameState: GameStateService/);
 assert.match(service, /private readonly gameForge: GameForgeService/);
+assert.match(service, /private readonly weaponPresentation: GameWeaponPresentationService/, 'Schmiedevorschau verwendet nicht den gemeinsamen Waffenpräsentationsservice.');
 assert.match(service, /getForgePreviewPresentation\(/, 'Angular-Schmiedevorschau verwendet den bestehenden Presentation-Core nicht.');
 assert.match(service, /this\.gameForge\.preview\(weaponForm, slots\)/, 'Angular-Schmiedevorschau bezieht Waffenwerte nicht über GameForgeService.');
 assert.match(service, /this\.gameForge\.requirements\(weaponForm, preview\.slots\)/, 'Angular-Schmiedevorschau verwendet nicht den Bauplan-Materialbedarf.');
@@ -18,6 +19,9 @@ assert.match(service, /getMaterialQuantityById\(state\.inventory, reference\.mat
 assert.match(service, /option\.value = String\(reference\.materialId\)/, 'Materialauswahl speichert weiterhin Materialnamen als Optionswert.');
 assert.match(service, /materialId: this\.readSelectedMaterialId\(binding\.id\)/, 'Schmiedeauswahl erzeugt keine ID-basierten Waffenslots.');
 assert.match(service, /reinforcementEffectTextById\(reference\.materialId\)/, 'SPE-Text wird nicht über die stabile Material-ID aufgelöst.');
+assert.match(service, /this\.weaponPresentation\.renderImage\([\s\S]*'forge-preview-weapon-image'[\s\S]*'preview'[\s\S]*\)/, 'Schmiedevorschau rendert das Materialbild nicht über den gemeinsamen Preview-Modus.');
+assert.match(service, /host\.dataset\['forgeWeaponImageOwner'\] = 'angular'/, 'Browser-nachweisbarer Ownership-Marker für die Schmiedewaffen-Vorschau fehlt.');
+assert.doesNotMatch(service, /GameWeaponImagePresentationService|getWeaponImageRenderPlan|getWeaponImageMarkup/, 'Schmiedevorschau darf keine eigene Waffenbild-Sonderlogik aufbauen.');
 assert.doesNotMatch(service, /reinforcementEffectText\(reference\.displayName\)|getMaterialIdByName/, 'Aktive Schmiedevorschau verwendet weiterhin Materialnamen als technische Referenz.');
 for (const binding of [
   "{ id: 'slotWorkingPart', rowId: 'forgeWorkingPartRow', slot: 'workingPart' }",
@@ -73,4 +77,4 @@ assert.ok(bridgeOpen >= 0 && stateBootstrap > bridgeOpen, 'Schmiedevorschau-Prä
 assert.match(app, /private readonly gameForgePreviewPresentation: GameForgePreviewPresentationService/);
 assert.match(app, /const APP_VERSION = APP_UI_VERSION;/);
 
-console.log('Forge-Preview-Presentation: ID-basierte Materialauswahl, kompakte nicht-scrollende Waffenwahl und abgeschlossene Unlock-Anzeigen bleiben Angular-eigen.');
+console.log('Forge-Preview-Presentation: ID-basierte Materialauswahl und zentraler Materialbild-Previewmodus bleiben Angular-eigen.');

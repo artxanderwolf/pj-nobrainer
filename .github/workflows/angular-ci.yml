@@ -36,6 +36,12 @@ jobs:
       - name: Smoke test built runtime
         run: node scripts/check-built-runtime-startup.mjs
 
+      - name: Test weapon image pilot in browser
+        run: node --no-warnings --experimental-strip-types scripts/check-built-weapon-image-pilot.mjs
+
+      - name: Test shared weapon card images in browser
+        run: node scripts/check-built-shared-weapon-card-images.mjs
+
       - name: Test roster in browser
         run: node scripts/check-built-roster.mjs
 
@@ -47,6 +53,9 @@ jobs:
 
       - name: Test market quantity input in browser
         run: node scripts/check-built-market-quantity-input.mjs
+
+      - name: Test market weapon images in browser
+        run: node scripts/check-built-market-weapon-images.mjs
 
       - name: Test Dungeon loot collection in browser
         run: node scripts/check-built-dungeon-loot-collect.mjs

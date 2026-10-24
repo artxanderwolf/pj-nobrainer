@@ -9,11 +9,16 @@ const registration = readFileSync('src/app/core/legacy-runtime-registration-adap
 
 assert.match(service, /private readonly gameState: GameStateService/, 'Schmiedeauftrags-Präsentation liest nicht aus dem Angular-State.');
 assert.match(service, /private readonly progressionPresentation: GameProgressionPresentationService/, 'Schmiedeauftrags-Präsentation aktualisiert die Ausbaukarten nicht über Angular.');
+assert.match(service, /private readonly weaponPresentation: GameWeaponPresentationService/, 'Schmiedeaufträge verwenden nicht den gemeinsamen Waffenpräsentationsservice.');
 assert.match(service, /getActiveForgeJobPresentation\(job, index, now, formatCurrencyNickel, formatDuration\)/, 'Aktive Schmiedeaufträge verwenden den bestehenden Presentation-Core nicht.');
 assert.match(service, /getQueuedForgeJobPresentation\(job, index, formatDuration\)/, 'Schmiede-Warteschlange verwendet den bestehenden Presentation-Core nicht.');
+assert.match(service, /this\.weaponPresentation\.renderImage\([\s\S]*job,[\s\S]*'forge-job-weapon-image'/, 'Aktive Schmiedeaufträge rendern ihre Waffe nicht über den gemeinsamen Renderer.');
+assert.match(service, /this\.weaponPresentation\.renderImage\([\s\S]*job,[\s\S]*'forge-queue-weapon-image'/, 'Wartende Schmiedeaufträge rendern ihre Waffe nicht über den gemeinsamen Renderer.');
+assert.doesNotMatch(service, /GameWeaponImagePresentationService|getWeaponImageRenderPlan|getWeaponImageMarkup/, 'Schmiedeaufträge dürfen keine eigene Waffenbild-Sonderlogik aufbauen.');
 assert.match(service, /document\.getElementById\('forgeJobCard'\)/);
 assert.match(service, /document\.getElementById\('forgeQueueCard'\)/);
 assert.match(service, /forgeJobPresentationOwner'\] = 'angular'/, 'Browser-nachweisbarer Angular-Ownership-Marker fehlt.');
+assert.match(service, /forgeQueuePresentationOwner'\] = 'angular'/, 'Browser-nachweisbarer Angular-Ownership-Marker der Warteschlange fehlt.');
 assert.match(service, /Kein aktiver Schmiedeauftrag\./);
 assert.match(service, /Warteschlange leer\./);
 assert.match(service, /this\.progressionPresentation\.render\(\);/, 'Schmiedeaufträge aktualisieren die kapazitätsabhängigen Ausbaukarten nicht.');
@@ -44,4 +49,4 @@ assert.match(app, /private readonly gameForgeJobPresentation: GameForgeJobPresen
 assert.match(app, /ngOnDestroy\(\): void \{[\s\S]*this\.gameForgeJobPresentation\.closeLegacyCompatibilityBridge\(\);/);
 assert.match(app, /const APP_VERSION = APP_UI_VERSION;/);
 
-console.log('Schmiedeauftrags-Präsentations-Eigentümerschaft: aktive Aufträge und Warteschlange werden direkt durch Angular aus dem Angular-State gerendert; Legacy besitzt nur noch einen dünnen renderForgeJob-Wrapper.');
+console.log('Schmiedeauftrags-Präsentations-Eigentümerschaft: aktive und wartende Aufträge nutzen denselben zentralen Waffenrenderer und bleiben Angular-eigen.');

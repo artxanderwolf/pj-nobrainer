@@ -174,10 +174,20 @@ export class GameCharacterPresentationService {
   private renderEquipmentSlot(character: CharacterState, handPresentation: CharacterHandPresentation): string {
     const weapon = this.getWeaponById(handPresentation.weaponId);
     const active = handPresentation.pickerOpen;
-    return `<button class="roster-equipment-slot${active ? ' active' : ''}" type="button" data-roster-action="toggle-picker" data-character-id="${character.id}" data-hand="${handPresentation.hand}" aria-expanded="${active}">
-      <span class="roster-equipment-label">${handPresentation.label}</span>
-      <strong>${weapon ? this.escapeHtml(weapon.name) : '+'}</strong>
-      <span class="roster-equipment-action">${active ? 'Auswahl schließen' : weapon ? 'Wechseln' : 'Ausrüsten'}</span>
+    const imageHtml = weapon
+      ? this.weaponPresentation.renderImage(
+          weapon,
+          'roster-equipped-weapon-image',
+          `${weapon.name} · ${handPresentation.label}`
+        )
+      : '';
+    return `<button class="roster-equipment-slot${weapon ? ' has-weapon' : ''}${active ? ' active' : ''}" type="button" data-roster-action="toggle-picker" data-character-id="${character.id}" data-hand="${handPresentation.hand}" aria-expanded="${active}">
+      ${imageHtml}
+      <span class="roster-equipment-copy">
+        <span class="roster-equipment-label">${handPresentation.label}</span>
+        <strong>${weapon ? this.escapeHtml(weapon.name) : '+'}</strong>
+        <span class="roster-equipment-action">${active ? 'Auswahl schließen' : weapon ? 'Wechseln' : 'Ausrüsten'}</span>
+      </span>
     </button>`;
   }
 

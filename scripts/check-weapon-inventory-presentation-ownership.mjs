@@ -1,3 +1,4 @@
+import './check-weapon-image-presentation-ownership.mjs';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
@@ -11,8 +12,15 @@ const legacyWeaponAdapter = readFileSync('src/app/core/legacy-weapon-presentatio
 
 assert.match(weaponPresentationService, /createWeaponPresentationCore\(/, 'Der gemeinsame Angular-Waffenpräsentationsservice verwendet den Presentation-Core nicht.');
 assert.match(weaponPresentationService, /renderCard\(/, 'Der gemeinsame Angular-Waffenpräsentationsservice rendert keine Waffenkarten.');
+assert.match(weaponPresentationService, /GameWeaponImagePresentationService/, 'Der gemeinsame Waffenpräsentationsservice bindet den Waffenbild-Service nicht ein.');
+assert.match(weaponPresentationService, /private readonly weaponImagePresentation: GameWeaponImagePresentationService/, 'Der Waffenbild-Service wird nicht zentral in die Waffenpräsentation injiziert.');
+assert.match(weaponPresentationService, /mode: WeaponImageRenderMode = 'complete'[\s\S]*this\.weaponImagePresentation\.render\(weapon, mode, \{ className, ariaLabel \}\)/, 'Der gemeinsame Waffenpräsentationsservice stellt keinen zentralen Complete-/Preview-Waffenbildpfad bereit.');
+assert.match(weaponPresentationService, /const imageHtml = this\.renderImage\(pricedWeapon, 'weapon-card-image'\)/, 'Waffenkarten verwenden nicht den gemeinsamen Waffenbildpfad.');
+assert.match(weaponPresentationService, /weapon-card-head-main/, 'Das gemeinsame Waffenkartenlayout besitzt keinen Bild-/Text-Kopf.');
 assert.match(characterPresentationService, /private readonly weaponPresentation: GameWeaponPresentationService/, 'Der Kader verwendet den gemeinsamen Angular-Waffenpräsentationsservice nicht.');
 assert.doesNotMatch(characterPresentationService, /createWeaponPresentationCore\(/, 'Der Kader erzeugt weiterhin einen zweiten Weapon-Presentation-Core.');
+assert.doesNotMatch(characterPresentationService, /GameWeaponImagePresentationService|getWeaponImageRenderPlan|getWeaponImageMarkup/, 'Der Kader darf keine eigene Waffenbild-Sonderlogik aufbauen.');
+assert.doesNotMatch(inventoryService, /GameWeaponImagePresentationService/, 'Das Waffenlager darf keine eigene Waffenbild-Sonderlogik aufbauen.');
 
 assert.match(inventoryService, /private readonly gameState: GameStateService/, 'Waffenlager-Präsentation liest nicht aus dem Angular-State.');
 assert.match(inventoryService, /private readonly gameEquipment: GameEquipmentService/, 'Waffenlager-Präsentation verwendet den Angular-Equipment-Service nicht.');
@@ -46,4 +54,4 @@ assert.ok(bridgeOpen >= 0 && stateBootstrap > bridgeOpen, 'Waffenlager-Präsenta
 assert.match(app, /ngOnDestroy\(\): void \{[\s\S]*this\.gameWeaponInventoryPresentation\.closeLegacyCompatibilityBridge\(\);/);
 assert.match(app, /const APP_VERSION = APP_UI_VERSION;/);
 
-console.log('Waffenlager-Präsentations-Eigentümerschaft: Karten, Sortierung, Belegungsstatus sowie Ausrüsten/Ablegen laufen in Angular; Legacy-Vollrender delegiert nur noch über eine dünne Renderbrücke.');
+console.log('Waffenlager-Präsentations-Eigentümerschaft: Karten, Materialbilder, Sortierung, Belegungsstatus sowie Ausrüsten/Ablegen laufen zentral in Angular; Kader und Waffenlager bauen keine eigene Waffenbildlogik auf.');

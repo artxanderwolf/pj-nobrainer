@@ -1,0 +1,156 @@
+.weapon-image {
+  position: relative;
+  display: inline-block;
+  width: 64px;
+  height: 64px;
+  flex: 0 0 64px;
+  overflow: hidden;
+  vertical-align: middle;
+  pointer-events: none;
+}
+
+.weapon-image-layer {
+  position: absolute;
+  inset: 0;
+  background: var(--weapon-image-color, #8A8A8A);
+  -webkit-mask-image: var(--weapon-image-atlas);
+  mask-image: var(--weapon-image-atlas);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 512px 64px;
+  mask-size: 512px 64px;
+  -webkit-mask-position: var(--weapon-mask-x, 0) 0;
+  mask-position: var(--weapon-mask-x, 0) 0;
+}
+
+.weapon-image[data-weapon-form="dagger"] { --weapon-image-atlas: url('./weapon-emblems/dagger-mask-atlas-64.png'); }
+.weapon-image[data-weapon-form="sword"] { --weapon-image-atlas: url('./weapon-emblems/sword-mask-atlas-64.png'); }
+.weapon-image[data-weapon-form="axe1h"] { --weapon-image-atlas: url('./weapon-emblems/axe1h-mask-atlas-64.png'); }
+.weapon-image[data-weapon-form="sword2h"] { --weapon-image-atlas: url('./weapon-emblems/sword2h-mask-atlas-64.png'); }
+.weapon-image[data-weapon-form="axe2h"] { --weapon-image-atlas: url('./weapon-emblems/axe2h-mask-atlas-64.png'); }
+.weapon-image[data-weapon-form="bow"] { --weapon-image-atlas: url('./weapon-emblems/bow-mask-atlas-64.png'); }
+.weapon-image[data-weapon-form="staff"] { --weapon-image-atlas: url('./weapon-emblems/staff-mask-atlas-64.png'); }
+
+.weapon-image-generic-shape {
+  position: absolute;
+  left: 28px;
+  top: 7px;
+  width: 8px;
+  height: 50px;
+  box-sizing: border-box;
+  border: 2px solid var(--weapon-outline-color, #000000);
+  border-radius: 5px 5px 2px 2px;
+  background: var(--weapon-image-color, #8A8A8A);
+  transform: rotate(40deg);
+  transform-origin: center;
+}
+
+.weapon-card-head-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
+.weapon-card-copy {
+  min-width: 0;
+}
+
+.weapon-card-image {
+  flex: 0 0 64px;
+}
+
+.roster-emblem-stage {
+  min-height: 274px;
+  padding-bottom: 96px;
+}
+
+.roster-equipment-slot.has-weapon {
+  min-height: 80px;
+  grid-template-columns: 64px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+
+.roster-equipment-copy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.roster-equipped-weapon-image {
+  flex: 0 0 64px;
+}
+
+.forge-weapon-image-preview {
+  min-height: 72px;
+  display: grid;
+  place-items: center;
+  margin: 0 0 6px;
+}
+
+.forge-preview-weapon-image,
+.forge-job-weapon-image,
+.forge-queue-weapon-image {
+  flex: 0 0 64px;
+}
+
+.forge-job-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.forge-job-copy {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.market-weapon-sale-row,
+.market-job-row,
+.market-weapon-sale-main {
+  display: flex;
+  align-items: center;
+}
+
+.market-weapon-sale-row,
+.market-job-row {
+  gap: 10px;
+}
+
+.market-weapon-sale-main {
+  min-width: 0;
+  flex: 1 1 auto;
+  gap: 8px;
+}
+
+.market-job-copy {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.market-weapon-sale-image,
+.market-job-weapon-image,
+.market-queue-weapon-image {
+  flex: 0 0 64px;
+}
+
+@media (max-width: 760px) {
+  .roster-emblem-stage {
+    min-height: 254px;
+    padding-bottom: 94px;
+  }
+
+  .roster-equipment-slot.has-weapon {
+    min-height: 80px;
+    gap: 6px;
+    padding: 6px;
+  }
+
+  .forge-job-row,
+  .market-weapon-sale-row,
+  .market-job-row {
+    gap: 6px;
+  }
+}

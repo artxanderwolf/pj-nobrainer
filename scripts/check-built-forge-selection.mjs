@@ -56,6 +56,22 @@ const probeScript = `<script>
     document.body.appendChild(node);
   };
 
+  const describeImage = image => {
+    if (!(image instanceof HTMLElement)) return null;
+    const style = getComputedStyle(image);
+    const layers = [...image.querySelectorAll('.weapon-image-layer')].map(layer => ({
+      name: layer.getAttribute('data-weapon-image-layer') || '',
+      color: getComputedStyle(layer).backgroundColor
+    }));
+    return {
+      form: image.getAttribute('data-weapon-form') || '',
+      kind: image.getAttribute('data-weapon-image-kind') || '',
+      cssWidth: style.width,
+      cssHeight: style.height,
+      layers
+    };
+  };
+
   const choose = (id, value) => {
     const select = document.getElementById(id);
     if (!(select instanceof HTMLSelectElement)) return false;
@@ -82,6 +98,8 @@ const probeScript = `<script>
       clearInterval(timer);
       const formChosen = chooseWeapon('bow');
       setTimeout(() => {
+        const incompletePreview = describeImage(document.querySelector('#forgeWeaponImagePreview .forge-preview-weapon-image'));
+        const previewOwner = document.getElementById('forgeWeaponImagePreview')?.dataset.forgeWeaponImageOwner || '';
         const selected = {
           back: choose('slotBack', '2'),
           gripCore: choose('slotGripCore', '2'),
@@ -91,6 +109,7 @@ const probeScript = `<script>
           form: formChosen
         };
         setTimeout(() => {
+          const completePreview = describeImage(document.querySelector('#forgeWeaponImagePreview .forge-preview-weapon-image'));
           const forgePage = document.getElementById('forge-form');
           const forgeCard = forgePage?.querySelector('.forge-build-card');
           const slotWrap = forgePage?.querySelector('.forge-slot-wrap');
@@ -128,6 +147,10 @@ const probeScript = `<script>
                 damageText: document.getElementById('forgeDamagePreview')?.textContent || '',
                 speedText: document.getElementById('forgeSpeedPreview')?.textContent || '',
                 previewNextDisabled,
+                previewOwner,
+                incompletePreview,
+                completePreview,
+                activeJobImage: describeImage(document.querySelector('#forgeJobCard .forge-job-weapon-image')),
                 compactUi,
                 beforeStart,
                 forgeJobText: document.getElementById('forgeJobCard')?.textContent?.replace(/\\s+/g, ' ').trim() || '',
@@ -211,6 +234,30 @@ try {
   assert.deepEqual(result.selected, { back: true, gripCore: true, gripWrap: true, special: true, bowstring: true, form: true });
   assert.equal(result.finalForm, 'bow');
   assert.equal(result.previewNextDisabled, false, 'Der Vorschau-Button darf nach der Materialauswahl nicht blockiert bleiben.');
+  assert.equal(result.previewOwner, 'angular', 'Die Waffengrafik der Schmiedevorschau ist nicht Angular-eigen.');
+  assert.ok(result.incompletePreview, 'Die unvollständige Schmiedevorschau besitzt kein Waffenbild.');
+  assert.equal(result.incompletePreview.form, 'bow');
+  assert.equal(result.incompletePreview.kind, 'materials', 'Offene Schmiedekomponenten müssen im Previewmodus einzeln grau bleiben, nicht als Gesamtfallback.');
+  assert.equal(result.incompletePreview.cssWidth, '64px');
+  assert.equal(result.incompletePreview.cssHeight, '64px');
+  assert.deepEqual(result.incompletePreview.layers.map(layer => layer.name), ['back', 'gripCore', 'gripWrap', 'bowstring', 'outline']);
+  assert.ok(result.incompletePreview.layers.slice(0, 4).every(layer => layer.color === 'rgb(138, 138, 138)'), 'Noch offene sichtbare Schmiedekomponenten sind nicht grau.');
+  assert.ok(result.completePreview, 'Die vollständige Schmiedevorschau besitzt kein Waffenbild.');
+  assert.equal(result.completePreview.form, 'bow');
+  assert.equal(result.completePreview.kind, 'materials');
+  assert.equal(result.completePreview.cssWidth, '64px');
+  assert.equal(result.completePreview.cssHeight, '64px');
+  assert.deepEqual(result.completePreview.layers, [
+    { name: 'back', color: 'rgb(126, 88, 53)' },
+    { name: 'gripCore', color: 'rgb(126, 88, 53)' },
+    { name: 'gripWrap', color: 'rgb(112, 83, 64)' },
+    { name: 'bowstring', color: 'rgb(112, 83, 64)' },
+    { name: 'outline', color: 'rgb(0, 0, 0)' }
+  ]);
+  assert.ok(result.activeJobImage, 'Der aktive Schmiedeauftrag besitzt kein Waffenbild.');
+  assert.equal(result.activeJobImage.form, result.completePreview.form, 'Aktiver Auftrag verwendet nicht dieselbe Waffenform wie die Vorschau.');
+  assert.equal(result.activeJobImage.kind, result.completePreview.kind, 'Aktiver Auftrag verwendet nicht denselben Material-Renderplan wie die Vorschau.');
+  assert.deepEqual(result.activeJobImage.layers, result.completePreview.layers, 'Schmiedevorschau und aktiver Auftrag zeigen dieselbe Waffe unterschiedlich.');
   assert.equal(result.compactUi.pickerOwner, 'angular', 'Die sichtbare Waffenwahl ist nicht Angular-eigen.');
   assert.equal(result.compactUi.completedProgressVisible, false, 'Abgeschlossene 10/10-Fortschritte dürfen in der Waffenwahl nicht sichtbar bleiben.');
   assert.equal(result.compactUi.oldHeadingsVisible, false, 'Entfernte Schmiede-Erklärungstexte sind noch sichtbar.');
@@ -233,7 +280,7 @@ try {
   assert.equal(result.bowstringHidden, false);
   assert.equal(result.oldBaseMaterialPresent, false);
 
-  console.log('Schmiede-Browserregression: kompakte nicht-scrollende Auswahl, ausgeblendete 10/10-Fortschritte, ID-Materialwahl und Auftragserstellung sind konsistent.');
+  console.log('Schmiede-Browserregression: Preview zeigt offene Teile grau und fertige Materialfarben; aktive Aufträge übernehmen exakt dasselbe 64x64-Waffenbild.');
 } finally {
   if (child) await stopBrowser(child);
   rmSync(browserProfile, { recursive: true, force: true });

@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { formatCurrencyNickel, formatDuration, materialSellDataById, weaponSellData } from '../game/economy-core';
 import { getWeaponEquipLocation, type EquipmentCharacterLike } from '../game/equipment-core';
 import { getMaterialStorageEntries, type MaterialStorageInventory } from '../game/material-storage-core';
-import { getMaterialDisplayNameById } from '../game/game-core';
+import { getMaterialDisplayNameById, type WeaponSlot } from '../game/game-core';
 import { type MarketJob } from '../game/market-core';
 import {
   getActiveMarketJobPresentation,
@@ -15,8 +15,16 @@ import { GameCombatLogService } from './game-combat-log.service';
 import { GameMarketService } from './game-market.service';
 import { GameProgressionPresentationService } from './game-progression-presentation.service';
 import { GameStateService, type MutableGameState } from './game-state.service';
+import { GameWeaponPresentationService } from './game-weapon-presentation.service';
 
-interface RuntimeMarketWeapon { id: number; name: string; valueNickel: number; slots?: readonly any[] | null; starter?: boolean; }
+interface RuntimeMarketWeapon {
+  id: number;
+  name: string;
+  weaponForm?: string | null;
+  valueNickel: number;
+  slots?: readonly WeaponSlot[] | null;
+  starter?: boolean;
+}
 type RuntimeMarketPresentationState = MutableGameState & {
   inventory: MaterialStorageInventory;
   weaponInventory: RuntimeMarketWeapon[];
@@ -41,7 +49,8 @@ export class GameMarketPresentationService {
     private readonly gameState: GameStateService,
     private readonly gameMarket: GameMarketService,
     private readonly combatLog: GameCombatLogService,
-    private readonly progressionPresentation: GameProgressionPresentationService
+    private readonly progressionPresentation: GameProgressionPresentationService,
+    private readonly weaponPresentation: GameWeaponPresentationService
   ) {}
 
   renderJobs(): void {
@@ -53,7 +62,12 @@ export class GameMarketPresentationService {
       active.className = state.marketJobs.length ? '' : 'empty';
       active.innerHTML = state.marketJobs.length ? state.marketJobs.map((job, index) => {
         const presentation = getActiveMarketJobPresentation(this.presentationJob(job), index, now, formatCurrencyNickel, formatDuration);
-        return `<div class="sell-row"><div style="width:100%"><strong>${presentation.title}</strong><div class="bar energy"><i style="width:${presentation.progressPercent}%"></i></div><p>${presentation.remainingText} · Ertrag <b>${presentation.revenueValueText}</b></p></div><button class="btn smallbtn" data-market-cancel="active" data-market-index="${index}">Abbrechen</button></div>`;
+        const weapon = this.weaponSnapshot(job);
+        const imageHtml = weapon
+          ? this.weaponPresentation.renderImage(weapon, 'market-job-weapon-image', `${weapon.name} im Verkauf`)
+          : '';
+        const weaponId = weapon ? ` data-market-weapon-id="${weapon.id}"` : '';
+        return `<div class="sell-row market-job-row"${weaponId}>${imageHtml}<div class="market-job-copy"><strong>${presentation.title}</strong><div class="bar energy"><i style="width:${presentation.progressPercent}%"></i></div><p>${presentation.remainingText} · Ertrag <b>${presentation.revenueValueText}</b></p></div><button class="btn smallbtn" data-market-cancel="active" data-market-index="${index}">Abbrechen</button></div>`;
       }).join('') : 'Kein aktiver Verkauf.';
       active.dataset['marketPresentationOwner'] = 'angular';
       this.bindCancelActions(active);
@@ -62,7 +76,12 @@ export class GameMarketPresentationService {
       queue.className = state.marketQueue.length ? '' : 'empty';
       queue.innerHTML = state.marketQueue.length ? state.marketQueue.map((job, index) => {
         const presentation = getQueuedMarketJobPresentation(this.presentationJob(job), index, formatCurrencyNickel, formatDuration);
-        return `<div class="sell-row"><div><strong>${presentation.title}</strong><div class="sell-meta">${presentation.metaText}</div></div><button class="btn smallbtn" data-market-cancel="queue" data-market-index="${index}">Entfernen</button></div>`;
+        const weapon = this.weaponSnapshot(job);
+        const imageHtml = weapon
+          ? this.weaponPresentation.renderImage(weapon, 'market-queue-weapon-image', `${weapon.name} in der Verkaufswarteschlange`)
+          : '';
+        const weaponId = weapon ? ` data-market-weapon-id="${weapon.id}"` : '';
+        return `<div class="sell-row market-job-row"${weaponId}>${imageHtml}<div class="market-job-copy"><strong>${presentation.title}</strong><div class="sell-meta">${presentation.metaText}</div></div><button class="btn smallbtn" data-market-cancel="queue" data-market-index="${index}">Entfernen</button></div>`;
       }).join('') : 'Warteschlange leer.';
       this.bindCancelActions(queue);
     }
@@ -142,10 +161,12 @@ export class GameMarketPresentationService {
       const sale = weaponSellData(weapon);
       if (!sale) continue;
       const presentation = getMarketWeaponPresentation(weapon.name, weapon.id, sale.valueNickel, sale.seconds, hasCapacity, formatCurrencyNickel);
+      const imageHtml = this.weaponPresentation.renderImage(weapon, 'market-weapon-sale-image', `${weapon.name} verkaufen`);
       const row = document.createElement('div');
-      row.className = 'sell-row';
+      row.className = 'sell-row market-weapon-sale-row';
+      row.dataset['marketWeaponId'] = String(weapon.id);
       row.title = presentation.tooltip;
-      row.innerHTML = `<div><strong>${presentation.title}</strong></div><button class="btn smallbtn" ${presentation.sellDisabled ? 'disabled' : ''}>Verkaufen</button>`;
+      row.innerHTML = `<div class="market-weapon-sale-main">${imageHtml}<div><strong>${presentation.title}</strong></div></div><button class="btn smallbtn" ${presentation.sellDisabled ? 'disabled' : ''}>Verkaufen</button>`;
       row.querySelector('button')?.addEventListener('click', () => this.startWeapon(weapon.id));
       box.appendChild(row);
     }
@@ -197,6 +218,14 @@ export class GameMarketPresentationService {
       ? getMaterialDisplayNameById(job.materialId) ?? `Material #${Number(job.materialId) || '?'}`
       : job.name || 'Waffe';
     return { ...job, name } as MarketPresentationJobLike;
+  }
+
+  private weaponSnapshot(job: MarketJob): RuntimeMarketWeapon | null {
+    if (job.type !== 'weapon' || !job.weaponSnapshot || typeof job.weaponSnapshot !== 'object') return null;
+    const snapshot = job.weaponSnapshot as Partial<RuntimeMarketWeapon>;
+    const id = Number(snapshot.id);
+    if (!Number.isInteger(id) || id < 0 || typeof snapshot.name !== 'string') return null;
+    return snapshot as RuntimeMarketWeapon;
   }
 
   private state(): RuntimeMarketPresentationState { return this.gameState.getState<RuntimeMarketPresentationState>(); }
