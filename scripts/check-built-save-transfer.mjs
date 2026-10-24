@@ -53,6 +53,10 @@ const probeScript = `<script>
     document.querySelector('.help-btn')?.click();
     document.getElementById('indexSaveTab')?.click();
   };
+  const displayOf=id=>{
+    const node=document.getElementById(id);
+    return node?getComputedStyle(node).display:'';
+  };
   const started=Date.now();
   const timer=setInterval(()=>{
     const saveBtn=document.getElementById('saveTransferSaveBtn');
@@ -68,17 +72,35 @@ const probeScript = `<script>
     const phase=localStorage.getItem(PHASE_KEY)||'start';
 
     if(phase==='start'){
-      openSaveTab();
+      document.querySelector('.help-btn')?.click();
+      const tabs=document.getElementById('indexInfoTabs');
+      const infoPanel=document.getElementById('indexInfoPanel');
+      const savePanel=document.getElementById('indexSavePanel');
+      const initial={
+        infoDisplay:displayOf('indexInfoPanel'),
+        saveDisplay:displayOf('indexSavePanel')
+      };
+      document.getElementById('indexSaveTab')?.click();
+      const tabsRect=tabs?.getBoundingClientRect();
+      const saveRect=savePanel?.getBoundingClientRect();
       const ui={
         infoTab:normalize(document.getElementById('indexInfoTab')?.textContent),
         saveTab:normalize(document.getElementById('indexSaveTab')?.textContent),
-        infoHidden:Boolean(document.getElementById('indexInfoPanel')?.hidden),
-        saveHidden:Boolean(document.getElementById('indexSavePanel')?.hidden),
+        initial,
+        infoHidden:Boolean(infoPanel?.hidden),
+        saveHidden:Boolean(savePanel?.hidden),
+        infoDisplay:displayOf('indexInfoPanel'),
+        saveDisplay:displayOf('indexSavePanel'),
+        saveDirectlyBelowTabs:Boolean(tabsRect&&saveRect&&saveRect.top>=tabsRect.bottom&&saveRect.top-tabsRect.bottom<40),
         saveLabel:normalize(saveBtn.textContent),
         exportLabel:normalize(exportBtn.textContent),
         importLabel:normalize(importBtn.textContent),
         accept:input.getAttribute('accept')||''
       };
+      document.getElementById('indexInfoTab')?.click();
+      ui.infoDisplayAfterReturn=displayOf('indexInfoPanel');
+      ui.saveDisplayAfterReturn=displayOf('indexSavePanel');
+      document.getElementById('indexSaveTab')?.click();
       saveBtn.click();
       setTimeout(()=>{
         exportBtn.click();
@@ -244,14 +266,21 @@ try {
   assert.equal(result.runtimeError, '', `Die Runtime meldet beim Spielstandtransfer einen Fehler: ${JSON.stringify(result)}`);
   assert.equal(result.first.ui.infoTab, 'Info');
   assert.equal(result.first.ui.saveTab, 'Spielstand');
+  assert.notEqual(result.first.ui.initial.infoDisplay, 'none', 'Der Info-Inhalt ist beim Öffnen des Info-Bereichs nicht sichtbar.');
+  assert.equal(result.first.ui.initial.saveDisplay, 'none', 'Der Spielstandbereich liegt bereits sichtbar unter dem Info-Index.');
   assert.equal(result.first.ui.infoHidden, true, 'Der Info-Inhalt wird beim Wechsel zum Spielstand-Reiter nicht ausgeblendet.');
   assert.equal(result.first.ui.saveHidden, false, 'Der Spielstand-Reiter wird nicht sichtbar.');
+  assert.equal(result.first.ui.infoDisplay, 'none', 'Der Info-Inhalt bleibt trotz aktivem Spielstand-Reiter tatsächlich sichtbar.');
+  assert.notEqual(result.first.ui.saveDisplay, 'none', 'Der Spielstand-Reiter bleibt trotz Auswahl tatsächlich unsichtbar.');
+  assert.equal(result.first.ui.saveDirectlyBelowTabs, true, 'Der Spielstandbereich erscheint nicht direkt unter den Reitern.');
+  assert.notEqual(result.first.ui.infoDisplayAfterReturn, 'none', 'Der Wechsel zurück zum Info-Reiter zeigt den Info-Inhalt nicht wieder an.');
+  assert.equal(result.first.ui.saveDisplayAfterReturn, 'none', 'Der Spielstandbereich bleibt nach Rückkehr zum Info-Reiter sichtbar.');
   assert.equal(result.first.ui.saveLabel, 'Jetzt speichern');
   assert.equal(result.first.ui.exportLabel, 'JSON exportieren');
   assert.equal(result.first.ui.importLabel, 'JSON laden');
   assert.match(result.first.ui.accept, /json/i, 'Die Dateiauswahl ist nicht auf JSON ausgerichtet.');
   assert.match(result.first.exportStatus, /JSON-Datei exportiert:/, 'Der JSON-Export wurde nicht bestätigt.');
-  assert.match(result.first.exportStatus, /NoBrainer-Spielstand-v0\.17\.2-/, 'Der Export verwendet nicht den versionierten JSON-Dateinamen.');
+  assert.match(result.first.exportStatus, /NoBrainer-Spielstand-v0\.17\.3-/, 'Der Export verwendet nicht den versionierten JSON-Dateinamen.');
   assert.match(result.first.invalidStatus, /kein vollständiger NoBrainer-Spielstand/, 'Eine ungültige JSON-Datei wird nicht verständlich abgelehnt.');
   assert.equal(result.first.unchangedAfterInvalid, true, 'Ein ungültiger Import verändert den lokalen Spielstand.');
   assert.equal(result.second.importedGold, result.second.expectedImportedGold, 'Der gültige JSON-Import wurde nach dem Reload nicht geladen.');
@@ -260,7 +289,7 @@ try {
   assert.equal(result.restoredGold, result.expectedOriginalGold, 'Rückgängig stellt den vorherigen Spielstand nicht wieder her.');
   assert.equal(result.backupRemoved, true, 'Die verwendete Import-Sicherung bleibt nach erfolgreicher Wiederherstellung liegen.');
 
-  console.log('Spielstandtransfer-E2E: Info-Reiter, manuelles Speichern, JSON-Export, Importvalidierung, Reload und Import-Rückgängig sind funktionsfähig.');
+  console.log('Spielstandtransfer-E2E: Info-/Spielstand-Reiter schalten sichtbar korrekt um; manuelles Speichern, JSON-Export, Importvalidierung, Reload und Import-Rückgängig sind funktionsfähig.');
 } finally {
   if (child) await stopBrowser(child);
   rmSync(browserProfile, { recursive: true, force: true });
