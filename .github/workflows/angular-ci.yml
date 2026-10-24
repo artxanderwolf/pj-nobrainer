@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - migration/angular
+      - feature/weapon-image-assets-v0.17.0
   pull_request:
     branches:
       - main
@@ -53,6 +54,9 @@ jobs:
 
       - name: Test market quantity input in browser
         run: node scripts/check-built-market-quantity-input.mjs
+
+      - name: Test market weapon images in browser
+        run: node scripts/check-built-market-weapon-images.mjs
 
       - name: Test Dungeon loot collection in browser
         run: node scripts/check-built-dungeon-loot-collect.mjs
