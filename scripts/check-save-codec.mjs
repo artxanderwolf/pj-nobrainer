@@ -1,5 +1,10 @@
 import assert from 'node:assert/strict';
 import { decodeSave, encodeSave, SAVE_VERSION } from '../src/app/game/save-codec.ts';
+import {
+  buildSaveExportFilename,
+  MIN_IMPORT_SAVE_VERSION,
+  validateImportedSave
+} from '../src/app/game/save-transfer-core.ts';
 
 const state = {
   gold: 123,
@@ -26,6 +31,44 @@ assert.deepEqual(decodeSave(JSON.stringify(state)), { state, savedAt: null, save
 for (const version of [13, 12, 11, 10, 9, 8]) {
   const legacy = JSON.stringify({ saveVersion: version, savedAt, state });
   assert.deepEqual(decodeSave(legacy), { state, savedAt, saveVersion: version }, `v${version}-Saves müssen weiterhin verlustfrei decodiert werden.`);
+  assert.equal(validateImportedSave(legacy).ok, true, `v${version}-Save-Dateien müssen für den JSON-Import akzeptiert werden.`);
 }
 
-console.log('Save-Codec v14 persistiert die Dungeon-Sitzungsendzeit und bleibt rückwärtskompatibel zu den bisherigen Save-Envelopes v13 bis v8.');
+const currentImport = validateImportedSave(encoded);
+assert.equal(currentImport.ok, true, 'Aktuelles Save v14 muss als JSON-Datei importierbar sein.');
+if (currentImport.ok) {
+  assert.equal(currentImport.saveVersion, 14);
+  assert.equal(currentImport.savedAt, savedAt);
+  assert.deepEqual(currentImport.state, state);
+}
+
+assert.deepEqual(
+  validateImportedSave('{kaputt'),
+  { ok: false, reason: 'invalid-json', message: 'Die Datei enthält kein gültiges JSON.' },
+  'Kaputtes JSON darf den Import nicht erreichen.'
+);
+assert.equal(validateImportedSave(JSON.stringify(state)).ok, false, 'Ein Legacy-Rohzustand ohne Save-Envelope darf nicht als Importdatei akzeptiert werden.');
+assert.equal(
+  validateImportedSave(JSON.stringify({ saveVersion: SAVE_VERSION + 1, savedAt, state })).reason,
+  'future-version',
+  'Save-Dateien aus einer neueren Version müssen blockiert werden.'
+);
+assert.equal(
+  validateImportedSave(JSON.stringify({ saveVersion: MIN_IMPORT_SAVE_VERSION - 1, savedAt, state })).reason,
+  'unsupported-version',
+  'Nicht mehr unterstützte alte Save-Dateien müssen blockiert werden.'
+);
+assert.equal(
+  validateImportedSave(JSON.stringify({ saveVersion: SAVE_VERSION, savedAt, state: { characters: [] } })).reason,
+  'invalid-state',
+  'Ein strukturell unvollständiger Spielzustand muss blockiert werden.'
+);
+
+const localDate = new Date(2026, 9, 24, 14, 36, 5).getTime();
+assert.equal(
+  buildSaveExportFilename('0.17.2', localDate),
+  'NoBrainer-Spielstand-v0.17.2-2026-10-24_14-36-05.json',
+  'Der Exportdateiname muss App-Version und lokalen Speicherzeitpunkt enthalten.'
+);
+
+console.log('Save-Codec v14 bleibt unverändert; JSON-Export/Import validiert Save-Dateien v8 bis v14 und blockiert ungültige oder zukünftige Saves.');
