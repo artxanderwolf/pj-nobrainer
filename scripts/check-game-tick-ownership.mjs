@@ -27,13 +27,13 @@ const prepareStart = runtimeService.indexOf('  prepare(): void {');
 const prepareEnd = runtimeService.indexOf('  startTick(): void {', prepareStart);
 assert.ok(prepareStart >= 0 && prepareEnd > prepareStart, 'Die Angular-Startsequenz konnte nicht isoliert werden.');
 const prepareCycle = runtimeService.slice(prepareStart, prepareEnd);
-const prepareResetIndex = prepareCycle.indexOf('const dungeonSessionReset = this.dungeonSession.resetLoadedSession(Date.now());');
+const prepareSessionIndex = prepareCycle.indexOf('const dungeonSessionPreparation = this.dungeonSession.prepareLoadedSession(Date.now());');
 const prepareDungeonIndex = prepareCycle.indexOf('const dungeonUpdate = this.dungeonSession.update();');
 const prepareEnergyIndex = prepareCycle.indexOf('this.gameEnergy.update();');
-assert.ok(prepareResetIndex >= 0, 'Beim App-Start wird ein alter persistierter Dungeon-Lauf nicht gezielt verworfen.');
+assert.ok(prepareSessionIndex >= 0, 'Beim App-Start werden persistierte Dungeon-Sitzungen nicht über die Resume-Migration vorbereitet.');
 assert.ok(
-  prepareDungeonIndex > prepareResetIndex && prepareEnergyIndex > prepareDungeonIndex,
-  'Beim Start muss die bereinigte Dungeon-Sitzung vor der regulären Energieaktualisierung verarbeitet werden.'
+  prepareDungeonIndex > prepareSessionIndex && prepareEnergyIndex > prepareDungeonIndex,
+  'Beim Start muss die vorbereitete Dungeon-Sitzung vor der regulären Energieaktualisierung verarbeitet werden.'
 );
 assert.equal(
   (prepareCycle.match(/this\.gameEnergy\.update\(\);/g) ?? []).length,
@@ -126,4 +126,4 @@ const tickAdapterIndex = appComponent.indexOf('adaptedScript = this.legacyGameTi
 const registrationAdapterIndex = appComponent.indexOf('adaptedScript = this.legacyRuntimeRegistrationAdapter.adapt(adaptedScript);');
 assert.ok(sourceAdapterIndex >= 0 && tickAdapterIndex > sourceAdapterIndex && registrationAdapterIndex > tickAdapterIndex, 'Die Adapterreihenfolge für den gameTick-Cutover ist nicht stabil.');
 
-console.log('gameTick-Eigentümerschaft: Der zentrale 250-ms-Zyklus liegt in Angular; aktive Trainingslager-Runs laufen bei geschlossenem Popup weiter, während geladene Alt-Läufe beim App-Start weiterhin ohne Offline-Catch-up verworfen werden.');
+console.log('gameTick-Eigentümerschaft: Der zentrale 250-ms-Zyklus liegt in Angular; aktive Trainingslager-Runs laufen bei geschlossenem Popup und nach Browser-Neustart weiter, während Altstände ohne persistierte Endzeit beim App-Start gezielt bereinigt werden.');

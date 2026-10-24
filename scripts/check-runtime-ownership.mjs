@@ -30,12 +30,14 @@ assert.match(runtimeService, /window\.NoBrainerRuntimeBootstrap = \{/, 'Der temp
 assert.match(runtimeService, /delete window\.NoBrainerRuntimeBootstrap;/, 'Der temporäre Runtime-Bootstrap wird nach der Registrierung nicht entfernt.');
 assert.match(runtimeService, /this\.runtime = runtime;/, 'Die registrierte Runtime wird nicht im Angular-Service gespeichert.');
 assert.doesNotMatch(runtimeService, /NoBrainerLegacyRuntime/, 'Der Angular-Runtime-Service greift weiterhin auf window.NoBrainerLegacyRuntime zu.');
-assert.match(runtimeService, /runtime\.prepare\(\);\n    const materialStorageChanged = this\.normalizeMaterialStorage\(\) > 0;/, 'Geladene Lagerbestände werden nach dem Legacy-Load nicht auf ID-Schlüssel normalisiert.');
+assert.match(runtimeService, /private readonly saveTransfer: GameSaveTransferService/, 'Der JSON-Spielstandtransfer ist nicht Angular-eigen in die Runtime injiziert.');
+assert.match(runtimeService, /runtime\.prepare\(\);\n    this\.saveTransfer\.bindActions\(\(\) => runtime\.save\(true\)\);\n    const materialStorageChanged = this\.normalizeMaterialStorage\(\) > 0;/, 'Der Spielstandtransfer verwendet nach dem Legacy-Load nicht denselben Runtime-Save oder verdrängt die Materialnormalisierung.');
 assert.match(runtimeService, /const dungeonMaterialReferencesChanged = this\.gameDungeon\.normalizeMaterialReferences\(\) > 0;/, 'Geladene Dungeon-Beute und ausstehende Drops werden nicht auf stabile Material-IDs normalisiert.');
 assert.match(runtimeService, /const forgeMaterialReferencesChanged = this\.gameForge\.normalizeMaterialReferences\(\) > 0;/, 'Geladene Schmiedeslots werden nicht auf stabile Material-IDs normalisiert.');
 assert.match(runtimeService, /const marketMaterialReferencesChanged = this\.gameMarket\.normalizeMaterialReferences\(\) > 0;/, 'Geladene Marktaufträge werden nicht auf stabile Material-IDs normalisiert.');
 assert.match(runtimeService, /materialStorageChanged \|\| dungeonMaterialReferencesChanged \|\| forgeMaterialReferencesChanged \|\| marketMaterialReferencesChanged/, 'Die vollständige Materialreferenz-Migration wird nicht gemeinsam persistiert.');
-assert.match(runtimeService, /else if \(materialReferencesChanged \|\| dungeonSessionReset\.saveRequested\) \{\n      runtime\.save\(false\);\n    \}/, 'Materialreferenz-Migration oder Bereinigung eines alten Dungeon-Laufzustands werden nach dem Laden nicht persistent gespeichert.');
+assert.match(runtimeService, /const dungeonSessionPreparation = this\.dungeonSession\.prepareLoadedSession\(Date\.now\(\)\);/, 'Persistierte Dungeon-Sitzungen werden beim Runtime-Start nicht durch die Resume-Migration vorbereitet.');
+assert.match(runtimeService, /else if \(materialReferencesChanged \|\| dungeonSessionPreparation\.saveRequested\) \{\n      runtime\.save\(false\);\n    \}/, 'Materialreferenz-Migration oder Bereinigung eines alten Dungeon-Laufzustands werden nach dem Laden nicht persistent gespeichert.');
 assert.match(runtimeService, /if \(inventoryChanged\) \{\n      this\.normalizeMaterialStorage\(\);/, 'Neue Dungeon-Lagerzugänge werden vor Render/Save nicht auf kanonische Material-ID-Schlüssel normalisiert.');
 assert.match(runtimeService, /return normalizeMaterialInventory\(inventory\);/, 'Runtime delegiert die Materialnormalisierung nicht an den gemeinsamen Storage-Core.');
 assert.match(gameTickAdapter, /const LEGACY_GAME_TICK_BLOCK = `function gameTick\(\)\{/, 'Der gameTick-Cutover besitzt keinen eindeutigen Legacy-Anker.');
@@ -43,4 +45,4 @@ assert.match(registrationAdapter, /const runtimeBootstrap=window\.NoBrainerRunti
 assert.match(registrationAdapter, /runtimeBootstrap\.register\(\{/, 'Die Legacy-Runtime wird nicht an Angular übergeben.');
 assert.match(registrationAdapter, /window\.NoBrainerLegacyRuntime=\{/, 'Der Adapter besitzt nicht mehr den erwarteten alten Registrierungsanker.');
 
-console.log('Runtime-Eigentümerschaft: Lager, Dungeon-Loot, Schmiedeslots und Marktaufträge werden nach dem Laden auf kanonische Material-IDs migriert; persistierte alte Dungeon-Laufzustände werden beendet; Runtime, Tick und Version bleiben Angular-eigen.');
+console.log('Runtime-Eigentümerschaft: JSON-Spielstandtransfer nutzt den zentralen Runtime-Save; Lager, Dungeon-Loot, Schmiedeslots und Marktaufträge werden weiter auf kanonische Material-IDs migriert; moderne Dungeon-Sitzungen werden fortgesetzt und Altstände ohne Endzeit bereinigt.');

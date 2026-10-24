@@ -87,6 +87,12 @@ assert.match(indexMarkup, /Kaderseite zeigt ausschließlich die vorhandenen Char
 assert.match(indexMarkup, /Antippen eines Eintrags öffnet die Charakterdetails in einem eigenen Popup/);
 assert.match(indexMarkup, /Stift-Symbol neben dem Namen schaltet die Namensbearbeitung ein/);
 assert.match(indexMarkup, /Ausrüstungsleiste liegt direkt am Klassenbild im Charakter-Popup/);
+assert.match(indexMarkup, /2H-Waffe belegt immer beide Handplätze/);
+assert.match(indexMarkup, /ERSETZT BEIDE HÄNDE/);
+assert.doesNotMatch(indexMarkup, /Eine 2H-Waffe kann nur ausgerüstet werden, wenn die andere Hand frei ist/);
+assert.doesNotMatch(indexMarkup, /Die technischen Ausrüstungsregeln für 1H- und 2H-Waffen bleiben unverändert/);
+assert.match(indexMarkup, /Ein laufender Dungeon-1-Lauf bleibt beim Schließen des Browsers gespeichert/);
+assert.match(indexMarkup, /Ein Browser-Neustart startet keine neue 5-Stunden-Frist/);
 assert.match(indexMarkup, /Rekrutierungsseite verwendet dasselbe Bedienmuster/);
 assert.match(indexMarkup, /Aktion „Anwerben“/);
 assert.match(indexMarkup, /Rüstung = additive Prozentpunkte, begrenzt auf maximal 80 %/);
@@ -106,4 +112,4 @@ assert.match(appComponent, /composePageMarkup\(APP_SHELL_PAGE_IDS\)/, 'Der App-C
 assert.match(appComponent, /composeAppShell\(pageMarkup\)/, 'Das Angular-eigene Seitenmarkup wird nicht in die Angular-Shell eingesetzt.');
 assert.doesNotMatch(appComponent, /DOMParser/, 'Angular-eigenes Seitenmarkup darf nicht aus Legacy-HTML geparst werden.');
 
-console.log('Seiten-Markup: Kader- und Rekrutierungshilfe beschreibt getrennte Listen-/Modalabläufe; kompakte Waffenherstellung sowie Dungeonstatus und direkte Ausbaukarten bleiben Angular-eigen.');
+console.log('Seiten-Markup: Hilfe beschreibt den automatischen 2H-Austausch und die Dungeon-Fortsetzung über Browser-Neustarts; übrige Angular-Seiten bleiben unverändert strukturiert.');

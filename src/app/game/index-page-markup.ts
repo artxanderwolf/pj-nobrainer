@@ -72,14 +72,14 @@ export const INDEX_PAGE_MARKUP = `<section class="page" id="index">
           <h2>Waffen-Handverteilung</h2>
           <div class="formula">1H-Waffe → belegt genau eine gewählte Hand</div>
           <div class="formula">2H-Waffe → benötigt beide Hände und belegt beide Handplätze mit derselben Waffe</div>
-          <p class="index-note">Eine 2H-Waffe kann nur ausgerüstet werden, wenn die andere Hand frei ist. Beim Ablegen einer 2H-Waffe werden beide Handplätze gemeinsam geleert. Klassenabhängige Waffenfreigaben und Schildregeln sind noch nicht aktiv.</p>
+          <p class="index-note">Eine 2H-Waffe belegt immer beide Handplätze. Sind beim gewählten Charakter bereits eine oder zwei 1H-Waffen oder eine andere 2H-Waffe ausgerüstet, werden diese beim Ausrüsten automatisch ersetzt und bleiben im Waffenlager verfügbar. Eine konkrete Waffe, die bereits bei einem anderen Charakter ausgerüstet ist, bleibt gesperrt. Beim Ablegen einer 2H-Waffe werden beide Handplätze gemeinsam geleert. Klassenabhängige Waffenfreigaben und Schildregeln sind noch nicht aktiv.</p>
         </div>
 
         <div class="card span-12">
           <h2>Kader, Charakterdetails & Rekrutierung</h2>
           <p class="index-note">Die Kaderseite zeigt ausschließlich die vorhandenen Charaktere als kompakte Liste mit Klassenemblem, Name, Klasse und Level. Antippen eines Eintrags öffnet die Charakterdetails in einem eigenen Popup; nach dem Schließen bleibt die Kaderliste als Seite bestehen.</p>
           <p class="index-note">Im Charakter-Popup zeigt das große Emblem die Klasse. Das Stift-Symbol neben dem Namen schaltet die Namensbearbeitung ein; Enter oder ✓ speichert den neuen Namen, Escape oder × verwirft die Eingabe.</p>
-          <p class="index-note">Die Ausrüstungsleiste liegt direkt am Klassenbild im Charakter-Popup. Linke und rechte Hand zeigen die aktuell ausgerüstete Waffe; Antippen öffnet die bestehende Waffenauswahl für genau diese Hand. Die technischen Ausrüstungsregeln für 1H- und 2H-Waffen bleiben unverändert.</p>
+          <p class="index-note">Die Ausrüstungsleiste liegt direkt am Klassenbild im Charakter-Popup. Linke und rechte Hand zeigen die aktuell ausgerüstete Waffe; Antippen öffnet die bestehende Waffenauswahl für genau diese Hand. Bei einer 2H-Waffe zeigt die Auswahl „ERSETZT BEIDE HÄNDE“, wenn beim gewählten Charakter bereits Waffen liegen; das Ausrüsten übernimmt anschließend beide Handplätze.</p>
           <p class="index-note">Die Charakterwerte sind im Popup auf zwei Seiten mit je bis zu acht Werten verteilt. Die Pfeile unter den Werten wechseln ausschließlich die Werteseite. Das Popup wird über ×, Escape oder den abgedunkelten Hintergrund geschlossen.</p>
           <p class="index-note">Die Rekrutierungsseite verwendet dasselbe Bedienmuster: Eine kompakte Klassenliste öffnet beim Antippen ein Rekrutierungs-Popup mit großem Klassenemblem, den bestehenden Klassenwerten und der Aktion „Anwerben“. Rekrutierungskosten, Kaderkapazität und Klassenwerte bleiben unverändert.</p>
         </div>
@@ -123,6 +123,7 @@ export const INDEX_PAGE_MARKUP = `<section class="page" id="index">
             </tbody>
           </table></div>
           <p class="index-note">Die drei IDs definieren den Materialpool des Gegners. Pro Gegner bleibt es bei einem Materialwurf; die Drop%-Werte der gelisteten Materialien werden als relative Gewichte dieses Pools verwendet.</p>
+          <p class="index-note">Ein laufender Dungeon-1-Lauf bleibt beim Schließen des Browsers gespeichert. Beim nächsten Öffnen wird die vergangene Zeit bis zur ursprünglich gespeicherten Endzeit nachgeholt; liegt die Endzeit noch in der Zukunft, läuft der Rest weiter, andernfalls wird der Lauf bis zu dieser Endzeit beendet. Ein Browser-Neustart startet keine neue 5-Stunden-Frist.</p>
         </div>
 
         <div class="card span-7">
