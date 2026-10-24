@@ -107,6 +107,35 @@
   flex: 1 1 auto;
 }
 
+.market-weapon-sale-row,
+.market-job-row,
+.market-weapon-sale-main {
+  display: flex;
+  align-items: center;
+}
+
+.market-weapon-sale-row,
+.market-job-row {
+  gap: 10px;
+}
+
+.market-weapon-sale-main {
+  min-width: 0;
+  flex: 1 1 auto;
+  gap: 8px;
+}
+
+.market-job-copy {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.market-weapon-sale-image,
+.market-job-weapon-image,
+.market-queue-weapon-image {
+  flex: 0 0 64px;
+}
+
 @media (max-width: 760px) {
   .roster-emblem-stage {
     min-height: 254px;
@@ -119,7 +148,9 @@
     padding: 6px;
   }
 
-  .forge-job-row {
+  .forge-job-row,
+  .market-weapon-sale-row,
+  .market-job-row {
     gap: 6px;
   }
 }
