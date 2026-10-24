@@ -32,6 +32,10 @@ const probeScript = `<script>
   const ORIGINAL_GOLD_KEY='__nobrainer_save_transfer_original_gold';
   const IMPORTED_GOLD_KEY='__nobrainer_save_transfer_imported_gold';
   const normalize=value=>String(value||'').replace(/\\s+/g,' ').trim();
+  const displayOf=id=>{
+    const node=document.getElementById(id);
+    return node?getComputedStyle(node).display:'';
+  };
   const finish=result=>{
     if(document.getElementById('saveTransferE2EResult'))return;
     const node=document.createElement('pre');
@@ -68,10 +72,25 @@ const probeScript = `<script>
     const phase=localStorage.getItem(PHASE_KEY)||'start';
 
     if(phase==='start'){
-      openSaveTab();
+      document.querySelector('.help-btn')?.click();
+      const initialInfoDisplay=displayOf('indexInfoPanel');
+      const initialSaveDisplay=displayOf('indexSavePanel');
+      document.getElementById('indexSaveTab')?.click();
+      const switchedInfoDisplay=displayOf('indexInfoPanel');
+      const switchedSaveDisplay=displayOf('indexSavePanel');
+      document.getElementById('indexInfoTab')?.click();
+      const returnedInfoDisplay=displayOf('indexInfoPanel');
+      const returnedSaveDisplay=displayOf('indexSavePanel');
+      document.getElementById('indexSaveTab')?.click();
       const ui={
         infoTab:normalize(document.getElementById('indexInfoTab')?.textContent),
         saveTab:normalize(document.getElementById('indexSaveTab')?.textContent),
+        initialInfoDisplay,
+        initialSaveDisplay,
+        switchedInfoDisplay,
+        switchedSaveDisplay,
+        returnedInfoDisplay,
+        returnedSaveDisplay,
         infoHidden:Boolean(document.getElementById('indexInfoPanel')?.hidden),
         saveHidden:Boolean(document.getElementById('indexSavePanel')?.hidden),
         saveLabel:normalize(saveBtn.textContent),
@@ -244,6 +263,12 @@ try {
   assert.equal(result.runtimeError, '', `Die Runtime meldet beim Spielstandtransfer einen Fehler: ${JSON.stringify(result)}`);
   assert.equal(result.first.ui.infoTab, 'Info');
   assert.equal(result.first.ui.saveTab, 'Spielstand');
+  assert.notEqual(result.first.ui.initialInfoDisplay, 'none', 'Der Info-Inhalt ist beim Öffnen des Info-Bereichs nicht sichtbar.');
+  assert.equal(result.first.ui.initialSaveDisplay, 'none', 'Der Spielstand-Inhalt hängt weiterhin sichtbar unter dem normalen Info-/Indexinhalt.');
+  assert.equal(result.first.ui.switchedInfoDisplay, 'none', 'Der Info-Inhalt bleibt beim Wechsel zum Spielstand-Reiter sichtbar.');
+  assert.notEqual(result.first.ui.switchedSaveDisplay, 'none', 'Der Spielstand-Reiter zeigt seinen Inhalt nicht an.');
+  assert.notEqual(result.first.ui.returnedInfoDisplay, 'none', 'Der Info-Inhalt wird beim Zurückwechseln nicht wieder sichtbar.');
+  assert.equal(result.first.ui.returnedSaveDisplay, 'none', 'Der Spielstand-Inhalt bleibt nach dem Zurückwechseln sichtbar.');
   assert.equal(result.first.ui.infoHidden, true, 'Der Info-Inhalt wird beim Wechsel zum Spielstand-Reiter nicht ausgeblendet.');
   assert.equal(result.first.ui.saveHidden, false, 'Der Spielstand-Reiter wird nicht sichtbar.');
   assert.equal(result.first.ui.saveLabel, 'Jetzt speichern');
@@ -251,7 +276,7 @@ try {
   assert.equal(result.first.ui.importLabel, 'JSON laden');
   assert.match(result.first.ui.accept, /json/i, 'Die Dateiauswahl ist nicht auf JSON ausgerichtet.');
   assert.match(result.first.exportStatus, /JSON-Datei exportiert:/, 'Der JSON-Export wurde nicht bestätigt.');
-  assert.match(result.first.exportStatus, /NoBrainer-Spielstand-v0\.17\.2-/, 'Der Export verwendet nicht den versionierten JSON-Dateinamen.');
+  assert.match(result.first.exportStatus, /NoBrainer-Spielstand-v0\.17\.3-/, 'Der Export verwendet nicht den versionierten JSON-Dateinamen.');
   assert.match(result.first.invalidStatus, /kein vollständiger NoBrainer-Spielstand/, 'Eine ungültige JSON-Datei wird nicht verständlich abgelehnt.');
   assert.equal(result.first.unchangedAfterInvalid, true, 'Ein ungültiger Import verändert den lokalen Spielstand.');
   assert.equal(result.second.importedGold, result.second.expectedImportedGold, 'Der gültige JSON-Import wurde nach dem Reload nicht geladen.');
@@ -260,7 +285,7 @@ try {
   assert.equal(result.restoredGold, result.expectedOriginalGold, 'Rückgängig stellt den vorherigen Spielstand nicht wieder her.');
   assert.equal(result.backupRemoved, true, 'Die verwendete Import-Sicherung bleibt nach erfolgreicher Wiederherstellung liegen.');
 
-  console.log('Spielstandtransfer-E2E: Info-Reiter, manuelles Speichern, JSON-Export, Importvalidierung, Reload und Import-Rückgängig sind funktionsfähig.');
+  console.log('Spielstandtransfer-E2E: Info-/Spielstand-Reiter trennen ihre Inhalte sichtbar; manuelles Speichern, JSON-Export, Importvalidierung, Reload und Import-Rückgängig sind funktionsfähig.');
 } finally {
   if (child) await stopBrowser(child);
   rmSync(browserProfile, { recursive: true, force: true });
