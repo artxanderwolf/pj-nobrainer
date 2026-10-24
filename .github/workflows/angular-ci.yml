@@ -65,3 +65,6 @@ jobs:
 
       - name: Test Trainingslager resume across browser restart
         run: node scripts/check-built-dungeon-resume.mjs
+
+      - name: Test save JSON export and import in browser
+        run: node scripts/check-built-save-transfer.mjs
