@@ -69,16 +69,26 @@ const probeScript = `<script>
 
     if(phase==='start'){
       openSaveTab();
+      const infoPanel=document.getElementById('indexInfoPanel');
+      const savePanel=document.getElementById('indexSavePanel');
       const ui={
         infoTab:normalize(document.getElementById('indexInfoTab')?.textContent),
         saveTab:normalize(document.getElementById('indexSaveTab')?.textContent),
-        infoHidden:Boolean(document.getElementById('indexInfoPanel')?.hidden),
-        saveHidden:Boolean(document.getElementById('indexSavePanel')?.hidden),
+        infoHidden:Boolean(infoPanel?.hidden),
+        saveHidden:Boolean(savePanel?.hidden),
+        infoDisplay:infoPanel?getComputedStyle(infoPanel).display:'missing',
+        saveDisplay:savePanel?getComputedStyle(savePanel).display:'missing',
         saveLabel:normalize(saveBtn.textContent),
         exportLabel:normalize(exportBtn.textContent),
         importLabel:normalize(importBtn.textContent),
         accept:input.getAttribute('accept')||''
       };
+      document.getElementById('indexInfoTab')?.click();
+      ui.infoDisplayAfterInfoClick=infoPanel?getComputedStyle(infoPanel).display:'missing';
+      ui.saveDisplayAfterInfoClick=savePanel?getComputedStyle(savePanel).display:'missing';
+      document.getElementById('indexSaveTab')?.click();
+      ui.infoDisplayAfterSaveClick=infoPanel?getComputedStyle(infoPanel).display:'missing';
+      ui.saveDisplayAfterSaveClick=savePanel?getComputedStyle(savePanel).display:'missing';
       saveBtn.click();
       setTimeout(()=>{
         exportBtn.click();
@@ -246,12 +256,18 @@ try {
   assert.equal(result.first.ui.saveTab, 'Spielstand');
   assert.equal(result.first.ui.infoHidden, true, 'Der Info-Inhalt wird beim Wechsel zum Spielstand-Reiter nicht ausgeblendet.');
   assert.equal(result.first.ui.saveHidden, false, 'Der Spielstand-Reiter wird nicht sichtbar.');
+  assert.equal(result.first.ui.infoDisplay, 'none', 'Der Info-Inhalt bleibt trotz aktivem Spielstand-Reiter visuell sichtbar.');
+  assert.equal(result.first.ui.saveDisplay, 'grid', 'Der Spielstand-Inhalt wird im Spielstand-Reiter nicht tatsächlich dargestellt.');
+  assert.equal(result.first.ui.infoDisplayAfterInfoClick, 'grid', 'Der Info-Inhalt wird beim Zurückwechseln nicht sichtbar.');
+  assert.equal(result.first.ui.saveDisplayAfterInfoClick, 'none', 'Der Spielstand-Inhalt bleibt beim Info-Reiter sichtbar.');
+  assert.equal(result.first.ui.infoDisplayAfterSaveClick, 'none', 'Der Info-Inhalt wird beim erneuten Wechsel zum Spielstand-Reiter nicht ausgeblendet.');
+  assert.equal(result.first.ui.saveDisplayAfterSaveClick, 'grid', 'Der Spielstand-Inhalt wird beim erneuten Wechsel nicht sichtbar.');
   assert.equal(result.first.ui.saveLabel, 'Jetzt speichern');
   assert.equal(result.first.ui.exportLabel, 'JSON exportieren');
   assert.equal(result.first.ui.importLabel, 'JSON laden');
   assert.match(result.first.ui.accept, /json/i, 'Die Dateiauswahl ist nicht auf JSON ausgerichtet.');
   assert.match(result.first.exportStatus, /JSON-Datei exportiert:/, 'Der JSON-Export wurde nicht bestätigt.');
-  assert.match(result.first.exportStatus, /NoBrainer-Spielstand-v0\.17\.2-/, 'Der Export verwendet nicht den versionierten JSON-Dateinamen.');
+  assert.match(result.first.exportStatus, /NoBrainer-Spielstand-v0\.17\.3-/, 'Der Export verwendet nicht den versionierten JSON-Dateinamen.');
   assert.match(result.first.invalidStatus, /kein vollständiger NoBrainer-Spielstand/, 'Eine ungültige JSON-Datei wird nicht verständlich abgelehnt.');
   assert.equal(result.first.unchangedAfterInvalid, true, 'Ein ungültiger Import verändert den lokalen Spielstand.');
   assert.equal(result.second.importedGold, result.second.expectedImportedGold, 'Der gültige JSON-Import wurde nach dem Reload nicht geladen.');
@@ -260,7 +276,7 @@ try {
   assert.equal(result.restoredGold, result.expectedOriginalGold, 'Rückgängig stellt den vorherigen Spielstand nicht wieder her.');
   assert.equal(result.backupRemoved, true, 'Die verwendete Import-Sicherung bleibt nach erfolgreicher Wiederherstellung liegen.');
 
-  console.log('Spielstandtransfer-E2E: Info-Reiter, manuelles Speichern, JSON-Export, Importvalidierung, Reload und Import-Rückgängig sind funktionsfähig.');
+  console.log('Spielstandtransfer-E2E: Reiter wechseln sichtbar korrekt; manuelles Speichern, JSON-Export, Importvalidierung, Reload und Import-Rückgängig sind funktionsfähig.');
 } finally {
   if (child) await stopBrowser(child);
   rmSync(browserProfile, { recursive: true, force: true });

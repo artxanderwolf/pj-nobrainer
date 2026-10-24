@@ -1,0 +1,4 @@
+#index #indexInfoPanel[hidden],
+#index #indexSavePanel[hidden] {
+  display: none !important;
+}
