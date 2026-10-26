@@ -30,6 +30,9 @@ jobs:
           cp "$SDK_ROOT/build-tools/36.0.0/zipalign" signing-tools/
           cp "$SDK_ROOT/build-tools/36.0.0/apksigner" signing-tools/
           cp "$SDK_ROOT/build-tools/36.0.0/lib/apksigner.jar" signing-tools/lib/
+          if [ -d "$SDK_ROOT/build-tools/36.0.0/lib64" ]; then
+            cp -R "$SDK_ROOT/build-tools/36.0.0/lib64" signing-tools/
+          fi
           chmod +x signing-tools/zipalign signing-tools/apksigner
 
       - name: Upload signing tools
