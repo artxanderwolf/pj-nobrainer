@@ -1,0 +1,41 @@
+name: Export Android Signing Tools
+
+on:
+  push:
+    branches:
+      - tooling/android-signing-tools-v36
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Locate Android Build Tools
+        run: |
+          SDK_ROOT="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          SDKMANAGER="$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$SDKMANAGER" ]; then
+            SDKMANAGER="$(find "$SDK_ROOT/cmdline-tools" -type f -name sdkmanager | head -n 1)"
+          fi
+          test -x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null
+          "$SDKMANAGER" "build-tools;36.0.0"
+          mkdir -p signing-tools/lib
+          cp "$SDK_ROOT/build-tools/36.0.0/zipalign" signing-tools/
+          cp "$SDK_ROOT/build-tools/36.0.0/apksigner" signing-tools/
+          cp "$SDK_ROOT/build-tools/36.0.0/lib/apksigner.jar" signing-tools/lib/
+          chmod +x signing-tools/zipalign signing-tools/apksigner
+
+      - name: Upload signing tools
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-signing-tools-36.0.0
+          path: signing-tools
+          if-no-files-found: error
+          retention-days: 1
