@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 
-const APP_VERSION = '0.19.3';
-const ANDROID_VERSION_CODE = 5;
+const APP_VERSION = '0.19.4';
+const ANDROID_VERSION_CODE = 6;
 const APP_ID = 'com.smithsofeldravar.game';
 const APP_NAME = 'Smiths of Eldravar';
 const CAPACITOR_VERSION = '8.5.3';
@@ -23,8 +23,10 @@ packageJson.scripts['android:sync'] = 'npm run build:android:web && npx cap sync
 packageJson.scripts['android:open'] = 'npx cap open android';
 packageJson.scripts['check:android-base'] = 'node scripts/check-android-base.mjs';
 packageJson.scripts['check:update-core'] = 'node --no-warnings --experimental-strip-types scripts/check-update-core.mjs';
-packageJson.scripts['check:android-updater'] = 'node scripts/check-android-updater.mjs';
-for (const check of ['npm run check:update-core', 'npm run check:android-updater']) {
+packageJson.scripts['check:android-updater'] = 'node --no-warnings --experimental-strip-types scripts/check-android-updater.mjs';
+packageJson.scripts['check:android-update-release'] = 'node --no-warnings --experimental-strip-types scripts/check-android-update-release.mjs';
+packageJson.scripts['android:prepare-update'] = 'node --no-warnings --experimental-strip-types scripts/prepare-android-update.mjs';
+for (const check of ['npm run check:update-core', 'npm run check:android-updater', 'npm run check:android-update-release']) {
   if (!packageJson.scripts['check'].includes(check)) packageJson.scripts['check'] += ` && ${check}`;
 }
 write(packagePath, JSON.stringify(packageJson, null, 2));

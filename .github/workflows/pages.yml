@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - migration/angular
+      - feature/android-v0.19.4-gate-c
   workflow_dispatch:
 
 permissions:
@@ -62,6 +63,7 @@ jobs:
           path: dist/nobrainer/browser
 
   deploy:
+    if: github.ref == 'refs/heads/migration/angular'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
