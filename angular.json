@@ -51,6 +51,20 @@
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
+            },
+            "android": {
+              "baseHref": "/",
+              "optimization": true,
+              "extractLicenses": true,
+              "sourceMap": false,
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kB",
+                  "maximumError": "1MB"
+                }
+              ],
+              "outputHashing": "all"
             }
           },
           "defaultConfiguration": "production"

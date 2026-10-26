@@ -5,3 +5,7 @@
 /.generated
 *.log
 .DS_Store
+*.jks
+*.keystore
+*.p12
+keystore.properties
