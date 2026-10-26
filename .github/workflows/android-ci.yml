@@ -120,13 +120,13 @@ jobs:
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: smiths-of-eldravar-v0.19.1-debug
+          name: smiths-of-eldravar-v0.19.2-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
       - name: Upload unsigned release APK
         uses: actions/upload-artifact@v4
         with:
-          name: smiths-of-eldravar-v0.19.1-release-unsigned
+          name: smiths-of-eldravar-v0.19.2-release-unsigned
           path: android/app/build/outputs/apk/release/app-release-unsigned.apk
           if-no-files-found: error
