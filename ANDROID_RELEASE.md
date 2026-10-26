@@ -94,3 +94,14 @@ Gate A gilt technisch als vorbereitet, wenn:
 7. eine mit diesem Key signierte Release-APK auf einem realen Android-Gerät installiert und gestartet wurde.
 
 Erst nach der Gate-A-Freigabe wird Gate B (In-App-Updater) begonnen.
+
+## Gate B – technischer In-App-Updater
+
+- App-Version: 0.19.0; Save-Version bleibt 14.
+- Android versionCode bleibt 1, solange Gate C noch keine echte zweite Android-APK freigibt.
+- Fester Stable-Kanal: GitHub Pages /android-update/stable.json.
+- Ein Merge veröffentlicht niemals automatisch ein Android-Update. Das Manifest bleibt bis zur ausdrücklichen Android-Releasefreigabe geschlossen (available=false).
+- Vor der Installation prüft die native Brücke HTTPS, freien Speicher, APK-Größe, SHA-256, Paket-ID, höheren versionCode, versionName und die Signatur gegen die installierte App.
+- Installation läuft ausschließlich über Android PackageInstaller mit Benutzerbestätigung.
+- Der Release-Key bleibt außerhalb des Repositories.
+- Reihenfolge eines späteren Releases: APK bauen → testen → signieren → hochladen → Download testen → SHA-256 prüfen → stable.json zuletzt freigeben.
