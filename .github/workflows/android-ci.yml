@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/android-v0.19.0-gate-b
+      - feature/android-v0.19.4-gate-c
       - migration/angular
   workflow_dispatch:
 
@@ -42,7 +43,7 @@ jobs:
           yes | "$SDKMANAGER" --licenses >/dev/null
           "$SDKMANAGER" "platform-tools" "platforms;android-36" "build-tools;36.0.0"
 
-      - name: Apply Gate B Android configuration
+      - name: Apply Gate C Android configuration
         run: node scripts/bootstrap-android.mjs
 
       - name: Install dependencies
@@ -120,13 +121,13 @@ jobs:
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: smiths-of-eldravar-v0.19.3-debug
+          name: smiths-of-eldravar-v0.19.4-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
       - name: Upload unsigned release APK
         uses: actions/upload-artifact@v4
         with:
-          name: smiths-of-eldravar-v0.19.3-release-unsigned
+          name: smiths-of-eldravar-v0.19.4-release-unsigned
           path: android/app/build/outputs/apk/release/app-release-unsigned.apk
           if-no-files-found: error

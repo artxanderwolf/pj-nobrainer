@@ -100,3 +100,66 @@ APK bauen
 ```
 
 Nur eine ausdrückliche Android-Releasefreigabe ändert den Stable-Kanal. Gate C testet anschließend die reale Updatekette inklusive erhaltenem Spielstand.
+
+## Gate C – realer Updatezyklus
+
+Vorbereiteter Zielstand: **App 0.19.4 / Android-Code 6 / Save-Version 14**.
+Ausgangspunkt für den Gerätetest ist die bereits freigegebene und installierte
+v0.19.3 mit Android-Code 5. Paket-ID, Capacitor-Ursprung, Speicherschlüssel und
+Release-Key müssen unverändert bleiben.
+
+Das freigegebene 64×64-Eldravar-Pixelmotiv ist als Android-Launcher-Icon und als
+Web-Favicon/Webmanifest-Icon enthalten. Die Originalquelle liegt unter
+`design/app-icon/`; es wurde ausschließlich ohne Glättung skaliert.
+
+### Vorbereitung und Veröffentlichung
+
+1. `npm ci` und `npm run android:sync` ausführen. Die vollständigen Projektprüfungen
+   laufen dabei vor dem Android-Webbuild. Zusätzlich `npm run check:android-base`
+   ausführen und den normalen Web-/Pages-Build sowie die Browserprüfungen testen.
+2. Einen Release-Build mit Java 21 / Android SDK 36 erstellen. Ohne die vier oben
+   beschriebenen `SOE_RELEASE_*`-Werte entsteht ausschließlich eine **unsignierte** APK.
+   Diese darf nicht verteilt oder im Stable-Kanal eingetragen werden.
+3. Die APK ausschließlich mit dem dauerhaft gesicherten Gate-A/B-Release-Key signieren.
+   Zertifikat-Fingerabdruck gegen den bisherigen Release-Key bzw. die bisherige APK
+   prüfen. Keinen Ersatzschlüssel erzeugen.
+4. Die signierte APK als GitHub-Release-Asset dieses Repositories hochladen. Ein
+   GitHub-Actions-Artefakt ist kein öffentlicher Update-Download.
+5. Den öffentlichen Download und die echte APK mit dem folgenden Werkzeug prüfen:
+
+   ```text
+   npm run android:prepare-update -- --apk <signierte-APK> --apk-url <GitHub-Release-Download-URL> --certificate-sha256 <bisheriger-Zertifikat-SHA256> --notes android-release-notes.json --sdk <Android-SDK>
+   ```
+
+   Optional wählt `--java <java.exe>` eine Java-Laufzeit. Das Werkzeug prüft mit
+   `aapt` und `apksigner` Paket-ID, Version, nicht-debuggable Release-Build,
+   gültige Signatur und den vorgegebenen bisherigen Signierer. Anschließend lädt
+   es die hochgeladene Datei über HTTPS und vergleicht Größe und SHA-256 vollständig.
+   Erst bei Erfolg entsteht `.generated/android-release/stable.json` als lokaler
+   Entwurf. Es werden weder Schlüssel noch Passwörter benötigt oder gespeichert.
+6. Den geprüften Entwurf als **letzten Veröffentlichungsschritt** nach
+   `public/android-update/stable.json` übernehmen. Den Pages-Build und den öffentlich
+   ausgelieferten Stable-Endpunkt erneut prüfen. Normale Web-Merges erzeugen oder
+   aktualisieren kein Android-Release automatisch.
+
+`npm run check:android-update-release` prüft Fehlerfälle der Vorbereitung mit
+Testdaten und simulierten Downloads. Das ersetzt weder eine echte APK-Prüfung
+noch einen Test auf dem Gerät.
+
+### Abnahme auf dem vorhandenen Android-Gerät
+
+1. In Code 5 den vorhandenen Spielstand kontrollieren und optional als JSON sichern.
+2. Unter Hilfe/Info `Nach Update suchen`: v0.19.4 / Code 6 und Release Notes erscheinen.
+3. `Update herunterladen`: Download und Prüfung erfolgreich; anschließend `APK speichern`.
+4. Die APK über Androids Dateiauswahl in `Downloads` speichern. Ein Abbruch des
+   Dialogs muss eine erneute Speicherung ermöglichen.
+5. Die gespeicherte APK außerhalb des Spiels über `Downloads` / `Eigene Dateien`
+   öffnen und die vorhandene App aktualisieren. **Die App vorher nicht deinstallieren.**
+6. Start, Pixel-Icon, v0.19.4 / Code 6 und den erhaltenen Spielstand prüfen.
+   Gold, Materialien, Kader/Ausrüstung und einen gespeicherten Dungeonfortschritt
+   kontrollieren. Anschließend das Spiel einmal vollständig schließen und neu öffnen.
+7. Eine erneute Updateprüfung darf Code 6 nicht nochmals als neueres Update anbieten.
+   Auch der Offline-Start muss weiter funktionieren.
+
+Gate C ist erst nach erfolgreicher Veröffentlichung und dieser realen Geräteabnahme
+bestanden. Bis die echte signierte APK geprüft ist, bleibt `available:false` gesetzt.

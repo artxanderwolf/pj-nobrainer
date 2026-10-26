@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
+import { parseAndroidUpdateManifest } from '../src/app/game/android-update-core.ts';
 
 const read = path => readFileSync(path, 'utf8');
 const manifest = read('android/app/src/main/AndroidManifest.xml');
@@ -50,7 +51,17 @@ assert.match(main, /requestAnimationFrame/, 'Vor Updater-Initialisierung muss ei
 assert.match(main, /setTimeout/, 'Updater-Initialisierung muss in einen nachgelagerten Task verschoben werden.');
 assert.match(main, /updateService\.initialize\(\)\.catch/, 'Updaterfehler müssen vom Spielstart isoliert bleiben.');
 
-assert.deepEqual(stable, { schemaVersion: 1, available: false }, 'Gate B darf noch kein reales Remote-Update freischalten.');
-assert.match(saveCodec, /export const SAVE_VERSION = 14;/, 'Gate B darf das persistierte Save-Format nicht verändern.');
+const channel = parseAndroidUpdateManifest(stable);
+if (channel.available) {
+  assert.ok(channel.versionCode >= 6, 'Der Stable-Kanal darf erst einen Nachfolger des freigegebenen Gate-B-Stands anbieten.');
+  const url = new URL(channel.apkUrl);
+  assert.equal(url.hostname, 'github.com', 'Der freigegebene Download muss ein Release dieses Projekts sein.');
+  assert.match(url.pathname, /^\/artxanderwolf\/pj-nobrainer\/releases\/download\/[^/]+\/[^/]+\.apk$/);
+  assert.equal(url.search, '');
+  assert.equal(url.hash, '');
+} else {
+  assert.deepEqual(stable, { schemaVersion: 1, available: false });
+}
+assert.match(saveCodec, /export const SAVE_VERSION = 14;/, 'Gate C darf das persistierte Save-Format nicht verändern.');
 
-console.log('Android Gate B: Updateprüfung und APK-Download bleiben in der App; geprüfte APK wird über den System-Dateidialog exportiert und ausschließlich außerhalb der App installiert.');
+console.log('Android Gate C: gültiger Stable-Kanal; geprüfte APK wird über den System-Dateidialog exportiert und ausschließlich außerhalb der App installiert.');
