@@ -111,5 +111,5 @@ Erst nach der Gate-A-Freigabe wird Gate B (In-App-Updater) begonnen.
 - Offline-Fortschritt wird beim App-Start weiterhin berechnet und gespeichert, aber erst nach dem ersten vollständigen UI-Render angezeigt.
 - Dadurch kann ein blockierender Android/WebView-Dialog den ersten sichtbaren Frame nicht mehr verhindern.
 - Ein eigener Regressionstest erzwingt, dass `prepare()` keinen Offline-Dialog vor dem Erst-Render öffnet.
-- Der vollständige Android-/Web-/Browser-CI-Lauf für den Geräteteststand `fec88f3499d673e4be6f280cf100f77244894e71` ist erfolgreich.
+- Der vollständige Android-/Web-/Browser-CI-Lauf für den v0.19.1-Gerätetest mit `versionCode 2` ist erfolgreich.
 - Save-Version bleibt 14; Gameplay- und Balancinglogik bleiben unverändert.
