@@ -72,6 +72,45 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug assembleRelease
 
+      - name: Build normal web app
+        run: npm run build
+
+      - name: Smoke test built runtime
+        run: node scripts/check-built-runtime-startup.mjs
+
+      - name: Test weapon image pilot in browser
+        run: node --no-warnings --experimental-strip-types scripts/check-built-weapon-image-pilot.mjs
+
+      - name: Test shared weapon card images in browser
+        run: node scripts/check-built-shared-weapon-card-images.mjs
+
+      - name: Test roster in browser
+        run: node scripts/check-built-roster.mjs
+
+      - name: Test recruitment modal in browser
+        run: node scripts/check-built-tavern-modal.mjs
+
+      - name: Test forge selection in browser
+        run: node scripts/check-built-forge-selection.mjs
+
+      - name: Test market quantity input in browser
+        run: node scripts/check-built-market-quantity-input.mjs
+
+      - name: Test market weapon images in browser
+        run: node scripts/check-built-market-weapon-images.mjs
+
+      - name: Test Dungeon loot collection in browser
+        run: node scripts/check-built-dungeon-loot-collect.mjs
+
+      - name: Test Trainingslager popup lifecycle in browser
+        run: node scripts/check-built-dungeon-modal.mjs
+
+      - name: Test Trainingslager resume across browser restart
+        run: node scripts/check-built-dungeon-resume.mjs
+
+      - name: Test save JSON export and import in browser
+        run: node scripts/check-built-save-transfer.mjs
+
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
