@@ -106,13 +106,6 @@ Erst nach der Gate-A-Freigabe wird Gate B (In-App-Updater) begonnen.
 - Der Release-Key bleibt außerhalb des Repositories.
 - Reihenfolge eines späteren Releases: APK bauen → testen → signieren → hochladen → Download testen → SHA-256 prüfen → stable.json zuletzt freigeben.
 
-### Gate-B-Startup-Hotfix v0.19.1
-
-- Offline-Fortschritt wird beim App-Start weiterhin berechnet und gespeichert, aber erst nach dem ersten vollständigen UI-Render angezeigt.
-- Dadurch kann ein blockierender Android/WebView-Dialog den ersten sichtbaren Frame nicht mehr verhindern.
-- Ein eigener Regressionstest erzwingt, dass `prepare()` keinen Offline-Dialog vor dem Erst-Render öffnet.
-- Der vollständige Android-/Web-/Browser-CI-Lauf für den v0.19.1-Gerätetest mit `versionCode 2` ist erfolgreich.
-- Save-Version bleibt 14; Gameplay- und Balancinglogik bleiben unverändert.
 
 ### Gate-B-Startup-Hotfix v0.19.2
 
@@ -121,3 +114,5 @@ Erst nach der Gate-A-Freigabe wird Gate B (In-App-Updater) begonnen.
 - Die Spieloberfläche wird vollständig aufgebaut; erst danach und nach einem möglichen ersten Paint wird der Updater initialisiert.
 - Kann der Updater nicht starten, läuft das Spiel ohne Updateprüfung weiter.
 - Save-Version bleibt 14; Gameplay und Balancing bleiben unverändert.
+
+- Der zwischenzeitliche v0.19.1-Umbau der Offline-Zusammenfassung wurde verworfen; die Runtime-Startlogik entspricht wieder dem auf dem Gerät bestätigten Gate-A-Stand.
