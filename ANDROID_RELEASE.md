@@ -51,7 +51,7 @@ npm run android:open
 
 ## Android-Versionierung
 
-`versionName` folgt der ausdrücklich als Android-Release freigegebenen Spielversion. `versionCode` ist eine eigene, streng steigende Ganzzahl und wird nur für veröffentlichte Android-Builds erhöht.
+`versionName` folgt der ausdrücklich als Android-Release freigegebenen Spielversion. `versionCode` ist eine eigene, streng steigende Ganzzahl und wird für jede auf realen Geräten als Update installierte APK erhöht.
 
 Beispiel:
 
@@ -98,14 +98,13 @@ Erst nach der Gate-A-Freigabe wird Gate B (In-App-Updater) begonnen.
 ## Gate B – technischer In-App-Updater
 
 - App-Version: 0.19.1; Save-Version bleibt 14.
-- Android versionCode bleibt 1, solange Gate C noch keine echte zweite Android-APK freigibt.
+- Android `versionCode 2` wird für den realen v0.19.1-Gerätetest verwendet, damit Android die korrigierte APK eindeutig über der bereits installierten v0.19.0-Testversion erkennt. Der Stable-Kanal bleibt dabei geschlossen; dies ist keine Gate-C-Freigabe.
 - Fester Stable-Kanal: GitHub Pages /android-update/stable.json.
 - Ein Merge veröffentlicht niemals automatisch ein Android-Update. Das Manifest bleibt bis zur ausdrücklichen Android-Releasefreigabe geschlossen (available=false).
 - Vor der Installation prüft die native Brücke HTTPS, freien Speicher, APK-Größe, SHA-256, Paket-ID, höheren versionCode, versionName und die Signatur gegen die installierte App.
 - Installation läuft ausschließlich über Android PackageInstaller mit Benutzerbestätigung.
 - Der Release-Key bleibt außerhalb des Repositories.
 - Reihenfolge eines späteren Releases: APK bauen → testen → signieren → hochladen → Download testen → SHA-256 prüfen → stable.json zuletzt freigeben.
-
 
 ### Gate-B-Startup-Hotfix v0.19.1
 
