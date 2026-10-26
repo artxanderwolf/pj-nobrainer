@@ -1,0 +1,1 @@
+Temporäre Hilfsbranch zum Export der öffentlichen Android Build Tools 36.0.0 für die lokale APK-Signierung. Enthält keine Schlüssel oder Zugangsdaten.
