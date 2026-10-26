@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   android:
@@ -124,16 +124,3 @@ jobs:
           name: smiths-of-eldravar-v0.18.0-release-unsigned
           path: android/app/build/outputs/apk/release/app-release-unsigned.apk
           if-no-files-found: error
-
-      - name: Commit generated Android project
-        if: github.ref == 'refs/heads/feature/android-v0.18.0-gate-a'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          if git diff --cached --quiet; then
-            echo "No generated Android changes to commit."
-          else
-            git commit -m "v0.18.0: Android-Grundprojekt für Gate A"
-            git push
-          fi
