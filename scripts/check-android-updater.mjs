@@ -13,7 +13,7 @@ const stable = JSON.parse(read('public/android-update/stable.json'));
 const saveCodec = read('src/app/game/save-codec.ts');
 
 assert.match(manifest, /android\.permission\.INTERNET/);
-assert.match(manifest, /android\.permission\.REQUEST_INSTALL_PACKAGES/);
+assert.doesNotMatch(manifest, /android\.permission\.REQUEST_INSTALL_PACKAGES/, 'Play-Protect-Test A muss ausschließlich die Installationsberechtigung entfernen.');
 assert.match(manifest, /android:name="\.UpdateInstallReceiver"/);
 assert.match(manifest, /android:exported="false"/);
 assert.match(activity, /registerPlugin\(AndroidUpdaterPlugin\.class\)/);
@@ -49,4 +49,4 @@ assert.match(main, /updateService\.initialize\(\)\.catch/, 'Updaterfehler müsse
 assert.deepEqual(stable, { schemaVersion: 1, available: false }, 'Gate B darf noch kein reales Remote-Update freischalten.');
 assert.match(saveCodec, /export const SAVE_VERSION = 14;/, 'Gate B darf das persistierte Save-Format nicht verändern.');
 
-console.log('Android Gate B: geschlossener Stable-Kanal, Android-only Updateprüfung, Downloadprüfung, Signaturvergleich und benutzerbestätigter PackageInstaller sind strukturell abgesichert.');
+console.log('Android Play-Protect-Test A: Updater-Code bleibt erhalten, REQUEST_INSTALL_PACKAGES ist gezielt entfernt.');
