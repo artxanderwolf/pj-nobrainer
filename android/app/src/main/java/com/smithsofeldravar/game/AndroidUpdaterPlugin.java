@@ -1,21 +1,21 @@
 package com.smithsofeldravar.game;
 
-import android.app.PendingIntent;
-import android.content.Context;
+import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
-import android.content.pm.PackageInstaller;
 import android.content.pm.PackageManager;
 import android.content.pm.Signature;
 import android.net.Uri;
 import android.os.Build;
 import android.os.StatFs;
-import android.provider.Settings;
+
+import androidx.activity.result.ActivityResult;
 
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
+import com.getcapacitor.annotation.ActivityCallback;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
 import java.io.BufferedInputStream;
@@ -37,17 +37,13 @@ import javax.net.ssl.HttpsURLConnection;
 
 @CapacitorPlugin(name = "AndroidUpdater")
 public class AndroidUpdaterPlugin extends Plugin {
-    static final String INSTALL_ACTION = "com.smithsofeldravar.game.UPDATE_INSTALL_STATUS";
-    static final String PREFS_NAME = "smiths_of_eldravar_updater";
-    static final String PREF_STATUS = "install_status";
-    static final String PREF_MESSAGE = "install_message";
-
     private static final String UPDATE_DIR = "android-updates";
     private static final String UPDATE_FILE = "smiths-of-eldravar-update.apk";
     private static final long STORAGE_RESERVE_BYTES = 32L * 1024L * 1024L;
     private static final int BUFFER_SIZE = 64 * 1024;
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private volatile UpdateRequest pendingSaveRequest;
 
     @PluginMethod
     public void getCurrentInfo(PluginCall call) {
@@ -89,72 +85,80 @@ public class AndroidUpdaterPlugin extends Plugin {
     }
 
     @PluginMethod
-    public void installVerified(PluginCall call) {
+    public void saveVerifiedUpdate(PluginCall call) {
         UpdateRequest request;
         try {
             request = requestFrom(call, false);
+            File apk = updateFile();
+            if (!apk.isFile()) throw new IllegalStateException("Es liegt keine geprüfte Update-APK bereit.");
+            verifyDownloadedApk(apk, request);
+            pendingSaveRequest = request;
+
+            Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            intent.setType("application/vnd.android.package-archive");
+            intent.putExtra(Intent.EXTRA_TITLE, releaseFileName(request.versionName));
+            startActivityForResult(call, intent, "saveVerifiedUpdateResult");
         } catch (Exception error) {
-            call.reject(error.getMessage());
+            pendingSaveRequest = null;
+            call.reject("Geprüfte APK konnte nicht zum Speichern vorbereitet werden: " + error.getMessage());
+        }
+    }
+
+    @ActivityCallback
+    private void saveVerifiedUpdateResult(PluginCall call, ActivityResult result) {
+        if (call == null) {
+            pendingSaveRequest = null;
+            return;
+        }
+        if (result.getResultCode() != Activity.RESULT_OK
+            || result.getData() == null
+            || result.getData().getData() == null) {
+            pendingSaveRequest = null;
+            JSObject response = new JSObject();
+            response.put("status", "cancelled");
+            call.resolve(response);
+            return;
+        }
+
+        Uri destination = result.getData().getData();
+        UpdateRequest request = pendingSaveRequest;
+        pendingSaveRequest = null;
+        if (request == null) {
+            call.reject("Update-Speicherauftrag ist nicht mehr verfügbar.");
             return;
         }
 
         executor.execute(() -> {
             try {
                 File apk = updateFile();
-                if (!apk.isFile()) throw new IllegalStateException("Es liegt keine geprüfte Update-APK bereit.");
                 verifyDownloadedApk(apk, request);
-
-                PackageManager manager = getContext().getPackageManager();
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !manager.canRequestPackageInstalls()) {
-                    JSObject result = new JSObject();
-                    result.put("status", "permission-required");
-                    call.resolve(result);
-                    return;
+                OutputStream raw = getContext().getContentResolver().openOutputStream(destination, "w");
+                if (raw == null) throw new IllegalStateException("Zieldatei konnte nicht geöffnet werden.");
+                try (
+                    InputStream input = new BufferedInputStream(new FileInputStream(apk), BUFFER_SIZE);
+                    OutputStream output = new BufferedOutputStream(raw, BUFFER_SIZE)
+                ) {
+                    byte[] buffer = new byte[BUFFER_SIZE];
+                    int read;
+                    while ((read = input.read(buffer)) != -1) output.write(buffer, 0, read);
                 }
 
-                stageInstaller(apk);
-                JSObject result = new JSObject();
-                result.put("status", "installer-started");
-                call.resolve(result);
+                JSObject response = new JSObject();
+                response.put("status", "saved");
+                response.put("fileName", releaseFileName(request.versionName));
+                clearUpdateFiles();
+                call.resolve(response);
             } catch (Exception error) {
-                call.reject(error.getMessage());
+                call.reject("Geprüfte APK konnte nicht gespeichert werden: " + error.getMessage());
             }
         });
-    }
-
-    @PluginMethod
-    public void openInstallPermissionSettings(PluginCall call) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-            call.resolve();
-            return;
-        }
-        try {
-            Intent intent = new Intent(
-                Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
-                Uri.parse("package:" + getContext().getPackageName())
-            );
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            getContext().startActivity(intent);
-            call.resolve();
-        } catch (Exception error) {
-            call.reject("Android-Einstellung für Installationsquellen konnte nicht geöffnet werden: " + error.getMessage());
-        }
     }
 
     @PluginMethod
     public void clearDownloadedUpdate(PluginCall call) {
         clearUpdateFiles();
         call.resolve();
-    }
-
-    @PluginMethod
-    public void getInstallStatus(PluginCall call) {
-        String status = getContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getString(PREF_STATUS, "none");
-        String message = getContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getString(PREF_MESSAGE, "");
-        JSObject result = new JSObject();
-        result.put("status", status);
-        if (message != null && !message.trim().isEmpty()) result.put("message", message);
-        call.resolve(result);
     }
 
     private UpdateRequest requestFrom(PluginCall call, boolean requireUrl) {
@@ -261,43 +265,6 @@ public class AndroidUpdaterPlugin extends Plugin {
         }
     }
 
-    private void stageInstaller(File apk) throws Exception {
-        PackageInstaller installer = getContext().getPackageManager().getPackageInstaller();
-        PackageInstaller.SessionParams params = new PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL);
-        params.setAppPackageName(getContext().getPackageName());
-        params.setSize(apk.length());
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            params.setRequireUserAction(PackageInstaller.SessionParams.USER_ACTION_REQUIRED);
-        }
-
-        int sessionId = installer.createSession(params);
-        try (PackageInstaller.Session session = installer.openSession(sessionId)) {
-            try (
-                InputStream input = new BufferedInputStream(new FileInputStream(apk), BUFFER_SIZE);
-                OutputStream output = session.openWrite("base.apk", 0, apk.length())
-            ) {
-                byte[] buffer = new byte[BUFFER_SIZE];
-                int read;
-                while ((read = input.read(buffer)) != -1) output.write(buffer, 0, read);
-                session.fsync(output);
-            }
-
-            Intent statusIntent = new Intent(getContext(), UpdateInstallReceiver.class);
-            statusIntent.setAction(INSTALL_ACTION);
-            PendingIntent pendingIntent = PendingIntent.getBroadcast(
-                getContext(),
-                sessionId,
-                statusIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE
-            );
-            getContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
-                .putString(PREF_STATUS, "pending")
-                .putString(PREF_MESSAGE, "")
-                .apply();
-            session.commit(pendingIntent.getIntentSender());
-        }
-    }
-
     private PackageInfo getInstalledPackageInfo(int flags) throws PackageManager.NameNotFoundException {
         return getContext().getPackageManager().getPackageInfo(getContext().getPackageName(), flags);
     }
@@ -346,7 +313,7 @@ public class AndroidUpdaterPlugin extends Plugin {
         long required = apkSize > (Long.MAX_VALUE - STORAGE_RESERVE_BYTES) / 2L
             ? Long.MAX_VALUE
             : apkSize * 2L + STORAGE_RESERVE_BYTES;
-        if (stats.getAvailableBytes() < required) throw new IllegalStateException("Zu wenig freier Speicher für Download und Android-Installation.");
+        if (stats.getAvailableBytes() < required) throw new IllegalStateException("Zu wenig freier Speicher für Download und Export der Update-APK.");
     }
 
     private void notifyProgress(long downloaded, long total) {
@@ -365,17 +332,18 @@ public class AndroidUpdaterPlugin extends Plugin {
         return new File(updateDirectory(), UPDATE_FILE);
     }
 
-    static void clearUpdateFiles(Context context) {
-        File directory = new File(context.getCacheDir(), UPDATE_DIR);
-        File target = new File(directory, UPDATE_FILE);
+    private void clearUpdateFiles() {
+        File directory = updateDirectory();
+        File target = updateFile();
         File partial = new File(directory, UPDATE_FILE + ".part");
         if (target.exists()) target.delete();
         if (partial.exists()) partial.delete();
         if (directory.isDirectory()) directory.delete();
     }
 
-    private void clearUpdateFiles() {
-        clearUpdateFiles(getContext());
+    private String releaseFileName(String versionName) {
+        String safe = versionName.replaceAll("[^0-9A-Za-z._-]", "_");
+        return "Smiths-of-Eldravar-v" + safe + ".apk";
     }
 
     private static final class UpdateRequest {

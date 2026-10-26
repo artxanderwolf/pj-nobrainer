@@ -25,22 +25,16 @@ export interface AndroidUpdaterDownloadResult {
   bytesDownloaded: number;
 }
 
-export interface AndroidUpdaterInstallResult {
-  status: 'installer-started' | 'permission-required';
-}
-
-export interface AndroidUpdaterInstallStatus {
-  status: string;
-  message?: string;
+export interface AndroidUpdaterSaveResult {
+  status: 'saved' | 'cancelled';
+  fileName?: string;
 }
 
 interface AndroidUpdaterPlugin {
   getCurrentInfo(): Promise<AndroidUpdaterCurrentInfo>;
   downloadAndVerify(options: AndroidUpdaterVerificationOptions): Promise<AndroidUpdaterDownloadResult>;
-  installVerified(options: AndroidUpdaterVerificationOptions): Promise<AndroidUpdaterInstallResult>;
-  openInstallPermissionSettings(): Promise<void>;
+  saveVerifiedUpdate(options: Omit<AndroidUpdaterVerificationOptions, 'apkUrl'>): Promise<AndroidUpdaterSaveResult>;
   clearDownloadedUpdate(): Promise<void>;
-  getInstallStatus(): Promise<AndroidUpdaterInstallStatus>;
   addListener(eventName: 'downloadProgress', listenerFunc: (event: AndroidUpdaterDownloadProgress) => void): Promise<PluginListenerHandle>;
 }
 

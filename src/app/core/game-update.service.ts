@@ -26,8 +26,8 @@ type UpdatePhase =
   | 'available'
   | 'downloading'
   | 'ready'
-  | 'permission-required'
-  | 'installing'
+  | 'saving'
+  | 'saved'
   | 'error';
 
 interface UpdateState {
@@ -38,7 +38,7 @@ interface UpdateState {
   bytesDownloaded: number;
   totalBytes: number;
   message: string;
-  retry: 'none' | 'check' | 'download' | 'install';
+  retry: 'none' | 'check' | 'download' | 'save';
 }
 
 const INITIAL_STATE: UpdateState = {
@@ -149,7 +149,7 @@ export class GameUpdateService {
         progress: 100,
         bytesDownloaded: result.bytesDownloaded,
         totalBytes: release.apkSize,
-        message: 'Update geprüft und installationsbereit.',
+        message: 'Update geprüft. Speichere die APK jetzt in „Downloads“ oder einem anderen Ordner.',
         retry: 'none'
       });
     } catch (error: unknown) {
@@ -161,48 +161,40 @@ export class GameUpdateService {
     }
   }
 
-  async installUpdate(): Promise<void> {
+  async saveUpdateApk(): Promise<void> {
     const release = this.stateSubject.value.release;
     if (!release) return;
 
-    this.patchState({ phase: 'installing', message: 'Android-Installer wird vorbereitet …', retry: 'none' });
+    this.patchState({
+      phase: 'saving',
+      message: 'Geprüfte APK wird zum Speichern vorbereitet …',
+      retry: 'none'
+    });
+
     try {
-      const result = await AndroidUpdater.installVerified(this.nativeOptions(release));
-      if (result.status === 'permission-required') {
+      const result = await AndroidUpdater.saveVerifiedUpdate(this.saveOptions(release));
+      if (result.status === 'cancelled') {
         this.patchState({
-          phase: 'permission-required',
-          message: 'Android benötigt einmalig die Erlaubnis, Updates aus dieser App zu installieren.',
-          retry: 'install'
+          phase: 'ready',
+          message: 'Speichern abgebrochen. Die geprüfte APK liegt weiterhin bereit.',
+          retry: 'none'
         });
         return;
       }
-      this.patchState({
-        phase: 'installing',
-        message: 'Der Android-Systeminstaller wurde geöffnet. Bitte die Installation dort bestätigen.',
-        retry: 'none'
-      });
-    } catch (error: unknown) {
-      this.patchState({
-        phase: 'error',
-        message: `Installation konnte nicht gestartet werden: ${this.errorMessage(error)}`,
-        retry: 'install'
-      });
-    }
-  }
 
-  async openInstallPermissionSettings(): Promise<void> {
-    try {
-      await AndroidUpdater.openInstallPermissionSettings();
+      const fileText = result.fileName ? ` (${result.fileName})` : '';
+      this.dismissedVersionCode = release.versionCode;
       this.patchState({
-        phase: 'ready',
-        message: 'Nach Erteilen der Android-Berechtigung bitte erneut auf „Installieren“ tippen.',
+        phase: 'saved',
+        progress: 100,
+        message: `APK gespeichert${fileText}. Öffne sie außerhalb von Smiths of Eldravar über „Downloads“ oder „Eigene Dateien“ und bestätige dort das Android-Update.`,
         retry: 'none'
       });
     } catch (error: unknown) {
       this.patchState({
         phase: 'error',
-        message: `Android-Einstellungen konnten nicht geöffnet werden: ${this.errorMessage(error)}`,
-        retry: 'install'
+        message: `APK konnte nicht gespeichert werden: ${this.errorMessage(error)}`,
+        retry: 'save'
       });
     }
   }
@@ -249,6 +241,15 @@ export class GameUpdateService {
     };
   }
 
+  private saveOptions(release: AndroidUpdateReleaseManifest): Omit<AndroidUpdaterVerificationOptions, 'apkUrl'> {
+    return {
+      apkSize: release.apkSize,
+      sha256: release.sha256,
+      versionName: release.versionName,
+      versionCode: release.versionCode
+    };
+  }
+
   private onDownloadProgress(event: AndroidUpdaterDownloadProgress): void {
     if (this.stateSubject.value.phase !== 'downloading') return;
     this.patchState({
@@ -274,7 +275,7 @@ export class GameUpdateService {
         card.dataset['androidUpdateCard'] = 'true';
         card.innerHTML = `
           <h2>Android-Updates</h2>
-          <p class="index-note">Die App prüft nur den ausdrücklich freigegebenen Android-Kanal. Updates sind freiwillig und werden vor der Installation technisch geprüft.</p>
+          <p class="index-note">Die App prüft nur den ausdrücklich freigegebenen Android-Kanal. Die APK wird im Spiel heruntergeladen und geprüft. Die Installation startest du anschließend außerhalb der App über „Downloads“ oder „Eigene Dateien“.</p>
           <p class="android-update-status" data-update-status></p>
           <div class="android-update-progress" data-update-progress-wrap hidden><div data-update-progress-bar></div></div>
           <div class="android-update-actions">
@@ -297,6 +298,7 @@ export class GameUpdateService {
           <h2 id="androidUpdateTitle">Neue Version verfügbar</h2>
           <p data-update-overlay-version></p>
           <ul data-update-release-notes></ul>
+          <p class="index-note">Nach dem geprüften Download speicherst du die APK. Öffne sie danach außerhalb des Spiels über „Downloads“ oder „Eigene Dateien“, um das Android-Update zu installieren.</p>
           <p class="android-update-status" data-update-overlay-status></p>
           <div class="android-update-progress" data-update-overlay-progress-wrap hidden><div data-update-overlay-progress-bar></div></div>
           <div class="android-update-actions">
@@ -319,12 +321,8 @@ export class GameUpdateService {
       await this.downloadUpdate();
       return;
     }
-    if (state.phase === 'ready' || (state.phase === 'error' && state.retry === 'install')) {
-      await this.installUpdate();
-      return;
-    }
-    if (state.phase === 'permission-required') {
-      await this.openInstallPermissionSettings();
+    if (state.phase === 'ready' || (state.phase === 'error' && state.retry === 'save')) {
+      await this.saveUpdateApk();
       return;
     }
     if (state.phase === 'error' && state.retry === 'check') await this.checkForUpdates(true);
@@ -342,13 +340,13 @@ export class GameUpdateService {
     const progressWrap = card.querySelector<HTMLElement>('[data-update-progress-wrap]');
     const progressBar = card.querySelector<HTMLElement>('[data-update-progress-bar]');
     if (status) status.textContent = state.message || this.defaultStatus(state);
-    if (check) check.disabled = ['checking', 'downloading', 'installing'].includes(state.phase);
+    if (check) check.disabled = ['checking', 'downloading', 'saving'].includes(state.phase);
 
     const primaryLabel = this.primaryLabel(state);
     if (primary) {
       primary.hidden = !primaryLabel;
       primary.textContent = primaryLabel;
-      primary.disabled = ['downloading', 'installing'].includes(state.phase);
+      primary.disabled = ['downloading', 'saving'].includes(state.phase);
     }
     this.renderProgress(progressWrap, progressBar, state);
 
@@ -365,9 +363,9 @@ export class GameUpdateService {
     if (overlayStatus) overlayStatus.textContent = state.message;
     if (overlayPrimary) {
       overlayPrimary.textContent = primaryLabel || 'Schließen';
-      overlayPrimary.disabled = ['downloading', 'installing'].includes(state.phase);
+      overlayPrimary.disabled = ['downloading', 'saving'].includes(state.phase);
     }
-    if (later) later.disabled = state.phase === 'installing';
+    if (later) later.disabled = state.phase === 'saving';
     if (notes) {
       notes.replaceChildren();
       for (const note of release?.releaseNotes ?? []) {
@@ -378,24 +376,23 @@ export class GameUpdateService {
     }
     this.renderProgress(overlayProgressWrap, overlayProgressBar, state);
 
-    const updateFlowVisible = Boolean(release) && ['available', 'downloading', 'ready', 'permission-required', 'installing', 'error'].includes(state.phase);
+    const updateFlowVisible = Boolean(release) && ['available', 'downloading', 'ready', 'saving', 'error'].includes(state.phase);
     overlay.hidden = !updateFlowVisible || this.dismissedVersionCode === release?.versionCode;
   }
 
   private renderProgress(wrap: HTMLElement | null, bar: HTMLElement | null, state: UpdateState): void {
     if (!wrap || !bar) return;
-    const visible = state.phase === 'downloading' || state.phase === 'ready';
+    const visible = state.phase === 'downloading' || state.phase === 'ready' || state.phase === 'saving';
     wrap.hidden = !visible;
     bar.style.width = `${Math.round(state.progress)}%`;
     bar.setAttribute('aria-label', `${Math.round(state.progress)} Prozent`);
   }
 
   private primaryLabel(state: UpdateState): string {
-    if (state.phase === 'available') return 'Jetzt aktualisieren';
-    if (state.phase === 'ready') return 'Installieren';
-    if (state.phase === 'permission-required') return 'Berechtigung öffnen';
+    if (state.phase === 'available') return 'Update herunterladen';
+    if (state.phase === 'ready') return 'APK speichern';
     if (state.phase === 'error' && state.retry === 'download') return 'Download erneut versuchen';
-    if (state.phase === 'error' && state.retry === 'install') return 'Installation erneut versuchen';
+    if (state.phase === 'error' && state.retry === 'save') return 'Speichern erneut versuchen';
     if (state.phase === 'error' && state.retry === 'check') return 'Erneut prüfen';
     return '';
   }
@@ -405,6 +402,7 @@ export class GameUpdateService {
     if (state.phase === 'checking') return 'Suche nach Updates …';
     if (state.phase === 'up-to-date') return 'Diese Android-Version ist aktuell.';
     if (state.phase === 'downloading') return `${this.formatBytes(state.bytesDownloaded)} / ${this.formatBytes(state.totalBytes)} · ${Math.round(state.progress)} %`;
+    if (state.phase === 'saved') return 'APK gespeichert. Installation erfolgt außerhalb der App.';
     return '';
   }
 
