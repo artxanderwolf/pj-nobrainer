@@ -14,9 +14,9 @@ assert.equal(APP_SHELL_PAGE_IDS[0], 'base');
 for (const required of ['character', 'storage', 'forge-preview', 'market-jobs', 'dungeon-select', 'index']) {
   assert.ok(APP_SHELL_PAGE_IDS.includes(required), `Modulare Seite ${required} fehlt in der Shell-Seitenliste.`);
 }
-assert.match(shell, /^<div class="app modular-ui" data-ui-version="0\.19\.1">/, 'Die modulare UI-v0.19.2-Shell fehlt.');
+assert.match(shell, /^<div class="app modular-ui" data-ui-version="0\.19\.2">/, 'Die modulare UI-v0.19.2-Shell fehlt.');
 assert.match(shell, /id="backBtn"[\s\S]*onclick="goBack\(\)"/, 'Der globale Zurück-Button fehlt.');
-assert.match(shell, /<div class="ui-version">SMITHS OF ELDRAVAR · v0\.19\.1<\/div>/, 'Die sichtbare Versionsanzeige ist nicht v0.19.2.');
+assert.match(shell, /<div class="ui-version">SMITHS OF ELDRAVAR · v0\.19\.2<\/div>/, 'Die sichtbare Versionsanzeige ist nicht v0.19.2.');
 assert.match(shell, /<h1 id="pageTitle">Übersicht<\/h1>/, 'Der Seitentitel-Anker fehlt.');
 assert.match(shell, /id="gold"/, 'Der Geld-Anker fehlt.');
 assert.match(shell, /class="help-btn"[\s\S]*onclick="go\('index'\)"/, 'Der Hilfezugang fehlt.');
