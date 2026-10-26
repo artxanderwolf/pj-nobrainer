@@ -56,7 +56,7 @@ assert.deepEqual(forbiddenKeyFiles, [], `Signierschlüssel dürfen nicht im Repo
 if (existsSync('android/app/build.gradle')) {
   const gradle = read('android/app/build.gradle');
   assert.match(gradle, new RegExp(`applicationId\\s+['\"]${APP_ID.replaceAll('.', '\\.') }['\"]`), 'Native applicationId stimmt nicht.');
-  assert.match(gradle, /versionCode\s+3\b/, 'Android versionCode muss für die v0.19.2-Gerätetestversion 3 sein.');
+  assert.match(gradle, /versionCode\s+4\b/, 'Android versionCode muss für Play-Protect-Test A 4 sein.');
   assert.match(gradle, /versionName\s+"0\.19\.2"/, 'Android versionName muss 0.19.2 sein.');
   for (const env of ['SOE_RELEASE_STORE_FILE', 'SOE_RELEASE_STORE_PASSWORD', 'SOE_RELEASE_KEY_ALIAS', 'SOE_RELEASE_KEY_PASSWORD']) {
     assert.ok(gradle.includes(env), `Release-Signing muss ${env} ausschließlich aus der Umgebung lesen.`);
@@ -64,4 +64,4 @@ if (existsSync('android/app/build.gradle')) {
   assert.ok(existsSync('android/gradlew'), 'Gradle Wrapper fehlt im versionierten Android-Projekt.');
 }
 
-console.log('Android Gate B: gemeinsame Angular-Codebasis, Smiths-of-Eldravar-Identität, Save-Version 14 und schlüsselfreie Release-Signing-Konfiguration sind konsistent.');
+console.log('Android Test A: gemeinsame Angular-Codebasis, Smiths-of-Eldravar-Identität, Save-Version 14 und Android-Code 4 sind konsistent.');
