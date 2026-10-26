@@ -112,7 +112,7 @@ const probeScript = `<script>
             localStorage.setItem(IMPORTED_GOLD_KEY,String(importedGold));
             localStorage.setItem(PHASE_KEY,'imported');
             assignFile(input,new File([JSON.stringify(imported)],'NoBrainer-Test-Spielstand.json',{type:'application/json'}));
-          },150);
+          },600);
         },150);
       },100);
       return;
