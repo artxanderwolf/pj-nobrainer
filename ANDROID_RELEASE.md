@@ -45,6 +45,10 @@ npm run android:open
 
 `npm run android:open` öffnet das native Projekt in Android Studio.
 
+## Reproduzierbarer CI-Build
+
+`.github/workflows/android-ci.yml` bildet Gate A unabhängig von einem einzelnen Entwicklerrechner nach: Node 22, Java 21, Android SDK 36, Angular-Prüfungen, Capacitor-Synchronisierung und Gradle-Build. Auf dem Gate-A-Feature-Branch wird das einmalig von Capacitor erzeugte native `android/`-Projekt nach erfolgreichem Build versioniert. Debug- und unsignierte Release-APKs werden als CI-Artefakte bereitgestellt; ein Produktions-APK bleibt vom extern gesicherten Release-Key abhängig.
+
 ## Android-Versionierung
 
 `versionName` folgt der ausdrücklich als Android-Release freigegebenen Spielversion. `versionCode` ist eine eigene, streng steigende Ganzzahl und wird nur für veröffentlichte Android-Builds erhöht.
