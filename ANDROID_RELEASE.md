@@ -174,7 +174,9 @@ Das Zertifikat stimmt mit dem dauerhaft gesicherten Gate-A/B-Zertifikat überein
 V2/V3 und 16K-zipalign sind verifiziert.
 
 Das freigegebene Stable-Manifest liegt auf dem Gate-C-Testbranch. Für den realen
-Test wird der bestehende Pages-Workflow ausdrücklich auf diesem Branch gestartet.
+Test veröffentlicht der bestehende Pages-Workflow ausdrücklich auch diesen Branch.
+Der begrenzte Push-Trigger ist nötig, da der Workflow auf dem alten Defaultbranch
+`main` noch nicht vorhanden ist und GitHub deshalb keinen manuellen Start anbietet.
 Der PR bleibt bis zum bestätigten Gerätetest ein Entwurf; es erfolgt kein vorzeitiger
 Gate-C-Abschluss. Normale Pages-Builds von `migration/angular` würden bis zum Merge
 weiterhin dessen zuletzt freigegebenen Kanal ausliefern.
