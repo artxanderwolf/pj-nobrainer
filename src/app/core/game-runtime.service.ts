@@ -54,6 +54,7 @@ export class GameRuntimeService {
   private tickHandle: number | null = null;
   private hiddenSnapshot: SaveSnapshot | null = null;
   private visibilityHandlerRegistered = false;
+  private pendingStartupOfflineSummary: { before: SaveSnapshot; after: SaveSnapshot } | null = null;
 
   constructor(
     private readonly saveStorage: SaveStorageService,
@@ -133,7 +134,7 @@ export class GameRuntimeService {
     if (before && this.offlineProgress.shouldShowSummary(before)) {
       runtime.save(false);
       const after = this.saveStorage.readSnapshot();
-      if (after) this.offlineProgress.showSummary(before, after);
+      if (after) this.pendingStartupOfflineSummary = { before, after };
     } else if (materialReferencesChanged || dungeonSessionPreparation.saveRequested) {
       runtime.save(false);
     }
@@ -154,6 +155,17 @@ export class GameRuntimeService {
     this.characterPresentation.render();
     this.weaponInventoryPresentation.render();
     this.dungeonPresentation.render();
+    this.flushStartupOfflineSummary();
+  }
+
+  private flushStartupOfflineSummary(): void {
+    const summary = this.pendingStartupOfflineSummary;
+    this.pendingStartupOfflineSummary = null;
+    if (!summary) return;
+
+    window.requestAnimationFrame(() => {
+      window.setTimeout(() => this.offlineProgress.showSummary(summary.before, summary.after), 0);
+    });
   }
 
   stopTick(): void {

@@ -97,7 +97,7 @@ Erst nach der Gate-A-Freigabe wird Gate B (In-App-Updater) begonnen.
 
 ## Gate B – technischer In-App-Updater
 
-- App-Version: 0.19.0; Save-Version bleibt 14.
+- App-Version: 0.19.1; Save-Version bleibt 14.
 - Android versionCode bleibt 1, solange Gate C noch keine echte zweite Android-APK freigibt.
 - Fester Stable-Kanal: GitHub Pages /android-update/stable.json.
 - Ein Merge veröffentlicht niemals automatisch ein Android-Update. Das Manifest bleibt bis zur ausdrücklichen Android-Releasefreigabe geschlossen (available=false).
@@ -105,3 +105,10 @@ Erst nach der Gate-A-Freigabe wird Gate B (In-App-Updater) begonnen.
 - Installation läuft ausschließlich über Android PackageInstaller mit Benutzerbestätigung.
 - Der Release-Key bleibt außerhalb des Repositories.
 - Reihenfolge eines späteren Releases: APK bauen → testen → signieren → hochladen → Download testen → SHA-256 prüfen → stable.json zuletzt freigeben.
+
+
+### Gate-B-Startup-Hotfix v0.19.1
+
+- Offline-Fortschritt wird beim App-Start weiterhin berechnet und gespeichert, aber erst nach dem ersten vollständigen UI-Render angezeigt.
+- Dadurch kann ein blockierender Android/WebView-Dialog den ersten sichtbaren Frame nicht mehr verhindern.
+- Save-Version bleibt 14; Gameplay- und Balancinglogik bleiben unverändert.
