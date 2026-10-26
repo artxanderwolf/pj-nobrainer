@@ -1,0 +1,45 @@
+name: Harden save transfer E2E timing
+
+on:
+  push:
+    branches:
+      - feature/android-v0.19.0-gate-b
+    paths:
+      - .github/workflows/harden-save-transfer-e2e-timing.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/android-v0.19.0-gate-b
+          fetch-depth: 0
+      - name: Increase invalid-import reaction window only
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const p = 'scripts/check-built-save-transfer.mjs';
+          let source = fs.readFileSync(p, 'utf8');
+          const anchor = 'assignFile(input,invalidFile);';
+          const start = source.indexOf(anchor);
+          if (start < 0) throw new Error('Invalid-import anchor not found');
+          const close = source.indexOf('},150);', start);
+          if (close < 0) throw new Error('Invalid-import timeout closure not found');
+          source = source.slice(0, close) + '},600);' + source.slice(close + '},150);'.length);
+          fs.writeFileSync(p, source, 'utf8');
+          NODE
+          git diff --check
+      - name: Commit E2E timing hardening
+        shell: bash
+        run: |
+          git config user.name "artxanderwolf"
+          git config user.email "artxanderwolf@gmail.com"
+          git add scripts/check-built-save-transfer.mjs
+          git diff --cached --check
+          git commit -m "test: ungültigen Save-Import zuverlässig abwarten"
+          git push origin HEAD:feature/android-v0.19.0-gate-b
