@@ -63,6 +63,7 @@ jobs:
           path: dist/nobrainer/browser
 
   deploy:
+    if: github.ref == 'refs/heads/migration/angular'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

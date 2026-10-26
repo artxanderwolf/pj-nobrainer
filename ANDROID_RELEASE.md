@@ -173,10 +173,9 @@ APK geprüft: **3.573.192 Bytes**, SHA-256
 Das Zertifikat stimmt mit dem dauerhaft gesicherten Gate-A/B-Zertifikat überein;
 V2/V3 und 16K-zipalign sind verifiziert.
 
-Das freigegebene Stable-Manifest liegt auf dem Gate-C-Testbranch. Für den realen
-Test veröffentlicht der bestehende Pages-Workflow ausdrücklich auch diesen Branch.
-Der begrenzte Push-Trigger ist nötig, da der Workflow auf dem alten Defaultbranch
-`main` noch nicht vorhanden ist und GitHub deshalb keinen manuellen Start anbietet.
-Der PR bleibt bis zum bestätigten Gerätetest ein Entwurf; es erfolgt kein vorzeitiger
-Gate-C-Abschluss. Normale Pages-Builds von `migration/angular` würden bis zum Merge
-weiterhin dessen zuletzt freigegebenen Kanal ausliefern.
+Das geprüfte Stable-Manifest liegt auf dem Gate-C-Testbranch. Der Pages-Workflow
+prüft auch diesen Branch, veröffentlicht wegen der bestehenden GitHub-Schutzregel
+jedoch ausschließlich aus `migration/angular`. Vor dem realen Update-Test muss
+die geprüfte Releasevorbereitung deshalb ausdrücklich in diesen Branch übernommen
+werden. Der Geräteabnahmestatus bleibt dabei offen: Ein Merge bestätigt weder den
+erhaltenen Spielstand auf dem Gerät noch den vollständigen Gate-C-Abschluss.
