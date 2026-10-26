@@ -38,8 +38,14 @@ export function validateApkMetadata(badging, signatureReport, expected, certific
   if (/^application-debuggable(?:\s|$)/m.test(badging)) throw new Error('Eine debuggable APK darf nicht veröffentlicht werden.');
   if (!/^Verifies\s*$/m.test(signatureReport)) throw new Error('apksigner hat keine gültige APK-Signatur bestätigt.');
 
-  const fingerprints = [...signatureReport.matchAll(/^Signer #\d+ certificate SHA-256 digest:\s*([a-fA-F0-9: ]+)\s*$/gm)]
-    .map(match => normalizeCertificateSha256(match[1]));
+  if (!/^Number of signers:[ \t]*1[ \t]*\r?$/m.test(signatureReport)) {
+    throw new Error('APK muss genau einen bestätigten Release-Signierer besitzen.');
+  }
+  if ([...signatureReport.matchAll(/^Signer #(\d+) certificate SHA-256 digest:/gm)].some(match => match[1] !== '1')) {
+    throw new Error('APK enthält mehr als einen Release-Signierer.');
+  }
+  const fingerprints = [...new Set([...signatureReport.matchAll(/^(?:Signer #\d+|V\d+(?:\.\d+)? Signer:)[ \t]+certificate SHA-256 digest:[ \t]*([a-fA-F0-9: ]+)[ \t]*\r?$/gm)]
+    .map(match => normalizeCertificateSha256(match[1])))];
   if (fingerprints.length !== 1 || fingerprints[0] !== normalizeCertificateSha256(certificateSha256)) {
     throw new Error('APK-Signierer stimmt nicht mit dem bekannten dauerhaften Release-Zertifikat überein.');
   }

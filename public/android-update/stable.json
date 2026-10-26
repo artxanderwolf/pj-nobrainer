@@ -1,4 +1,16 @@
 {
   "schemaVersion": 1,
-  "available": false
+  "available": true,
+  "versionName": "0.19.4",
+  "versionCode": 6,
+  "apkUrl": "https://github.com/artxanderwolf/pj-nobrainer/releases/download/android-v0.19.4-code6/Smiths-of-Eldravar-v0.19.4-code6-release.apk",
+  "apkSize": 3573192,
+  "sha256": "37ebdddeceeb46c89b076aaa6b0eb2efbac43f65bb1e52c929d008eefc517196",
+  "publishedAt": "2026-10-26T17:56:23.828Z",
+  "mandatory": false,
+  "releaseNotes": [
+    "Das freigegebene Eldravar-Pixel-Icon wird als Android-App-Icon und Web-Icon verwendet.",
+    "Android-Updates werden im Spiel gefunden, heruntergeladen und geprüft. Speichere die APK und öffne sie anschließend über Downloads oder Eigene Dateien.",
+    "Aktualisiere die vorhandene App ohne Deinstallation. Das Spielstandformat bleibt unverändert bei Version 14."
+  ]
 }

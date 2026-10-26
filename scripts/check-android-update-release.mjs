@@ -19,13 +19,18 @@ assert.equal(normalizeCertificateSha256(fingerprint), certificate);
 assert.throws(() => normalizeCertificateSha256('1234'), /64 Hex/);
 assert.throws(() => readExpectedAndroidVersion('versionName "0.19.4"'), /nicht eindeutig/);
 assert.deepEqual(validateApkMetadata(badging, signature, expected, fingerprint), { ...expected, certificateSha256: certificate });
+const sdk37Signature = signature.replace('Signer #1 certificate', 'V3.0 Signer: certificate');
+assert.deepEqual(validateApkMetadata(badging, sdk37Signature, expected, certificate), { ...expected, certificateSha256: certificate });
+assert.deepEqual(validateApkMetadata(badging, `${sdk37Signature}V2 Signer: certificate SHA-256 digest: ${certificate}\n`, expected, certificate), { ...expected, certificateSha256: certificate });
+assert.throws(() => validateApkMetadata(badging, signature.replace('Number of signers: 1', 'Number of signers: 2'), expected, certificate), /Signierer/);
+assert.throws(() => validateApkMetadata(badging, `${signature}Signer #2 certificate SHA-256 digest: ${certificate}\n`, expected, certificate), /Signierer/);
 assert.throws(() => validateApkMetadata(badging, signature.replace(certificate, 'b2'.repeat(32)), expected, certificate), /Signierer/);
 assert.throws(() => validateApkMetadata(`${badging}application-debuggable\n`, signature, expected, certificate), /debuggable/);
 assert.throws(() => validateApkMetadata(badging.replace(expected.packageName, 'other.package'), signature, expected, certificate), /Paket-ID/);
 assert.throws(() => validateApkMetadata(badging.replace(`versionCode='${expected.versionCode}'`, "versionCode='1'"), signature, expected, certificate), /APK-Version/);
 assert.throws(() => validateApkMetadata(badging.replace(`versionName='${expected.versionName}'`, "versionName='0.0.1'"), signature, expected, certificate), /APK-Version/);
 assert.throws(() => validateApkMetadata(badging, 'DOES NOT VERIFY', expected, certificate), /keine gültige/);
-assert.throws(() => validateApkMetadata(badging, `${signature}Signer #2 certificate SHA-256 digest: ${certificate}\n`, expected, certificate), /Signierer/);
+assert.throws(() => validateApkMetadata(badging, `${signature}Signer #2 certificate SHA-256 digest: ${'b2'.repeat(32)}\n`, expected, certificate), /Signierer/);
 
 // These bytes and tool reports are fixtures, not a real APK or a real signature verification.
 const bytes = new TextEncoder().encode('release-download-fixture');

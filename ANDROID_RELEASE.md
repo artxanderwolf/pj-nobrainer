@@ -163,3 +163,18 @@ noch einen Test auf dem Gerät.
 
 Gate C ist erst nach erfolgreicher Veröffentlichung und dieser realen Geräteabnahme
 bestanden. Bis die echte signierte APK geprüft ist, bleibt `available:false` gesetzt.
+
+### Veröffentlichter Gate-C-Teststand
+
+Die signierte v0.19.4 / Code 6 ist als GitHub-Testrelease `android-v0.19.4-code6`
+veröffentlicht. Der vollständige öffentliche HTTPS-Download wurde gegen die lokale
+APK geprüft: **3.573.192 Bytes**, SHA-256
+`37ebdddeceeb46c89b076aaa6b0eb2efbac43f65bb1e52c929d008eefc517196`.
+Das Zertifikat stimmt mit dem dauerhaft gesicherten Gate-A/B-Zertifikat überein;
+V2/V3 und 16K-zipalign sind verifiziert.
+
+Das freigegebene Stable-Manifest liegt auf dem Gate-C-Testbranch. Für den realen
+Test wird der bestehende Pages-Workflow ausdrücklich auf diesem Branch gestartet.
+Der PR bleibt bis zum bestätigten Gerätetest ein Entwurf; es erfolgt kein vorzeitiger
+Gate-C-Abschluss. Normale Pages-Builds von `migration/angular` würden bis zum Merge
+weiterhin dessen zuletzt freigegebenen Kanal ausliefern.
