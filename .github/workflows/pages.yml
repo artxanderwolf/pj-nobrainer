@@ -44,6 +44,9 @@ jobs:
       - name: Smoke test built runtime
         run: node scripts/check-built-runtime-startup.mjs
 
+      - name: Verify Android update channel
+        run: test -f dist/nobrainer/browser/android-update/stable.json && node --no-warnings --experimental-strip-types scripts/check-update-core.mjs
+
       - name: Test forge selection in browser
         run: node scripts/check-built-forge-selection.mjs
 
