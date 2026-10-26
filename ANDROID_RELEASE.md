@@ -97,7 +97,7 @@ Erst nach der Gate-A-Freigabe wird Gate B (In-App-Updater) begonnen.
 
 ## Gate B – technischer In-App-Updater
 
-- App-Version: 0.19.1; Save-Version bleibt 14.
+- App-Version: 0.19.2; Save-Version bleibt 14.
 - Android `versionCode 2` wird für den realen v0.19.1-Gerätetest verwendet, damit Android die korrigierte APK eindeutig über der bereits installierten v0.19.0-Testversion erkennt. Der Stable-Kanal bleibt dabei geschlossen; dies ist keine Gate-C-Freigabe.
 - Fester Stable-Kanal: GitHub Pages /android-update/stable.json.
 - Ein Merge veröffentlicht niemals automatisch ein Android-Update. Das Manifest bleibt bis zur ausdrücklichen Android-Releasefreigabe geschlossen (available=false).
@@ -113,3 +113,11 @@ Erst nach der Gate-A-Freigabe wird Gate B (In-App-Updater) begonnen.
 - Ein eigener Regressionstest erzwingt, dass `prepare()` keinen Offline-Dialog vor dem Erst-Render öffnet.
 - Der vollständige Android-/Web-/Browser-CI-Lauf für den v0.19.1-Gerätetest mit `versionCode 2` ist erfolgreich.
 - Save-Version bleibt 14; Gameplay- und Balancinglogik bleiben unverändert.
+
+### Gate-B-Startup-Hotfix v0.19.2
+
+- Ursache gegenüber dem funktionierenden Gate-A-Stand eingegrenzt: Der Gate-B-Updater beobachtete den gesamten DOM und mutierte ihn aus demselben Observer heraus.
+- Der globale MutationObserver ist entfernt.
+- Die Spieloberfläche wird vollständig aufgebaut; erst danach und nach einem möglichen ersten Paint wird der Updater initialisiert.
+- Kann der Updater nicht starten, läuft das Spiel ohne Updateprüfung weiter.
+- Save-Version bleibt 14; Gameplay und Balancing bleiben unverändert.

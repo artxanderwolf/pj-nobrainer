@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-const APP_VERSION = '0.19.1';
+const APP_VERSION = '0.19.2';
 const APP_ID = 'com.smithsofeldravar.game';
 const APP_NAME = 'Smiths of Eldravar';
 const CAPACITOR_VERSION = '8.5.3';
@@ -16,7 +16,7 @@ const appComponent = read('src/app/app.component.ts');
 const saveCodec = read('src/app/game/save-codec.ts');
 const gitignore = read('.gitignore');
 
-assert.equal(packageJson.version, APP_VERSION, 'Android-Gate-B muss App-Version 0.19.1 verwenden.');
+assert.equal(packageJson.version, APP_VERSION, 'Android-Gate-B muss App-Version 0.19.2 verwenden.');
 assert.equal(packageJson.dependencies?.['@capacitor/core'], CAPACITOR_VERSION, 'Capacitor Core muss exakt gepinnt sein.');
 assert.equal(packageJson.dependencies?.['@capacitor/android'], CAPACITOR_VERSION, 'Capacitor Android muss exakt gepinnt sein.');
 assert.equal(packageJson.devDependencies?.['@capacitor/cli'], CAPACITOR_VERSION, 'Capacitor CLI muss exakt gepinnt sein.');
@@ -33,7 +33,7 @@ assert.match(capacitorConfig, new RegExp(`appId:\\s*['\"]${APP_ID.replaceAll('.'
 assert.match(capacitorConfig, new RegExp(`appName:\\s*['\"]${APP_NAME}['\"]`), 'Android-Appname stimmt nicht.');
 assert.match(capacitorConfig, /webDir:\s*['"]dist\/nobrainer\/browser['"]/, 'Capacitor muss den bestehenden Angular-Build verwenden.');
 
-assert.match(appShell, /APP_UI_VERSION\s*=\s*'0\.19\.1'/, 'Sichtbare App-Version ist nicht v0.19.1.');
+assert.match(appShell, /APP_UI_VERSION\s*=\s*'0\.19\.1'/, 'Sichtbare App-Version ist nicht v0.19.2.');
 assert.match(appShell, /SMITHS OF ELDRAVAR · v\$\{APP_UI_VERSION\}/, 'Offizieller Spielname fehlt in der sichtbaren Shell.');
 assert.match(appComponent, /Smiths of Eldravar – v\$\{APP_UI_VERSION\}/, 'Dokumenttitel verwendet nicht den offiziellen Spielnamen.');
 assert.match(saveCodec, /export const SAVE_VERSION = 14;/, 'Gate B darf die Save-Version nicht verändern.');
@@ -56,8 +56,8 @@ assert.deepEqual(forbiddenKeyFiles, [], `Signierschlüssel dürfen nicht im Repo
 if (existsSync('android/app/build.gradle')) {
   const gradle = read('android/app/build.gradle');
   assert.match(gradle, new RegExp(`applicationId\\s+['\"]${APP_ID.replaceAll('.', '\\.') }['\"]`), 'Native applicationId stimmt nicht.');
-  assert.match(gradle, /versionCode\s+2\b/, 'Android versionCode muss für die v0.19.1-Gerätetestversion 2 sein.');
-  assert.match(gradle, /versionName\s+"0\.19\.1"/, 'Android versionName muss 0.19.1 sein.');
+  assert.match(gradle, /versionCode\s+3\b/, 'Android versionCode muss für die v0.19.2-Gerätetestversion 2 sein.');
+  assert.match(gradle, /versionName\s+"0\.19\.1"/, 'Android versionName muss 0.19.2 sein.');
   for (const env of ['SOE_RELEASE_STORE_FILE', 'SOE_RELEASE_STORE_PASSWORD', 'SOE_RELEASE_KEY_ALIAS', 'SOE_RELEASE_KEY_PASSWORD']) {
     assert.ok(gradle.includes(env), `Release-Signing muss ${env} ausschließlich aus der Umgebung lesen.`);
   }

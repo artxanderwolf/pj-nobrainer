@@ -56,7 +56,6 @@ const INITIAL_STATE: UpdateState = {
 export class GameUpdateService {
   private readonly stateSubject = new BehaviorSubject<UpdateState>(INITIAL_STATE);
   private downloadListener: PluginListenerHandle | null = null;
-  private domObserver: MutationObserver | null = null;
   private dismissedVersionCode: number | null = null;
   private updateCard: HTMLElement | null = null;
   private overlay: HTMLElement | null = null;
@@ -65,7 +64,7 @@ export class GameUpdateService {
     if (!this.isAndroidNative()) return;
 
     this.stateSubject.next({ ...INITIAL_STATE, phase: 'idle' });
-    this.installPresentationObserver();
+    this.ensurePresentation();
     this.downloadListener = await AndroidUpdater.addListener('downloadProgress', event => this.onDownloadProgress(event));
 
     try {
@@ -80,8 +79,6 @@ export class GameUpdateService {
   }
 
   async destroy(): Promise<void> {
-    this.domObserver?.disconnect();
-    this.domObserver = null;
     await this.downloadListener?.remove();
     this.downloadListener = null;
   }
@@ -264,14 +261,6 @@ export class GameUpdateService {
   private patchState(patch: Partial<UpdateState>): void {
     this.stateSubject.next({ ...this.stateSubject.value, ...patch });
     this.renderPresentation();
-  }
-
-  private installPresentationObserver(): void {
-    if (this.domObserver) return;
-    this.domObserver = new MutationObserver(() => this.ensurePresentation());
-    this.domObserver.observe(document.documentElement, { childList: true, subtree: true });
-    this.ensurePresentation();
-    this.stateSubject.subscribe(() => this.renderPresentation());
   }
 
   private ensurePresentation(): void {

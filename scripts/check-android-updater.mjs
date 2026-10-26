@@ -7,6 +7,7 @@ const plugin = read('android/app/src/main/java/com/smithsofeldravar/game/Android
 const receiver = read('android/app/src/main/java/com/smithsofeldravar/game/UpdateInstallReceiver.java');
 const activity = read('android/app/src/main/java/com/smithsofeldravar/game/MainActivity.java');
 const service = read('src/app/core/game-update.service.ts');
+const main = read('src/main.ts');
 const bridge = read('src/app/core/android-updater.plugin.ts');
 const stable = JSON.parse(read('public/android-update/stable.json'));
 const saveCodec = read('src/app/game/save-codec.ts');
@@ -39,6 +40,11 @@ assert.match(service, /Nach Update suchen/);
 assert.match(service, /Jetzt aktualisieren/);
 assert.match(service, /Installieren/);
 assert.match(service, /Später/);
+assert.doesNotMatch(service, /MutationObserver|domObserver|installPresentationObserver/, 'Updater darf den gesamten DOM nicht rekursiv beobachten.');
+assert.match(main, /document\.querySelector\('#index \.grid'\)/, 'Updater darf erst starten, wenn die Spieloberfläche vorhanden ist.');
+assert.match(main, /requestAnimationFrame/, 'Vor Updater-Initialisierung muss ein Paint-Zeitfenster möglich sein.');
+assert.match(main, /setTimeout/, 'Updater-Initialisierung muss in einen nachgelagerten Task verschoben werden.');
+assert.match(main, /updateService\.initialize\(\)\.catch/, 'Updaterfehler müssen vom Spielstart isoliert bleiben.');
 
 assert.deepEqual(stable, { schemaVersion: 1, available: false }, 'Gate B darf noch kein reales Remote-Update freischalten.');
 assert.match(saveCodec, /export const SAVE_VERSION = 14;/, 'Gate B darf das persistierte Save-Format nicht verändern.');
