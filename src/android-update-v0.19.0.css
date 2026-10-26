@@ -1,0 +1,62 @@
+.android-update-card .android-update-actions,
+.android-update-dialog .android-update-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.android-update-status {
+  min-height: 1.4em;
+  margin: 10px 0 0;
+}
+
+.android-update-progress {
+  width: 100%;
+  height: 8px;
+  margin-top: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.android-update-progress > div {
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: currentColor;
+  transition: width 160ms linear;
+}
+
+.android-update-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(0, 0, 0, 0.72);
+}
+
+.android-update-overlay[hidden] {
+  display: none;
+}
+
+.android-update-dialog {
+  width: min(520px, 100%);
+  max-height: min(80vh, 680px);
+  overflow: auto;
+  padding: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 16px;
+  background: var(--panel, #181818);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.5);
+}
+
+.android-update-dialog h2 {
+  margin-top: 0;
+}
+
+.android-update-dialog ul {
+  padding-left: 22px;
+}
