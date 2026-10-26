@@ -120,7 +120,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
       this.gameCombatLog.closeLegacyCompatibilityBridge();
       console.error('Die NoBrainer-Runtime konnte nicht geladen werden.', error);
       this.legacyHost.nativeElement.dataset['runtimeError'] = error instanceof Error ? error.message : String(error);
-      this.legacyHost.nativeElement.textContent = 'Die NoBrainer-Runtime konnte nicht geladen werden. Bitte Seite neu laden.';
+      this.legacyHost.nativeElement.textContent = 'Smiths of Eldravar konnte nicht geladen werden. Bitte die App neu starten.';
     }
   }
 
@@ -207,7 +207,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   }
 
   private applyVersionMarker(): void {
-    document.title = `Projekt NoBrainer – v${APP_UI_VERSION}`;
+    document.title = `Smiths of Eldravar – v${APP_UI_VERSION}`;
     const versionLabel = this.legacyHost.nativeElement.querySelector<HTMLElement>('.brand small');
     if (versionLabel) versionLabel.textContent = `v${APP_UI_VERSION}`;
   }

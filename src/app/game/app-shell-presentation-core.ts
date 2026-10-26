@@ -1,4 +1,4 @@
-export const APP_UI_VERSION = '0.17.3';
+export const APP_UI_VERSION = '0.18.0';
 
 export const APP_SHELL_PAGE_IDS = [
   'base',
@@ -34,7 +34,7 @@ const APP_SHELL_BEFORE_PAGES = `<div class="app modular-ui" data-ui-version="${A
     <header class="topbar modular-topbar">
       <button id="backBtn" class="back-btn" type="button" aria-label="Zurück" onclick="goBack()" hidden>←</button>
       <div class="page-heading">
-        <div class="ui-version">NO BRAINER · v${APP_UI_VERSION}</div>
+        <div class="ui-version">SMITHS OF ELDRAVAR · v${APP_UI_VERSION}</div>
         <h1 id="pageTitle">Übersicht</h1>
       </div>
       <div class="top-actions">
