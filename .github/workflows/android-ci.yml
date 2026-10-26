@@ -3,7 +3,7 @@ name: Android CI
 on:
   push:
     branches:
-      - feature/android-v0.18.0-gate-a
+      - feature/android-v0.19.0-gate-b
       - migration/angular
   workflow_dispatch:
 
@@ -42,8 +42,8 @@ jobs:
           yes | "$SDKMANAGER" --licenses >/dev/null
           "$SDKMANAGER" "platform-tools" "platforms;android-36" "build-tools;36.0.0"
 
-      - name: Apply Gate A Android configuration
-        run: node scripts/bootstrap-android-gate-a.mjs
+      - name: Apply Gate B Android configuration
+        run: node scripts/bootstrap-android.mjs
 
       - name: Install dependencies
         run: npm install --no-audit --no-fund
@@ -58,13 +58,16 @@ jobs:
           fi
 
       - name: Apply native Android release configuration
-        run: node scripts/bootstrap-android-gate-a.mjs
+        run: node scripts/bootstrap-android.mjs
 
       - name: Synchronize Capacitor
         run: npx cap sync android
 
       - name: Verify Android base
         run: npm run check:android-base
+
+      - name: Verify Android updater
+        run: npm run check:android-updater
 
       - name: Build debug and unsigned release APKs
         working-directory: android
@@ -74,6 +77,9 @@ jobs:
 
       - name: Build normal web app
         run: npm run build
+
+      - name: Verify built update channel
+        run: test -f dist/nobrainer/browser/android-update/stable.json
 
       - name: Smoke test built runtime
         run: node scripts/check-built-runtime-startup.mjs
@@ -114,13 +120,13 @@ jobs:
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: smiths-of-eldravar-v0.18.0-debug
+          name: smiths-of-eldravar-v0.19.3-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
       - name: Upload unsigned release APK
         uses: actions/upload-artifact@v4
         with:
-          name: smiths-of-eldravar-v0.18.0-release-unsigned
+          name: smiths-of-eldravar-v0.19.3-release-unsigned
           path: android/app/build/outputs/apk/release/app-release-unsigned.apk
           if-no-files-found: error
