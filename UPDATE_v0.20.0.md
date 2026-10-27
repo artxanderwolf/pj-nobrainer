@@ -1,8 +1,8 @@
 # v0.20.0 – Waffenregeln und Trainingslager
 
-Freigabekandidat auf Basis von v0.19.4 (`6ce2284`, migration/angular).
+Version auf Basis von v0.19.4 (`6ce2284`, migration/angular).
 Android-Code 7; Paket-ID und Save-Version 14 bleiben bestehen.
-Veröffentlichung und Änderung des öffentlichen Updatekanals benötigen die Freigabe des Nutzers.
+Der Nutzer hat Veröffentlichung und Updatekanal am 27.10.2026 ausdrücklich freigegeben.
 
 ## Ausrüstung
 
@@ -68,5 +68,9 @@ Launcher-Masken. Web-Icon-URLs besitzen eine neue Cacheversion.
 - Noch erforderliche Nutzerabnahme: bestehende Code-6-App ohne Deinstallation aktualisieren;
   eigenen Spielstand, abgelegte Waffen, Klassenboni, Icon und Fortsetzen nach Neustart prüfen.
 
-Der öffentliche Stable-Kanal bleibt bis zur ausdrücklichen Freigabe auf v0.19.4/Code 6.
-Dieser Entwurf veröffentlicht weder APK noch Webversion.
+Die signierte APK ist als `android-v0.20.0-code7` veröffentlicht. Der öffentliche
+HTTPS-Download wurde vollständig gegen die lokale APK geprüft: 3.618.248 Bytes,
+SHA-256 `8f2c04b3e56b47b758a7f692dc5f8c91f090738389c818ae309d527d7378e711`.
+Das bisherige Release-Zertifikat, Paket-ID und Save-Version bleiben erhalten.
+Das geprüfte Stable-Manifest bietet Code 7 als freiwilliges Update an.
+Die tatsächliche Abnahme auf dem Android-Gerät dieser Version steht weiterhin aus.
