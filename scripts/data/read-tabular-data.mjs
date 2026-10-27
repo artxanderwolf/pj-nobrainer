@@ -6,6 +6,7 @@ export const TABLE_DIR = resolve('balancing/tables');
 export const REQUIRED_TABLES = [
   '_meta',
   'character_classes',
+  'class_equipment_rules',
   'character_progression',
   'materials',
   'weapon_parts',

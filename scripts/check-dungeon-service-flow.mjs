@@ -67,6 +67,7 @@ function makeState(characterCount = 1, energy = 100) {
     weaponInventory: [{
       id: 1,
       name: 'Testwaffe',
+      weaponForm: 'sword',
       stats: { damagePerHit: 100, attackSpeed: 1, hitChance: 1, penetration: 1 }
     }],
     inventory: {},

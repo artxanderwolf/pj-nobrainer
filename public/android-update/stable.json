@@ -1,16 +1,19 @@
 {
   "schemaVersion": 1,
   "available": true,
-  "versionName": "0.19.4",
-  "versionCode": 6,
-  "apkUrl": "https://github.com/artxanderwolf/pj-nobrainer/releases/download/android-v0.19.4-code6/Smiths-of-Eldravar-v0.19.4-code6-release.apk",
-  "apkSize": 3573192,
-  "sha256": "37ebdddeceeb46c89b076aaa6b0eb2efbac43f65bb1e52c929d008eefc517196",
-  "publishedAt": "2026-10-26T17:56:23.828Z",
+  "versionName": "0.20.0",
+  "versionCode": 7,
+  "apkUrl": "https://github.com/artxanderwolf/pj-nobrainer/releases/download/android-v0.20.0-code7/Smiths-of-Eldravar-v0.20.0-code7-release.apk",
+  "apkSize": 3618248,
+  "sha256": "8f2c04b3e56b47b758a7f692dc5f8c91f090738389c818ae309d527d7378e711",
+  "publishedAt": "2026-10-27T10:59:54.284Z",
   "mandatory": false,
   "releaseNotes": [
-    "Das freigegebene Eldravar-Pixel-Icon wird als Android-App-Icon und Web-Icon verwendet.",
-    "Android-Updates werden im Spiel gefunden, heruntergeladen und geprüft. Speichere die APK und öffne sie anschließend über Downloads oder Eigene Dateien.",
+    "Klassen dürfen nur ihre freigegebenen Waffen ausrüsten. Bereits unerlaubt ausgerüstete Waffen werden ins Lager abgelegt.",
+    "Nur Rekruten dürfen zwei Einhandwaffen führen: 75 % Schaden je Waffe, mit Schwert und Dolch 82,5 %.",
+    "Bevorzugte Waffen erhalten 10 % Schadensbonus: Kämpfer mit 2H-Schwert oder 2H-Axt, Bogner mit Bogen, Gelehrter mit Stab.",
+    "Wellen werden im Trainingslager seltener gefunden: 5 % Chance je Suchsekunde. Gegner und Belohnungen pro Gegner bleiben gleich.",
+    "Das neue Eldravar-Emblem wird als Android-App-Icon und Web-Icon verwendet.",
     "Aktualisiere die vorhandene App ohne Deinstallation. Das Spielstandformat bleibt unverändert bei Version 14."
   ]
 }

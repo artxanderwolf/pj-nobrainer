@@ -9,6 +9,7 @@ import { GameDungeonEquipmentSyncService } from './game-dungeon-equipment-sync.s
 import { GameDungeonService, type DungeonActionResult } from './game-dungeon.service';
 import { GameDungeonPresentationService } from './game-dungeon-presentation.service';
 import { GameDungeonSessionService } from './game-dungeon-session.service';
+import { GameEquipmentService } from './game-equipment.service';
 import { GameEnergyService } from './game-energy.service';
 import { GameForgeJobPresentationService } from './game-forge-job-presentation.service';
 import { GameForgePreviewPresentationService } from './game-forge-preview-presentation.service';
@@ -54,6 +55,7 @@ export class GameRuntimeService {
   private tickHandle: number | null = null;
   private hiddenSnapshot: SaveSnapshot | null = null;
   private visibilityHandlerRegistered = false;
+  private equipmentRepairMessages: string[] = [];
 
   constructor(
     private readonly saveStorage: SaveStorageService,
@@ -66,6 +68,7 @@ export class GameRuntimeService {
     private readonly forgePreviewPresentation: GameForgePreviewPresentationService,
     private readonly combatLog: GameCombatLogService,
     private readonly gameEnergy: GameEnergyService,
+    private readonly gameEquipment: GameEquipmentService,
     private readonly gameForge: GameForgeService,
     private readonly gameMarket: GameMarketService,
     private readonly gameDungeon: GameDungeonService,
@@ -99,6 +102,16 @@ export class GameRuntimeService {
 
     const before = this.saveStorage.readSnapshot();
     runtime.prepare();
+    const equipmentRepairs = this.gameEquipment.normalizeEquipment();
+    const equipmentChanged = equipmentRepairs.length > 0;
+    if (equipmentChanged) {
+      this.equipmentRepairMessages = equipmentRepairs.map(repair => `${repair.characterName}: ${repair.weaponName} – ${repair.reason}`);
+      const state = this.gameState.getState<MutableGameState & { dungeonRun?: { attackPoints: Array<{ nextAt: number }> } | null }>();
+      const nextTimes = (state.dungeonRun?.attackPoints ?? []).map(point => Number(point.nextAt)).filter(Number.isFinite);
+      const repairAt = nextTimes.length ? Math.min(Date.now(), ...nextTimes) : Date.now();
+      this.dungeonEquipmentSync.refresh(repairAt);
+      runtime.save(false);
+    }
     this.saveTransfer.bindActions(() => runtime.save(true));
     const materialStorageChanged = this.normalizeMaterialStorage() > 0;
     const dungeonMaterialReferencesChanged = this.gameDungeon.normalizeMaterialReferences() > 0;
@@ -134,7 +147,7 @@ export class GameRuntimeService {
       runtime.save(false);
       const after = this.saveStorage.readSnapshot();
       if (after) this.offlineProgress.showSummary(before, after);
-    } else if (materialReferencesChanged || dungeonSessionPreparation.saveRequested) {
+    } else if (equipmentChanged || materialReferencesChanged || dungeonSessionPreparation.saveRequested) {
       runtime.save(false);
     }
 
@@ -154,6 +167,11 @@ export class GameRuntimeService {
     this.characterPresentation.render();
     this.weaponInventoryPresentation.render();
     this.dungeonPresentation.render();
+    if (this.equipmentRepairMessages.length) {
+      const message = 'Ausrüstung an die Klassenregeln angepasst. Abgelegte Waffen bleiben im Lager.\n\n' + this.equipmentRepairMessages.join('\n');
+      this.equipmentRepairMessages = [];
+      window.setTimeout(() => window.alert(message), 0);
+    }
   }
 
   stopTick(): void {

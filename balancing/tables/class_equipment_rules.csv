@@ -1,0 +1,5 @@
+class_id,weapon_allowed,dual_wield_allowed,weapon_and_shield_allowed,allowed_weapon_forms,preferred_weapon_forms,preferred_pair_forms,dual_wield_damage_factor,preferred_damage_factor
+recruit,true,true,true,dagger|sword|sword2h|axe1h|axe2h|staff,,dagger|sword,0.75,1.10
+fighter,true,false,true,sword|sword2h|axe1h|axe2h,sword2h|axe2h,,1,1.10
+archer,true,false,false,dagger|sword|axe1h|bow,bow,,1,1.10
+scholar,true,false,false,dagger|staff,staff,,1,1.10

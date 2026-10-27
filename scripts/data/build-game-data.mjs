@@ -223,6 +223,13 @@ const tables = await validateFromDisk();
 const game = buildGameData(tables);
 const economy = buildEconomy(tables);
 const progression = buildProgression(tables);
+const equipmentRules = Object.fromEntries(tables.class_equipment_rules.rows.map(row => [String(row.class_id), {
+  weaponAllowed: row.weapon_allowed, dualWieldAllowed: row.dual_wield_allowed,
+  weaponAndShieldAllowed: row.weapon_and_shield_allowed,
+  allowedWeaponForms: split(row.allowed_weapon_forms), preferredWeaponForms: split(row.preferred_weapon_forms),
+  preferredPairForms: split(row.preferred_pair_forms), dualWieldDamageFactor: n(row.dual_wield_damage_factor),
+  preferredDamageFactor: n(row.preferred_damage_factor)
+}]));
 await mkdir(OUTPUT_DIR, { recursive: true });
 
 const gameSource = header
@@ -238,6 +245,7 @@ const gameSource = header
 const economySource = header + ts('GENERATED_ECONOMY_BALANCE', economy);
 const progressionSource = header + Object.entries(progression).map(([key, value]) => `export const ${key} = ${JSON.stringify(value)};\n`).join('');
 
+await writeFile(resolve(OUTPUT_DIR, 'equipment-rules.generated.ts'), header + ts('GENERATED_CLASS_EQUIPMENT_RULES', equipmentRules), 'utf8');
 await writeFile(resolve(OUTPUT_DIR, 'game-data.generated.ts'), gameSource, 'utf8');
 await writeFile(resolve(OUTPUT_DIR, 'economy-balance.generated.ts'), economySource, 'utf8');
 await writeFile(resolve(OUTPUT_DIR, 'character-progression.generated.ts'), progressionSource, 'utf8');
