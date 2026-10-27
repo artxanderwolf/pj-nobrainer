@@ -107,6 +107,26 @@ export function validateGameData(tables) {
     assertRange(row.base_penetration, 0, 1, `weapon_forms ${row.id}.base_penetration`);
   }
 
+  const equipmentRules = tables.class_equipment_rules.rows;
+  assertUnique(equipmentRules, 'class_id', 'class_equipment_rules');
+  if (equipmentRules.length !== CLASS_IDS.size) fail('class_equipment_rules muss jede Klasse genau einmal enthalten.');
+  for (const row of equipmentRules) {
+    if (!CLASS_IDS.has(String(row.class_id))) fail(`Unbekannte Ausrüstungsklasse ${row.class_id}.`);
+    for (const field of ['weapon_allowed', 'dual_wield_allowed', 'weapon_and_shield_allowed']) {
+      if (typeof row[field] !== 'boolean') fail(`class_equipment_rules ${row.class_id}.${field} muss true/false sein.`);
+    }
+    const allowed = splitList(row.allowed_weapon_forms);
+    if (new Set(allowed).size !== allowed.length) fail(`Doppelte Waffenfreigabe für ${row.class_id}.`);
+    for (const form of allowed) if (!formIds.has(form)) fail(`Unbekannte Waffenfreigabe ${form} für ${row.class_id}.`);
+    const preferred = splitList(row.preferred_weapon_forms);
+    const pair = splitList(row.preferred_pair_forms);
+    for (const form of [...preferred, ...pair]) if (!allowed.includes(form)) fail(`Präferenz ${form} ist für ${row.class_id} nicht freigegeben.`);
+    if (pair.length && (pair.length !== 2 || !row.dual_wield_allowed || pair.some(id => !forms.find(form => String(form.id) === id)?.one_handed))) fail(`Ungültige Paarpräferenz für ${row.class_id}.`);
+    if (asNumber(row.dual_wield_damage_factor, 'dual_wield_damage_factor') <= 0) fail('Zweiwaffenfaktor muss positiv sein.');
+    assertRange(row.dual_wield_damage_factor, 0, 1, 'dual_wield_damage_factor');
+    if (asNumber(row.preferred_damage_factor, 'preferred_damage_factor') < 1) fail('Präferenzfaktor muss mindestens 1 sein.');
+  }
+
   const formParts = tables.weapon_form_parts.rows;
   const relationKeys = new Set();
   for (const row of formParts) {

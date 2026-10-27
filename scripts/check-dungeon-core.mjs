@@ -40,7 +40,8 @@ try {
   character.hp = 10;
   assert.equal(resolveSearchStep([character], 0.5), 'miss');
   assert.equal(character.hp, 11);
-  assert.equal(resolveSearchStep([character], 0.05), 'encounter');
+  assert.equal(resolveSearchStep([character], 0.049999), 'encounter');
+  assert.equal(resolveSearchStep([character], 0.05), 'miss', 'Die Begegnungschance beträgt genau 5 % pro Suchschritt.');
 
   assert.equal(rollEnemyCount(1, 0), 1);
   assert.equal(rollEnemyCount(1, 0.71), 2);

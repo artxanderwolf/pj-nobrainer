@@ -51,6 +51,9 @@ function replaceOnce(source: string, expected: string, replacement: string): str
 @Injectable({ providedIn: 'root' })
 export class LegacyEquipmentAdapterService {
   adapt(source: string): string {
-    return replaceOnce(source, LEGACY_EQUIPMENT_BLOCK, ADAPTED_EQUIPMENT_BLOCK);
+    const adapted = replaceOnce(source, LEGACY_EQUIPMENT_BLOCK, ADAPTED_EQUIPMENT_BLOCK);
+    return replaceOnce(adapted,
+      'function cloneStarterWeapon(){\n  return JSON.parse(JSON.stringify(STARTER_WEAPON));\n}',
+      'function cloneStarterWeapon(){\n  return window.NoBrainerEquipmentCompatibility.cloneStarterWeapon(STARTER_WEAPON);\n}');
   }
 }

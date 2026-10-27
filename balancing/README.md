@@ -37,3 +37,25 @@ Seit v0.15.3 enthält `character_progression.csv` die stat-spezifischen Level-Fa
 Dungeon-spezifische Laufzeit-, Anzeigenamen- und Kostenwerte gehören ebenfalls in `balancing/tables/dungeons.csv`. Dungeon-ID 1 besitzt `display_name = Trainingslager`, `duration_ms = 18000000` für fünf Stunden und `energy_cost = 0`, weil Energie im Dungeon vorerst weder verbraucht noch als Start-/Abbruchbedingung verwendet wird.
 
 Die vollständige Entfernung der verbleibenden Legacy-Runtime ist ein eigener Angular-Cutover und unabhängig von der ID-Architektur. Sie soll nicht mit Balanceänderungen vermischt werden.
+
+## Waffenfreigaben und Trägerfaktoren v0.20.0
+
+`class_equipment_rules.csv` ist die kanonische Quelle für erlaubte Waffenform-IDs,
+Zweiwaffen-/Schildfreigaben und Präferenzen pro stabiler Klassen-ID. Der Generator
+schreibt `equipment-rules.generated.ts`. Schildfreigaben sind Metadaten, kein neues
+Schildsystem. Keine anderen Werte der älteren Charakter-Abhängigkeitstabelle wurden übernommen.
+
+Die gemeinsame Ausrüstungsprüfung entscheidet vor einer Mutation über das vollständige
+Ziel-Loadout und bereinigt vorhandene Belegungen beim Laden/Import. Lagergegenstände
+werden dabei weder gelöscht noch kopiert. Der bekannte Startgegenstand wird an seiner
+technischen Legacy-Grenze ausdrücklich als `sword` projiziert; unbekannte Formen werden
+nicht durch einen Schwert-Fallback freigegeben.
+
+Trägerfaktor: Rekrut mit zwei 1H-Waffen ×0,75; bevorzugter Aufbau zusätzlich ×1,10.
+Kampf, Charakter-ROH und Ausrüstungsvorschau verwenden dieselbe Funktion. Gegenstands-
+und Wirtschaftswerte erhalten keinen Trägerfaktor. Das Save-Format bleibt Version 14;
+die idempotente Belegungsprüfung benötigt kein neues persistiertes Datenformat.
+
+Dungeon 1: `encounter_chance=0.05`, `search_step_ms=1000`; Gegnerwerte und Suchheilung
+bleiben erhalten. Der neue Quellenstand wurde für den Freigabekandidaten vorbereitet;
+der öffentliche Android-Stable-Kanal bleibt bis zur Releasefreigabe auf der bisherigen APK.

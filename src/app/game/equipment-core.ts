@@ -10,8 +10,12 @@ export interface EquipmentSlots {
 export interface EquipmentCharacterLike {
   id: number;
   name?: string;
+  classId?: string | null;
   equipment: EquipmentSlots;
 }
+
+export type EquipmentRuleFailure = 'weapon-not-found' | 'unknown-class' | 'unknown-weapon-form' | 'class-weapon-forbidden' | 'dual-wield-forbidden' | 'invalid-loadout';
+export type WeaponEquipPolicy = (character: EquipmentCharacterLike, weaponId: number, projected: EquipmentSlots) => EquipmentRuleFailure | null;
 
 export interface WeaponEquipLocation {
   characterId: number;
@@ -35,12 +39,24 @@ export interface WeaponPickerPresentation {
 
 export type EquipWeaponResult =
   | { ok: true; location: WeaponEquipLocation }
-  | { ok: false; reason: 'character-not-found' | 'invalid-hand' | 'weapon-in-use' | 'both-hands-required' };
+  | { ok: false; reason: 'character-not-found' | 'invalid-hand' | 'weapon-in-use' | 'both-hands-required' | EquipmentRuleFailure };
 
 const ONE_HANDED: WeaponHandCountResolver = () => 1;
 
 export function isEquipmentHand(hand: string): hand is EquipmentHand {
   return hand === 'leftHand' || hand === 'rightHand';
+}
+
+export function projectWeaponEquipment(character: EquipmentCharacterLike, weaponId: number, hand: EquipmentHand, resolveHandCount: WeaponHandCountResolver): EquipmentSlots {
+  if (resolveHandCount(weaponId) === 2) return { leftHand: weaponId, rightHand: weaponId };
+  const projected = { ...character.equipment };
+  const current = projected[hand];
+  if (current !== null && projected.leftHand === current && projected.rightHand === current) {
+    projected.leftHand = null; projected.rightHand = null;
+  }
+  if (projected[otherHand(hand)] === weaponId) projected[otherHand(hand)] = null;
+  projected[hand] = weaponId;
+  return projected;
 }
 
 function otherHand(hand: EquipmentHand): EquipmentHand {
@@ -74,17 +90,18 @@ export function getWeaponEquipLocation(
 export function getFreeWeaponEquipTargets(
   characters: EquipmentCharacterLike[],
   weaponId?: number,
-  resolveHandCount: WeaponHandCountResolver = ONE_HANDED
+  resolveHandCount: WeaponHandCountResolver = ONE_HANDED,
+  policy?: WeaponEquipPolicy
 ): WeaponEquipTarget[] {
   const targets: WeaponEquipTarget[] = [];
   const handCount = weaponId === undefined ? 1 : resolveHandCount(weaponId);
   for (const character of characters) {
     if (handCount === 2) {
-      targets.push({ characterId: character.id, hand: 'leftHand', label: 'Beide Hände' });
+      if (!policy || weaponId === undefined || !policy(character, weaponId, projectWeaponEquipment(character, weaponId, 'leftHand', resolveHandCount))) targets.push({ characterId: character.id, hand: 'leftHand', label: 'Beide Hände' });
       continue;
     }
-    if (character.equipment.leftHand === null) targets.push({ characterId: character.id, hand: 'leftHand', label: 'Linke Hand' });
-    if (character.equipment.rightHand === null) targets.push({ characterId: character.id, hand: 'rightHand', label: 'Rechte Hand' });
+    if (character.equipment.leftHand === null && (!policy || weaponId === undefined || !policy(character, weaponId, projectWeaponEquipment(character, weaponId, 'leftHand', resolveHandCount)))) targets.push({ characterId: character.id, hand: 'leftHand', label: 'Linke Hand' });
+    if (character.equipment.rightHand === null && (!policy || weaponId === undefined || !policy(character, weaponId, projectWeaponEquipment(character, weaponId, 'rightHand', resolveHandCount)))) targets.push({ characterId: character.id, hand: 'rightHand', label: 'Rechte Hand' });
   }
   return targets;
 }
@@ -92,11 +109,12 @@ export function getFreeWeaponEquipTargets(
 export function getWeaponInventoryPresentation(
   characters: EquipmentCharacterLike[],
   weaponId: number,
-  resolveHandCount: WeaponHandCountResolver = ONE_HANDED
+  resolveHandCount: WeaponHandCountResolver = ONE_HANDED,
+  policy?: WeaponEquipPolicy
 ): WeaponInventoryPresentation {
   const location = getWeaponEquipLocation(characters, weaponId);
   if (!location) {
-    return { location: null, status: '', targets: getFreeWeaponEquipTargets(characters, weaponId, resolveHandCount) };
+    return { location: null, status: '', targets: getFreeWeaponEquipTargets(characters, weaponId, resolveHandCount, policy) };
   }
 
   const character = characters.find((entry) => entry.id === location.characterId);
@@ -113,10 +131,14 @@ export function getWeaponPickerPresentation(
   weaponId: number,
   characterId: number,
   hand: EquipmentHand,
-  resolveHandCount: WeaponHandCountResolver = ONE_HANDED
+  resolveHandCount: WeaponHandCountResolver = ONE_HANDED,
+  policy?: WeaponEquipPolicy,
+  reasonText: (reason: string) => string = reason => reason
 ): WeaponPickerPresentation {
   const character = characters.find((entry) => entry.id === characterId);
   if (!character) return { status: '', disabled: false };
+  const rejection = policy?.(character, weaponId, projectWeaponEquipment(character, weaponId, hand, resolveHandCount));
+  if (rejection) return { status: reasonText(rejection), disabled: true };
 
   const opposite = otherHand(hand);
   const handCount = resolveHandCount(weaponId);
@@ -145,7 +167,8 @@ export function equipWeapon(
   weaponId: number,
   hand: string,
   characterId: number,
-  resolveHandCount: WeaponHandCountResolver = ONE_HANDED
+  resolveHandCount: WeaponHandCountResolver = ONE_HANDED,
+  policy?: WeaponEquipPolicy
 ): EquipWeaponResult {
   const character = characters.find((entry) => entry.id === characterId);
   if (!character) return { ok: false, reason: 'character-not-found' };
@@ -154,22 +177,12 @@ export function equipWeapon(
   const existing = getWeaponEquipLocation(characters, weaponId);
   if (existing && existing.characterId !== character.id) return { ok: false, reason: 'weapon-in-use' };
 
-  const opposite = otherHand(hand);
-  const handCount = resolveHandCount(weaponId);
-  if (handCount === 2) {
-    character.equipment.leftHand = weaponId;
-    character.equipment.rightHand = weaponId;
-    return { ok: true, location: { characterId: character.id, hand: 'leftHand' } };
-  }
-
-  const targetWeapon = character.equipment[hand];
-  if (targetWeapon !== null && isTwoHandedPair(character, targetWeapon)) {
-    character.equipment.leftHand = null;
-    character.equipment.rightHand = null;
-  }
-  if (character.equipment[opposite] === weaponId) character.equipment[opposite] = null;
-  character.equipment[hand] = weaponId;
-  return { ok: true, location: { characterId: character.id, hand } };
+  const projected = projectWeaponEquipment(character, weaponId, hand, resolveHandCount);
+  const rejection = policy?.(character, weaponId, projected);
+  if (rejection) return { ok: false, reason: rejection };
+  character.equipment.leftHand = projected.leftHand;
+  character.equipment.rightHand = projected.rightHand;
+  return { ok: true, location: { characterId: character.id, hand: resolveHandCount(weaponId) === 2 ? 'leftHand' : hand } };
 }
 
 export function unequipHand(

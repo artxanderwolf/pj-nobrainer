@@ -11,8 +11,8 @@ const weaponPresentationAdapter = readFileSync('src/app/core/legacy-weapon-prese
 assert.match(equipmentService, /constructor\(private readonly gameState: GameStateService\)/);
 assert.match(equipmentService, /weaponInventory: RuntimeEquipmentWeapon\[\];/);
 assert.match(equipmentService, /getWeaponHandCount\(weapon\?\.weaponForm\)/);
-assert.match(equipmentService, /return equipWeapon\([\s\S]*this\.characters\(\),[\s\S]*Number\(weaponId\),[\s\S]*hand,[\s\S]*Number\(characterId\),[\s\S]*id => this\.weaponHandCount\(id\)[\s\S]*\);/);
-assert.match(equipmentService, /return unequipHand\(this\.characters\(\), Number\(characterId\), hand\);/);
+assert.match(equipmentService, /const result = equipWeapon\([\s\S]*this\.characters\(\),[\s\S]*Number\(weaponId\),[\s\S]*hand,[\s\S]*Number\(characterId\),[\s\S]*id => this\.weaponHandCount\(id\)[\s\S]*\);/);
+assert.match(equipmentService, /const changed = unequipHand\(this\.characters\(\), Number\(characterId\), hand\);/);
 assert.match(equipmentService, /getWeaponPickerPresentation\(weaponId: number, characterId: number, hand: string\)/);
 assert.match(equipmentService, /id => this\.weaponHandCount\(id\)/);
 assert.match(equipmentService, /window\.NoBrainerEquipmentCompatibility = \{/);
@@ -38,3 +38,7 @@ assert.match(appComponent, /ngOnDestroy\(\): void \{[\s\S]*this\.gameEquipment\.
 assert.match(appComponent, /const APP_VERSION = APP_UI_VERSION;/);
 
 console.log('Equipment-Eigentümerschaft: 1H-/2H-Auflösung, Ausrüsten und Ablegen laufen über Angular; Kader und Waffenlager greifen direkt auf den Service zu.');
+
+assert.match(equipmentService, /checkProjectedEquipment/);
+assert.match(equipmentService, /sanitizeEquipmentLoadouts/);
+assert.match(equipmentService, /this\.policy/);

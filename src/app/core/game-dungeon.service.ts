@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { getCharacterWeaponDamageFactor } from '../game/equipment-rules-core.ts';
 import { buildWeightedTargets, resolveAttack, type CombatTargetLike } from '../game/combat-core';
 import {
   checkDungeonStart,
@@ -64,6 +65,7 @@ interface RuntimeDungeonEquipment {
 
 interface RuntimeDungeonWeapon {
   id: number;
+  weaponForm?: string | null;
   name: string;
   stats?: Partial<WeaponStats> | null;
 }
@@ -537,7 +539,9 @@ export class GameDungeonService {
       if (!weapon) return;
       const baseDamage = Number(weapon.stats?.weaponBaseDamage ?? weapon.stats?.damagePerHit) || 0;
       const baseHitChance = Number(weapon.stats?.weaponBaseHitChance ?? weapon.stats?.hitChance) || 0;
-      damage = baseDamage * characterStats.strengthFactor;
+      const equippedIds = new Set([character.equipment.leftHand, character.equipment.rightHand]);
+      const equippedWeapons = state.weaponInventory.filter(entry => equippedIds.has(entry.id));
+      damage = baseDamage * characterStats.strengthFactor * getCharacterWeaponDamageFactor(character.classId, equippedWeapons);
       hitChance = Math.min(1, baseHitChance * characterStats.precision);
       penetration = characterStats.penetration;
       label = weapon.name;

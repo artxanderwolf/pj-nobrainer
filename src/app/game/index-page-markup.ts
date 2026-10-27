@@ -70,9 +70,18 @@ export const INDEX_PAGE_MARKUP = `<section class="page" id="index">
         </div>
         <div class="card span-12">
           <h2>Waffen-Handverteilung</h2>
+          <div class="table-wrap mobile-stack"><table><thead><tr><th>Klasse</th><th>Erlaubte Waffen</th><th>Bevorzugt</th></tr></thead><tbody>
+            <tr><td>Rekrut</td><td>Dolch, 1H-/2H-Schwert, 1H-/2H-Axt, Stab</td><td>1H-Schwert + Dolch</td></tr>
+            <tr><td>Kämpfer</td><td>1H-/2H-Schwert, 1H-/2H-Axt</td><td>2H-Schwert oder 2H-Axt</td></tr>
+            <tr><td>Bogner</td><td>Dolch, 1H-Schwert, 1H-Axt, Bogen</td><td>Bogen</td></tr>
+            <tr><td>Gelehrter</td><td>Dolch, Stab</td><td>Stab</td></tr>
+          </tbody></table></div>
+          <p class="index-note">Zwei Einhandwaffen beim Rekruten verursachen je 75 % Waffenschaden. Genau ein 1H-Schwert und ein Dolch erhalten zusätzlich den Präferenzfaktor 1,10: 75 % × 1,10 = 82,5 % je Waffe. Die Zuordnung zu linker/rechter Hand ist dafür egal. Andere erlaubte Einhandpaare bleiben bei 75 %; eine einzelne Waffe und Zweihänder erhalten keinen Zweiwaffenabzug.</p>
+          <p class="index-note">Bevorzugte Waffen verursachen 10 % mehr Waffenschaden. Der Bonus verbessert weder Tempo noch Treffer-/Krit-Chance oder sonstige Charakterboni; kritische Treffer werden auf Basis des angepassten Schadens berechnet. Der Faktor wird aus der aktuellen Ausrüstung bestimmt. Waffen-Grundwerte und Marktpreise bleiben Gegenstandswerte.</p>
+          <p class="index-note">Beim Laden oder JSON-Import wird unerlaubte Ausrüstung abgelegt und vollständig im Lager behalten. Erlaubte Waffen bleiben angelegt; sind zwei Waffen einzeln erlaubt, aber zusammen verboten, werden beide abgelegt. Es wird keine Ersatzwaffe gewählt. Geänderte Handbelegungen werden gesammelt gemeldet und Kampfwerte ohne zusätzliche Heilung neu berechnet.</p>
           <div class="formula">1H-Waffe → belegt genau eine gewählte Hand</div>
           <div class="formula">2H-Waffe → benötigt beide Hände und belegt beide Handplätze mit derselben Waffe</div>
-          <p class="index-note">Eine 2H-Waffe belegt immer beide Handplätze. Sind beim gewählten Charakter bereits eine oder zwei 1H-Waffen oder eine andere 2H-Waffe ausgerüstet, werden diese beim Ausrüsten automatisch ersetzt und bleiben im Waffenlager verfügbar. Eine konkrete Waffe, die bereits bei einem anderen Charakter ausgerüstet ist, bleibt gesperrt. Beim Ablegen einer 2H-Waffe werden beide Handplätze gemeinsam geleert. Klassenabhängige Waffenfreigaben und Schildregeln sind noch nicht aktiv.</p>
+          <p class="index-note">Eine 2H-Waffe belegt immer beide Handplätze. Sind beim gewählten Charakter bereits eine oder zwei 1H-Waffen oder eine andere 2H-Waffe ausgerüstet, werden diese beim Ausrüsten automatisch ersetzt und bleiben im Waffenlager verfügbar. Eine konkrete Waffe, die bereits bei einem anderen Charakter ausgerüstet ist, bleibt gesperrt. Beim Ablegen einer 2H-Waffe werden beide Handplätze gemeinsam geleert. Waffenfreigaben werden beim Ausrüsten geprüft. Nur der Rekrut darf zwei Einhandwaffen gleichzeitig tragen. Bogen und Stab belegen ebenfalls beide Hände. Schilde sind noch kein ausrüstbarer Gegenstand.</p>
         </div>
 
         <div class="card span-12">
@@ -86,6 +95,7 @@ export const INDEX_PAGE_MARKUP = `<section class="page" id="index">
 
         <div class="card span-12">
           <h2>Klassen-Grundwerte</h2>
+          <p class="index-note">Im Trainingslager wird während der Suche jede Sekunde mit 5 % Chance eine neue Welle gefunden. Die reine Suchzeit beträgt im Mittel 20 Sekunden, bleibt aber zufällig; Kampf und Beutesammeln kommen zum Wellenabstand hinzu. Erfolglose Suchschritte heilen weiterhin jeden lebenden aktiven Charakter um 1 HP bis zum Maximum. Seltenere Wellen bedeuten auch weniger XP und Beute pro Stunde; die Belohnung pro Gegner bleibt unverändert.</p>
           <p class="index-note">Der Rekrut bleibt der Allrounder. Kämpfer, Bogner und Gelehrter sind stärker spezialisiert. Bedrohung ist fest an die Klasse gebunden, wird nicht durch Ausrüstung verändert und bleibt über alle Level konstant.</p>
           <div class="table-wrap mobile-stack"><table>
             <thead><tr><th>Klasse</th><th>HP</th><th>E</th><th>R</th><th>AW</th><th>SF</th><th>P</th><th>B</th><th>K-C</th><th>K-S</th><th>HP-R</th><th>E-R</th><th>ERF</th><th>LR</th><th>DS</th></tr></thead>
@@ -169,7 +179,7 @@ export const INDEX_PAGE_MARKUP = `<section class="page" id="index">
           <p class="index-note">Die festen Prüfrüstungen 0/40/80 sind unabhängig vom Dungeon und decken das aktuelle Prozent-Rüstungssystem bis zum 80-%-Cap ab. Dadurch verändert ein neues Dungeon-Balancing nicht automatisch den Marktwert bestehender Waffen.</p>
           <p class="index-note">Der positive SPE-Bonus von 10 % gilt nur beim direkten Verkauf eines Rohmaterials. Bei fertigen Waffen gibt es keinen zweiten pauschalen SPE-Bonus: GES-, P- und DS-Effekte fließen über die tatsächlichen Waffenwerte bereits in den Leistungswert ein.</p>
           <p class="index-note">Die Seltenheit einer Waffe bleibt eine sichtbare Materialeigenschaft, bestimmt aber nicht mehr direkt Waffenwert, Herstellungszeit oder Waffen-Verkaufszeit. Materialmenge verändert weiterhin nur den Verbrauch, nicht den Statbeitrag eines Bauteils.</p>
-          <p class="index-note">Noch nicht aktiv sind die klassenabhängigen Waffenfreigaben, Schildkombinationen und Rüstungsklassen aus „Charakter_abhängikeiten“. Für Rüstung gilt später exakt die Tabellenlogik: A = alle, S = nur schwer, M = nur mittel, L = nur leicht; Kombinationen erlauben nur die ausdrücklich genannten Klassen.</p>
+          <p class="index-note">Die klassenabhängigen Waffenfreigaben sind aktiv. Waffen können unabhängig davon hergestellt, gelagert und verkauft werden, ob eine bestimmte Klasse sie tragen darf. Die vorbereiteten Schildfreigaben führen noch keine Schilde ein; Rüstungsklassen bleiben eine spätere Erweiterung.</p>
           <div class="formula">Material-Verkaufserlös = Materialwert pro Stück × Verkaufsmenge</div>
           <div class="formula">Währung: 100 Nickel = 1 Bronze · 100 Bronze = 1 Silber · 100 Silber = 1 Gold</div>
         </div>

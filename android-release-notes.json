@@ -1,5 +1,8 @@
 [
-  "Das freigegebene Eldravar-Pixel-Icon wird als Android-App-Icon und Web-Icon verwendet.",
-  "Android-Updates werden im Spiel gefunden, heruntergeladen und geprüft. Speichere die APK und öffne sie anschließend über Downloads oder Eigene Dateien.",
+  "Klassen dürfen nur ihre freigegebenen Waffen ausrüsten. Bereits unerlaubt ausgerüstete Waffen werden ins Lager abgelegt.",
+  "Nur Rekruten dürfen zwei Einhandwaffen führen: 75 % Schaden je Waffe, mit Schwert und Dolch 82,5 %.",
+  "Bevorzugte Waffen erhalten 10 % Schadensbonus: Kämpfer mit 2H-Schwert oder 2H-Axt, Bogner mit Bogen, Gelehrter mit Stab.",
+  "Wellen werden im Trainingslager seltener gefunden: 5 % Chance je Suchsekunde. Gegner und Belohnungen pro Gegner bleiben gleich.",
+  "Das neue Eldravar-Emblem wird als Android-App-Icon und Web-Icon verwendet.",
   "Aktualisiere die vorhandene App ohne Deinstallation. Das Spielstandformat bleibt unverändert bei Version 14."
 ]

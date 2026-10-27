@@ -1,6 +1,8 @@
 import { Injectable } from '@angular/core';
+import { getClassEquipmentRule, getCharacterWeaponDamageFactor } from '../game/equipment-rules-core.ts';
 import {
   CHARACTER_CLASSES,
+  CONFIG,
   calculateCharacterStats,
   weaponDamageAfterArmor,
   type ResolvedCharacterStats
@@ -141,6 +143,7 @@ export class GameCharacterPresentationService {
 
     return `<article class="roster-detail-card" data-character-id="${character.id}">
       ${this.renderCharacterHeader(character, characterClass.name, levelStat?.value ?? `${character.level ?? 1}`)}
+      ${this.renderEquipmentRuleNote(character)}
       <div class="roster-emblem-stage">
         <span class="class-emblem class-emblem-large" data-class-id="${assetId}" role="img" aria-label="Klassenemblem ${this.escapeHtml(characterClass.name)}"></span>
         <div class="roster-equipment-layer" aria-label="Ausrüstung">
@@ -150,6 +153,15 @@ export class GameCharacterPresentationService {
       ${picker ? this.renderWeaponPicker(character, picker) : ''}
       ${this.renderStatPage(pageStats, this.statPageIndex, pageCount)}
     </article>`;
+  }
+
+  private renderEquipmentRuleNote(character: CharacterState): string {
+    const rule = getClassEquipmentRule(character.classId);
+    if (!rule) return '';
+    const forms = rule.preferredPairForms.length ? rule.preferredPairForms : rule.preferredWeaponForms;
+    const names = forms.map(form => CONFIG.forge.weaponForms[form]?.name || form).join(rule.preferredPairForms.length ? ' + ' : ' oder ');
+    const factor = getCharacterWeaponDamageFactor(character.classId, this.getEquippedWeapons(character));
+    return `<p class="index-note" data-equipment-factor="${factor}">Bevorzugt: ${this.escapeHtml(names)} · Waffenschaden: ${(factor * 100).toLocaleString('de-DE')} % je Waffe</p>`;
   }
 
   private renderCharacterHeader(character: CharacterState, className: string, levelValue: string): string {
@@ -212,13 +224,22 @@ export class GameCharacterPresentationService {
       const disabled = picker.disabled;
       const label = disabled ? picker.status : 'Ausrüsten';
       const actions = `<div class="weapon-card-actions"><button class="btn ${disabled ? '' : 'primary'}" ${disabled ? 'disabled' : ''} data-roster-action="equip-weapon" data-character-id="${character.id}" data-hand="${handPresentation.hand}" data-weapon-id="${weapon.id}">${label}</button></div>`;
-      return this.weaponPresentation.renderCard(weapon, currentWeapon, picker.status, actions);
+      const preview = disabled ? null : this.gameEquipment.previewWeaponEquip(weapon.id, character.id, handPresentation.hand);
+      let comparison = '';
+      if (preview) {
+        const stats = calculateCharacterStats(character.classId, preview.weapons, characterStatLevelMultiplier(character.level));
+        const after = this.offenseForWeapons(character, preview.weapons, stats);
+        const before = this.effectiveOffense(character, this.effectiveStats(character));
+        const delta = after - before;
+        comparison = `<p class="index-note" data-equipment-preview="${weapon.id}">Charakter-ROH danach: ${after.toFixed(2)} (${delta >= 0 ? '+' : ''}${delta.toFixed(2)}) · Waffenschadenfaktor: ${(preview.factor * 100).toLocaleString('de-DE')} %</p>`;
+      }
+      return this.weaponPresentation.renderCard(weapon, currentWeapon, picker.status, actions) + comparison;
     }).join('');
     const clearAction = currentWeapon
       ? `<div class="weapon-card-actions"><button class="btn" data-roster-action="clear-hand" data-character-id="${character.id}" data-hand="${handPresentation.hand}">Hand leeren</button></div>`
       : '';
 
-    return `<div class="weapon-picker roster-weapon-picker"><div class="weapon-picker-title">${handPresentation.label} · Klammerwerte = Änderung zur aktuell ausgerüsteten Waffe.</div>${clearAction}<div class="weapon-card-list">${cards || '<div class="empty">Keine Waffen im Lager.</div>'}</div></div>`;
+    return `<div class="weapon-picker roster-weapon-picker"><div class="weapon-picker-title">${handPresentation.label} · Waffenkarten zeigen Gegenstandsgrundwerte. Charakter-ROH berücksichtigt die gesamte Ausrüstung und Klassenfaktoren.</div>${clearAction}<div class="weapon-card-list">${cards || '<div class="empty">Keine Waffen im Lager.</div>'}</div></div>`;
   }
 
   private effectiveStats(character: CharacterState): ResolvedCharacterStats {
@@ -230,9 +251,12 @@ export class GameCharacterPresentationService {
   }
 
   private effectiveOffense(character: CharacterState, stats: ResolvedCharacterStats): number {
-    const weapons = this.getEquippedWeapons(character);
+    return this.offenseForWeapons(character, this.getEquippedWeapons(character), stats);
+  }
+
+  private offenseForWeapons(character: CharacterState, weapons: readonly RuntimeWeaponPresentation[], stats: ResolvedCharacterStats): number {
     if (weapons.length) {
-      return weapons.reduce((sum, weapon) => sum + weaponDamageAfterArmor(weapon, 0, stats).raw, 0);
+      return weapons.reduce((sum, weapon) => sum + weaponDamageAfterArmor(weapon, 0, stats).raw, 0) * getCharacterWeaponDamageFactor(character.classId, weapons);
     }
     const fistRaw = 1 * stats.strengthFactor * 1 * Math.min(1, 0.5 * stats.precision);
     return fistRaw * (1 + stats.critChance * (stats.critDamage - 1));
@@ -352,11 +376,7 @@ export class GameCharacterPresentationService {
       if (!Number.isFinite(weaponId)) return;
       const result = this.gameEquipment.equipWeapon(weaponId, hand, characterId);
       if (!result.ok) {
-        if (result.reason === 'weapon-in-use') {
-          alert('Diese konkrete Waffe ist bereits bei einem anderen Charakter ausgerüstet.');
-        } else if (result.reason === 'both-hands-required') {
-          alert('Diese 2H-Waffe benötigt beide Hände. Leere zuerst die andere Hand.');
-        }
+        alert(this.gameEquipment.rejectionText(result.reason));
         return;
       }
       this.finishEquipmentChange();

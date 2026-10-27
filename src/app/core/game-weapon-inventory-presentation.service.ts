@@ -74,7 +74,7 @@ export class GameWeaponInventoryPresentationService {
       }).join('');
       actions = options
         ? `<div class="weapon-card-actions" style="display:grid;grid-template-columns:1fr auto"><select class="equip-select" data-weapon-inventory-select="${weapon.id}">${options}</select><button class="btn primary" data-weapon-inventory-action="equip" data-weapon-id="${weapon.id}">Ausrüsten</button></div>`
-        : '<div class="weapon-card-actions"><button class="btn" disabled>Keine freie Hand</button></div>';
+        : '<div class="weapon-card-actions"><button class="btn" disabled>Kein zulässiger freier Handplatz</button></div>';
     }
 
     return this.weaponPresentation.renderCard(weapon, null, presentation.status, actions);
@@ -111,9 +111,7 @@ export class GameWeaponInventoryPresentationService {
       if (!Number.isFinite(characterId)) return;
       const result = this.gameEquipment.equipWeapon(weaponId, hand, characterId);
       if (!result.ok) {
-        if (result.reason === 'weapon-in-use') {
-          alert('Diese konkrete Waffe ist bereits bei einem anderen Charakter ausgerüstet.');
-        }
+        alert(this.gameEquipment.rejectionText(result.reason));
         return;
       }
       this.finishEquipmentChange();
