@@ -1,3 +1,5 @@
+import { DUNGEON_IDS, getDungeonSession, assignDungeonCharacter, characterDungeonReservation, type DungeonSessionState } from '../game/parallel-dungeon-core.ts';
+import { dungeonUnlocked } from '../game/mission-core.ts';
 import { getDungeonDefinition } from '../game/dungeon-definitions.ts';
 import { Injectable } from '@angular/core';
 import { CHARACTER_CLASSES, CONFIG, type CharacterClassId } from '../game/game-core';
@@ -14,15 +16,7 @@ interface DungeonPresentationCharacter extends DungeonTeamPresentationCharacterL
 interface DungeonPresentationEnemy { name: string; hp: number; maxHp: number; alive?: boolean; }
 interface DungeonPresentationState extends MutableGameState {
   characters: DungeonPresentationCharacter[];
-  dungeonAuto: boolean;
-  dungeonRun: { participantIds: number[]; enemies: DungeonPresentationEnemy[] } | null;
-  dungeonSearch: { nextCheckAt: number } | null;
-  dungeonLootCollect: { enemyCount: number } | null;
-  dungeonLoot: MaterialStorageInventory;
-  dungeonTeamSlots: Array<number | null>;
-  dungeonCycleOriginalIds: number[];
-  dungeonCycleActiveIds: number[];
-  dungeonWavesDefeated: number;
+  session: DungeonSessionState;
 }
 
 interface DungeonLogEntry {
@@ -36,7 +30,8 @@ export class GameDungeonPresentationService {
   private actionsBound = false;
   private actionHandler: ((result: DungeonActionResult, inventoryChanged: boolean) => void) | null = null;
   private readonly maxVisibleLogEntries = 1000;
-  private liveLogEntries: DungeonLogEntry[] = [];
+  private get liveLogEntries(): DungeonLogEntry[] { return this.getState().session.log; }
+  private set liveLogEntries(entries:DungeonLogEntry[]) { this.getState().session.log=entries; }
   private liveLogPlaceholder = 'Noch kein Lauf gestartet.';
 
   constructor(
@@ -48,6 +43,7 @@ export class GameDungeonPresentationService {
     this.actionHandler = handler;
     if (this.actionsBound) return;
 
+    this.installHubMarkup();
     this.installModalMarkup();
     this.installHelpSection();
 
@@ -63,7 +59,8 @@ export class GameDungeonPresentationService {
     }
 
     openButton.removeAttribute('onclick');
-    openButton.addEventListener('click', () => this.openModal());
+    openButton.addEventListener('click', () => this.openModal(1));
+    document.getElementById('dungeon')?.addEventListener('click',event=>{const button=(event.target as Element).closest<HTMLElement>('[data-open-dungeon]');const id=Number(button?.dataset['openDungeon']);if(id>1)this.openModal(id);});
 
     // Der alte zweite Hub-Knopf bleibt nur als unsichtbarer Kompatibilitätsanker für Altstand-/Browserchecks bestehen.
     overviewAction.hidden = true;
@@ -93,12 +90,11 @@ export class GameDungeonPresentationService {
     this.renderPrimaryAction();
   }
 
-  addEvent(text: string, className = ''): void {
-    this.liveLogEntries.unshift({ text, className });
-    if (this.liveLogEntries.length > this.maxVisibleLogEntries) {
-      this.liveLogEntries.length = this.maxVisibleLogEntries;
-    }
-    if (!this.dungeonSession.isOpen()) return;
+  addEvent(text: string, className = '', dungeonId = this.dungeonSession.getOpenedDungeonId()): void {
+    const session = getDungeonSession(this.gameState.getState(),dungeonId);
+    session.log.unshift({ text, className });
+    if (session.log.length > this.maxVisibleLogEntries) session.log.length = this.maxVisibleLogEntries;
+    if (!this.dungeonSession.isOpen() || dungeonId!==this.dungeonSession.getOpenedDungeonId()) return;
 
     const log = document.getElementById('dungeonCombatLog');
     if (!log) return;
@@ -116,6 +112,12 @@ export class GameDungeonPresentationService {
     if (previousScrollTop > 0) {
       log.scrollTop = previousScrollTop + Math.max(0, log.scrollHeight - previousScrollHeight);
     }
+  }
+
+  private installHubMarkup(): void {
+    const hub=document.querySelector('#dungeon .screen-menu');
+    if(!hub)throw new Error('Dungeon-Übersicht fehlt.');
+    hub.innerHTML=DUNGEON_IDS.map(id=>`<div class="menu-card menu-card-split dungeon-overview-card" data-dungeon-card="${id}"><button ${id===1?'id="dungeonOverviewOpenBtn"':''} data-open-dungeon="${id}" class="menu-card-main" type="button"><span class="menu-card-title">${getDungeonDefinition(id).displayName}</span><span class="menu-card-copy"></span></button>${id===1?'<button id="dungeonOverviewAction" hidden class="btn">Trainingslager öffnen</button>':''}</div>`).join('');
   }
 
   private installModalMarkup(): void {
@@ -179,7 +181,7 @@ export class GameDungeonPresentationService {
     card.dataset['dungeonSessionHelp'] = 'true';
     card.innerHTML = `
       <h2>${this.getDisplayName()} – Ablauf</h2>
-      <p class="index-note">Das Trainingslager ist Dungeon 1 und wird ausschließlich über seine Karte im Dungeon-Bereich als Popup geöffnet. Die zuletzt gewählte Gruppe bleibt gespeichert und wird beim nächsten Öffnen wiederverwendet.</p>
+      <p class="index-note">Das Trainingslager ist Dungeon 1 und wird ausschließlich über seine Karte im Dungeon-Bereich als Popup geöffnet. Jeder Dungeon hat eine eigene Karte, Gruppe, Restzeit, Beute und ein eigenes Protokoll. Mehrere Dungeons können parallel laufen. Ein Charakter kann während eines laufenden Dungeons keinem weiteren aktiven Dungeon zugeordnet werden; auch gefallene Teilnehmer bleiben bis zum Laufende reserviert. Die zuletzt gewählte Gruppe bleibt pro Dungeon gespeichert.</p>
       <div class="formula">Maximale Laufzeit: 5 Stunden · Ende: Zeitablauf oder manueller Abbruch</div>
       <p class="index-note">Schließen des Popups beendet einen laufenden Run nicht. Suche, Kämpfe, Countdown, Erfahrung, Beute und Live-Protokoll laufen innerhalb der geöffneten Spielanwendung im Hintergrund weiter. Erst ein manueller Abbruch oder das Ende der fünf Stunden beendet den Run.</p>
       <p class="index-note">Energie wird im Trainingslager derzeit weder angezeigt noch verbraucht. Charaktere und aktive Gegner werden im Dungeon-Kontext ohne HP-Zahlen dargestellt; ihr aktueller Lebensstand ist ausschließlich über Lebensbalken sichtbar.</p>
@@ -187,10 +189,13 @@ export class GameDungeonPresentationService {
     grid.prepend(card);
   }
 
-  private openModal(): void {
+  private openModal(dungeonId = this.dungeonSession.getOpenedDungeonId()): void {
+    if(!dungeonUnlocked(this.gameState.getState(),dungeonId))return;
+    this.gameState.getState()['selectedDungeonId']=dungeonId;
     const modal = document.getElementById('dungeon-select');
     if (!modal) return;
-    const result = this.dungeonSession.open(Date.now());
+    const result = this.dungeonSession.open(Date.now(),dungeonId);
+    modal.dataset['dungeonId']=String(dungeonId);
     modal.hidden = false;
     modal.classList.add('dungeon-modal-open');
     modal.setAttribute('aria-hidden', 'false');
@@ -216,14 +221,14 @@ export class GameDungeonPresentationService {
 
   private renderHub(): void {
     const state = this.getState();
-    const title = document.querySelector<HTMLElement>('.dungeon-overview-card .menu-card-title');
-    const copy = document.querySelector<HTMLElement>('.dungeon-overview-card .menu-card-copy');
     const overviewAction = document.getElementById('dungeonOverviewAction') as HTMLButtonElement | null;
-    if (title) title.textContent = this.getDisplayName();
-    if (copy) {
-      copy.textContent = this.dungeonSession.isRunActive()
-        ? `Läuft im Hintergrund · ${this.formatDuration(this.dungeonSession.getTiming(Date.now()).remainingMs)} verbleibend`
-        : '5 Stunden Laufzeit · Team, Gegner, Beute und Live-Protokoll in einer Ansicht';
+    for(const id of DUNGEON_IDS){
+      const card=document.querySelector<HTMLElement>(`[data-dungeon-card="${id}"]`);
+      const button=card?.querySelector<HTMLButtonElement>('button');
+      const copy=card?.querySelector<HTMLElement>('.menu-card-copy');
+      const unlocked=dungeonUnlocked(this.gameState.getState(),id);
+      if(button){button.disabled=!unlocked;button.setAttribute('aria-label',`${getDungeonDefinition(id).displayName}${unlocked?' öffnen':' · gesperrt'}`);}
+      if(copy)copy.textContent=!unlocked?'Gesperrt · Zugang über Mission freischalten':this.dungeonSession.isRunActive(id)?`Läuft im Hintergrund · ${this.formatDuration(this.dungeonSession.getTiming(Date.now(),id).remainingMs)} verbleibend`:'5 Stunden Laufzeit · Team, Gegner, Beute und Live-Protokoll';
     }
     if (overviewAction) {
       const lootTotal = this.getLootTotal(state);
@@ -240,10 +245,10 @@ export class GameDungeonPresentationService {
     const characters = this.presentationCharacters(state);
     const locked = this.dungeonSession.isRunActive();
     const presentation = getDungeonTeamPresentation(
-      state.dungeonTeamSlots,
+      state.session.dungeonTeamSlots,
       characters,
       locked,
-      state.dungeonCycleActiveIds ?? [],
+      state.session.dungeonCycleActiveIds ?? [],
       locked
     );
     const slots = presentation.slots.map(slot => {
@@ -266,8 +271,8 @@ export class GameDungeonPresentationService {
     slot: number
   ): string {
     if (this.openTeamPickerSlot !== slot) return '';
-    const used = new Set(state.dungeonTeamSlots.filter((id, index): id is number => index !== slot && typeof id === 'number'));
-    const candidates = characters.filter(character => !used.has(character.id));
+    const used = new Set(state.session.dungeonTeamSlots.filter((id, index): id is number => index !== slot && typeof id === 'number'));
+    const candidates = characters.filter(character => !used.has(character.id) && characterDungeonReservation(this.gameState.getState(),character.id,state.session.dungeonId)===null);
     if (!candidates.length) return '<div class="team-slot-picker muted small">Keine weiteren Charaktere verfügbar.</div>';
     return `<div class="team-slot-picker">${candidates.map(candidate => `<div class="team-candidate"><div><strong>${candidate.name}</strong><div class="sell-meta">${candidate.className}</div></div><button class="btn smallbtn primary" data-dungeon-action="assign" data-slot="${slot}" data-character-id="${candidate.id}">Zuweisen</button></div>`).join('')}</div>`;
   }
@@ -288,7 +293,7 @@ export class GameDungeonPresentationService {
     const root = document.getElementById('dungeonActiveEnemies');
     if (!root) return;
     const state = this.getState();
-    const enemies = (state.dungeonRun?.enemies ?? []).filter(enemy => enemy.alive !== false && enemy.hp > 0);
+    const enemies = (state.session.dungeonRun?.enemies ?? []).filter(enemy => enemy.alive !== false && enemy.hp > 0);
     if (!enemies.length) {
       root.innerHTML = `<div class="empty dungeon-compact-empty">${this.dungeonSession.isRunActive() ? `${this.getDisplayName()} wird durchsucht …` : 'Keine aktiven Gegner.'}</div>`;
       return;
@@ -305,7 +310,7 @@ export class GameDungeonPresentationService {
     const empty = document.getElementById('dungeonLootEmpty');
     const collect = document.getElementById('dungeonCollectLootBtn') as HTMLButtonElement | null;
     if (!box || !empty || !collect) return;
-    const entries = getMaterialStorageEntries(state.dungeonLoot).filter(entry => entry.qty > 0);
+    const entries = getMaterialStorageEntries(state.session.dungeonLoot).filter(entry => entry.qty > 0);
     box.innerHTML = entries.map(entry => `<span class="loot-chip">${entry.displayName}<b>×${entry.qty}</b></span>`).join('');
     empty.style.display = entries.length ? 'none' : 'block';
     collect.textContent = entries.length ? `Einsammeln (${entries.reduce((sum, entry) => sum + entry.qty, 0)})` : 'Einsammeln';
@@ -322,9 +327,9 @@ export class GameDungeonPresentationService {
     if (this.dungeonSession.isRunActive()) {
       button.textContent = 'Lauf abbrechen';
       button.disabled = false;
-      status.textContent = state.dungeonRun
+      status.textContent = state.session.dungeonRun
         ? `Kampf aktiv · ${this.getAliveEnemyCount(state)} Gegner aktiv`
-        : state.dungeonLootCollect
+        : state.session.dungeonLootCollect
           ? 'Beute der aktuellen Welle wird eingesammelt …'
           : `${this.getDisplayName()} wird durchsucht …`;
       return;
@@ -340,7 +345,7 @@ export class GameDungeonPresentationService {
 
   private handlePrimaryAction(): void {
     if (this.getLootTotal(this.getState()) > 0 && !this.dungeonSession.isRunActive()) return;
-    if (!this.dungeonSession.isRunActive()) this.resetLiveLog('Trainingslager wird gestartet …');
+    if (!this.dungeonSession.isRunActive()) this.resetLiveLog(`${this.getDisplayName()} wird gestartet …`);
     this.handleResult(this.dungeonSession.toggleRun(Date.now()));
   }
 
@@ -373,9 +378,9 @@ export class GameDungeonPresentationService {
       return;
     }
     if (action === 'remove') {
-      state.dungeonTeamSlots[slot] = null;
-      state.dungeonCycleOriginalIds = [];
-      state.dungeonCycleActiveIds = [];
+      if(!assignDungeonCharacter(this.gameState.getState() as MutableGameState & {characters:Array<{id:number}>},state.session.dungeonId,slot,null))return;
+      state.session.dungeonCycleOriginalIds = [];
+      state.session.dungeonCycleActiveIds = [];
       this.openTeamPickerSlot = null;
       this.handleResult({ events: [], saveRequested: true });
       return;
@@ -383,10 +388,10 @@ export class GameDungeonPresentationService {
     if (action === 'assign') {
       const characterId = Number(target.dataset['characterId']);
       if (!state.characters.some(character => character.id === characterId)) return;
-      if (state.dungeonTeamSlots.some((id, index) => index !== slot && id === characterId)) return;
-      state.dungeonTeamSlots[slot] = characterId;
-      state.dungeonCycleOriginalIds = [];
-      state.dungeonCycleActiveIds = [];
+      if (state.session.dungeonTeamSlots.some((id, index) => index !== slot && id === characterId)) return;
+      if(!assignDungeonCharacter(this.gameState.getState() as MutableGameState & {characters:Array<{id:number}>},state.session.dungeonId,slot,characterId))return;
+      state.session.dungeonCycleOriginalIds = [];
+      state.session.dungeonCycleActiveIds = [];
       this.openTeamPickerSlot = null;
       this.handleResult({ events: [], saveRequested: true });
     }
@@ -441,19 +446,19 @@ export class GameDungeonPresentationService {
   }
 
   private getSelectedIds(state: DungeonPresentationState): number[] {
-    return state.dungeonTeamSlots.filter((id): id is number => typeof id === 'number' && id > 0);
+    return state.session.dungeonTeamSlots.filter((id): id is number => typeof id === 'number' && id > 0);
   }
 
   private getLootTotal(state: DungeonPresentationState): number {
-    return getMaterialStorageEntries(state.dungeonLoot).reduce((sum, entry) => sum + entry.qty, 0);
+    return getMaterialStorageEntries(state.session.dungeonLoot).reduce((sum, entry) => sum + entry.qty, 0);
   }
 
   private getAliveEnemyCount(state: DungeonPresentationState): number {
-    return (state.dungeonRun?.enemies ?? []).filter(enemy => enemy.alive !== false && enemy.hp > 0).length;
+    return (state.session.dungeonRun?.enemies ?? []).filter(enemy => enemy.alive !== false && enemy.hp > 0).length;
   }
 
   private getDisplayName(): string {
-    const displayName = getDungeonDefinition(Number(this.getState()['selectedDungeonId']) || 1).displayName;
+    const displayName = getDungeonDefinition(this.dungeonSession.getOpenedDungeonId()).displayName;
     return displayName || 'Trainingslager';
   }
 
@@ -471,6 +476,7 @@ export class GameDungeonPresentationService {
   }
 
   private getState(): DungeonPresentationState {
-    return this.gameState.getState<DungeonPresentationState>();
+    const root=this.gameState.getState();
+    return {characters:root['characters'],session:getDungeonSession(root,this.dungeonSession.getOpenedDungeonId())} as DungeonPresentationState;
   }
 }

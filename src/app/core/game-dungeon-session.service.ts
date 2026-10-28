@@ -1,3 +1,4 @@
+import { DUNGEON_IDS, getDungeonSession, characterDungeonReservation, migrateParallelDungeons, type DungeonSessionState as SessionData } from '../game/parallel-dungeon-core.ts';
 import { Injectable } from '@angular/core';
 import { getDungeonDefinition } from '../game/dungeon-definitions.ts';
 import { initializeReleaseProgress, type MissionState } from '../game/mission-core.ts';
@@ -16,19 +17,8 @@ interface DungeonSessionCharacter {
 
 interface DungeonSessionState extends MutableGameState, MissionState {
   characters: DungeonSessionCharacter[];
-  expeditionActive: boolean;
-  dungeonAuto: boolean;
-  dungeonStopRequested?: boolean;
-  dungeonRun: unknown | null;
-  dungeonSearch: unknown | null;
-  dungeonLootCollect: unknown | null;
-  dungeonLoot: MaterialStorageInventory;
-  dungeonTeamSlots: Array<number | null>;
-  dungeonCycleOriginalIds: number[];
-  dungeonCycleActiveIds: number[];
-  dungeonWavesDefeated: number;
-  dungeonSessionStartWaves?: number;
-  dungeonSessionEndsAt?: number | null;
+  session: SessionData;
+  dungeons: Record<number,SessionData>;
 }
 
 export interface DungeonSessionTiming {
@@ -41,13 +31,15 @@ export interface DungeonSessionTiming {
 @Injectable({ providedIn: 'root' })
 export class GameDungeonSessionService {
   private modalOpen = false;
+  private openedDungeonId = 1;
 
   constructor(
     private readonly gameState: GameStateService,
     private readonly gameDungeon: GameDungeonService
   ) {}
 
-  open(_at = Date.now()): DungeonActionResult {
+  open(_at = Date.now(), dungeonId = 1): DungeonActionResult {
+    this.openedDungeonId = dungeonId;
     this.modalOpen = true;
     return { events: [], saveRequested: false };
   }
@@ -63,7 +55,12 @@ export class GameDungeonSessionService {
    * Laufzustände ohne belastbare Endzeit werden einmal sauber zurückgesetzt.
    */
   prepareLoadedSession(_at = Date.now()): DungeonActionResult {
-    const state = this.getState();
+    const results = DUNGEON_IDS.map(id => this.prepareLoadedDungeon(id));
+    return {events: results.flatMap(r=>r.events),saveRequested:results.some(r=>r.saveRequested)};
+  }
+
+  private prepareLoadedDungeon(dungeonId:number): DungeonActionResult {
+    const state = this.getState(dungeonId);
     this.modalOpen = false;
 
     const active = this.hasActiveRun(state);
@@ -77,8 +74,8 @@ export class GameDungeonSessionService {
     return { events: [], saveRequested: changed };
   }
 
-  toggleRun(at = Date.now()): DungeonActionResult {
-    if (!this.modalOpen) {
+  toggleRun(at = Date.now(), dungeonId = this.openedDungeonId): DungeonActionResult {
+    if (!this.modalOpen || dungeonId !== this.openedDungeonId) {
       return {
         events: [],
         saveRequested: false,
@@ -86,19 +83,24 @@ export class GameDungeonSessionService {
       };
     }
 
-    const state = this.getState();
+    const state = this.getState(dungeonId);
     if (this.hasActiveRun(state)) return this.finishSession(state, 'manual', at);
 
-    const result = this.sanitizeResult(this.gameDungeon.toggleAuto(at));
+    const result = this.sanitizeResult(this.gameDungeon.toggleAuto(at,dungeonId));
     if (this.hasActiveRun(state)) {
-      state.dungeonSessionEndsAt = at + this.getDurationMs();
+      state.session.dungeonSessionEndsAt = at + this.getDurationMs();
       return { ...result, saveRequested: true };
     }
     return result;
   }
 
   update(now = Date.now()): DungeonUpdateResult {
-    const state = this.getState();
+    const results = DUNGEON_IDS.map(id => this.updateDungeon(now,id));
+    return {events:results.flatMap(r=>r.events),saveRequested:results.some(r=>r.saveRequested),catchingUp:results.some(r=>r.catchingUp),alertMessage:results.map(r=>r.alertMessage).filter(Boolean).join('\n\n') || undefined};
+  }
+
+  private updateDungeon(now:number, dungeonId:number): DungeonUpdateResult {
+    const state = this.getState(dungeonId);
     if (!this.hasActiveRun(state)) {
       const timingCleared = this.clearSessionTiming(state);
       return { events: [], saveRequested: timingCleared, catchingUp: false };
@@ -113,7 +115,7 @@ export class GameDungeonSessionService {
     }
 
     const updateAt = Math.min(now, endsAt);
-    const result = this.sanitizeResult(this.gameDungeon.update(updateAt));
+    const result = this.sanitizeResult(this.gameDungeon.update(updateAt,dungeonId),dungeonId);
 
     if (!this.hasActiveRun(state)) {
       const timingCleared = this.clearSessionTiming(state);
@@ -133,13 +135,14 @@ export class GameDungeonSessionService {
     return result;
   }
 
-  collectLoot(): DungeonActionResult {
-    return this.sanitizeResult(this.gameDungeon.collectLoot());
+  collectLoot(dungeonId=this.openedDungeonId): DungeonActionResult {
+    if (this.isRunActive(dungeonId)) return {events:[],saveRequested:false};
+    return this.sanitizeResult(this.gameDungeon.collectLoot(dungeonId),dungeonId);
   }
 
-  getTiming(now = Date.now()): DungeonSessionTiming {
-    const totalMs = this.getDurationMs();
-    const state = this.getState();
+  getTiming(now = Date.now(), dungeonId = this.openedDungeonId): DungeonSessionTiming {
+    const totalMs = this.getDurationMs(dungeonId);
+    const state = this.getState(dungeonId);
     const endsAt = this.getSessionEndsAt(state);
     const active = this.hasActiveRun(state) && endsAt !== null;
     const remainingMs = active ? Math.max(0, Number(endsAt) - now) : totalMs;
@@ -151,16 +154,18 @@ export class GameDungeonSessionService {
     };
   }
 
+  getOpenedDungeonId(): number { return this.openedDungeonId; }
+
   isOpen(): boolean {
     return this.modalOpen;
   }
 
-  isRunActive(): boolean {
-    return this.hasActiveRun(this.getState());
+  isRunActive(dungeonId=this.openedDungeonId): boolean {
+    return this.hasActiveRun(this.getState(dungeonId));
   }
 
-  getDurationMs(): number {
-    const configured = Number(getDungeonDefinition(this.getState().selectedDungeonId ?? 1).durationMs);
+  getDurationMs(dungeonId=this.openedDungeonId): number {
+    const configured = Number(getDungeonDefinition(dungeonId).durationMs);
     if (!Number.isFinite(configured) || configured <= 0) {
       throw new Error(`${this.getDisplayName()} benötigt eine positive durationMs-Konfiguration.`);
     }
@@ -172,18 +177,18 @@ export class GameDungeonSessionService {
     reason: 'manual' | 'timeout',
     at: number
   ): DungeonActionResult {
-    const waves = this.gameDungeon.getSessionWaveCount();
-    const teamIds = state.dungeonCycleOriginalIds?.length
-      ? [...state.dungeonCycleOriginalIds]
+    const waves = this.gameDungeon.getSessionWaveCount(state.session.dungeonId);
+    const teamIds = state.session.dungeonCycleOriginalIds?.length
+      ? [...state.session.dungeonCycleOriginalIds]
       : this.selectedIds(state);
-    const loot = getMaterialStorageEntries(state.dungeonLoot)
+    const loot = getMaterialStorageEntries(state.session.dungeonLoot)
       .filter(entry => entry.qty > 0)
       .sort((left, right) => left.displayName.localeCompare(right.displayName))
       .map(entry => `${entry.displayName} ×${entry.qty}`);
 
     this.resetRuntimeState(state);
 
-    const displayName = this.getDisplayName();
+    const displayName = this.getDisplayName(state.session.dungeonId);
     const reasonText = reason === 'manual'
       ? 'Grund: Manueller Abbruch.'
       : 'Grund: Maximale Laufzeit von 5 Stunden erreicht.';
@@ -195,6 +200,7 @@ export class GameDungeonSessionService {
 
     return {
       events: [{
+        dungeonId:state.session.dungeonId,
         text: reason === 'manual'
           ? `${displayName}-Lauf manuell abgebrochen.`
           : `${displayName}-Lauf nach 5 Stunden beendet.`,
@@ -215,58 +221,59 @@ export class GameDungeonSessionService {
 
   private resetRuntimeState(state: DungeonSessionState): void {
     const selected = this.selectedIds(state)
+      .filter(id=>characterDungeonReservation(state,id,state.session.dungeonId)===null)
       .map(id => state.characters.find(character => character.id === id))
       .filter((character): character is DungeonSessionCharacter => Boolean(character));
-    initializeReleaseProgress(state).session = null;
+    state.session.progress = null;
     resetDungeonCycle(selected);
-    state.dungeonAuto = false;
-    state.dungeonStopRequested = false;
-    state.dungeonRun = null;
-    state.dungeonSearch = null;
-    state.dungeonLootCollect = null;
-    state.expeditionActive = false;
-    state.dungeonCycleOriginalIds = [];
-    state.dungeonCycleActiveIds = [];
-    state.dungeonSessionStartWaves = Number(state.dungeonWavesDefeated) || 0;
-    state.dungeonSessionEndsAt = null;
+    state.session.dungeonAuto = false;
+    state.session.dungeonStopRequested = false;
+    state.session.dungeonRun = null;
+    state.session.dungeonSearch = null;
+    state.session.dungeonLootCollect = null;
+    state.session.expeditionActive = false;
+    state.session.dungeonCycleOriginalIds = [];
+    state.session.dungeonCycleActiveIds = [];
+    state.session.dungeonSessionStartWaves = Number(state.session.dungeonWavesDefeated) || 0;
+    state.session.dungeonSessionEndsAt = null;
   }
 
   private clearSessionTiming(state: DungeonSessionState): boolean {
-    if (state.dungeonSessionEndsAt === null || state.dungeonSessionEndsAt === undefined) return false;
-    state.dungeonSessionEndsAt = null;
+    if (state.session.dungeonSessionEndsAt === null || state.session.dungeonSessionEndsAt === undefined) return false;
+    state.session.dungeonSessionEndsAt = null;
     return true;
   }
 
   private getSessionEndsAt(state: DungeonSessionState): number | null {
-    const endsAt = Number(state.dungeonSessionEndsAt);
+    const endsAt = Number(state.session.dungeonSessionEndsAt);
     return Number.isFinite(endsAt) && endsAt > 0 ? endsAt : null;
   }
 
   private hasRuntimeState(state: DungeonSessionState): boolean {
     return Boolean(
-      state.dungeonAuto || state.dungeonStopRequested || state.dungeonRun || state.dungeonSearch ||
-      state.dungeonLootCollect || state.expeditionActive || state.dungeonCycleOriginalIds?.length ||
-      state.dungeonCycleActiveIds?.length || this.getSessionEndsAt(state) !== null
+      state.session.dungeonAuto || state.session.dungeonStopRequested || state.session.dungeonRun || state.session.dungeonSearch ||
+      state.session.dungeonLootCollect || state.session.expeditionActive || state.session.dungeonCycleOriginalIds?.length ||
+      state.session.dungeonCycleActiveIds?.length || this.getSessionEndsAt(state) !== null
     );
   }
 
   private hasActiveRun(state: DungeonSessionState): boolean {
-    return Boolean(state.dungeonAuto || state.dungeonRun || state.dungeonSearch || state.dungeonLootCollect);
+    return Boolean(state.session.dungeonAuto || state.session.dungeonRun || state.session.dungeonSearch || state.session.dungeonLootCollect);
   }
 
   private selectedIds(state: DungeonSessionState): number[] {
-    return (state.dungeonTeamSlots ?? [])
+    return (state.session.dungeonTeamSlots ?? [])
       .map(id => Number(id))
       .filter(id => Number.isInteger(id) && id > 0 && state.characters.some(character => character.id === id));
   }
 
-  private getDisplayName(): string {
-    const displayName = getDungeonDefinition(this.getState().selectedDungeonId ?? 1).displayName;
+  private getDisplayName(dungeonId=this.openedDungeonId): string {
+    const displayName = getDungeonDefinition(dungeonId).displayName;
     return displayName || 'Trainingslager';
   }
 
-  private sanitizeResult<T extends DungeonActionResult>(result: T): T {
-    const displayName = this.getDisplayName();
+  private sanitizeResult<T extends DungeonActionResult>(result: T, dungeonId=this.openedDungeonId): T {
+    const displayName = this.getDisplayName(dungeonId);
     const events = result.events.map(event => ({
       ...event,
       text: event.text
@@ -279,10 +286,13 @@ export class GameDungeonSessionService {
     const alertMessage = result.alertMessage
       ?.replace(/Dungeon-1/g, displayName)
       .replace(/Dungeon 1/g, displayName);
-    return { ...result, events, ...(alertMessage ? { alertMessage } : {}) };
+    return { ...result, events:events.map(event=>({...event,dungeonId})), ...(alertMessage ? { alertMessage } : {}) };
   }
 
-  private getState(): DungeonSessionState {
-    return this.gameState.getState<DungeonSessionState>();
+  private getState(dungeonId=this.openedDungeonId): DungeonSessionState {
+    const root=this.gameState.getState();
+    initializeReleaseProgress(root);
+    if(!root['dungeons'])migrateParallelDungeons(root);
+    return {characters:root['characters'],releaseProgress:root['releaseProgress'],dungeons:root['dungeons'],session:getDungeonSession(root,dungeonId)} as DungeonSessionState;
   }
 }

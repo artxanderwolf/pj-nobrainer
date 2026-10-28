@@ -20,24 +20,24 @@ const savedAt = 1_760_000_000_000;
 const encoded = encodeSave(state, savedAt);
 const parsed = JSON.parse(encoded);
 
-assert.equal(parsed.saveVersion, 15, 'Save-Version muss für persistente Dungeon-Sitzungsendzeiten 15 sein.');
-assert.equal(SAVE_VERSION, 15, 'TypeScript-Save-Version muss 15 sein.');
+assert.equal(parsed.saveVersion, 16, 'Save-Version muss für persistente Dungeon-Sitzungsendzeiten 16 sein.');
+assert.equal(SAVE_VERSION, 16, 'TypeScript-Save-Version muss 16 sein.');
 assert.equal(parsed.savedAt, savedAt, 'savedAt muss unverändert gespeichert werden.');
 assert.equal(parsed.state.dungeonSessionEndsAt, state.dungeonSessionEndsAt, 'Die absolute Dungeon-Endzeit muss im Save erhalten bleiben.');
 assert.deepEqual(parsed.state, state, 'State muss unverändert im Save-Envelope liegen.');
-assert.deepEqual(decodeSave(encoded), { state, savedAt, saveVersion: 15 }, 'Aktuelles Save-Envelope muss verlustfrei decodiert werden.');
+assert.deepEqual(decodeSave(encoded), { state, savedAt, saveVersion: 16 }, 'Aktuelles Save-Envelope muss verlustfrei decodiert werden.');
 assert.deepEqual(decodeSave(JSON.stringify(state)), { state, savedAt: null, saveVersion: null }, 'Legacy-Rohzustand muss weiterhin geladen werden.');
 
-for (const version of [14, 13, 12, 11, 10, 9, 8]) {
+for (const version of [15, 14, 13, 12, 11, 10, 9, 8]) {
   const legacy = JSON.stringify({ saveVersion: version, savedAt, state });
   assert.deepEqual(decodeSave(legacy), { state, savedAt, saveVersion: version }, `v${version}-Saves müssen weiterhin verlustfrei decodiert werden.`);
   assert.equal(validateImportedSave(legacy).ok, true, `v${version}-Save-Dateien müssen für den JSON-Import akzeptiert werden.`);
 }
 
 const currentImport = validateImportedSave(encoded);
-assert.equal(currentImport.ok, true, 'Aktuelles Save v15 muss als JSON-Datei importierbar sein.');
+assert.equal(currentImport.ok, true, 'Aktuelles Save v16 muss als JSON-Datei importierbar sein.');
 if (currentImport.ok) {
-  assert.equal(currentImport.saveVersion, 15);
+  assert.equal(currentImport.saveVersion, 16);
   assert.equal(currentImport.savedAt, savedAt);
   assert.deepEqual(currentImport.state, state);
 }
@@ -64,11 +64,11 @@ assert.equal(
   'Ein strukturell unvollständiger Spielzustand muss blockiert werden.'
 );
 
-const localDate = new Date(2026, 9, 24, 15, 36, 5).getTime();
+const localDate = new Date(2026, 9, 24, 16, 36, 5).getTime();
 assert.equal(
   buildSaveExportFilename('0.17.2', localDate),
-  'NoBrainer-Spielstand-v0.17.2-2026-10-24_15-36-05.json',
+  'NoBrainer-Spielstand-v0.17.2-2026-10-24_16-36-05.json',
   'Der Exportdateiname muss App-Version und lokalen Speicherzeitpunkt enthalten.'
 );
 
-console.log('Save-Codec v15 bleibt unverändert; JSON-Export/Import validiert Save-Dateien v8 bis v15 und blockiert ungültige oder zukünftige Saves.');
+console.log('Save-Codec v16 bleibt unverändert; JSON-Export/Import validiert Save-Dateien v8 bis v16 und blockiert ungültige oder zukünftige Saves.');

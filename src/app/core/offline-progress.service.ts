@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { getMaterialDisplayNameById } from '../game/game-core.ts';
 import { formatCurrencyNickel } from '../game/economy-core';
 
 export interface SaveSnapshot {
@@ -13,12 +14,12 @@ export class OfflineProgressService {
 
     const state = snapshot.state ?? {};
     const characters = Array.isArray(state.characters) ? state.characters : [];
-    const energyCanRegenerate = !state.dungeonAuto && characters.some(
+    const energyCanRegenerate = !this.sessions(state).some(d=>d.dungeonAuto || d.dungeonRun || d.dungeonSearch || d.dungeonLootCollect) && characters.some(
       (character: any) => Number(character.energy) < Number(character.maxEnergy)
     );
 
     return Boolean(
-      state.dungeonAuto || state.dungeonRun || state.dungeonSearch || state.dungeonLootCollect ||
+      this.sessions(state).some(d=>d.dungeonAuto || d.dungeonRun || d.dungeonSearch || d.dungeonLootCollect) ||
       state.forgeJobs?.length || state.forgeQueue?.length ||
       state.marketJobs?.length || state.marketQueue?.length || energyCanRegenerate
     );
@@ -39,13 +40,13 @@ export class OfflineProgressService {
 
     const waves = Math.max(
       0,
-      Number(afterState.dungeonWavesDefeated || 0) - Number(beforeState.dungeonWavesDefeated || 0)
+      this.sessions(afterState).reduce((sum,d)=>sum+Number(d.dungeonWavesDefeated||0),0) - this.sessions(beforeState).reduce((sum,d)=>sum+Number(d.dungeonWavesDefeated||0),0)
     );
     if (waves > 0) {
       lines.push(`Dungeon: ${waves} Welle${waves === 1 ? '' : 'n'} erfolgreich abgeschlossen`);
     }
 
-    const lootChanges = this.quantityChanges(beforeState.dungeonLoot, afterState.dungeonLoot);
+    const lootChanges = this.quantityChanges(this.sessionLoot(beforeState), this.sessionLoot(afterState));
     if (lootChanges.length) lines.push(`Dungeon-Beute: ${lootChanges.join(', ')}`);
 
     const weaponsBefore = Array.isArray(beforeState.weaponInventory) ? beforeState.weaponInventory.length : 0;
@@ -62,6 +63,16 @@ export class OfflineProgressService {
 
     if (lines.length === 1) lines.push('Keine abgeschlossenen automatischen Vorgänge.');
     return `Offline-Fortschritt\n\n${lines.join('\n')}`;
+  }
+
+  private sessions(state:any): any[] { return state.dungeons ? Object.values(state.dungeons) : [state]; }
+
+  private sessionLoot(state:any): Record<string,{qty:number}> {
+    const totals:Record<string,{qty:number}>={};
+    for(const session of this.sessions(state))for(const [id,entry] of Object.entries(session.dungeonLoot??{}) as Array<[string,{qty:number}]>) {
+      totals[id]??={qty:0}; totals[id].qty+=Number(entry.qty)||0;
+    }
+    return totals;
   }
 
   private energyFullyRegeneratedDuringAbsence(before: any, after: any): boolean {
@@ -84,7 +95,7 @@ export class OfflineProgressService {
       const oldQty = Number(before?.[name]?.qty || 0);
       const newQty = Number(after?.[name]?.qty || 0);
       const delta = newQty - oldQty;
-      if (delta > 0) changes.push(`${name} +${this.formatNumber(delta)}`);
+      if (delta > 0) changes.push(`${getMaterialDisplayNameById(Number(name))??name} +${this.formatNumber(delta)}`);
     }
     return changes;
   }

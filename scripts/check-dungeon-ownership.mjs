@@ -15,7 +15,7 @@ const dungeonStyles = readFileSync('src/dungeon-modal-v0.15.0.css', 'utf8');
 const dungeonData = readFileSync('balancing/tables/dungeons.csv', 'utf8');
 const dataGenerator = readFileSync('scripts/data/build-game-data.mjs', 'utf8');
 
-for (const pattern of [/getDungeonPhase\(state\)/, /resolveSearchStep\(/, /checkDungeonStart\(/, /payDungeonEnergy\(/, /createDungeonEnemies\(/, /createDungeonAttackPoints\(/, /resolveAttack\(/, /rescheduleDungeonAttack\(/, /getMaterialReferenceById\(/, /addMaterialQuantityById\(/, /getMaterialStorageEntries\(/, /grantCharacterExperience\(/, /characterStatLevelMultiplier\(/, /resetDungeonCycle\(/]) {
+for (const pattern of [/getDungeonPhase\(state\.session\)/, /resolveSearchStep\(/, /checkDungeonStart\(/, /payDungeonEnergy\(/, /createDungeonEnemies\(/, /createDungeonAttackPoints\(/, /resolveAttack\(/, /rescheduleDungeonAttack\(/, /getMaterialReferenceById\(/, /addMaterialQuantityById\(/, /getMaterialStorageEntries\(/, /grantCharacterExperience\(/, /characterStatLevelMultiplier\(/, /resetDungeonCycle\(/]) {
   assert.match(dungeonService, pattern, `Dungeon-Service verliert erwartete Fachlogik: ${pattern}`);
 }
 assert.doesNotMatch(dungeonService, /DUNGEON_LOOT_TABLES|MATERIALS\[/, 'Aktive Dungeon-Drops hängen weiterhin an einer namenbasierten oder alten globalen Loot-Tabelle.');
@@ -30,9 +30,9 @@ assert.match(dungeonData, /^1,Trainingslager,0,18000000,/m, 'Dungeon-ID 1 muss d
 assert.match(dataGenerator, /displayName: String\(dungeon\.display_name\)/, 'Der Anzeigename wird nicht aus der kanonischen Dungeon-Datenquelle generiert.');
 
 assert.match(sessionService, /private modalOpen = false;/, 'Dungeon-Sitzung besitzt keinen expliziten Popup-Zustand.');
-assert.match(sessionService, /dungeonSessionEndsAt\?: number \| null;/, 'Dungeon-Sitzung besitzt keine persistierbare absolute Endzeit.');
+assert.match(readFileSync('src/app/game/parallel-dungeon-core.ts','utf8'), /dungeonSessionEndsAt: number \| null;/, 'Dungeon-Sitzung besitzt keine persistierbare absolute Endzeit.');
 assert.doesNotMatch(sessionService, /runStartedAt/, 'Die 5-Stunden-Uhr hängt weiterhin an einem rein flüchtigen Service-Zeitstempel.');
-assert.match(sessionService, /open\(_at = Date\.now\(\)\)[\s\S]*this\.modalOpen = true;[\s\S]*saveRequested: false/, 'Öffnen des Popups ist nicht vom Run-Lebenszyklus getrennt.');
+assert.match(sessionService, /open\(_at = Date\.now\(\), dungeonId = 1\)[\s\S]*this\.modalOpen = true;[\s\S]*saveRequested: false/, 'Öffnen des Popups ist nicht vom Run-Lebenszyklus getrennt.');
 assert.match(sessionService, /close\(_at = Date\.now\(\)\)[\s\S]*this\.modalOpen = false;[\s\S]*saveRequested: false/, 'Schließen des Popups ist nicht vom Run-Lebenszyklus getrennt.');
 const closeStart = sessionService.indexOf('  close(_at = Date.now()): DungeonActionResult {');
 const closeEnd = sessionService.indexOf('  /**', closeStart);
@@ -45,21 +45,21 @@ assert.match(sessionService, /if \(active && endsAt !== null\) \{[\s\S]*saveRequ
 assert.match(sessionService, /const changed = this\.hasRuntimeState\(state\);[\s\S]*if \(changed\) this\.resetRuntimeState\(state\);/, 'Alte oder verwaiste Dungeon-Laufzustände werden beim Laden nicht gezielt bereinigt.');
 assert.match(sessionService, /if \(!this\.hasActiveRun\(state\)\)/, 'Dungeon-Update hängt nicht am tatsächlichen Run-Zustand.');
 assert.doesNotMatch(sessionService, /if \(!this\.modalOpen\) return \{ events: \[\], saveRequested: false, catchingUp: false \};/, 'Dungeon-Update wird bei geschlossenem Popup weiterhin gestoppt.');
-assert.match(sessionService, /state\.dungeonSessionEndsAt = at \+ this\.getDurationMs\(\);/, 'Neue Dungeon-Sitzungen persistieren ihre absolute Endzeit nicht.');
-assert.match(sessionService, /const updateAt = Math\.min\(now, endsAt\);[\s\S]*this\.gameDungeon\.update\(updateAt\)/, 'Dungeon-Catch-up wird nicht auf die ursprüngliche Sitzungs-Endzeit begrenzt.');
+assert.match(sessionService, /state\.session\.dungeonSessionEndsAt = at \+ this\.getDurationMs\(\);/, 'Neue Dungeon-Sitzungen persistieren ihre absolute Endzeit nicht.');
+assert.match(sessionService, /const updateAt = Math\.min\(now, endsAt\);[\s\S]*this\.gameDungeon\.update\(updateAt,dungeonId\)/, 'Dungeon-Catch-up wird nicht auf die ursprüngliche Sitzungs-Endzeit begrenzt.');
 assert.match(sessionService, /if \(now >= endsAt\) \{[\s\S]*this\.finishSession\(state, 'timeout', endsAt\)/, '5-Stunden-Ende wird nicht anhand der persistierten absoluten Endzeit abgeschlossen.');
 assert.match(sessionService, /const remainingMs = active \? Math\.max\(0, Number\(endsAt\) - now\) : totalMs;/, 'Restzeit wird nicht direkt aus der persistierten Endzeit berechnet.');
 assert.match(sessionService, /if \(endsAt === null\)[\s\S]*return \{ events: \[\], saveRequested: false, catchingUp: false \};/, 'Fehlende Altstand-Endzeiten erhalten im Update stillschweigend eine neue Laufzeit.');
-assert.match(sessionService, /state\.dungeonSessionEndsAt = null;/, 'Dungeon-Sitzungsende löscht die persistierte Endzeit nicht.');
+assert.match(sessionService, /state\.session\.dungeonSessionEndsAt = null;/, 'Dungeon-Sitzungsende löscht die persistierte Endzeit nicht.');
 assert.match(sessionService, /finishSession\(state, 'manual', at\)/, 'Manueller Abbruch endet nicht sofort über den Session-Service.');
-assert.match(sessionService, /isRunActive\(\): boolean \{\n    return this\.hasActiveRun\(this\.getState\(\)\);/, 'Run-Aktivität hängt weiterhin fälschlich vom Popup-Zustand ab.');
+assert.match(sessionService, /isRunActive\(dungeonId=this\.openedDungeonId\): boolean \{\n    return this\.hasActiveRun\(this\.getState\(dungeonId\)\);/, 'Run-Aktivität hängt weiterhin fälschlich vom Popup-Zustand ab.');
 assert.ok(sessionService.includes(String.raw`.replace(/\s*\([\d.,]+\s*HP\)/g, '')`), 'Numerische Rest-HP werden nicht aus dem Trainingslager-Protokoll ausgeblendet.');
 assert.doesNotMatch(sessionService, /state\.dungeonTeamSlots\s*=\s*\[null/, 'Session-Ende darf die gespeicherte Teamauswahl nicht leeren.');
 
 assert.match(presentationService, /installModalMarkup\(\)/, 'Dungeon 1 wird nicht in ein Angular-eigenes Popup überführt.');
 assert.match(presentationService, /id="dungeonModalTitle">\$\{this\.getDisplayName\(\)\}/, 'Das Popup verwendet nicht den datengetriebenen Anzeigenamen.');
 assert.match(presentationService, /liveLogEntries/, 'Das Live-Protokoll besitzt keinen popup-unabhängigen Sitzungspuffer.');
-assert.match(presentationService, /this\.liveLogEntries\.unshift/, 'Dungeon-Ereignisse werden nicht unabhängig vom geöffneten Popup gesammelt.');
+assert.match(presentationService, /session\.log\.unshift/, 'Dungeon-Ereignisse werden nicht unabhängig vom geöffneten Popup gesammelt.');
 assert.match(presentationService, /id="dungeonTimeBar"/, 'Dungeon-Popup besitzt keinen Laufzeitbalken.');
 assert.match(presentationService, /id="dungeonActiveEnemies"/, 'Dungeon-Popup besitzt keine aktive Gegneranzeige.');
 assert.match(presentationService, /id="dungeonCombatLog"/, 'Dungeon-Popup besitzt kein eigenes Live-Protokoll.');
@@ -83,7 +83,7 @@ assert.doesNotMatch(characterPresentationAdapter, /ADAPTED_DUNGEON_TEAM|ADAPTED_
 assert.match(runtimeService, /private readonly gameDungeon: GameDungeonService/, 'GameRuntimeService besitzt keinen Angular-Dungeon-Service.');
 assert.match(runtimeService, /private readonly dungeonSession: GameDungeonSessionService/, 'GameRuntimeService besitzt keine Angular-Dungeon-Sitzung.');
 assert.match(runtimeService, /const dungeonUpdate = this\.dungeonSession\.update\(\);[\s\S]*this\.applyDungeonResult\(runtime, dungeonUpdate\);/, 'Der Angular-Tick aktualisiert die Dungeon-Sitzung nicht.');
-assert.match(runtimeService, /this\.dungeonPresentation\.addEvent\(event\.text, event\.className\);/, 'Dungeon-Ereignisse werden nicht in das Trainingslager-Live-Protokoll geleitet.');
+assert.match(runtimeService, /this\.dungeonPresentation\.addEvent\(event\.text, event\.className,event\.dungeonId\);/, 'Dungeon-Ereignisse werden nicht in das zugehörige Live-Protokoll geleitet.');
 assert.match(runtimeService, /const dungeonSessionPreparation = this\.dungeonSession\.prepareLoadedSession\(Date\.now\(\)\);/, 'Runtime bereitet persistierte Dungeon-Sitzungen beim Start nicht über die Resume-Migration vor.');
 assert.match(runtimeService, /this\.applyDungeonResult\(runtime, dungeonSessionPreparation\);/, 'Bereinigte Altstände werden nach der Startmigration nicht gespeichert.');
 assert.doesNotMatch(runtimeService, /resetLoadedSession\(/, 'Runtime verwirft persistierte Dungeon-Sitzungen weiterhin pauschal beim Start.');

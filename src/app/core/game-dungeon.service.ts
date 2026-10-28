@@ -1,3 +1,4 @@
+import { DUNGEON_IDS, getDungeonSession, migrateParallelDungeons, characterDungeonReservation, type DungeonSessionState } from '../game/parallel-dungeon-core.ts';
 import { getDungeonDefinition } from '../game/dungeon-definitions.ts';
 import { healParty } from '../game/healing-core.ts';
 import { dungeonUnlocked, initializeReleaseProgress, recordSuccessfulWave, startProgressSession, type MissionState } from '../game/mission-core.ts';
@@ -48,6 +49,7 @@ import {
 import { GameStateService, type MutableGameState } from './game-state.service';
 
 export interface DungeonRuntimeEvent {
+  dungeonId?: number;
   text: string;
   className?: string;
 }
@@ -112,19 +114,8 @@ type RuntimeDungeonState = MutableGameState & MissionState & {
   characters: RuntimeDungeonCharacter[];
   weaponInventory: RuntimeDungeonWeapon[];
   inventory: MaterialStorageInventory;
-  expeditionActive: boolean;
-  dungeonAuto: boolean;
-  dungeonStopRequested?: boolean;
-  dungeonRun: DungeonRunLike | null;
-  dungeonSearch: RuntimeDungeonSearch | null;
-  dungeonLootCollect: RuntimeDungeonLootCollect | null;
-  dungeonLoot: MaterialStorageInventory;
-  dungeonTeamSlots: Array<number | null>;
-  dungeonCycleOriginalIds: number[];
-  dungeonCycleActiveIds: number[];
-  dungeonWavesDefeated: number;
-  dungeonSessionStartWaves?: number;
-  lastEnergyUpdate: number;
+  session: DungeonSessionState;
+  dungeons: Record<number,DungeonSessionState>;
 };
 
 @Injectable({ providedIn: 'root' })
@@ -133,30 +124,30 @@ export class GameDungeonService {
 
   constructor(private readonly gameState: GameStateService) {}
 
-  update(now = Date.now()): DungeonUpdateResult {
-    const state = this.getState();
+  update(now = Date.now(), dungeonId = 1): DungeonUpdateResult {
+    const state = this.getState(dungeonId);
     const outcome: DungeonUpdateResult = { events: [], saveRequested: false, catchingUp: false };
     const firstEventAt = this.getFirstEventAt(state, now);
     const catchingUp = isDungeonCatchup(firstEventAt, now);
     const previousCatchupMode = this.catchupMode;
     this.catchupMode = catchingUp;
     outcome.catchingUp = catchingUp;
-    const wavesBefore = Number(state.dungeonWavesDefeated) || 0;
+    const wavesBefore = Number(state.session.dungeonWavesDefeated) || 0;
     let events = 0;
 
     try {
       while (events++ < 100_000) {
-        const phase = getDungeonPhase(state);
+        const phase = getDungeonPhase(state.session);
 
         if (phase === 'loot') {
-          const collect = state.dungeonLootCollect;
+          const collect = state.session.dungeonLootCollect;
           if (!collect || collect.readyAt > now) break;
           this.completeLootCollect(state, collect.readyAt, outcome);
           continue;
         }
 
         if (phase === 'combat') {
-          const run = state.dungeonRun;
+          const run = state.session.dungeonRun;
           if (!run) continue;
 
           const alivePlayers = run.participantIds
@@ -191,23 +182,23 @@ export class GameDungeonService {
 
         if (phase === 'idle') break;
 
-        if (!state.dungeonSearch) {
+        if (!state.session.dungeonSearch) {
           this.beginSearch(state, now, outcome);
           break;
         }
-        if (state.dungeonSearch.nextCheckAt > now) break;
+        if (state.session.dungeonSearch.nextCheckAt > now) break;
 
-        const at = state.dungeonSearch.nextCheckAt;
-        const searchResult = resolveSearchStep(this.getAliveParticipants(state), Math.random(), getDungeonDefinition(state.selectedDungeonId ?? 1).encounterChance);
+        const at = state.session.dungeonSearch.nextCheckAt;
+        const searchResult = resolveSearchStep(this.getAliveParticipants(state), Math.random(), getDungeonDefinition(state.session.dungeonId).encounterChance);
         if (searchResult === 'encounter') this.startRun(state, at, outcome);
-        else state.dungeonSearch.nextCheckAt = at + CONFIG.dungeon.searchStepMs;
+        else state.session.dungeonSearch.nextCheckAt = at + CONFIG.dungeon.searchStepMs;
       }
     } finally {
       this.catchupMode = previousCatchupMode;
     }
 
     if (catchingUp) {
-      const waves = (Number(state.dungeonWavesDefeated) || 0) - wavesBefore;
+      const waves = (Number(state.session.dungeonWavesDefeated) || 0) - wavesBefore;
       this.addEvent(
         outcome,
         `Offline-Fortschritt nachgeholt${waves > 0 ? `: ${waves} Welle${waves === 1 ? '' : 'n'} besiegt` : ''}.`,
@@ -218,24 +209,24 @@ export class GameDungeonService {
     return outcome;
   }
 
-  toggleAuto(at = Date.now()): DungeonActionResult {
-    const state = this.getState();
+  toggleAuto(at = Date.now(), dungeonId = 1): DungeonActionResult {
+    const state = this.getState(dungeonId);
     const outcome = this.createOutcome();
     const sessionActive = Boolean(
-      state.dungeonAuto || state.dungeonRun || state.dungeonSearch || state.dungeonLootCollect || state.dungeonStopRequested
+      state.session.dungeonAuto || state.session.dungeonRun || state.session.dungeonSearch || state.session.dungeonLootCollect || state.session.dungeonStopRequested
     );
 
     if (sessionActive) {
-      if (state.dungeonStopRequested) return outcome;
+      if (state.session.dungeonStopRequested) return outcome;
 
-      state.dungeonAuto = false;
-      state.dungeonSearch = null;
+      state.session.dungeonAuto = false;
+      state.session.dungeonSearch = null;
 
-      if (state.dungeonRun || state.dungeonLootCollect) {
-        state.dungeonStopRequested = true;
+      if (state.session.dungeonRun || state.session.dungeonLootCollect) {
+        state.session.dungeonStopRequested = true;
         this.addEvent(
           outcome,
-          state.dungeonRun
+          state.session.dungeonRun
             ? 'Laufabbruch angefordert. Die aktuelle Welle wird noch beendet.'
             : 'Laufabbruch angefordert. Die aktuelle Beute wird noch eingesammelt.',
           'muted'
@@ -260,34 +251,37 @@ export class GameDungeonService {
     }
 
     initializeReleaseProgress(state);
-    const dungeonId = Number(state.selectedDungeonId) || 1;
-    if (!dungeonUnlocked(state, dungeonId)) { outcome.alertMessage = 'Dungeon noch nicht freigeschaltet.'; return outcome; }
-    startProgressSession(state, dungeonId);
-    state.dungeonStopRequested = false;
-    state.dungeonCycleOriginalIds = [...selectedIds];
-    state.dungeonCycleActiveIds = [...selectedIds];
+    const selectedDungeonId = state.session.dungeonId;
+    if (!dungeonUnlocked(state, selectedDungeonId)) { outcome.alertMessage = 'Dungeon noch nicht freigeschaltet.'; return outcome; }
+    const occupied = selectedIds.find(id => characterDungeonReservation(state,id,selectedDungeonId)!==null);
+    if (occupied !== undefined) { outcome.alertMessage = 'Ein gewählter Charakter befindet sich bereits in einem anderen Dungeon.'; return outcome; }
+    startProgressSession(state, selectedDungeonId);
+    state.session.log = [];
+    state.session.dungeonStopRequested = false;
+    state.session.dungeonCycleOriginalIds = [...selectedIds];
+    state.session.dungeonCycleActiveIds = [...selectedIds];
     resetDungeonCycle(selectedIds.map(id => this.getCharacterById(state, id)).filter((character): character is RuntimeDungeonCharacter => !!character));
-    state.expeditionActive = selectedIds.length > 0;
-    state.dungeonSessionStartWaves = Number(state.dungeonWavesDefeated) || 0;
-    state.dungeonAuto = true;
+    state.session.expeditionActive = selectedIds.length > 0;
+    state.session.dungeonSessionStartWaves = Number(state.session.dungeonWavesDefeated) || 0;
+    state.session.dungeonAuto = true;
     this.addEvent(outcome, 'Dungeon-1-Lauf gestartet. Das ausgewählte Team beginnt mit der Suche.', 'good');
     this.beginSearch(state, at, outcome);
     outcome.saveRequested = true;
     return outcome;
   }
 
-  collectLoot(): DungeonActionResult {
-    const state = this.getState();
+  collectLoot(dungeonId = 1): DungeonActionResult {
+    const state = this.getState(dungeonId);
     const outcome = this.createOutcome();
-    normalizeMaterialInventory(state.dungeonLoot);
-    const entries = getMaterialStorageEntries(state.dungeonLoot).filter(entry => entry.qty > 0);
+    normalizeMaterialInventory(state.session.dungeonLoot);
+    const entries = getMaterialStorageEntries(state.session.dungeonLoot).filter(entry => entry.qty > 0);
     if (!entries.length) return outcome;
 
     let total = 0;
     for (const entry of entries) {
       const added = addMaterialQuantityById(state.inventory, entry.materialId, entry.qty);
       if (!added) throw new Error(`Dungeon-Beute konnte nicht ins Lager übertragen werden: Material-ID ${entry.materialId}.`);
-      delete state.dungeonLoot[String(entry.materialId)];
+      delete state.session.dungeonLoot[String(entry.materialId)];
       total += entry.qty;
     }
     this.addEvent(outcome, `${total} Material${total === 1 ? '' : 'ien'} aus der Dungeon-Beute ins Lager eingesammelt.`, 'good');
@@ -296,9 +290,13 @@ export class GameDungeonService {
 
   /** Migriert alte Namensreferenzen in Dungeon-Beute und ausstehenden Drops auf stabile IDs. */
   normalizeMaterialReferences(): number {
-    const state = this.getState();
-    let changed = normalizeMaterialInventory(state.dungeonLoot);
-    const collect = state.dungeonLootCollect;
+    return DUNGEON_IDS.reduce((sum,id)=>sum+this.normalizeDungeonMaterialReferences(id),0);
+  }
+
+  private normalizeDungeonMaterialReferences(dungeonId: number): number {
+    const state = this.getState(dungeonId);
+    let changed = normalizeMaterialInventory(state.session.dungeonLoot);
+    const collect = state.session.dungeonLootCollect;
     if (!collect?.drops?.length) return changed;
 
     for (const drop of collect.drops) {
@@ -314,16 +312,16 @@ export class GameDungeonService {
     return changed;
   }
 
-  getSessionWaveCount(): number {
-    const state = this.getState();
-    const start = Number.isFinite(Number(state.dungeonSessionStartWaves))
-      ? Number(state.dungeonSessionStartWaves)
-      : Number(state.dungeonWavesDefeated) || 0;
-    return Math.max(0, (Number(state.dungeonWavesDefeated) || 0) - start);
+  getSessionWaveCount(dungeonId = 1): number {
+    const state = this.getState(dungeonId);
+    const start = Number.isFinite(Number(state.session.dungeonSessionStartWaves))
+      ? Number(state.session.dungeonSessionStartWaves)
+      : Number(state.session.dungeonWavesDefeated) || 0;
+    return Math.max(0, (Number(state.session.dungeonWavesDefeated) || 0) - start);
   }
 
   private beginSearch(state: RuntimeDungeonState, at: number, outcome: DungeonActionResult): boolean {
-    if (!state.dungeonAuto || state.dungeonRun || state.dungeonLootCollect || state.dungeonStopRequested) return false;
+    if (!state.session.dungeonAuto || state.session.dungeonRun || state.session.dungeonLootCollect || state.session.dungeonStopRequested) return false;
     const check = checkDungeonStart(this.getAliveParticipants(state));
     if (!check.ok) {
       if (check.reason.includes('Energie')) {
@@ -337,17 +335,17 @@ export class GameDungeonService {
       return false;
     }
 
-    state.expeditionActive = true;
-    state.dungeonSearch = { nextCheckAt: at + CONFIG.dungeon.searchStepMs };
+    state.session.expeditionActive = true;
+    state.session.dungeonSearch = { nextCheckAt: at + CONFIG.dungeon.searchStepMs };
     return true;
   }
 
   private startRun(state: RuntimeDungeonState, at: number, outcome: DungeonActionResult): boolean {
-    if (state.dungeonRun || state.dungeonLootCollect || state.dungeonStopRequested) return false;
-    state.dungeonSearch = null;
+    if (state.session.dungeonRun || state.session.dungeonLootCollect || state.session.dungeonStopRequested) return false;
+    state.session.dungeonSearch = null;
     const check = checkDungeonStart(this.getAliveParticipants(state));
     if (!check.ok) {
-      if (state.dungeonAuto && check.reason.includes('Energie')) {
+      if (state.session.dungeonAuto && check.reason.includes('Energie')) {
         this.stopForEnergy(
           state,
           at,
@@ -360,7 +358,7 @@ export class GameDungeonService {
 
     payDungeonEnergy(check.participants, check.share);
     const enemyCount = rollEnemyCount(check.participants.length, Math.random());
-    const enemies = createDungeonEnemies(enemyCount, () => Math.random(), state.selectedDungeonId ?? 1, () => Math.random());
+    const enemies = createDungeonEnemies(enemyCount, () => Math.random(), state.session.dungeonId, () => Math.random());
     const attackPoints = createDungeonAttackPoints(
       check.participants,
       enemies,
@@ -368,9 +366,9 @@ export class GameDungeonService {
       character => this.getCharacterAttackPoints(state, character as RuntimeDungeonCharacter)
     );
 
-    state.expeditionActive = true;
-    state.dungeonRun = {
-      dungeonId: state.selectedDungeonId ?? 1,
+    state.session.expeditionActive = true;
+    state.session.dungeonRun = {
+      dungeonId: state.session.dungeonId,
       startedAt: at,
       participantIds: check.participants.map(character => character.id),
       energyShare: check.share,
@@ -390,20 +388,20 @@ export class GameDungeonService {
   }
 
   private finishWave(state: RuntimeDungeonState, success: boolean, at: number, outcome: DungeonActionResult): void {
-    const run = state.dungeonRun;
+    const run = state.session.dungeonRun;
     if (!run) return;
-    state.dungeonRun = null;
+    state.session.dungeonRun = null;
 
     if (success) {
       const drops = this.rollDrops(run.enemies, run.dungeonId);
       recordSuccessfulWave(state, run.dungeonId, () => Math.random());
       this.grantWaveExperience(state, run, outcome);
-      state.dungeonWavesDefeated = (Number(state.dungeonWavesDefeated) || 0) + 1;
-      state.dungeonCycleActiveIds = run.participantIds
+      state.session.dungeonWavesDefeated = (Number(state.session.dungeonWavesDefeated) || 0) + 1;
+      state.session.dungeonCycleActiveIds = run.participantIds
         .map(id => this.getCharacterById(state, id))
         .filter((character): character is RuntimeDungeonCharacter => !!character && character.alive)
         .map(character => character.id);
-      state.dungeonLootCollect = {
+      state.session.dungeonLootCollect = {
         readyAt: at + CONFIG.dungeon.lootCollectMs,
         drops,
         enemyCount: run.enemies.length
@@ -417,15 +415,15 @@ export class GameDungeonService {
       }
     } else {
       this.resetCycleAfterFailure(state, outcome);
-      if (state.dungeonStopRequested) this.finishSession(state, 'manual', at, outcome);
-      else if (state.dungeonAuto) this.beginSearch(state, at, outcome);
+      if (state.session.dungeonStopRequested) this.finishSession(state, 'manual', at, outcome);
+      else if (state.session.dungeonAuto) this.beginSearch(state, at, outcome);
     }
 
     outcome.saveRequested = true;
   }
 
   private completeLootCollect(state: RuntimeDungeonState, at: number, outcome: DungeonActionResult): void {
-    const collect = state.dungeonLootCollect;
+    const collect = state.session.dungeonLootCollect;
     if (!collect) return;
 
     const resolvedDrops = collect.drops
@@ -433,26 +431,26 @@ export class GameDungeonService {
       .filter((drop): drop is { materialId: number; name: string; category: string } => Boolean(drop));
 
     resolvedDrops.forEach(drop => {
-      const added = addMaterialQuantityById(state.dungeonLoot, drop.materialId, 1);
+      const added = addMaterialQuantityById(state.session.dungeonLoot, drop.materialId, 1);
       if (!added) throw new Error(`Dungeon-Drop konnte nicht gespeichert werden: Material-ID ${drop.materialId}.`);
     });
     if (!this.catchupMode) {
       this.addEvent(outcome, `BEUTE EINGESAMMELT – ${resolvedDrops.map(drop => drop.name).join(', ')}.`, 'good');
     }
-    state.dungeonLootCollect = null;
+    state.session.dungeonLootCollect = null;
     outcome.saveRequested = true;
 
-    if (state.dungeonStopRequested) {
+    if (state.session.dungeonStopRequested) {
       this.finishSession(state, 'manual', at, outcome);
       return;
     }
-    if (state.dungeonAuto) this.beginSearch(state, at, outcome);
+    if (state.session.dungeonAuto) this.beginSearch(state, at, outcome);
   }
 
   private resetCycleAfterFailure(state: RuntimeDungeonState, outcome: DungeonActionResult): void {
-    const ids = (state.dungeonCycleOriginalIds ?? []).filter(id => !!this.getCharacterById(state, id));
+    const ids = (state.session.dungeonCycleOriginalIds ?? []).filter(id => !!this.getCharacterById(state, id));
     resetDungeonCycle(ids.map(id => this.getCharacterById(state, id)).filter((character): character is RuntimeDungeonCharacter => !!character));
-    state.dungeonCycleActiveIds = [...ids];
+    state.session.dungeonCycleActiveIds = [...ids];
     this.addEvent(outcome, 'Welle verloren: Das ursprünglich ausgewählte Team startet mit vollen HP wieder im Suchmodus.', 'bad');
   }
 
@@ -462,9 +460,8 @@ export class GameDungeonService {
     message: string,
     outcome: DungeonActionResult
   ): void {
-    state.dungeonAuto = false;
-    state.dungeonSearch = null;
-    state.lastEnergyUpdate = at;
+    state.session.dungeonAuto = false;
+    state.session.dungeonSearch = null;
     this.addEvent(outcome, message, 'muted');
     this.finishSession(state, 'energy', at, outcome);
   }
@@ -476,28 +473,27 @@ export class GameDungeonService {
     outcome: DungeonActionResult
   ): void {
     const summary = this.buildSessionSummary(state, reason);
-    state.dungeonAuto = false;
-    state.dungeonStopRequested = false;
-    state.dungeonSearch = null;
-    state.dungeonRun = null;
-    state.dungeonLootCollect = null;
-    state.expeditionActive = false;
-    state.lastEnergyUpdate = at;
-    state.dungeonTeamSlots = [null, null, null, null];
-    state.dungeonCycleOriginalIds = [];
-    state.dungeonCycleActiveIds = [];
-    state.dungeonSessionStartWaves = Number(state.dungeonWavesDefeated) || 0;
+    state.session.dungeonAuto = false;
+    state.session.dungeonStopRequested = false;
+    state.session.dungeonSearch = null;
+    state.session.dungeonRun = null;
+    state.session.dungeonLootCollect = null;
+    state.session.expeditionActive = false;
+    state.session.dungeonTeamSlots = [null, null, null, null];
+    state.session.dungeonCycleOriginalIds = [];
+    state.session.dungeonCycleActiveIds = [];
+    state.session.dungeonSessionStartWaves = Number(state.session.dungeonWavesDefeated) || 0;
     outcome.alertMessage = summary;
     outcome.saveRequested = true;
   }
 
   private buildSessionSummary(state: RuntimeDungeonState, reason: DungeonSessionEndReason): string {
-    const teamIds = state.dungeonCycleOriginalIds?.length ? state.dungeonCycleOriginalIds : this.getSelectedIds(state);
+    const teamIds = state.session.dungeonCycleOriginalIds?.length ? state.session.dungeonCycleOriginalIds : this.getSelectedIds(state);
     const teamNames = teamIds
       .map(id => this.getCharacterById(state, id)?.name)
       .filter((name): name is string => Boolean(name));
-    const waves = this.getSessionWaveCount();
-    const loot = getMaterialStorageEntries(state.dungeonLoot)
+    const waves = this.getSessionWaveCount(state.session.dungeonId);
+    const loot = getMaterialStorageEntries(state.session.dungeonLoot)
       .filter(entry => entry.qty > 0)
       .sort((a, b) => a.displayName.localeCompare(b.displayName))
       .map(entry => `${entry.displayName} ×${entry.qty}`);
@@ -518,7 +514,7 @@ export class GameDungeonService {
   }
 
   private getLootTotal(state: RuntimeDungeonState): number {
-    return getMaterialStorageEntries(state.dungeonLoot).reduce((sum, entry) => sum + entry.qty, 0);
+    return getMaterialStorageEntries(state.session.dungeonLoot).reduce((sum, entry) => sum + entry.qty, 0);
   }
 
   private playerAttack(
@@ -557,7 +553,7 @@ export class GameDungeonService {
     }
 
     if (character.classId === 'healer') {
-      const party = state.dungeonTeamSlots.map(id => this.getCharacterById(state,id)).filter((c): c is RuntimeDungeonCharacter => !!c && run.participantIds.includes(c.id));
+      const party = state.session.dungeonTeamSlots.map(id => this.getCharacterById(state,id)).filter((c): c is RuntimeDungeonCharacter => !!c && run.participantIds.includes(c.id));
       const heal = healParty(party, damage, c => this.getCharacterStats(state,c).threat);
       if (heal) this.addCombatEvent(outcome, `${character.name} heilt ${heal.target.name} um ${heal.healed.toFixed(2)} HP.`, 'good');
       return;
@@ -648,13 +644,13 @@ export class GameDungeonService {
   }
 
   private getSelectedIds(state: RuntimeDungeonState): number[] {
-    return (state.dungeonTeamSlots ?? [])
+    return (state.session.dungeonTeamSlots ?? [])
       .map(id => Number(id))
       .filter(id => Number.isFinite(id) && !!this.getCharacterById(state, id));
   }
 
   private getParticipants(state: RuntimeDungeonState): RuntimeDungeonCharacter[] {
-    const activeIds = state.dungeonCycleActiveIds?.length ? state.dungeonCycleActiveIds : this.getSelectedIds(state);
+    const activeIds = state.session.dungeonCycleActiveIds?.length ? state.session.dungeonCycleActiveIds : this.getSelectedIds(state);
     return activeIds
       .map(id => this.getCharacterById(state, id))
       .filter((character): character is RuntimeDungeonCharacter => !!character);
@@ -793,9 +789,9 @@ export class GameDungeonService {
   }
 
   private getFirstEventAt(state: RuntimeDungeonState, now: number): number {
-    if (state.dungeonLootCollect) return Number(state.dungeonLootCollect.readyAt);
-    if (state.dungeonRun) return state.dungeonRun.attackPoints.reduce((minimum, point) => Math.min(minimum, point.nextAt), Infinity);
-    if (state.dungeonSearch) return Number(state.dungeonSearch.nextCheckAt);
+    if (state.session.dungeonLootCollect) return Number(state.session.dungeonLootCollect.readyAt);
+    if (state.session.dungeonRun) return state.session.dungeonRun.attackPoints.reduce((minimum, point) => Math.min(minimum, point.nextAt), Infinity);
+    if (state.session.dungeonSearch) return Number(state.session.dungeonSearch.nextCheckAt);
     return now;
   }
 
@@ -832,7 +828,14 @@ export class GameDungeonService {
     if (!this.catchupMode) this.addEvent(outcome, text, className);
   }
 
-  private getState(): RuntimeDungeonState {
-    return this.gameState.getState<RuntimeDungeonState>();
+  private getState(dungeonId = 1): RuntimeDungeonState {
+    const root=this.gameState.getState();
+    initializeReleaseProgress(root);
+    if(!root['dungeons'])migrateParallelDungeons(root);
+    return {
+      characters:root['characters'], weaponInventory:root['weaponInventory'], inventory:root['inventory'],
+      releaseProgress:root['releaseProgress'], weaponCraftCounts:root['weaponCraftCounts'],
+      dungeons:root['dungeons'], session:getDungeonSession(root,dungeonId)
+    } as RuntimeDungeonState;
   }
 }

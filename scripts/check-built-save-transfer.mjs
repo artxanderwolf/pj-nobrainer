@@ -275,7 +275,7 @@ try {
   assert.equal(result.first.ui.importLabel, 'JSON laden');
   assert.match(result.first.ui.accept, /json/i, 'Die Dateiauswahl ist nicht auf JSON ausgerichtet.');
   assert.match(result.first.exportStatus, /JSON-Datei exportiert:/, 'Der JSON-Export wurde nicht bestätigt.');
-  assert.match(result.first.exportStatus, /NoBrainer-Spielstand-v0\.3\.0\.1-/, 'Der Export verwendet nicht den versionierten JSON-Dateinamen.');
+  assert.match(result.first.exportStatus, /NoBrainer-Spielstand-v0\.4\.0\.0-/, 'Der Export verwendet nicht den versionierten JSON-Dateinamen.');
   assert.match(result.first.invalidStatus, /kein vollständiger NoBrainer-Spielstand/, 'Eine ungültige JSON-Datei wird nicht verständlich abgelehnt.');
   assert.equal(result.first.unchangedAfterInvalid, true, 'Ein ungültiger Import verändert den lokalen Spielstand.');
   assert.equal(result.second.importedGold, result.second.expectedImportedGold, 'Der gültige JSON-Import wurde nach dem Reload nicht geladen.');
