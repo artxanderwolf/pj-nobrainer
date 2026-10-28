@@ -1,4 +1,5 @@
 import { getDungeonSession, type DungeonWorldState } from './parallel-dungeon-core.ts';
+import { QUALIFIED_RUN_WAVES } from './dungeon-progress-rules.ts';
 import { getWeaponUnlockState, WEAPON_CRAFT_UNLOCK_TARGET, type WeaponCraftCounts } from './forge-core.ts';
 export interface ReleaseProgress {
     version: 1;
@@ -83,7 +84,7 @@ export function recordSuccessfulWave(state: MissionState, dungeonId: number, ran
     if (!session || session.dungeonId !== dungeonId)
         return;
     session.waves++;
-    if (!session.qualified && session.waves >= 360) {
+    if (!session.qualified && session.waves >= QUALIFIED_RUN_WAVES) {
         session.qualified = true;
         p.qualifiedRuns[dungeonId] = count(p.qualifiedRuns[dungeonId]) + 1;
     }

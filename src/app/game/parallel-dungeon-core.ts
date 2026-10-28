@@ -1,6 +1,7 @@
 import type { DungeonRunLike } from './dungeon-core.ts';
 import { addMaterialQuantityById, type MaterialStorageInventory } from './material-storage-core.ts';
 import type { MissionState } from './mission-core.ts';
+import { QUALIFIED_RUN_WAVES } from './dungeon-progress-rules.ts';
 
 export const DUNGEON_IDS = [1, 2, 3, 4, 5] as const;
 export interface DungeonProgressSession { dungeonId: number; waves: number; qualified: boolean; searchEligible: boolean; }
@@ -55,8 +56,9 @@ export function assignDungeonCharacter(state: DungeonWorldState & { characters: 
 
 const LEGACY_FIELDS = ['expeditionActive','dungeonAuto','dungeonStopRequested','dungeonRun','dungeonSearch','dungeonLootCollect','dungeonLoot','dungeonTeamSlots','dungeonCycleOriginalIds','dungeonCycleActiveIds','dungeonWavesDefeated','dungeonSessionStartWaves','dungeonSessionEndsAt'] as const;
 /** One-way boundary from the actually released single-session saves (v8–v15). */
-export function migrateParallelDungeons(state: Record<string, unknown> & MissionState): void {
+export function migrateParallelDungeons(state: Record<string, unknown> & MissionState): boolean {
   const legacy = !state.dungeons;
+  let changed = legacy;
   if (legacy) {
     const run=state['dungeonRun'] as DungeonRunLike|null|undefined;
     const requested=Number(run?.dungeonId ?? state.selectedDungeonId) || 1;
@@ -67,14 +69,20 @@ export function migrateParallelDungeons(state: Record<string, unknown> & Mission
     if(oldProgress?.dungeonId===id)session.progress=oldProgress;
     else if(dungeonSessionActive(session)){
       const waves=Math.max(0,(Number(session.dungeonWavesDefeated)||0)-(Number(session.dungeonSessionStartWaves)||0));
-      session.progress={dungeonId:id,waves,qualified:waves>=360,searchEligible:false};
-      if(waves>=360 && state.releaseProgress)state.releaseProgress.qualifiedRuns[id]=Math.max(1,state.releaseProgress.qualifiedRuns[id]??0);
+      session.progress={dungeonId:id,waves,qualified:waves>=QUALIFIED_RUN_WAVES,searchEligible:false};
+      if(waves>=QUALIFIED_RUN_WAVES && state.releaseProgress)state.releaseProgress.qualifiedRuns[id]=Math.max(1,state.releaseProgress.qualifiedRuns[id]??0);
     }
   }
   for(const id of DUNGEON_IDS){
     const session=getDungeonSession(state,id);
     session.log ??= [];
     session.progress ??= null;
+    // Re-evaluate saved in-progress runs after the balance change, without counting twice.
+    if (session.progress && !session.progress.qualified && session.progress.waves >= QUALIFIED_RUN_WAVES && state.releaseProgress) {
+      session.progress.qualified = true;
+      state.releaseProgress.qualifiedRuns[id] = Math.max(0, Math.floor(Number(state.releaseProgress.qualifiedRuns[id]) || 0)) + 1;
+      changed = true;
+    }
   }
   for(const field of LEGACY_FIELDS)delete state[field];
   if(state.releaseProgress)delete (state.releaseProgress as unknown as {session?:unknown}).session;
@@ -92,4 +100,5 @@ export function migrateParallelDungeons(state: Record<string, unknown> & Mission
     }
     else ids.forEach(n=>reserved.add(n));
   }
+  return changed;
 }

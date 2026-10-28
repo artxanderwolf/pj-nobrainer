@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-const APP_VERSION = '0.20.0';
+const APP_VERSION = '0.4.0.2';
 const APP_ID = 'com.smithsofeldravar.game';
 const APP_NAME = 'Smiths of Eldravar';
 const CAPACITOR_VERSION = '8.5.3';
@@ -16,7 +16,7 @@ const appComponent = read('src/app/app.component.ts');
 const saveCodec = read('src/app/game/save-codec.ts');
 const gitignore = read('.gitignore');
 
-assert.equal(packageJson.version, APP_VERSION, 'Android-Gate-C muss App-Version 0.20.0 verwenden.');
+assert.equal(packageJson.version, APP_VERSION, 'Android-Gate-C muss App-Version 0.4.0.2 verwenden.');
 assert.equal(packageJson.dependencies?.['@capacitor/core'], CAPACITOR_VERSION, 'Capacitor Core muss exakt gepinnt sein.');
 assert.equal(packageJson.dependencies?.['@capacitor/android'], CAPACITOR_VERSION, 'Capacitor Android muss exakt gepinnt sein.');
 assert.equal(packageJson.devDependencies?.['@capacitor/cli'], CAPACITOR_VERSION, 'Capacitor CLI muss exakt gepinnt sein.');
@@ -33,10 +33,10 @@ assert.match(capacitorConfig, new RegExp(`appId:\\s*['\"]${APP_ID.replaceAll('.'
 assert.match(capacitorConfig, new RegExp(`appName:\\s*['\"]${APP_NAME}['\"]`), 'Android-Appname stimmt nicht.');
 assert.match(capacitorConfig, /webDir:\s*['"]dist\/nobrainer\/browser['"]/, 'Capacitor muss den bestehenden Angular-Build verwenden.');
 
-assert.match(appShell, /APP_UI_VERSION\s*=\s*'0\.20\.0'/, 'Sichtbare App-Version ist nicht v0.20.0.');
+assert.match(appShell, /APP_UI_VERSION\s*=\s*'0\.4\.0\.2'/, 'Sichtbare App-Version ist nicht v0.4.0.2.');
 assert.match(appShell, /SMITHS OF ELDRAVAR · v\$\{APP_UI_VERSION\}/, 'Offizieller Spielname fehlt in der sichtbaren Shell.');
 assert.match(appComponent, /Smiths of Eldravar – v\$\{APP_UI_VERSION\}/, 'Dokumenttitel verwendet nicht den offiziellen Spielnamen.');
-assert.match(saveCodec, /export const SAVE_VERSION = 14;/, 'Gate C darf die Save-Version nicht verändern.');
+assert.match(saveCodec, /export const SAVE_VERSION = 16;/, 'Android muss dasselbe Save-Format wie die gemeinsame Anwendung verwenden.');
 
 for (const ignored of ['*.jks', '*.keystore', '*.p12', 'keystore.properties']) {
   assert.ok(gitignore.split(/\r?\n/).includes(ignored), `${ignored} muss von Git ausgeschlossen sein.`);
@@ -56,12 +56,12 @@ assert.deepEqual(forbiddenKeyFiles, [], `Signierschlüssel dürfen nicht im Repo
 if (existsSync('android/app/build.gradle')) {
   const gradle = read('android/app/build.gradle');
   assert.match(gradle, new RegExp(`applicationId\\s+['\"]${APP_ID.replaceAll('.', '\\.') }['\"]`), 'Native applicationId stimmt nicht.');
-  assert.match(gradle, /versionCode\s+7\b/, 'Android versionCode muss für die v0.20.0-Gerätetestversion 7 sein.');
-  assert.match(gradle, /versionName\s+"0\.20\.0"/, 'Android versionName muss 0.20.0 sein.');
+  assert.match(gradle, /versionCode\s+8\b/, 'Android versionCode muss für die v0.4.0.2-Gerätetestversion 8 sein.');
+  assert.match(gradle, /versionName\s+"0\.4\.0\.2"/, 'Android versionName muss 0.4.0.2 sein.');
   for (const env of ['SOE_RELEASE_STORE_FILE', 'SOE_RELEASE_STORE_PASSWORD', 'SOE_RELEASE_KEY_ALIAS', 'SOE_RELEASE_KEY_PASSWORD']) {
     assert.ok(gradle.includes(env), `Release-Signing muss ${env} ausschließlich aus der Umgebung lesen.`);
   }
   assert.ok(existsSync('android/gradlew'), 'Gradle Wrapper fehlt im versionierten Android-Projekt.');
 }
 
-console.log('Android Gate C: gemeinsame Angular-Codebasis, Smiths-of-Eldravar-Identität, Save-Version 14 und schlüsselfreie Release-Signing-Konfiguration sind konsistent.');
+console.log('Android Gate C: gemeinsame Angular-Codebasis, Smiths-of-Eldravar-Identität, Save-Version 16 und schlüsselfreie Release-Signing-Konfiguration sind konsistent.');
