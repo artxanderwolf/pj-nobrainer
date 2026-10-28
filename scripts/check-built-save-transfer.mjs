@@ -102,7 +102,15 @@ const probeScript = `<script>
           assignFile(input,invalidFile);
           setTimeout(()=>{
             const invalidStatus=normalize(document.getElementById('saveTransferStatus')?.textContent);
-            const unchangedAfterInvalid=localStorage.getItem(SAVE_KEY)===baseline;
+            // A scheduled normal save may update timestamps while File.text() resolves.
+            // Compare all persisted gameplay data, excluding only those two clocks.
+            const gameplaySnapshot=raw=>{
+              const save=JSON.parse(raw);
+              delete save.savedAt;
+              if(save.state)delete save.state.lastEnergyUpdate;
+              return JSON.stringify(save);
+            };
+            const unchangedAfterInvalid=gameplaySnapshot(localStorage.getItem(SAVE_KEY))===gameplaySnapshot(baseline);
             const imported=JSON.parse(baseline);
             const importedGold=originalGold+12345;
             imported.savedAt=Date.now();

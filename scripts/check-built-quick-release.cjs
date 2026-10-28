@@ -49,8 +49,15 @@ let browser;
  assert.match(download.suggestedFilename(),/^NoBrainer-Spielstand-v0\.3\.0\.0-/);
  const stream=await download.createReadStream();let exported='';for await(const chunk of stream)exported+=chunk;
  const imported=JSON.parse(exported),originalGold=imported.state.gold;assert.equal(imported.saveVersion,15);
+ const beforeInvalid=await page.evaluate(()=>JSON.parse(localStorage.getItem('nobrainer_save_v1')));
  await page.locator('#saveTransferImportInput').setInputFiles({name:'invalid.json',mimeType:'application/json',buffer:Buffer.from('{invalid')});
  await page.waitForFunction(()=>document.getElementById('saveTransferStatus').textContent.includes('kein gültiges JSON'));
+ await page.waitForTimeout(600);
+ const afterInvalid=await page.evaluate(()=>JSON.parse(localStorage.getItem('nobrainer_save_v1')));
+ const clockChanges={savedAt:beforeInvalid.savedAt!==afterInvalid.savedAt,lastEnergyUpdate:beforeInvalid.state.lastEnergyUpdate!==afterInvalid.state.lastEnergyUpdate};
+ for(const save of [beforeInvalid,afterInvalid]){delete save.savedAt;delete save.state.lastEnergyUpdate;}
+ assert.deepEqual(afterInvalid,beforeInvalid,'Invalid import must preserve all gameplay fields');
+ console.log('Ungültiger Import erhält alle Spieldaten; Zeitstempeländerungen:',clockChanges);
  imported.state.gold=12345;
  await Promise.all([page.waitForNavigation(),page.locator('#saveTransferImportInput').setInputFiles({name:'valid.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(imported))})]);
  await page.waitForSelector('#questOverviewButton');assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('nobrainer_save_v1')).state.gold),12345);
