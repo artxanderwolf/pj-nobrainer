@@ -50,7 +50,7 @@ export class GameTavernPresentationService {
     const state = this.state();
     const recruitCost = this.gameProgression.getRecruitOffer('recruit').costNickel;
     const presentation = getTavernPresentation(
-      Object.values(CHARACTER_CLASSES),
+      Object.values(CHARACTER_CLASSES).filter(cls => cls.id !== 'healer' || this.gameProgression.getRecruitOffer('healer').reason !== 'unknown-class'),
       state.characters.length,
       state.upgrades.innCapacity,
       state.gold,

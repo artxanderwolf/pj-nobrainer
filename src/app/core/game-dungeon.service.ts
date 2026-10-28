@@ -1,3 +1,6 @@
+import { getDungeonDefinition } from '../game/dungeon-definitions.ts';
+import { healParty } from '../game/healing-core.ts';
+import { dungeonUnlocked, initializeReleaseProgress, recordSuccessfulWave, startProgressSession, type MissionState } from '../game/mission-core.ts';
 import { Injectable } from '@angular/core';
 import { getCharacterWeaponDamageFactor } from '../game/equipment-rules-core.ts';
 import { buildWeightedTargets, resolveAttack, type CombatTargetLike } from '../game/combat-core';
@@ -25,6 +28,7 @@ import {
   CHARACTER_CLASSES,
   CONFIG,
   calculateCharacterStats,
+  getDungeonEnemyDefinition,
   getMaterialIdByName,
   getMaterialReferenceById,
   type CharacterClassId,
@@ -104,7 +108,7 @@ interface RuntimeDungeonLootCollect {
 
 type DungeonSessionEndReason = 'manual' | 'energy';
 
-type RuntimeDungeonState = MutableGameState & {
+type RuntimeDungeonState = MutableGameState & MissionState & {
   characters: RuntimeDungeonCharacter[];
   weaponInventory: RuntimeDungeonWeapon[];
   inventory: MaterialStorageInventory;
@@ -194,7 +198,7 @@ export class GameDungeonService {
         if (state.dungeonSearch.nextCheckAt > now) break;
 
         const at = state.dungeonSearch.nextCheckAt;
-        const searchResult = resolveSearchStep(this.getAliveParticipants(state), Math.random());
+        const searchResult = resolveSearchStep(this.getAliveParticipants(state), Math.random(), getDungeonDefinition(state.selectedDungeonId ?? 1).encounterChance);
         if (searchResult === 'encounter') this.startRun(state, at, outcome);
         else state.dungeonSearch.nextCheckAt = at + CONFIG.dungeon.searchStepMs;
       }
@@ -255,6 +259,10 @@ export class GameDungeonService {
       return outcome;
     }
 
+    initializeReleaseProgress(state);
+    const dungeonId = Number(state.selectedDungeonId) || 1;
+    if (!dungeonUnlocked(state, dungeonId)) { outcome.alertMessage = 'Dungeon noch nicht freigeschaltet.'; return outcome; }
+    startProgressSession(state, dungeonId);
     state.dungeonStopRequested = false;
     state.dungeonCycleOriginalIds = [...selectedIds];
     state.dungeonCycleActiveIds = [...selectedIds];
@@ -352,7 +360,7 @@ export class GameDungeonService {
 
     payDungeonEnergy(check.participants, check.share);
     const enemyCount = rollEnemyCount(check.participants.length, Math.random());
-    const enemies = createDungeonEnemies(enemyCount, () => Math.random());
+    const enemies = createDungeonEnemies(enemyCount, () => Math.random(), state.selectedDungeonId ?? 1, () => Math.random());
     const attackPoints = createDungeonAttackPoints(
       check.participants,
       enemies,
@@ -362,7 +370,7 @@ export class GameDungeonService {
 
     state.expeditionActive = true;
     state.dungeonRun = {
-      dungeonId: CONFIG.dungeon.id,
+      dungeonId: state.selectedDungeonId ?? 1,
       startedAt: at,
       participantIds: check.participants.map(character => character.id),
       energyShare: check.share,
@@ -387,7 +395,8 @@ export class GameDungeonService {
     state.dungeonRun = null;
 
     if (success) {
-      const drops = this.rollDrops(run.enemies);
+      const drops = this.rollDrops(run.enemies, run.dungeonId);
+      recordSuccessfulWave(state, run.dungeonId, () => Math.random());
       this.grantWaveExperience(state, run, outcome);
       state.dungeonWavesDefeated = (Number(state.dungeonWavesDefeated) || 0) + 1;
       state.dungeonCycleActiveIds = run.participantIds
@@ -547,6 +556,12 @@ export class GameDungeonService {
       label = weapon.name;
     }
 
+    if (character.classId === 'healer') {
+      const party = state.dungeonTeamSlots.map(id => this.getCharacterById(state,id)).filter((c): c is RuntimeDungeonCharacter => !!c && run.participantIds.includes(c.id));
+      const heal = healParty(party, damage, c => this.getCharacterStats(state,c).threat);
+      if (heal) this.addCombatEvent(outcome, `${character.name} heilt ${heal.target.name} um ${heal.healed.toFixed(2)} HP.`, 'good');
+      return;
+    }
     const result = resolveAttack(
       target,
       damage,
@@ -569,6 +584,10 @@ export class GameDungeonService {
       return;
     }
 
+    if (!target.alive && target.classId === 'healer') {
+      initializeReleaseProgress(state).healerDefeated += 1;
+      outcome.saveRequested = true;
+    }
     if (characterStats.lifeSteal > 0 && result.dealt > 0) {
       const maxHp = characterStats.maxHp;
       character.hp = Math.min(maxHp, character.hp + result.dealt * characterStats.lifeSteal);
@@ -588,6 +607,11 @@ export class GameDungeonService {
   ): void {
     const enemy = typeof point.ownerId === 'string' ? run.enemies.find(entry => entry.id === point.ownerId) : null;
     if (!enemy || !enemy.alive) return;
+    if (enemy.classId === 'healer') {
+      const heal = healParty(run.enemies, enemy.damage * enemy.strengthFactor, e => CHARACTER_CLASSES[e.classId].threat);
+      if (heal) this.addCombatEvent(outcome, `${enemy.name} heilt ${heal.target.name} um ${heal.healed.toFixed(2)} HP.`, 'bad');
+      return;
+    }
     const target = this.weightedTarget(
       run.participantIds
         .map(id => this.getCharacterById(state, id))
@@ -691,9 +715,14 @@ export class GameDungeonService {
     return weighted[rollWeightedIndex(weighted.map(entry => entry.weight), Math.random())]?.target ?? null;
   }
 
-  private rollDrops(enemies: readonly DungeonEnemy[]): RuntimeDungeonDrop[] {
+  private rollDrops(enemies: readonly DungeonEnemy[], dungeonId: number): RuntimeDungeonDrop[] {
     const result: RuntimeDungeonDrop[] = [];
     for (const enemy of enemies) {
+      if (enemy.boss) {
+        const ids = [...new Set(Object.values(CHARACTER_CLASSES).flatMap(cls => getDungeonEnemyDefinition(dungeonId, cls.id)?.lootMaterialIds ?? []))];
+        for (let draw=0; draw<5 && ids.length; draw++) result.push({materialId: ids.splice(Math.floor(Math.random()*ids.length),1)[0]});
+        continue;
+      }
       const candidates = enemy.lootMaterialIds
         .map(materialId => getMaterialReferenceById(materialId))
         .filter((entry): entry is NonNullable<ReturnType<typeof getMaterialReferenceById>> => Boolean(entry));

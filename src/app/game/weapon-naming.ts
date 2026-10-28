@@ -102,28 +102,7 @@ function migrateMarketJobToCurrentRules(job){
 }`;
 
 const CURRENT_FIND_WEAKEST_STARTER = `function findWeakestStarterSlots(){
-  const weaponForm="sword",form=CONFIG.forge.weaponForms[weaponForm],slotIds=window.NoBrainerGameCore.getWeaponCraftingSlots(weaponForm);
-  const materialOptions=slotIds.map(slot=>{
-    const part=form.parts.find(entry=>entry.materialSlot===slot),categories=part?.categories||[];
-    return Object.entries(MATERIALS).filter(([,material])=>categories.includes(material.category)).map(([name])=>name);
-  });
-  let weakest=null;
-  function visit(index,slots){
-    if(index<slotIds.length){
-      materialOptions[index].forEach(material=>visit(index+1,[...slots,{slot:slotIds[index],material}]));
-      return;
-    }
-    const stats=calculateWeaponStats(slots,weaponForm),m=stats.characterModifiers||{};
-    const score=[stats.expectedRaw,stats.penetration,m.armor||0,m.dodge||0,m.strengthFactor||0,m.precision||0,m.critChance||0,m.critDamage||0];
-    if(!weakest){weakest={slots,stats,score};return;}
-    for(let i=0;i<score.length;i++){
-      if(Math.abs(score[i]-weakest.score[i])<1e-9)continue;
-      if(score[i]<weakest.score[i])weakest={slots,stats,score};
-      return;
-    }
-  }
-  visit(0,[]);
-  return weakest;
+  return window.NoBrainerGameCore.getStarterBlueprint();
 }`;
 
 const CURRENT_GET_FORGE_SELECTION = `function getForgeSelection(){

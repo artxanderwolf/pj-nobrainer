@@ -3,7 +3,7 @@ const app=readFileSync('src/app/app.component.ts','utf8'), service=readFileSync(
 for(const p of [/forgeRequirements\(slots, weaponForm\)/,/reserveForgeMaterials\(/,/getMaterialQuantityById\(/,/normalizeWeaponSlots\(/,/enqueueForgeJob\(/,/advanceForgeJobs\(/,/state\.weaponInventory\.unshift\(\{/]) assert.match(service,p); assert.match(service,/window\.NoBrainerForgeCompatibility = \{/); assert.match(service,/delete window\.NoBrainerForgeCompatibility;/);
 assert.match(service,/normalizeMaterialReferences\(\): number/); assert.doesNotMatch(service,/state\.inventory\[material\]/, 'Aktiver Schmiedepfad greift weiterhin über Materialnamen auf das Lager zu.');
 assert.match(service,/isWeaponSelectionComplete/); assert.match(service,/getForgeSelectionQuantities/);
-assert.match(service,/isWeaponFormUnlocked\(weaponForm, this\.getCraftCounts\(state\)\)/, 'Gesperrte Waffenformen werden im Angular-Service nicht vor Auftragserstellung blockiert.');
+assert.match(service,/weaponUnlocked\(state, weaponForm\)/, 'Gesperrte Waffenformen werden im Angular-Service nicht vor Auftragserstellung blockiert.');
 assert.match(service,/recordCompletedWeaponCraft\(this\.getCraftCounts\(state\), job\.weaponForm\)/, 'Abgeschlossene Schmiedeaufträge erhöhen den Waffen-Fortschritt nicht im Angular-Service.');
 assert.match(service,/visibleWeaponForms\(\): string\[\]/, 'Angular-Service stellt keine sichtbaren Waffenformen für die Präsentation bereit.');
 assert.match(presentation,/getActiveForgeJobPresentation\(/); assert.match(presentation,/getQueuedForgeJobPresentation\(/); assert.match(presentation,/this\.gameState\.getState<RuntimeForgeJobPresentationState>\(\)/);

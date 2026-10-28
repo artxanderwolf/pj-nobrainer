@@ -51,9 +51,9 @@ try {
 
   const enemy = createDungeonEnemy(1, 'recruit');
   assert.equal(enemy.name, 'Neuling 1');
-  assert.equal(enemy.maxHp, 60);
+  assert.equal(enemy.maxHp, 120);
   assert.equal(enemy.hitChance, 0.5);
-  assert.deepEqual(enemy.lootMaterialIds, [9, 5, 3]);
+  assert.deepEqual(enemy.lootMaterialIds, [5, 3]);
   assert.equal(enemy.xpDrop, 10);
 
   const points = createDungeonAttackPoints([character], [enemy], 1000, () => [{ kind: 'fist', speed: 1 }]);

@@ -1,12 +1,21 @@
 export const INDEX_PAGE_MARKUP = `<section class="page" id="index">
       <div class="grid">
+        <div class="card span-12" data-release-help>
+          <h2>Missionen, Dungeons und Heilkunst</h2>
+          <p>Das Schriftrollen-Icon im Kopfbereich bleibt immer sichtbar. Auf der Übersicht gibt es einen weiteren Missionszugang. Fortschritt wird als x/Ziel angezeigt. Eine abgeschlossene Mission ist einsammelbereit: Erst „Einsammeln“ schaltet Dungeon, Waffenform oder Heiler frei. Abschlussmeldungen erscheinen nacheinander für jeweils 2 Sekunden. Noch unsichtbare Missionen zeigen weder Eintrag noch Meldung; bereits erzielter Fortschritt erscheint, sobald sie verfügbar werden.</p>
+          <p>Trainingslager → Waffenkammer → Wald → Einsame Stadt → Heilige Ebenen. Wähle den Dungeon vor dem Lauf. Während eines Laufs ist die Auswahl gesperrt. Ein Lauf qualifiziert ab 360 erfolgreichen Wellen genau einmal, auch nach Neuladen. Nach 20 qualifizierten Läufen beginnt die Zugangssuche in einem neuen Lauf: kein Wurf vor Welle 100, danach nach jeder erfolgreichen Welle 5 %. Ein gefundener Zugang bleibt erhalten und wird erst nach Claim freigeschaltet.</p>
+          <p>In allen fünf Dungeons wird im Suchmodus einmal pro Sekunde mit 5 % Chance eine Gegnerwelle gefunden. Das ergibt durchschnittlich 20 Sekunden reine Suchzeit; Kampf und Einsammeln kommen hinzu. Es gibt keinen festen 20-Sekunden-Takt. Normale Gegner: Neuling/Tank/Jäger/Lehrling im Verhältnis 55/20/15/10. In der Einsamen Stadt sind 15 % der Gegner Heiler; die übrigen 85 % folgen diesem Verhältnis. Bosse erscheinen mit 1 % pro Gegnerplatz, haben Rekrutenbasis, zehnfache HP, doppelten Schaden und Geschwindigkeit 0,8. Bossbeute: fünf verschiedene Materialien aus dem gesamten Dungeonpool.</p>
+          <p>Dungeon 2–5 besitzen je Gegner vier eigene Materialien: 50/30/15/5 %. Die Materialfarben sind im Index und bei Waffen sichtbar. Rarity 2/3/4/5 verwendet weiterhin das bestehende Wertsystem.</p>
+          <p>Heilkunst: Einen Heiler besiegen und die Mission einsammeln. Heiler haben Gelehrten-Grundwerte, nutzen Dolch oder bevorzugt Stab und dieselbe Aktionsgeschwindigkeit. Sie verursachen keinen Schaden. Ihre normale Schadensgrundformel liefert stattdessen Heilung ohne kritische Treffer: Ziel ist der lebende Charakter mit dem niedrigsten HP-Prozentwert; Gleichstand entscheidet höhere Bedrohung, dann der frühere Teamslot. Selbstheilung ist erlaubt, Wiederbelebung nicht. Heilung endet bei Max-HP; bei voller Gruppe setzt der Heiler aus.</p>
+          <p>Bestehende Waffenfreischaltungen sind Missionen mit unveränderten Zielen: je zehn hergestellte Vorgängerwaffen; Bogen und Stab benötigen je zehn 2H Schwerter und 2H Äxte. Bereits freigeschaltete Waffenformen bleiben beim Update verfügbar. Alte Spielstände werden kontrolliert auf Save 15 erweitert; Exportiere für einen Rückwechsel vorher deinen Spielstand.</p>
+        </div>
         <div class="card span-12">
           <h2>Materialindex – gemeinsames Stat-System</h2>
           <p class="index-note">Ein Material besitzt ein gemeinsames Statprofil; ein Bauteil entscheidet, welche Werte davon beim Bau einer Waffe tatsächlich aktiviert werden. Nullwerte sind bewusst Teil des Datenmodells und können später für Rüstungen oder weitere Bauteile genutzt werden.</p>
           <div class="table-wrap mobile-stack">
             <table>
               <thead><tr>
-                <th>Typ</th><th>Material</th><th>S</th><th>HP</th><th>E</th><th>R (%)</th><th>AW</th><th>SF</th><th>P</th><th>B</th><th>K-C</th><th>K-S</th><th>HP-R</th><th>E-R</th><th>ERF</th><th>LR</th><th>DS</th><th>SPE</th><th>SPE%</th><th>Dungeon 1 Gewicht</th>
+                <th>Typ</th><th>Material</th><th>S</th><th>HP</th><th>E</th><th>R (%)</th><th>AW</th><th>SF</th><th>P</th><th>B</th><th>K-C</th><th>K-S</th><th>HP-R</th><th>E-R</th><th>ERF</th><th>LR</th><th>DS</th><th>SPE</th><th>SPE%</th><th>Quelle / Dropgewicht</th>
               </tr></thead>
               <tbody id="materialIndexRows"></tbody>
             </table>
@@ -14,7 +23,7 @@ export const INDEX_PAGE_MARKUP = `<section class="page" id="index">
           <p class="index-note">Rüstung (R) wird 1:1 in Prozentpunkten geführt: R 1 = 1 % Schadensreduktion vor Durchschlag. Der finale Charakterwert ist auf 80 % begrenzt.</p>
           <p class="index-note">Bedrohung (B) ist eine reine Klasseneigenschaft. Ausrüstung verändert die Bedrohung nicht und Levelaufstiege erhöhen sie ebenfalls nicht.</p>
           <p class="index-note">Für Sehnen besitzen die Leder vorerst weiterhin die zuletzt vereinbarten SF/DS-Werte: Lederfetzen +0,01 SF / +1 %-Pkt. DS · Hasen-Leder +0,03 / +2 %-Pkt. · Fuchs-Leder +0,05 / +4 %-Pkt. Diese Werte wirken nur an Bauteilen, die SF bzw. DS aktivieren.</p>
-          <div class="formula">Dungeon 1: Jeder Gegner besitzt drei Material-IDs. Pro besiegtem Gegner wird genau ein Material aus diesem Pool gezogen; Drop% dient innerhalb dieses Gegnerpools als relatives Gewicht.</div>
+          <div class="formula">Dungeon 1: Neuling und Tank besitzen zwei Material-IDs; Jäger und Lehrling besitzen drei. Lederfetzen droppen nur bei Jäger und Lehrling. Pro besiegtem Gegner wird genau ein Material aus diesem Pool gezogen; Drop% dient innerhalb dieses Gegnerpools als relatives Gewicht.</div>
         </div>
 
         <div class="card span-12">

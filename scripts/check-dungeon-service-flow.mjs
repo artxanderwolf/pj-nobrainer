@@ -68,7 +68,7 @@ function makeState(characterCount = 1, energy = 100) {
       id: 1,
       name: 'Testwaffe',
       weaponForm: 'sword',
-      stats: { damagePerHit: 100, attackSpeed: 1, hitChance: 1, penetration: 1 }
+      stats: { damagePerHit: 1000, attackSpeed: 1, hitChance: 1, penetration: 1 }
     }],
     inventory: {},
     expeditionActive: false,
@@ -102,7 +102,7 @@ try {
   assert.equal(successState.dungeonSearch.nextCheckAt, 2000);
   assert.equal(result.saveRequested, true);
 
-  Math.random = () => 0;
+  { let draws = [0,0,0.5,0]; Math.random = () => draws.shift() ?? 0.5; }
   result = successService.update(2000);
   assert.ok(successState.dungeonRun, 'Bei Begegnungswurf 0 muss eine Dungeon-Welle starten.');
   assert.equal(successState.characters[0].energy, 100, 'Der Wellenstart darf keine Energie mehr verbrauchen.');
@@ -110,7 +110,7 @@ try {
   assert.equal(successState.dungeonRun.totalEnergyCost, 0);
   assert.equal(successState.dungeonRun.enemies.length, 1);
   assert.equal(successState.dungeonRun.enemies[0].name, 'Neuling 1');
-  assert.deepEqual(successState.dungeonRun.enemies[0].lootMaterialIds, [9, 5, 3]);
+  assert.deepEqual(successState.dungeonRun.enemies[0].lootMaterialIds, [5, 3]);
   assert.equal(successState.dungeonRun.enemies[0].xpDrop, 10);
 
   Math.random = () => 0.5;
@@ -120,7 +120,7 @@ try {
   assert.ok(successState.dungeonLootCollect, 'Nach Sieg muss zunächst die Loot-Zwischenphase aktiv sein.');
   assert.deepEqual(
     successState.dungeonLootCollect.drops,
-    [{ materialId: 9 }],
+    [{ materialId: 5 }],
     'Neue Dungeon-Drops dürfen technisch nur noch die stabile Material-ID persistieren.'
   );
   assert.deepEqual(successState.dungeonCycleActiveIds, [1], 'Überlebende müssen für den nächsten Durchlauf aktiv bleiben.');
@@ -133,7 +133,7 @@ try {
   result = successService.update(4000);
   assert.equal(successState.dungeonLootCollect, null, 'Die Loot-Zwischenphase muss nach Ablauf abgeschlossen werden.');
   assert.equal(Object.values(successState.dungeonLoot).reduce((sum, entry) => sum + (entry.qty || 0), 0), 1);
-  assert.equal(successState.dungeonLoot['9']?.qty, 1, 'Neuling muss Lederfetzen unter Material-ID 9 speichern.');
+  assert.equal(successState.dungeonLoot['5']?.qty, 1, 'Neuling speichert Kupfer unter Material-ID 5.');
   assert.equal(successState.dungeonLoot.Lederfetzen, undefined, 'Neue Dungeon-Beute darf keinen Materialnamen als Schlüssel verwenden.');
   assert.equal(successState.dungeonSearch.nextCheckAt, 5000, 'Bei aktivem Lauf muss nach dem Loot wieder gesucht werden.');
   assert.equal(successService.getSessionWaveCount(), 1);
@@ -141,7 +141,7 @@ try {
   const collected = successService.collectLoot();
   assert.equal(Object.keys(successState.dungeonLoot).length, 0, 'Manuelles Einsammeln muss die Dungeon-Beute leeren.');
   assert.equal(Object.values(successState.inventory).reduce((sum, entry) => sum + (entry.qty || 0), 0), 1);
-  assert.equal(successState.inventory['9']?.qty, 1, 'Eingesammelte Beute muss unter der Material-ID im Lager liegen.');
+  assert.equal(successState.inventory['5']?.qty, 1, 'Eingesammelte Beute muss unter der Material-ID im Lager liegen.');
   assert.equal(successState.inventory.Lederfetzen, undefined);
   assert.equal(collected.events.length, 1);
 
@@ -164,7 +164,7 @@ try {
   const splitState = makeState(2);
   const splitService = new GameDungeonService({ getState: () => splitState });
   splitService.toggleAuto(1000);
-  Math.random = () => 0;
+  { let draws = [0,0,0.5,0]; Math.random = () => draws.shift() ?? 0.5; }
   splitService.update(2000);
   assert.equal(splitState.dungeonRun.enemies.length, 1);
   Math.random = () => 0.5;
@@ -175,7 +175,7 @@ try {
   const failureState = makeState(2);
   const failureService = new GameDungeonService({ getState: () => failureState });
   failureService.toggleAuto(1000);
-  Math.random = () => 0;
+  { let draws = [0,0,0.5,0]; Math.random = () => draws.shift() ?? 0.5; }
   failureService.update(2000);
   assert.ok(failureState.dungeonRun);
   failureState.characters.forEach(character => { character.hp = 0; character.alive = false; });
@@ -203,7 +203,7 @@ try {
   const waveAbortState = makeState(1);
   const waveAbortService = new GameDungeonService({ getState: () => waveAbortState });
   waveAbortService.toggleAuto(1000);
-  Math.random = () => 0;
+  { let draws = [0,0,0.5,0]; Math.random = () => draws.shift() ?? 0.5; }
   waveAbortService.update(2000);
   assert.ok(waveAbortState.dungeonRun);
   const abortRequest = waveAbortService.toggleAuto(2100);

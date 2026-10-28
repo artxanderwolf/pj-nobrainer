@@ -102,7 +102,15 @@ const probeScript = `<script>
           assignFile(input,invalidFile);
           setTimeout(()=>{
             const invalidStatus=normalize(document.getElementById('saveTransferStatus')?.textContent);
-            const unchangedAfterInvalid=localStorage.getItem(SAVE_KEY)===baseline;
+            // A scheduled normal save may update timestamps while File.text() resolves.
+            // Compare all persisted gameplay data, excluding only those two clocks.
+            const gameplaySnapshot=raw=>{
+              const save=JSON.parse(raw);
+              delete save.savedAt;
+              if(save.state)delete save.state.lastEnergyUpdate;
+              return JSON.stringify(save);
+            };
+            const unchangedAfterInvalid=gameplaySnapshot(localStorage.getItem(SAVE_KEY))===gameplaySnapshot(baseline);
             const imported=JSON.parse(baseline);
             const importedGold=originalGold+12345;
             imported.savedAt=Date.now();
@@ -267,7 +275,7 @@ try {
   assert.equal(result.first.ui.importLabel, 'JSON laden');
   assert.match(result.first.ui.accept, /json/i, 'Die Dateiauswahl ist nicht auf JSON ausgerichtet.');
   assert.match(result.first.exportStatus, /JSON-Datei exportiert:/, 'Der JSON-Export wurde nicht bestätigt.');
-  assert.match(result.first.exportStatus, /NoBrainer-Spielstand-v0\.20\.0-/, 'Der Export verwendet nicht den versionierten JSON-Dateinamen.');
+  assert.match(result.first.exportStatus, /NoBrainer-Spielstand-v0\.3\.0\.1-/, 'Der Export verwendet nicht den versionierten JSON-Dateinamen.');
   assert.match(result.first.invalidStatus, /kein vollständiger NoBrainer-Spielstand/, 'Eine ungültige JSON-Datei wird nicht verständlich abgelehnt.');
   assert.equal(result.first.unchangedAfterInvalid, true, 'Ein ungültiger Import verändert den lokalen Spielstand.');
   assert.equal(result.second.importedGold, result.second.expectedImportedGold, 'Der gültige JSON-Import wurde nach dem Reload nicht geladen.');

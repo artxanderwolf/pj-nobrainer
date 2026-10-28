@@ -10,14 +10,14 @@ import { GENERATED_CHARACTER_CLASSES } from './data/generated/game-data.generate
 import {
   createStatModifiers,
   type CharacterClassDefinition,
-  type CharacterClassId,
   type CharacterModifierKey,
   type CharacterStatModifiers,
   type ResolvedCharacterStats,
   type WeaponLike
 } from './game-core-v01310-baseline.ts';
 
-const CHARACTER_CLASSES = GENERATED_CHARACTER_CLASSES as unknown as Record<CharacterClassId, CharacterClassDefinition>;
+type CharacterClassId = keyof typeof GENERATED_CHARACTER_CLASSES;
+const CHARACTER_CLASSES = GENERATED_CHARACTER_CLASSES as unknown as Record<CharacterClassId, Omit<CharacterClassDefinition, 'id'> & {id: CharacterClassId}>;
 
 function addModifiers(target: CharacterStatModifiers, source: Partial<CharacterStatModifiers>): void {
   (Object.keys(target) as CharacterModifierKey[]).forEach(key => {

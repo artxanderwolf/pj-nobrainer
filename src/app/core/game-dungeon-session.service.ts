@@ -1,4 +1,6 @@
 import { Injectable } from '@angular/core';
+import { getDungeonDefinition } from '../game/dungeon-definitions.ts';
+import { initializeReleaseProgress, type MissionState } from '../game/mission-core.ts';
 import { CONFIG } from '../game/game-core';
 import { resetDungeonCycle } from '../game/dungeon-core';
 import { getMaterialStorageEntries, type MaterialStorageInventory } from '../game/material-storage-core';
@@ -12,7 +14,7 @@ interface DungeonSessionCharacter {
   alive: boolean;
 }
 
-interface DungeonSessionState extends MutableGameState {
+interface DungeonSessionState extends MutableGameState, MissionState {
   characters: DungeonSessionCharacter[];
   expeditionActive: boolean;
   dungeonAuto: boolean;
@@ -158,7 +160,7 @@ export class GameDungeonSessionService {
   }
 
   getDurationMs(): number {
-    const configured = Number((CONFIG.dungeon as typeof CONFIG.dungeon & { durationMs?: number }).durationMs);
+    const configured = Number(getDungeonDefinition(this.getState().selectedDungeonId ?? 1).durationMs);
     if (!Number.isFinite(configured) || configured <= 0) {
       throw new Error(`${this.getDisplayName()} benötigt eine positive durationMs-Konfiguration.`);
     }
@@ -215,6 +217,7 @@ export class GameDungeonSessionService {
     const selected = this.selectedIds(state)
       .map(id => state.characters.find(character => character.id === id))
       .filter((character): character is DungeonSessionCharacter => Boolean(character));
+    initializeReleaseProgress(state).session = null;
     resetDungeonCycle(selected);
     state.dungeonAuto = false;
     state.dungeonStopRequested = false;
@@ -258,7 +261,7 @@ export class GameDungeonSessionService {
   }
 
   private getDisplayName(): string {
-    const displayName = String((CONFIG.dungeon as typeof CONFIG.dungeon & { displayName?: string }).displayName ?? '').trim();
+    const displayName = getDungeonDefinition(this.getState().selectedDungeonId ?? 1).displayName;
     return displayName || 'Trainingslager';
   }
 

@@ -182,11 +182,6 @@ export class GameForgePreviewPresentationService {
       return `${form.name} · gesperrt (${requirementText})`;
     }
 
-    if (this.gameForge.isProgressionSource(weaponForm)) {
-      const current = Math.min(this.gameForge.craftCount(weaponForm), WEAPON_CRAFT_UNLOCK_TARGET);
-      if (current < WEAPON_CRAFT_UNLOCK_TARGET) return `${form.name} · ${current}/${WEAPON_CRAFT_UNLOCK_TARGET}`;
-    }
-
     return form.name;
   }
 

@@ -1,6 +1,7 @@
-import { CHARACTER_CLASSES, CONFIG, getDungeonEnemyDefinition, type CharacterClassId } from './game-core';
-import { enforceGlobalActionCooldown, type CombatActionPointLike } from './combat-core';
-import { healParticipantsAfterSearchMiss, resolveDungeonSearch, type SearchParticipantLike } from './dungeon-search-core';
+import { getDungeonDefinition } from './dungeon-definitions.ts';
+import { CHARACTER_CLASSES, CONFIG, getDungeonEnemyDefinition, type CharacterClassId } from './game-core.ts';
+import { enforceGlobalActionCooldown, type CombatActionPointLike } from './combat-core.ts';
+import { healParticipantsAfterSearchMiss, resolveDungeonSearch, type SearchParticipantLike } from './dungeon-search-core.ts';
 
 export interface DungeonCharacterLike extends SearchParticipantLike {
   id: number;
@@ -26,6 +27,7 @@ export interface DungeonEnemy {
   penetration: number;
   lootMaterialIds: number[];
   xpDrop: number;
+  boss?: boolean;
 }
 
 export interface DungeonAttackPoint extends CombatActionPointLike {
@@ -101,39 +103,44 @@ export function rollEnemyCount(teamSize: number, roll: number): number {
   return rollWeightedIndex(CONFIG.dungeon.enemyCountWeights[size], roll) + 1;
 }
 
-export function rollEnemyClass(roll: number): CharacterClassId {
-  const entries = Object.entries(CONFIG.dungeon.enemyClassWeights) as [CharacterClassId, number][];
+export function rollEnemyClass(roll: number, dungeonId = 1): CharacterClassId {
+  const entries = Object.entries(getDungeonDefinition(dungeonId).enemyClassWeights) as [CharacterClassId, number][];
   return entries[rollWeightedIndex(entries.map(([, weight]) => weight), roll)][0];
 }
 
-export function createDungeonEnemy(index: number, classId: CharacterClassId): DungeonEnemy {
+export function createDungeonEnemy(index: number, classId: CharacterClassId, dungeonId = 1, boss = false): DungeonEnemy {
   const cls = CHARACTER_CLASSES[classId];
-  const multipliers = CONFIG.dungeon.enemyMultipliers;
-  const base = CONFIG.dungeon.enemyBase;
-  const definition = getDungeonEnemyDefinition(CONFIG.dungeon.id, classId);
+  const config = getDungeonDefinition(dungeonId);
+  const multipliers = config.enemyMultipliers;
+  const base = config.enemyBase;
+  const definition = getDungeonEnemyDefinition(dungeonId, classId);
   return {
     id: `e${index}`,
-    name: `${definition?.name ?? cls.name} ${index}`,
+    name: `${boss ? 'Boss · ' : ''}${definition?.name ?? cls.name} ${index}`,
     classId,
-    maxHp: cls.maxHp * multipliers.hp,
-    hp: cls.maxHp * multipliers.hp,
+    boss,
+    maxHp: cls.maxHp * multipliers.hp * (boss ? 10 : 1),
+    hp: cls.maxHp * multipliers.hp * (boss ? 10 : 1),
     armor: cls.armor * multipliers.armor,
     dodge: Math.min(0.95, cls.dodge * multipliers.dodge),
     strengthFactor: cls.strengthFactor,
     precision: cls.precision,
     distance: cls.distance ?? 1,
     alive: true,
-    damage: base.damage * multipliers.damage,
-    speed: base.speed * multipliers.speed,
+    damage: base.damage * multipliers.damage * (boss ? 2 : 1),
+    speed: boss ? 0.8 : base.speed * multipliers.speed,
     hitChance: Math.min(1, base.hitChance * multipliers.hitChance),
     penetration: Math.max(0, Math.min(1, base.penetration * multipliers.penetration)),
     lootMaterialIds: [...(definition?.lootMaterialIds ?? [])],
-    xpDrop: Math.max(0, Number(definition?.xpDrop) || 0)
+    xpDrop: Math.max(0, Number(definition?.xpDrop) || 0) * (boss && dungeonId > 1 ? 100 : 1)
   };
 }
 
-export function createDungeonEnemies(count: number, classRoll: () => number): DungeonEnemy[] {
-  return Array.from({ length: Math.max(0, Math.floor(count)) }, (_, index) => createDungeonEnemy(index + 1, rollEnemyClass(classRoll())));
+export function createDungeonEnemies(count: number, classRoll: () => number, dungeonId = 1, bossRoll: (() => number) | null = null): DungeonEnemy[] {
+  return Array.from({ length: Math.max(0, Math.floor(count)) }, (_, index) => {
+    const boss = bossRoll !== null && bossRoll() < 0.01;
+    return createDungeonEnemy(index + 1, boss ? 'recruit' : rollEnemyClass(classRoll(), dungeonId), dungeonId, boss);
+  });
 }
 
 function uniqueCharacterAttackPointSources(
@@ -245,8 +252,8 @@ export function isDungeonCatchup(firstEventAt: number, now: number, thresholdMs 
   return Number.isFinite(firstEventAt) && now - firstEventAt > thresholdMs;
 }
 
-export function resolveSearchStep<TCharacter extends SearchParticipantLike>(participants: readonly TCharacter[], encounterRoll: number): 'encounter' | 'miss' {
-  const result = resolveDungeonSearch(CONFIG.dungeon.encounterChance, encounterRoll);
+export function resolveSearchStep<TCharacter extends SearchParticipantLike>(participants: readonly TCharacter[], encounterRoll: number, encounterChance = CONFIG.dungeon.encounterChance): 'encounter' | 'miss' {
+  const result = resolveDungeonSearch(encounterChance, encounterRoll);
   if (result === 'miss') healParticipantsAfterSearchMiss(participants, 1);
   return result;
 }

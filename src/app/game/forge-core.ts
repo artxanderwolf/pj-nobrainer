@@ -1,6 +1,6 @@
 import {
   calculateWeaponEconomy
-} from './economy-core';
+} from './economy-core.ts';
 import {
   CONFIG,
   calculateWeaponStats,
@@ -13,7 +13,7 @@ import {
   type WeaponCraftingSlotId,
   type WeaponSlot,
   type WeaponStats
-} from './game-core';
+} from './game-core.ts';
 import {
   getMaterialQuantityById,
   reserveMaterialQuantitiesById,

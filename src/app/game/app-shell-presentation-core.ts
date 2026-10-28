@@ -1,4 +1,4 @@
-export const APP_UI_VERSION = '0.20.0';
+export const APP_UI_VERSION = '0.3.0.1';
 
 export const APP_SHELL_PAGE_IDS = [
   'base',
@@ -39,6 +39,7 @@ const APP_SHELL_BEFORE_PAGES = `<div class="app modular-ui" data-ui-version="${A
       </div>
       <div class="top-actions">
         <div class="pill money-pill">Geld <b id="gold">0 Nickel</b></div>
+        <button id="questHeaderButton" class="help-btn" type="button" aria-label="Missionen öffnen">📜</button>
         <button class="help-btn" type="button" aria-label="Hilfe" onclick="go('index')">?</button>
       </div>
       <span id="matCount" class="sr-only">0</span>

@@ -22,9 +22,8 @@ import {
 const closeTo = (actual, expected, message) => assert.ok(Math.abs(actual - expected) < 1e-12, message ?? `${actual} ≈ ${expected}`);
 
 const materialNames = Object.keys(MATERIALS).sort();
-assert.deepEqual(materialNames, [
-  'Aluminium', 'Fichte', 'Fuchs-Leder', 'Hasen-Leder', 'Kupfer', 'Lederfetzen', 'Morsche Fichte', 'Tanne', 'Zinn'
-].sort(), 'Die Erweiterung darf keine Materialien hinzufügen oder entfernen.');
+assert.equal(materialNames.length, 77, 'Neun bisherige und 68 neue Materialien.');
+for (const name of ['Aluminium','Fichte','Fuchs-Leder','Hasen-Leder','Kupfer','Lederfetzen','Morsche Fichte','Tanne','Zinn']) assert.ok(materialNames.includes(name));
 
 const expectedForms = {
   dagger: ['Dolch', 1, 6, 1.4, 0.60, 0.5],
@@ -86,8 +85,8 @@ assert.equal(MATERIALS.Fichte.dungeonDropWeight, 8);
 assert.equal(MATERIALS.Tanne.dungeonDropWeight, 2);
 assert.equal(getMaterialById(9)?.[0], 'Lederfetzen');
 assert.equal(getDungeonMaterialDropWeight(1, 'Kupfer'), 8);
-assert.deepEqual(getDungeonEnemyDefinition(1, 'recruit'), { name: 'Neuling', lootMaterialIds: [9, 5, 3], xpDrop: 10 });
-assert.deepEqual(getDungeonEnemyDefinition(1, 'fighter'), { name: 'Tank', lootMaterialIds: [9, 4, 6], xpDrop: 10 });
+assert.deepEqual(getDungeonEnemyDefinition(1, 'recruit'), { name: 'Neuling', lootMaterialIds: [5, 3], xpDrop: 10 });
+assert.deepEqual(getDungeonEnemyDefinition(1, 'fighter'), { name: 'Tank', lootMaterialIds: [4, 6], xpDrop: 10 });
 assert.deepEqual(getDungeonEnemyDefinition(1, 'archer'), { name: 'Jäger', lootMaterialIds: [9, 8, 7], xpDrop: 10 });
 assert.deepEqual(getDungeonEnemyDefinition(1, 'scholar'), { name: 'Lehrling', lootMaterialIds: [9, 2, 1], xpDrop: 10 });
 
