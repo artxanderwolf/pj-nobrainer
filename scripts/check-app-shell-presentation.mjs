@@ -8,15 +8,15 @@ const packageJson = JSON.parse(readFileSync('package.json', 'utf8'));
 const probePage = '<section class="page" id="probe">Probe</section>';
 const shell = composeAppShell(probePage);
 
-assert.equal(APP_UI_VERSION, '0.20.0', 'Die gemeinsame sichtbare App-Version muss v0.20.0 sein.');
+assert.equal(APP_UI_VERSION, '0.3.0.0', 'Die gemeinsame sichtbare App-Version muss v0.3.0.0 sein.');
 assert.equal(packageJson.version, APP_UI_VERSION, 'package.json und sichtbare App-Version dürfen nicht auseinanderlaufen.');
 assert.equal(APP_SHELL_PAGE_IDS[0], 'base');
 for (const required of ['character', 'storage', 'forge-preview', 'market-jobs', 'dungeon-select', 'index']) {
   assert.ok(APP_SHELL_PAGE_IDS.includes(required), `Modulare Seite ${required} fehlt in der Shell-Seitenliste.`);
 }
-assert.match(shell, /^<div class="app modular-ui" data-ui-version="0\.20\.0">/, 'Die modulare UI-v0.20.0-Shell fehlt.');
+assert.match(shell, /^<div class="app modular-ui" data-ui-version="0\.3\.0\.0">/, 'Die modulare UI-v0.3.0.0-Shell fehlt.');
 assert.match(shell, /id="backBtn"[\s\S]*onclick="goBack\(\)"/, 'Der globale Zurück-Button fehlt.');
-assert.match(shell, /<div class="ui-version">SMITHS OF ELDRAVAR · v0\.20\.0<\/div>/, 'Die sichtbare Versionsanzeige ist nicht v0.20.0.');
+assert.match(shell, /<div class="ui-version">SMITHS OF ELDRAVAR · v0\.3\.0\.0<\/div>/, 'Die sichtbare Versionsanzeige ist nicht v0.3.0.0.');
 assert.match(shell, /<h1 id="pageTitle">Übersicht<\/h1>/, 'Der Seitentitel-Anker fehlt.');
 assert.match(shell, /id="gold"/, 'Der Geld-Anker fehlt.');
 assert.match(shell, /class="help-btn"[\s\S]*onclick="go\('index'\)"/, 'Der Hilfezugang fehlt.');
@@ -51,4 +51,4 @@ assert.match(appComponent, /composeAppShell\(pageMarkup\)/, 'Der App-Component b
 assert.doesNotMatch(appComponent, /DOMParser/, 'Der App-Component parst weiterhin die Legacy-HTML.');
 assert.match(appComponent, /const LEGACY_RUNTIME_PATH = 'legacy\/NoBrainer_GitHub_v0\.12\.2\.runtime\.js';/, 'Der App-Component verweist nicht auf das eigenständige Runtime-Asset.');
 
-console.log('App-Shell-Präsentation: responsive UI v0.20.0 mit funktionsfähigem Spielstand-Reiter, materialabhängigen Waffenbildern, gemeinsamen Kader-/Rekrutierungsmodals, Waffenherstellung, Trainingslager-Popup, Topbar, Zurück-Button und vierteiliger Bottom-Navigation ist Angular-eigen.');
+console.log('App-Shell-Präsentation: responsive UI v0.3.0.0 mit funktionsfähigem Spielstand-Reiter, materialabhängigen Waffenbildern, gemeinsamen Kader-/Rekrutierungsmodals, Waffenherstellung, Trainingslager-Popup, Topbar, Zurück-Button und vierteiliger Bottom-Navigation ist Angular-eigen.');

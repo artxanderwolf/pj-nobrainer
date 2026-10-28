@@ -38,6 +38,12 @@ replaceData(baseline.MATERIALS, GENERATED_MATERIALS);
 replaceData(baseline.DUNGEON_ENEMY_DEFINITIONS, GENERATED_DUNGEON_ENEMY_DEFINITIONS);
 replaceData(baseline.DUNGEON_LOOT_TABLES, GENERATED_DUNGEON_LOOT_TABLES);
 
+export type CharacterClassId = keyof typeof GENERATED_CHARACTER_CLASSES;
+export const CHARACTER_CLASSES = GENERATED_CHARACTER_CLASSES;
+export function getDungeonEnemyDefinition(dungeonId: number, classId: CharacterClassId): { name: string; lootMaterialIds: readonly number[]; xpDrop: number } | null {
+  return (GENERATED_DUNGEON_ENEMY_DEFINITIONS as Record<number, Partial<Record<CharacterClassId, {name: string; lootMaterialIds: readonly number[]; xpDrop: number}>>>)[dungeonId]?.[classId] ?? null;
+}
+
 export interface MaterialReference {
   materialId: number;
   technicalKey: string;
@@ -177,7 +183,13 @@ export function calculateWeaponStats(slots: readonly WeaponSlot[] | null | undef
   };
 }
 
+export function getStarterBlueprint() {
+  const slots: WeaponSlot[] = [{slot:'workingPart',materialId:4},{slot:'back',materialId:1},{slot:'gripCore',materialId:1},{slot:'gripWrap',materialId:9},{slot:'special',materialId:1},{slot:'parry',materialId:1}];
+  return {slots,stats:calculateWeaponStats(slots,'sword')};
+}
+
 export const GAME_CORE_BRIDGE = {
+  getStarterBlueprint,
   ...baseline.GAME_CORE_BRIDGE,
   calculateCharacterStats,
   getMaterialById, normalizeWeaponSlots, canonicalWeaponSlots, isWeaponSelectionComplete, rarityFactor,

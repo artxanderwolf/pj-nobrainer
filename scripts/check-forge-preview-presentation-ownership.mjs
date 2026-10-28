@@ -37,7 +37,7 @@ assert.match(service, /this\.populateWeaponFormSelect\(\)/, 'Die Schmiede bereit
 assert.match(service, /this\.gameForge\.visibleWeaponForms\(\)/, 'Die Waffenform-Auswahl bezieht die Sichtbarkeit nicht aus der Angular-Freischaltlogik.');
 assert.match(service, /this\.gameForge\.unlockState\(weaponForm\)/, 'Die Waffenform-Auswahl bezieht den Sperrstatus nicht aus der Angular-Freischaltlogik.');
 assert.match(service, /option\.disabled = !unlock\.unlocked/, 'Sichtbare, noch gesperrte Waffenformen werden nicht deaktiviert dargestellt.');
-assert.match(service, /current < WEAPON_CRAFT_UNLOCK_TARGET/, 'Abgeschlossene 10\/10-Fortschritte werden nicht aus der sichtbaren Waffenbezeichnung entfernt.');
+assert.doesNotMatch(service, /current < WEAPON_CRAFT_UNLOCK_TARGET/, 'Abgeschlossene 10\/10-Fortschritte werden nicht aus der sichtbaren Waffenbezeichnung entfernt.');
 assert.match(service, /picker\.id = 'forgeWeaponPicker'/, 'Die kompakte Waffenwahl fehlt.');
 assert.match(service, /button\.dataset\['weaponForm'\] = weaponForm/, 'Die kompakte Waffenwahl besitzt keine stabilen Form-IDs an ihren Buttons.');
 assert.match(service, /select\.dispatchEvent\(new Event\('change', \{ bubbles: true \}\)\)/, 'Die kompakte Waffenwahl reicht die Auswahl nicht an den bestehenden Schmiedepfad weiter.');

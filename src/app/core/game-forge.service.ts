@@ -1,6 +1,8 @@
+import { weaponUnlocked } from '../game/mission-core.ts';
 import { Injectable } from '@angular/core';
 import { calculateWeaponEconomy } from '../game/economy-core';
 import {
+  CONFIG,
   canonicalWeaponSlots,
   createStatModifiers,
   getMaterialReferenceById,
@@ -122,11 +124,11 @@ export class GameForgeService {
   }
 
   visibleWeaponForms(): string[] {
-    return getVisibleWeaponForms(this.getCraftCounts());
+    return Object.keys(CONFIG.forge.weaponForms).filter(form => weaponUnlocked(this.getState(),form));
   }
 
   unlockState(weaponForm: string): WeaponUnlockState {
-    return getWeaponUnlockState(weaponForm, this.getCraftCounts());
+    return { weaponForm, visible: weaponUnlocked(this.getState(),weaponForm), unlocked: weaponUnlocked(this.getState(),weaponForm), prerequisites: [] };
   }
 
   craftCount(weaponForm: string): number {
@@ -134,7 +136,7 @@ export class GameForgeService {
   }
 
   isProgressionSource(weaponForm: string): boolean {
-    return isWeaponProgressionSource(weaponForm);
+    return false;
   }
 
   preview(weaponForm: string, slots: readonly WeaponSlot[]): ForgePreviewResult {
@@ -171,7 +173,7 @@ export class GameForgeService {
     const activeSlots = Number(state.upgrades.forgeSlots) || 0;
     const queueSlots = Number(state.upgrades.forgeQueue) || 0;
 
-    if (!isWeaponFormUnlocked(weaponForm, this.getCraftCounts(state))) return { status: 'locked', weaponForm };
+    if (!weaponUnlocked(state, weaponForm)) return { status: 'locked', weaponForm };
     if (!hasForgeCapacity(state, activeSlots, queueSlots)) return { status: 'full' };
     if (!this.isComplete(weaponForm, slots)) return { status: 'incomplete' };
 

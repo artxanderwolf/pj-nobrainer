@@ -67,7 +67,7 @@ assert.match(presentationService, /dungeon-character-hp/, 'Charakter-HP werden i
 assert.match(presentationService, /class="bar hp"/, 'Gegner-HP werden nicht als Balken dargestellt.');
 assert.doesNotMatch(presentationService, /\$\{hp\.toFixed|\/ \$\{maxHp\.toFixed|HP \$\{this\.formatNumber/, 'Dungeon-Präsentation zeigt weiterhin numerische HP-Werte.');
 assert.match(presentationService, /this\.dungeonSession\.toggleRun\(Date\.now\(\)\)/, 'Popup-Aktion delegiert nicht an den Dungeon-Session-Service.');
-assert.match(presentationService, /Teamzuweisung ist während eines laufenden Trainingslager-Runs gesperrt/, 'Teamänderung wird während des Runs nicht sichtbar gesperrt.');
+assert.match(presentationService, /Teamzuweisung ist während eines laufenden Dungeon-Runs gesperrt/, 'Teamänderung wird während des Runs nicht sichtbar gesperrt.');
 assert.doesNotMatch(presentationService, /GameEnergyService|EN je Charakter|Energiekosten/, 'Dungeon-Präsentation verwendet weiterhin das alte Energiesystem.');
 assert.match(presentationService, /data-dungeon-session-help/, 'Hilfe/Index wird für den neuen Dungeon-Ablauf nicht ergänzt.');
 assert.match(presentationService, /Schließen des Popups beendet einen laufenden Run nicht/, 'Hilfe erklärt die Hintergrundfortsetzung nicht.');

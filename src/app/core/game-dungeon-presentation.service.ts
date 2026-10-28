@@ -1,3 +1,4 @@
+import { getDungeonDefinition } from '../game/dungeon-definitions.ts';
 import { Injectable } from '@angular/core';
 import { CHARACTER_CLASSES, CONFIG, type CharacterClassId } from '../game/game-core';
 import { getMaterialStorageEntries, type MaterialStorageInventory } from '../game/material-storage-core';
@@ -83,6 +84,7 @@ export class GameDungeonPresentationService {
   }
 
   render(): void {
+    const title=document.getElementById('dungeonModalTitle');if(title)title.textContent=this.getDisplayName();
     this.renderHub();
     this.renderTeam();
     this.renderTiming();
@@ -158,7 +160,7 @@ export class GameDungeonPresentationService {
             <div id="dungeonLootEmpty" class="empty dungeon-compact-empty">Noch keine Beute gesammelt.</div>
           </section>
           <section class="dungeon-panel dungeon-log-panel">
-            <h3>Trainingslager-Protokoll</h3>
+            <h3>Dungeon-Protokoll</h3>
             <div id="dungeonCombatLog" class="log dungeon-live-log" data-placeholder="true"><div class="muted">Noch kein Lauf gestartet.</div></div>
           </section>
         </div>
@@ -255,7 +257,7 @@ export class GameDungeonPresentationService {
       const fallen = slot.fallen ? `<span class="tag temp">${slot.fallenLabel}</span>` : '';
       return `<div class="team-slot${pickerOpen}"><div class="team-slot-head"><strong>${slot.title}</strong>${fallen}</div><div class="bar hp dungeon-character-hp" role="progressbar" aria-label="Leben ${character?.name ?? ''}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(hpPercent)}"><i style="width:${hpPercent}%"></i></div><div class="actions"><button class="btn" data-dungeon-action="remove" data-slot="${slot.slotIndex}" ${locked ? 'disabled' : ''}>${slot.removeLabel}</button><button class="btn" data-dungeon-action="picker" data-slot="${slot.slotIndex}" ${locked ? 'disabled' : ''}>${slot.switchLabel}</button></div>${picker}</div>`;
     }).join('');
-    root.innerHTML = `<div class="team-slot-grid">${slots}</div>${locked ? '<p class="status-line">Teamzuweisung ist während eines laufenden Trainingslager-Runs gesperrt.</p>' : ''}`;
+    root.innerHTML = `<div class="team-slot-grid">${slots}</div>${locked ? '<p class="status-line">Teamzuweisung ist während eines laufenden Dungeon-Runs gesperrt.</p>' : ''}`;
   }
 
   private teamPickerHtml(
@@ -288,7 +290,7 @@ export class GameDungeonPresentationService {
     const state = this.getState();
     const enemies = (state.dungeonRun?.enemies ?? []).filter(enemy => enemy.alive !== false && enemy.hp > 0);
     if (!enemies.length) {
-      root.innerHTML = `<div class="empty dungeon-compact-empty">${this.dungeonSession.isRunActive() ? 'Trainingslager wird durchsucht …' : 'Keine aktiven Gegner.'}</div>`;
+      root.innerHTML = `<div class="empty dungeon-compact-empty">${this.dungeonSession.isRunActive() ? `${this.getDisplayName()} wird durchsucht …` : 'Keine aktiven Gegner.'}</div>`;
       return;
     }
     root.innerHTML = enemies.map(enemy => {
@@ -324,7 +326,7 @@ export class GameDungeonPresentationService {
         ? `Kampf aktiv · ${this.getAliveEnemyCount(state)} Gegner aktiv`
         : state.dungeonLootCollect
           ? 'Beute der aktuellen Welle wird eingesammelt …'
-          : 'Trainingslager wird durchsucht …';
+          : `${this.getDisplayName()} wird durchsucht …`;
       return;
     }
     button.textContent = 'Lauf starten';
@@ -451,7 +453,7 @@ export class GameDungeonPresentationService {
   }
 
   private getDisplayName(): string {
-    const displayName = String((CONFIG.dungeon as typeof CONFIG.dungeon & { displayName?: string }).displayName ?? '').trim();
+    const displayName = getDungeonDefinition(Number(this.getState()['selectedDungeonId']) || 1).displayName;
     return displayName || 'Trainingslager';
   }
 

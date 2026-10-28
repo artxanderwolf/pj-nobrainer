@@ -2,7 +2,7 @@ import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 import { readAllTables } from './read-tabular-data.mjs';
 
-const CLASS_IDS = new Set(['recruit', 'fighter', 'archer', 'scholar']);
+const CLASS_IDS = new Set(['recruit', 'fighter', 'archer', 'scholar', 'healer']);
 const CATEGORIES = new Set(['Holz', 'Metall', 'Leder']);
 const PART_IDS = new Set(['workingPart', 'back', 'gripCore', 'gripWrap', 'special', 'parry', 'bowstring']);
 const SPECIAL_STATS = new Set(['', 'GES', 'P', 'DS']);
@@ -143,7 +143,7 @@ export function validateGameData(tables) {
 
   const dungeons = tables.dungeons.rows;
   assertUnique(dungeons, 'dungeon_id', 'dungeons');
-  if (dungeons.length !== 1) fail('Die aktuelle Runtime unterstützt in Phase 1 genau einen aktiven CONFIG.dungeon-Eintrag.');
+  if (dungeons.length !== 5) fail('Schnellrelease benötigt genau fünf Dungeons.');
   const dungeonIds = new Set(dungeons.map(row => asInteger(row.dungeon_id, 'dungeons.dungeon_id')));
   for (const row of dungeons) {
     if (asNumber(row.energy_cost, `dungeons ${row.dungeon_id}.energy_cost`) < 0) fail('energy_cost darf nicht negativ sein.');

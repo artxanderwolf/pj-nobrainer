@@ -1,3 +1,4 @@
+import { GameMissionService } from './game-mission.service';
 import { Injectable } from '@angular/core';
 import { formatCurrencyNickel } from '../game/economy-core';
 import { normalizeMaterialInventory, type MaterialStorageInventory } from '../game/material-storage-core';
@@ -75,6 +76,7 @@ export class GameRuntimeService {
     private readonly dungeonSession: GameDungeonSessionService,
     private readonly dungeonEquipmentSync: GameDungeonEquipmentSyncService,
     private readonly dungeonPresentation: GameDungeonPresentationService,
+    private readonly missions: GameMissionService,
     private readonly saveTransfer: GameSaveTransferService
   ) {}
 
@@ -112,6 +114,7 @@ export class GameRuntimeService {
       this.dungeonEquipmentSync.refresh(repairAt);
       runtime.save(false);
     }
+    this.missions.prepare(() => runtime.save(false), () => { runtime.renderInitial(); this.forgePreviewPresentation.render(); this.dungeonPresentation.render(); });
     this.saveTransfer.bindActions(() => runtime.save(true));
     const materialStorageChanged = this.normalizeMaterialStorage() > 0;
     const dungeonMaterialReferencesChanged = this.gameDungeon.normalizeMaterialReferences() > 0;
@@ -142,6 +145,7 @@ export class GameRuntimeService {
     const dungeonUpdate = this.dungeonSession.update();
     this.applyDungeonResult(runtime, dungeonUpdate);
     this.gameEnergy.update();
+    this.missions.render();
 
     if (before && this.offlineProgress.shouldShowSummary(before)) {
       runtime.save(false);
@@ -161,6 +165,7 @@ export class GameRuntimeService {
 
   renderInitial(): void {
     this.getRuntime().renderInitial();
+    this.missions.render();
     this.resourcePresentation.render();
     this.forgePreviewPresentation.render();
     this.forgeJobPresentation.render();
@@ -226,6 +231,7 @@ export class GameRuntimeService {
     const dungeonUpdate = this.dungeonSession.update();
     this.applyDungeonResult(runtime, dungeonUpdate);
     this.gameEnergy.update();
+    this.missions.render();
 
     this.forgeJobPresentation.render();
     runtime.renderMarketJob();

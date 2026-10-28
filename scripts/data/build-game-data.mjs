@@ -65,7 +65,7 @@ function buildGameData(tables) {
     parts: formParts.get(String(row.id)) ?? []
   }]));
 
-  const dungeon = tables.dungeons.rows[0];
+  const dungeonConfigs = Object.fromEntries(tables.dungeons.rows.map(dungeon => {
   const dungeonId = n(dungeon.dungeon_id);
   const dungeonDurationMs = n(dungeon.duration_ms);
   if (dungeonDurationMs <= 0) throw new Error('Dungeon-Daten: duration_ms muss größer 0 sein.');
@@ -82,8 +82,7 @@ function buildGameData(tables) {
       .map(row => n(row.weight));
   }
 
-  const config = {
-    dungeon: {
+  return [dungeonId, {
       id: dungeonId,
       displayName: String(dungeon.display_name),
       energyCost: n(dungeon.energy_cost),
@@ -102,7 +101,10 @@ function buildGameData(tables) {
       lootCollectMs: n(dungeon.loot_collect_ms),
       enemyClassWeights: classWeights,
       enemyCountWeights
-    },
+    }];
+  }));
+  const config = {
+    dungeon: dungeonConfigs[1],
     energyRegenPerMinute: n(settings.energyRegenPerMinute),
     market: { baseSeconds: n(settings['market.baseSeconds']), materialBaseNickel: n(settings['market.materialBaseNickel']) },
     tavern: { recruitBaseNickel: n(settings['tavern.recruitBaseNickel']), recruitGrowth: n(settings['tavern.recruitGrowth']) },
@@ -164,7 +166,9 @@ function buildGameData(tables) {
     };
   }
 
-  const categoryOrder = tables.dungeon_category_weights.rows.map(row => [n(row.dungeon_id), String(row.category), n(row.weight)]);
+  // Frozen compatibility projection for the old Dungeon-1 runtime only.
+  // New dungeon content is consumed exclusively through ID-native enemy definitions.
+  const categoryOrder = tables.dungeon_category_weights.rows.filter(row => n(row.dungeon_id) === 1).map(row => [n(row.dungeon_id), String(row.category), n(row.weight)]);
   const legacyLoot = {};
   for (const [did, category, weight] of categoryOrder) {
     legacyLoot[did] ??= { categories: [] };
@@ -172,7 +176,7 @@ function buildGameData(tables) {
       name: category,
       weight,
       items: Object.entries(materials)
-        .filter(([, definition]) => definition.category === category)
+        .filter(([, definition]) => definition.materialId <= 9 && definition.category === category)
         .sort((a,b) => b[1].dungeonDropWeight - a[1].dungeonDropWeight || a[1].materialId - b[1].materialId)
         .map(([name, definition]) => ({ name, chance: definition.dungeonDropWeight }))
     });
@@ -180,7 +184,7 @@ function buildGameData(tables) {
 
   return {
     meta: { schemaVersion: n(meta.schema_version), contentRevision: n(meta.content_revision), baselineVersion: String(meta.baseline_version) },
-    config, classes, materials, rarityBonus, enemyDefinitions, legacyLoot, materialKeys: tables.materials.rows.map(row => ({
+    config, dungeonConfigs, classes, materials, rarityBonus, enemyDefinitions, legacyLoot, materialKeys: tables.materials.rows.map(row => ({
       materialId: n(row.material_id), technicalKey: String(row.technical_key), displayName: row.display_name
     }))
   };
@@ -235,6 +239,7 @@ await mkdir(OUTPUT_DIR, { recursive: true });
 const gameSource = header
   + ts('DATA_META', game.meta)
   + ts('GENERATED_CONFIG', game.config)
+  + ts('GENERATED_DUNGEONS', game.dungeonConfigs)
   + ts('GENERATED_CHARACTER_CLASSES', game.classes)
   + ts('GENERATED_MATERIAL_SALE_RARITY_BONUS', game.rarityBonus)
   + ts('GENERATED_MATERIALS', game.materials)
