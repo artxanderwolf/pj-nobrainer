@@ -75,6 +75,6 @@ export class GameStateService {
     this.dungeonMigrationPending = !nextState['dungeons'];
     Object.assign(this.state, nextState);
     initializeReleaseProgress(this.state);
-    migrateParallelDungeons(this.state);
+    this.dungeonMigrationPending = migrateParallelDungeons(this.state) || this.dungeonMigrationPending;
   }
 }

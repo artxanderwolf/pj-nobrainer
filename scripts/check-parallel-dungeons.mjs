@@ -33,7 +33,7 @@ try{
  assert.equal(world.characters[0].hp,0,'Stopping another dungeon must not heal this participant');
  world.dungeons[2].dungeonTeamSlots=[1,null,null,null];sessions.open(1700,2);const rejected=sessions.toggleRun(1700);assert.match(rejected.alertMessage,/anderen Dungeon/);assert.equal(world.dungeons[2].dungeonAuto,false);
  assert.equal(assignDungeonCharacter(world,2,0,2),true);sessions.toggleRun(1800);
- world.dungeons[1].progress.waves=359;world.dungeons[2].progress.waves=359;
+ world.dungeons[1].progress.waves=149;world.dungeons[2].progress.waves=149;
  recordSuccessfulWave(world,1,()=>1);assert.equal(world.releaseProgress.qualifiedRuns[1],1);assert.equal(world.releaseProgress.qualifiedRuns[2],undefined);
  recordSuccessfulWave(world,2,()=>1);assert.equal(world.releaseProgress.qualifiedRuns[2],1);
  const restored=decodeSave(encodeSave(world)).state;migrateParallelDungeons(restored);
@@ -51,6 +51,15 @@ try{
  initializeReleaseProgress(old);old.selectedDungeonId=3;old.releaseProgress.session={dungeonId:3,waves:400,qualified:true,searchEligible:true};migrateParallelDungeons(old);
  assert.equal(old.dungeons[3].dungeonSessionEndsAt,99999);assert.equal(old.dungeons[3].dungeonLootCollect.drops[0].materialId,26);assert.equal(old.dungeons[3].progress.searchEligible,true);assert.equal('dungeonAuto' in old,false);assert.equal('session' in old.releaseProgress,false);
  const snapshot=JSON.stringify(old);migrateParallelDungeons(old);assert.equal(JSON.stringify(old),snapshot,'Migration must be idempotent');
+ // Existing unqualified runs adopt the lower boundary exactly once; no access rolls are enabled mid-run.
+ const balanced={};initializeReleaseProgress(balanced);migrateParallelDungeons(balanced);
+ balanced.releaseProgress.qualifiedRuns[1]=7;
+ balanced.dungeons[1].progress={dungeonId:1,waves:150,qualified:false,searchEligible:false};
+ balanced.dungeons[2].progress={dungeonId:2,waves:149,qualified:false,searchEligible:false};
+ migrateParallelDungeons(balanced);assert.equal(balanced.releaseProgress.qualifiedRuns[1],8);assert.equal(balanced.dungeons[1].progress.qualified,true);assert.equal(balanced.dungeons[1].progress.searchEligible,false);assert.equal(balanced.releaseProgress.qualifiedRuns[2],undefined);
+ migrateParallelDungeons(balanced);assert.equal(balanced.releaseProgress.qualifiedRuns[1],8);
+ recordSuccessfulWave(balanced,1,()=>1);assert.equal(balanced.releaseProgress.qualifiedRuns[1],8);
+ recordSuccessfulWave(balanced,2,()=>1);assert.equal(balanced.releaseProgress.qualifiedRuns[2],1);
  // Imported double booking: stop only the later dungeon and preserve earned drops.
  const bad={characters:[createCharacter(1,'A')],inventory:{},weaponInventory:{}};initializeReleaseProgress(bad);migrateParallelDungeons(bad);
  for(const id of [1,2]){const d=bad.dungeons[id];d.dungeonAuto=true;d.dungeonTeamSlots=[1,null,null,null];d.dungeonCycleOriginalIds=[1];}
