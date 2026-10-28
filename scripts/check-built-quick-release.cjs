@@ -46,7 +46,7 @@ let browser;
  assert.equal(await page.locator('#materialIndexRows tr').count(),77);
  await page.evaluate(()=>window.go('index'));await page.click('#indexSaveTab');
  const downloadPromise=page.waitForEvent('download');await page.click('#saveTransferExportBtn');const download=await downloadPromise;
- assert.match(download.suggestedFilename(),/^NoBrainer-Spielstand-v0\.3\.0\.0-/);
+ assert.match(download.suggestedFilename(),/^NoBrainer-Spielstand-v0\.3\.0\.1-/);
  const stream=await download.createReadStream();let exported='';for await(const chunk of stream)exported+=chunk;
  const imported=JSON.parse(exported),originalGold=imported.state.gold;assert.equal(imported.saveVersion,15);
  const beforeInvalid=await page.evaluate(()=>JSON.parse(localStorage.getItem('nobrainer_save_v1')));

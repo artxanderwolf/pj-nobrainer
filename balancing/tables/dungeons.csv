@@ -1,6 +1,6 @@
 dungeon_id,display_name,energy_cost,duration_ms,enemy_base_damage,enemy_base_speed,enemy_base_hit_chance,enemy_base_penetration,enemy_mult_hp,enemy_mult_armor,enemy_mult_dodge,enemy_mult_damage,enemy_mult_speed,enemy_mult_hit_chance,enemy_mult_penetration,encounter_chance,search_step_ms,loot_collect_ms
-1,Trainingslager,0,18000000,6,0.8,0.50,0,4,1,1,1,1,1,1,0.001,1000,1000
-2,Waffenkammer,0,18000000,6,0.8,0.50,0,8,2,2,2,2,2,2,0.002,1000,1000
-3,Wald,0,18000000,6,0.8,0.50,0,16,4,4,4,4,4,4,0.004,1000,1000
-4,Einsame Stadt,0,18000000,6,0.8,0.50,0,32,8,8,8,8,8,8,0.008,1000,1000
-5,Heilige Ebenen,0,18000000,6,0.8,0.50,0,64,16,16,16,16,16,16,0.016,1000,1000
+1,Trainingslager,0,18000000,6,0.8,0.50,0,4,1,1,1,1,1,1,0.05,1000,1000
+2,Waffenkammer,0,18000000,6,0.8,0.50,0,8,2,2,2,2,2,2,0.05,1000,1000
+3,Wald,0,18000000,6,0.8,0.50,0,16,4,4,4,4,4,4,0.05,1000,1000
+4,Einsame Stadt,0,18000000,6,0.8,0.50,0,32,8,8,8,8,8,8,0.05,1000,1000
+5,Heilige Ebenen,0,18000000,6,0.8,0.50,0,64,16,16,16,16,16,16,0.05,1000,1000

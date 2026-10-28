@@ -6,6 +6,7 @@ import { healParty, selectHealingTarget } from '../src/app/game/healing-core.ts'
 import { MATERIAL_REFERENCES, CHARACTER_CLASSES, calculateCharacterStats, calculateWeaponStats, getStarterBlueprint, getDungeonEnemyDefinition } from '../src/app/game/game-core.ts';
 import { GENERATED_DUNGEONS, GENERATED_DUNGEON_ENEMY_DEFINITIONS } from '../src/app/game/data/generated/game-data.generated.ts';
 import { getWeaponMaterialColorById } from '../src/app/game/weapon-material-colors.ts';
+import { resolveDungeonSearch } from '../src/app/game/dungeon-search-core.ts';
 import { getClassEquipmentRule } from '../src/app/game/equipment-rules-core.ts';
 import { getRecruitOffer } from '../src/app/game/progression-core.ts';
 import { encodeSave, decodeSave } from '../src/app/game/save-codec.ts';
@@ -73,7 +74,14 @@ for(const [index,row] of catalog.rows.entries()){
 }
 for(const c of ['recruit','fighter'])assert.ok(!getDungeonEnemyDefinition(1,c).lootMaterialIds.includes(9));
 for(const c of ['archer','scholar'])assert.ok(getDungeonEnemyDefinition(1,c).lootMaterialIds.includes(9));
-assert.deepEqual(Object.values(GENERATED_DUNGEONS).map(d=>d.encounterChance),[.001,.002,.004,.008,.016]);
+assert.deepEqual(Object.values(GENERATED_DUNGEONS).map(d=>d.encounterChance),[.05,.05,.05,.05,.05]);
+for (const dungeon of Object.values(GENERATED_DUNGEONS)) assert.equal(dungeon.searchStepMs,1000,'Ein Suchwurf pro Sekunde');
+for (const dungeon of Object.values(GENERATED_DUNGEONS)) {
+  assert.equal(resolveDungeonSearch(dungeon.encounterChance,0),'encounter','Fund im ersten Suchschritt möglich');
+  for (let second=1;second<=40;second++) assert.equal(resolveDungeonSearch(dungeon.encounterChance,.5),'miss','Auch nach 20 Sekunden kein erzwungener Fund');
+  assert.equal(resolveDungeonSearch(dungeon.encounterChance,.049999),'encounter');
+  assert.equal(resolveDungeonSearch(dungeon.encounterChance,.05),'miss');
+}
 assert.equal(GENERATED_DUNGEONS[4].enemyClassWeights.healer,15);
 assert.equal(Object.values(GENERATED_DUNGEONS[4].enemyClassWeights).reduce((a,b)=>a+b,0),100);
 assert.equal(getStarterBlueprint().stats.expectedRaw,5.775);assert.ok(getStarterBlueprint().slots.every(s=>s.materialId<=9));
