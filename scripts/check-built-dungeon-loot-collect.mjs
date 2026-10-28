@@ -53,7 +53,7 @@ const probeScript = `<script>
       inventoryQty: Number(saved?.state?.inventory?.[${JSON.stringify(String(materialId))}]?.qty || 0),
       canonicalMaterialId: Number(saved?.state?.inventory?.[${JSON.stringify(String(materialId))}]?.materialId || 0),
       legacyInventoryKeyPresent: Boolean(saved?.state?.inventory?.[${JSON.stringify(materialName)}]),
-      legacyDungeonLootKeyPresent: Boolean(saved?.state?.dungeonLoot?.[${JSON.stringify(materialName)}]),
+      legacyDungeonLootKeyPresent: Boolean(saved?.state?.dungeons?.[1]?.dungeonLoot?.[${JSON.stringify(materialName)}]),
       materialCount: document.getElementById('matCount')?.textContent?.trim() || '',
       storageText: document.getElementById('inventoryRows')?.textContent?.replace(/\\s+/g, ' ').trim() || '',
       dungeonLootText: document.getElementById('dungeonLoot')?.textContent?.replace(/\\s+/g, ' ').trim() || '',
@@ -176,7 +176,7 @@ try {
   const result = JSON.parse(decoded);
 
   assert.equal(result.status, 'clicked', `Der unsichtbare Dungeon-Loot-Kompatibilitätsanker wurde zum Einsammeln nicht verwendbar: ${JSON.stringify(result)}`);
-  assert.equal(result.saveVersion, 15, `Der migrierte Altstand wurde nicht als Save v15 persistiert: ${JSON.stringify(result)}`);
+  assert.equal(result.saveVersion, 16, `Der migrierte Altstand wurde nicht als Save v16 persistiert: ${JSON.stringify(result)}`);
   assert.equal(result.inventoryQty, 2, `Dungeon-Loot wurde nicht in das ID-keyed gespeicherte Inventar übertragen: ${JSON.stringify(result)}`);
   assert.equal(result.canonicalMaterialId, materialId, `Der kanonische Lagereintrag trägt nicht die erwartete Material-ID: ${JSON.stringify(result)}`);
   assert.equal(result.legacyInventoryKeyPresent, false, `Der Materialname blieb fälschlich als Inventarschlüssel erhalten: ${JSON.stringify(result)}`);
@@ -189,7 +189,7 @@ try {
   assert.equal(result.primaryText, 'Lauf starten', `Nach dem Einsammeln muss der Trainingslager-Popup-Button wieder einen neuen Lauf anbieten: ${JSON.stringify(result)}`);
   assert.equal(result.runtimeError, '', `Die Runtime meldet während des Loot-E2E-Tests einen Fehler: ${JSON.stringify(result)}`);
 
-  console.log('Dungeon-Loot-Browserregression: v9-Namensloot wird zu ID-keyed Save v15 migriert, eingesammelt und im Trainingslager-Popup korrekt angezeigt.');
+  console.log('Dungeon-Loot-Browserregression: v9-Namensloot wird zu ID-keyed Save v16 migriert, eingesammelt und im Trainingslager-Popup korrekt angezeigt.');
 } finally {
   if (child) await stopBrowser(child);
   rmSync(browserProfile, { recursive: true, force: true });

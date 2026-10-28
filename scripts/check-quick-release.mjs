@@ -109,13 +109,13 @@ try{
   const healer={id:1,classId:'healer',hp:1,maxHp:22,alive:true,equipment:{leftHand:null,rightHand:null},name:'Heiler',level:1};
   const enemy=createDungeonEnemy(1,'recruit');const hp=enemy.hp;
   const runtime={characters:[healer],weaponInventory:[],dungeonTeamSlots:[1,null,null,null]};const svc=new GameDungeonService({getState:()=>runtime});
-  const out={events:[],saveRequested:false};svc.playerAttack(runtime,{ownerId:1,kind:'fist'},{participantIds:[1],enemies:[enemy]},out);
+  const out={events:[],saveRequested:false};svc.playerAttack(svc.getState(1),{ownerId:1,kind:'fist'},{participantIds:[1],enemies:[enemy]},out);
   assert.equal(enemy.hp,hp);assert.ok(healer.hp>1);assert.equal(healer.hp,2.15,'No critical healing');
-  const eh=createDungeonEnemy(2,'healer',4);eh.hp=1;svc.enemyAttack(runtime,{ownerId:eh.id},{enemies:[enemy,eh],participantIds:[1]},out);assert.ok(eh.hp>1);
+  const eh=createDungeonEnemy(2,'healer',4);eh.hp=1;svc.enemyAttack(svc.getState(1),{ownerId:eh.id},{enemies:[enemy,eh],participantIds:[1]},out);assert.ok(eh.hp>1);
   const slayer={...healer,classId:'recruit',id:2,name:'Rekrut',equipment:{leftHand:77,rightHand:null}};
   const killState={characters:[slayer],weaponInventory:[{id:77,weaponForm:'sword',stats:{weaponBaseDamage:100000,attackSpeed:1,weaponBaseHitChance:1}}],dungeonTeamSlots:[2]};
   const killService=new GameDungeonService({getState:()=>killState});Math.random=()=>.5;
-  killService.playerAttack(killState,{ownerId:2,weaponId:77,kind:'weapon'},{participantIds:[2],enemies:[eh]},out);
+  killService.playerAttack(killService.getState(1),{ownerId:2,weaponId:77,kind:'weapon'},{participantIds:[2],enemies:[eh]},out);
   assert.equal(killState.releaseProgress.healerDefeated,1,'Kill survives immediate manual abort, before wave completion');
   assert.equal(out.saveRequested,true);
 }finally{Math.random=rng;unlinkSync(temporary);}

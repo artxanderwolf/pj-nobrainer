@@ -13,8 +13,18 @@ app-root,
   min-height: 100%;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
+  font-size: 16px;
   overscroll-behavior-y: none;
+}
+
+@media (max-width: 760px) {
+  body { font-size: 14px; }
 }
 
 .modular-ui.app {

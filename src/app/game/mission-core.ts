@@ -1,3 +1,4 @@
+import { getDungeonSession, type DungeonWorldState } from './parallel-dungeon-core.ts';
 import { getWeaponUnlockState, WEAPON_CRAFT_UNLOCK_TARGET, type WeaponCraftCounts } from './forge-core.ts';
 export interface ReleaseProgress {
     version: 1;
@@ -7,14 +8,9 @@ export interface ReleaseProgress {
     notified: Record<string, boolean>;
     notificationQueue: string[];
     healerDefeated: number;
-    session: {
-        dungeonId: number;
-        waves: number;
-        qualified: boolean;
-        searchEligible: boolean;
-    } | null;
+
 }
-export interface MissionState {
+export interface MissionState extends DungeonWorldState {
     releaseProgress?: ReleaseProgress;
     weaponCraftCounts?: WeaponCraftCounts;
     selectedDungeonId?: number;
@@ -35,7 +31,7 @@ const count = (n: unknown) => Math.max(0, Math.floor(Number(n) || 0));
 export function initializeReleaseProgress(state: MissionState): ReleaseProgress {
     if (state.releaseProgress?.version === 1)
         return state.releaseProgress;
-    const p: ReleaseProgress = { version: 1, qualifiedRuns: {}, accessFound: {}, claimed: {}, notified: {}, notificationQueue: [], healerDefeated: 0, session: null };
+    const p: ReleaseProgress = { version: 1, qualifiedRuns: {}, accessFound: {}, claimed: {}, notified: {}, notificationQueue: [], healerDefeated: 0 };
     for (const form of FORMS)
         if (getWeaponUnlockState(form, state.weaponCraftCounts).unlocked)
             p.claimed[`weapon_${form}`] = true;
@@ -79,11 +75,11 @@ export function claimMission(state: MissionState, id: string): boolean {
 }
 export function startProgressSession(state: MissionState, dungeonId: number): void {
     const p = initializeReleaseProgress(state);
-    p.session = { dungeonId, waves: 0, qualified: false, searchEligible: count(p.qualifiedRuns[dungeonId]) >= 20 };
+    getDungeonSession(state,dungeonId).progress = { dungeonId, waves: 0, qualified: false, searchEligible: count(p.qualifiedRuns[dungeonId]) >= 20 };
 }
 /** Called only after successful waves; roll provider is never invoked before eligibility or after a find. */
 export function recordSuccessfulWave(state: MissionState, dungeonId: number, random: () => number): void {
-    const p = initializeReleaseProgress(state), session = p.session;
+    const p = initializeReleaseProgress(state), session = getDungeonSession(state,dungeonId).progress;
     if (!session || session.dungeonId !== dungeonId)
         return;
     session.waves++;

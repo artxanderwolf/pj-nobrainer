@@ -1,3 +1,4 @@
+import { DUNGEON_IDS, getDungeonSession, type DungeonSessionState } from '../game/parallel-dungeon-core.ts';
 import { Injectable } from '@angular/core';
 import {
   filterActiveDungeonAttackPoints,
@@ -26,7 +27,7 @@ interface RuntimeDungeonEquipmentSyncCharacter {
 type RuntimeDungeonEquipmentSyncState = MutableGameState & {
   characters: RuntimeDungeonEquipmentSyncCharacter[];
   weaponInventory: RuntimeDungeonEquipmentSyncWeapon[];
-  dungeonRun: DungeonRunLike | null;
+  dungeons?: Record<number,DungeonSessionState>;
 };
 
 @Injectable({ providedIn: 'root' })
@@ -35,7 +36,15 @@ export class GameDungeonEquipmentSyncService {
 
   refresh(at = Date.now()): boolean {
     const state = this.gameState.getState<RuntimeDungeonEquipmentSyncState>();
-    const run = state.dungeonRun;
+    let changed=false;
+    for(const id of DUNGEON_IDS){
+      const run=getDungeonSession(state,id).dungeonRun;
+      if(run)changed=this.refreshRun(state,run,at)||changed;
+    }
+    return changed;
+  }
+
+  private refreshRun(state:RuntimeDungeonEquipmentSyncState,run:DungeonRunLike,at:number):boolean {
     if (!run) return false;
 
     const activeCharacters = run.participantIds

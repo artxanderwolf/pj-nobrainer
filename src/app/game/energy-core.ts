@@ -11,9 +11,10 @@ export interface EnergyClassLike {
 export interface EnergyStateLike<TCharacter extends EnergyCharacterLike = EnergyCharacterLike> {
   characters: TCharacter[];
   lastEnergyUpdate: number;
-  dungeonAuto: boolean;
-  dungeonRun: unknown;
-  dungeonLootCollect: unknown;
+  dungeonAuto?: boolean;
+  dungeonRun?: unknown;
+  dungeonLootCollect?: unknown;
+  dungeons?: Record<number,{dungeonAuto:boolean;dungeonRun:unknown;dungeonSearch:unknown;dungeonLootCollect:unknown}>;
 }
 
 export interface EnergyUpdateResult {
@@ -39,6 +40,7 @@ export function updateEnergyState<TCharacter extends EnergyCharacterLike>(
     !state.dungeonAuto &&
     !state.dungeonRun &&
     !state.dungeonLootCollect &&
+    !Object.values(state.dungeons??{}).some(d=>d.dungeonAuto||d.dungeonRun||d.dungeonSearch||d.dungeonLootCollect) &&
     elapsedMinutes > 0;
 
   if (!canRegenerate) {

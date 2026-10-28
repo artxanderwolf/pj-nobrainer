@@ -1,3 +1,5 @@
+import { initializeReleaseProgress } from '../game/mission-core.ts';
+import { migrateParallelDungeons } from '../game/parallel-dungeon-core.ts';
 import { Injectable } from '@angular/core';
 
 export type MutableGameState = Record<string, unknown>;
@@ -17,6 +19,13 @@ declare global {
 export class GameStateService {
   private readonly state: MutableGameState = {};
   private initialized = false;
+  private dungeonMigrationPending = false;
+
+  consumeDungeonMigration(): boolean {
+    const pending=this.dungeonMigrationPending;
+    this.dungeonMigrationPending=false;
+    return pending;
+  }
 
   openBootstrapRegistration(): void {
     if (window.NoBrainerStateBootstrap) {
@@ -63,6 +72,9 @@ export class GameStateService {
     }
 
     for (const key of Object.keys(this.state)) delete this.state[key];
+    this.dungeonMigrationPending = !nextState['dungeons'];
     Object.assign(this.state, nextState);
+    initializeReleaseProgress(this.state);
+    migrateParallelDungeons(this.state);
   }
 }

@@ -62,6 +62,21 @@ body.dungeon-modal-active {
   margin: 0;
 }
 
+.dungeon-modal-header > div:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.dungeon-run-wave-count {
+  margin-left: auto;
+  flex: 0 0 auto;
+  max-width: 36%;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  text-align: right;
+}
+
 .dungeon-modal-close {
   width: 42px;
   height: 42px;

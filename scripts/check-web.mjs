@@ -5,7 +5,7 @@ const prepare=spawnSync(process.execPath,['scripts/prepare-legacy-runtime.mjs'],
 if(prepare.status!==0)process.exit(prepare.status??1);
 const checks=scripts.check.split(' && ').map(s=>s.replace('npm run ',''))
   .filter(key=>!key.startsWith('check:android'));
-checks.push('check:quick-release');
+checks.push('check:quick-release','check:parallel-dungeons');
 for(const key of checks){
   const args=scripts[key].split(' ').slice(1);
   const result=spawnSync(process.execPath,args,{stdio:'inherit'});
