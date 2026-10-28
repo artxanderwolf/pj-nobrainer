@@ -82,6 +82,9 @@ export class GameDungeonPresentationService {
 
   render(): void {
     const title=document.getElementById('dungeonModalTitle');if(title)title.textContent=this.getDisplayName();
+    const waveCount = document.getElementById('dungeonRunWaveCount');
+    const session = this.getState().session;
+    if (waveCount) waveCount.textContent = `Wellen besiegt: ${Math.max(0, session.dungeonWavesDefeated - session.dungeonSessionStartWaves)}`;
     this.renderHub();
     this.renderTeam();
     this.renderTiming();
@@ -141,7 +144,8 @@ export class GameDungeonPresentationService {
             <div class="ui-version">DUNGEON</div>
             <h2 id="dungeonModalTitle">${this.getDisplayName()}</h2>
           </div>
-          <button id="dungeonModalCloseBtn" class="dungeon-modal-close" type="button" aria-label="Trainingslager schließen">×</button>
+          <div id="dungeonRunWaveCount" class="dungeon-run-wave-count" role="status">Wellen besiegt: 0</div>
+          <button id="dungeonModalCloseBtn" class="dungeon-modal-close" type="button" aria-label="Dungeonfenster schließen">×</button>
         </div>
         <div class="dungeon-modal-layout">
           <section class="dungeon-panel dungeon-team-panel">

@@ -36,7 +36,7 @@ let browser;
  await page.click('#questHeaderButton');await page.waitForSelector('#missionDialog[open]');await page.screenshot({path:path.join(out,'desktop-missions.png')});await page.click('#missionClose');
  await page.evaluate(()=>window.go('dungeon'));await page.click('[data-open-dungeon="2"]');await page.waitForSelector('.dungeon-modal-open');
  assert.match(await page.locator('#dungeonModalTitle').textContent(),/Waffenkammer/);
- assert.equal(await page.locator('#questHeaderButton').isVisible(),true);await page.click('#questHeaderButton');await page.waitForSelector('#missionDialog[open]');await page.click('#missionClose');await page.click('#dungeonModalCloseBtn');
+ assert.equal(await page.locator('#questHeaderButton').isVisible(),false);await page.click('#dungeonModalCloseBtn');assert.equal(await page.locator('#questHeaderButton').isVisible(),true);await page.click('#questHeaderButton');await page.waitForSelector('#missionDialog[open]');await page.click('#missionClose');
  await page.setViewportSize({width:390,height:844});await page.evaluate(()=>window.go('base'));await page.click('#questHeaderButton');await page.waitForSelector('#missionDialog[open]');
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);await page.screenshot({path:path.join(out,'mobile-missions.png')});await page.click('#missionClose');
  // Unlock healing through its actual claim and verify recruitment availability.
@@ -46,7 +46,7 @@ let browser;
  assert.equal(await page.locator('#materialIndexRows tr').count(),77);
  await page.evaluate(()=>window.go('index'));await page.click('#indexSaveTab');
  const downloadPromise=page.waitForEvent('download');await page.click('#saveTransferExportBtn');const download=await downloadPromise;
- assert.match(download.suggestedFilename(),/^NoBrainer-Spielstand-v0\.4\.0\.0-/);
+ assert.match(download.suggestedFilename(),/^NoBrainer-Spielstand-v0\.4\.0\.1-/);
  const stream=await download.createReadStream();let exported='';for await(const chunk of stream)exported+=chunk;
  const imported=JSON.parse(exported),originalGold=imported.state.gold;assert.equal(imported.saveVersion,16);
  const beforeInvalid=await page.evaluate(()=>JSON.parse(localStorage.getItem('nobrainer_save_v1')));

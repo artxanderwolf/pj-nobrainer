@@ -1,4 +1,6 @@
 #missionDialog{background:#17202c;color:#f2e6cd;border:1px solid #88734f;border-radius:16px;width:min(640px,calc(100vw - 24px));max-height:85dvh;padding:20px;box-sizing:border-box}
 #missionDialog::backdrop{background:#000b}.mission-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}.mission-card{padding:14px 0;border-top:1px solid #ffffff25}.mission-card h3{margin:0 0 8px}.mission-card .btn{margin-top:10px}.mission-overview{display:block;width:100%;margin:16px 0}#questHeaderButton{min-width:42px;white-space:nowrap;z-index:1}#missionToast{position:fixed;top:80px;left:50%;transform:translateX(-50%);width:max-content;max-width:90vw;background:#263b2e;border:1px solid #a7bd78;border-radius:10px;color:#fff;padding:12px 18px;z-index:10001;pointer-events:none}#releaseDungeonSelect{display:block;width:100%;margin-bottom:14px;padding:12px;background:#17202c;color:#f2e6cd;border:1px solid #88734f;border-radius:8px}
 
-.modular-ui .modular-topbar{z-index:1100}.modular-ui .dungeon-modal-page.dungeon-modal-open{top:var(--ui-header-height,72px)}.modular-ui .dungeon-modal-dialog{height:min(calc(100dvh - 100px),900px)}
+/* Dungeon windows occupy the available game viewport, including the header area. */
+body.dungeon-modal-active .modular-topbar,
+body.dungeon-modal-active .bottom-nav{visibility:hidden;pointer-events:none}
