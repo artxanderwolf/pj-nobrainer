@@ -65,7 +65,7 @@ export class OfflineProgressService {
     return `Offline-Fortschritt\n\n${lines.join('\n')}`;
   }
 
-  private sessions(state:any): any[] { return state.dungeons ? Object.values(state.dungeons) : [state]; }
+  private sessions(state:any): any[] { return state.teams ? Object.values(state.teams) : state.dungeons ? Object.values(state.dungeons) : [state]; }
 
   private sessionLoot(state:any): Record<string,{qty:number}> {
     const totals:Record<string,{qty:number}>={};

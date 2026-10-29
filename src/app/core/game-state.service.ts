@@ -1,5 +1,5 @@
 import { initializeReleaseProgress } from '../game/mission-core.ts';
-import { migrateParallelDungeons } from '../game/parallel-dungeon-core.ts';
+import { migrateTeams } from '../game/team-core.ts';
 import { Injectable } from '@angular/core';
 
 export type MutableGameState = Record<string, unknown>;
@@ -72,9 +72,9 @@ export class GameStateService {
     }
 
     for (const key of Object.keys(this.state)) delete this.state[key];
-    this.dungeonMigrationPending = !nextState['dungeons'];
+    this.dungeonMigrationPending = !nextState['teams'];
     Object.assign(this.state, nextState);
     initializeReleaseProgress(this.state);
-    this.dungeonMigrationPending = migrateParallelDungeons(this.state) || this.dungeonMigrationPending;
+    this.dungeonMigrationPending = migrateTeams(this.state) || this.dungeonMigrationPending;
   }
 }

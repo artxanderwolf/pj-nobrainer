@@ -1,6 +1,7 @@
 id,base_cost_nickel,growth,start_property,start_value,max_value
-inn,250,2.0,startCapacity,2,10
-forgeSlots,500,3.0,start,1,5
+inn,500,2.0,startCapacity,2,10
+forgeSlots,1000,3.0,start,1,5
 forgeQueue,100,1.75,start,1,10
-marketSlots,500,3.0,start,1,5
+marketSlots,1000,3.0,start,1,5
 marketQueue,100,1.75,start,1,10
+teamSlots,500,2.0,start,1,10

@@ -1,3 +1,4 @@
+import {migrateTeams} from '../src/app/game/team-core.ts';
 import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync, unlinkSync } from 'node:fs';
 import ts from 'typescript';
@@ -13,15 +14,15 @@ import { encodeSave, decodeSave } from '../src/app/game/save-codec.ts';
 
 const state={weaponCraftCounts:{dagger:0}},p=initializeReleaseProgress(state);
 let draws=0;const random=()=>{draws++;return 0;};
-startProgressSession(state,1);
+migrateTeams(state);startProgressSession(state,1);
 for(let i=0;i<149;i++)recordSuccessfulWave(state,1,random);
 assert.equal(p.qualifiedRuns[1],undefined);assert.equal(draws,0);
 recordSuccessfulWave(state,1,random);assert.equal(p.qualifiedRuns[1],1);
 for(let i=0;i<400;i++)recordSuccessfulWave(state,1,random);
 assert.equal(p.qualifiedRuns[1],1,'A session counts at most once');
-for(let run=1;run<20;run++){startProgressSession(state,1);for(let wave=0;wave<150;wave++)recordSuccessfulWave(state,1,random);}
+for(let run=1;run<20;run++){migrateTeams(state);startProgressSession(state,1);for(let wave=0;wave<150;wave++)recordSuccessfulWave(state,1,random);}
 assert.equal(p.qualifiedRuns[1],20);assert.equal(draws,0,'20th qualifying run cannot search before a new run');
-startProgressSession(state,1);for(let wave=0;wave<99;wave++)recordSuccessfulWave(state,1,random);
+migrateTeams(state);startProgressSession(state,1);for(let wave=0;wave<99;wave++)recordSuccessfulWave(state,1,random);
 assert.equal(draws,0);recordSuccessfulWave(state,1,()=>{draws++;return .05;});assert.equal(p.accessFound[2],undefined);
 recordSuccessfulWave(state,1,()=>{draws++;return .049999;});assert.equal(p.accessFound[2],true);assert.equal(dungeonUnlocked(state,2),false);
 const saved=decodeSave(encodeSave(state)).state;
@@ -37,7 +38,7 @@ assert.equal(missions(state).find(m=>m.id==='weapon_bow').visible,false);assert.
 p.claimed.weapon_sword2h=true;p.claimed.weapon_axe2h=true;refreshMissionNotifications(state);
 assert.ok(p.notificationQueue.includes('weapon_bow'));assert.equal(missions(state).find(m=>m.id==='weapon_bow').complete,true);
 assert.equal(new Set(p.notificationQueue).size,p.notificationQueue.length);
-const resumed={};initializeReleaseProgress(resumed);startProgressSession(resumed,1);for(let i=0;i<150;i++)recordSuccessfulWave(resumed,1,()=>1);
+const resumed={};initializeReleaseProgress(resumed);migrateTeams(resumed);startProgressSession(resumed,1);for(let i=0;i<150;i++)recordSuccessfulWave(resumed,1,()=>1);
 const resumed2=decodeSave(encodeSave(resumed)).state;recordSuccessfulWave(resumed2,1,()=>1);assert.equal(resumed2.releaseProgress.qualifiedRuns[1],1);
 
 const a={hp:10,maxHp:100,alive:true,threat:10},b={hp:5,maxHp:50,alive:true,threat:20},dead={hp:0,maxHp:100,alive:false,threat:100};

@@ -74,7 +74,7 @@ const probeScript = `<script>
             teamText: firstTeamText,
             timeText: normalize(document.getElementById('dungeonTimeText')?.textContent),
             timeWidth: document.getElementById('dungeonTimeBar')?.style.width || '',
-            hiddenOverviewAction: Boolean(document.getElementById('dungeonOverviewAction')?.hidden),
+            teamPurchasePresent: Boolean(document.getElementById('buyTeamButton')),
             layout: layoutSnapshot()
           };
 
@@ -228,15 +228,15 @@ try {
   assert.equal(result.status, 'checked', `Trainingslager-Popup-Runtime wurde nicht bereit: ${JSON.stringify(result)}`);
   assert.equal(result.browserErrors.length, 0, `Beim Trainingslager-Popup trat ein Browserfehler auf: ${JSON.stringify(result)}`);
   assert.equal(result.runtimeError, '', `Die Runtime meldet während des Trainingslager-Popup-Tests einen Fehler: ${JSON.stringify(result)}`);
-  assert.equal(result.first.hubTitle, 'Trainingslager', 'Dungeon 1 verwendet im Hub nicht den Anzeigenamen Trainingslager.');
-  assert.equal(result.first.modalTitle, 'Trainingslager', 'Das Popup verwendet nicht den Anzeigenamen Trainingslager.');
+  assert.equal(result.first.hubTitle, 'Team 1', 'Dungeon 1 verwendet im Hub nicht den Anzeigenamen Trainingslager.');
+  assert.equal(result.first.modalTitle, 'Team 1 · Trainingslager', 'Das Popup verwendet nicht den Anzeigenamen Trainingslager.');
   assert.equal(result.first.modalOpen, true, 'Trainingslager öffnet sich nicht als Popup.');
   assert.equal(result.first.slotCount, 4, 'Trainingslager zeigt nicht genau vier Charakterplätze.');
   assert.ok(result.first.characterHpBars > 0, 'Belegte Charakterplätze zeigen keinen Lebensbalken.');
   assert.equal(/\bEN\b|Energie|\bHP\b/i.test(result.first.teamText), false, `Dungeon-Team zeigt weiterhin numerische Ressourcenlabels: ${result.first.teamText}`);
   assert.equal(result.first.timeText, '05:00:00', 'Trainingslager startet nicht mit fünf Stunden Laufzeit.');
   assert.equal(result.first.timeWidth, '100%', 'Laufzeitbalken startet nicht vollständig gefüllt.');
-  assert.equal(result.first.hiddenOverviewAction, true, 'Der alte zusätzliche Dungeon-Hubknopf ist weiterhin sichtbar.');
+  assert.equal(result.first.teamPurchasePresent, true, 'Der alte zusätzliche Dungeon-Hubknopf ist weiterhin sichtbar.');
   assert.ok(result.first.layout, 'Layoutmessung fehlt.');
   assert.equal(result.first.layout.dialogOverflowY, 'hidden', 'Der Trainingslager-Dialog ist weiterhin scrollbar.');
   assert.equal(result.first.layout.layoutOverflowY, 'hidden', 'Die Trainingslager-Gesamtansicht ist weiterhin scrollbar.');
@@ -252,7 +252,7 @@ try {
   assert.equal(/\([\d.,]+\s*HP\)/i.test(result.running.logText), false, `Das Live-Protokoll zeigt weiterhin numerische Rest-HP: ${result.running.logText}`);
 
   assert.equal(result.closed.hidden, true, 'Schließen blendet das Trainingslager-Popup nicht aus.');
-  assert.match(result.closed.hubCopy, /Läuft im Hintergrund/, 'Der Dungeon-Hub zeigt den Hintergrundlauf nicht an.');
+  assert.match(result.closed.hubCopy, /Trainingslager.*verbleibend/, 'Die Teamkarte zeigt Ziel und Restzeit des Hintergrundlaufs nicht an.');
   assert.equal(result.reopened.modalOpen, true, 'Trainingslager kann nach dem Schließen nicht erneut geöffnet werden.');
   assert.equal(result.reopened.primaryText, 'Lauf abbrechen', 'Schließen des Popups beendet den laufenden Trainingslager-Run.');
   assert.ok(timeToSeconds(result.reopened.timeText) < timeToSeconds(result.running.timeText), 'Der Countdown ist bei geschlossenem Popup nicht weitergelaufen.');

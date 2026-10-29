@@ -109,8 +109,8 @@ export class GameRuntimeService {
     const equipmentChanged = equipmentRepairs.length > 0;
     if (equipmentChanged) {
       this.equipmentRepairMessages = equipmentRepairs.map(repair => `${repair.characterName}: ${repair.weaponName} – ${repair.reason}`);
-      const state = this.gameState.getState<MutableGameState & { dungeons?: Record<number,{dungeonRun?: { attackPoints:Array<{nextAt:number}> } | null}> }>();
-      const nextTimes = Object.values(state.dungeons??{}).flatMap(d=>d.dungeonRun?.attackPoints??[]).map(point => Number(point.nextAt)).filter(Number.isFinite);
+      const state = this.gameState.getState<MutableGameState & { teams?: Record<number,{dungeonRun?: { attackPoints:Array<{nextAt:number}> } | null}> }>();
+      const nextTimes = Object.values(state.teams??{}).flatMap(d=>d.dungeonRun?.attackPoints??[]).map(point => Number(point.nextAt)).filter(Number.isFinite);
       const repairAt = nextTimes.length ? Math.min(Date.now(), ...nextTimes) : Date.now();
       this.dungeonEquipmentSync.refresh(repairAt);
       runtime.save(false);
@@ -272,7 +272,7 @@ export class GameRuntimeService {
 
   private applyDungeonResult(runtime: GameRuntimeApi, result: DungeonActionResult, inventoryChanged = false): void {
     for (const event of result.events) {
-      this.dungeonPresentation.addEvent(event.text, event.className,event.dungeonId);
+      this.dungeonPresentation.addEvent(event.text, event.className,event.teamId);
     }
     if (inventoryChanged) {
       this.normalizeMaterialStorage();

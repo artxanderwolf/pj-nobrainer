@@ -59,3 +59,6 @@ die idempotente Belegungsprüfung benötigt kein neues persistiertes Datenformat
 Dungeon 1: `encounter_chance=0.05`, `search_step_ms=1000`; Gegnerwerte und Suchheilung
 bleiben erhalten. Der neue Quellenstand wurde für den Freigabekandidaten vorbereitet;
 der öffentliche Android-Stable-Kanal bleibt bis zur Releasefreigabe auf der bisherigen APK.
+
+## Teams v0.5.0.0
+Save 17 speichert unabhängige Teams mit stabiler teamId und getrenntem dungeonId-Ziel. Aktive Läufe, Beute, Protokolle und Gruppen bleiben beim Neustart erhalten. Die ältere Beschreibung transienter Trainingslager-Sitzungen oben ist überholt. Vorhandene belegte Gruppen/Läufe/Beute werden einmalig in Bestandsteams übernommen; neue Spielstände starten mit einem Team. Maximal 10 Teams, Kauf ab 5.000 Nickel, Wachstum 2. Die teamSlots-Konfiguration verwendet denselben Wirtschaftsfaktor 10 wie Gebäude. Kader-, Herstellungs- und Verkaufsplätze kosten gegenüber v0.4.0.2 doppelt so viel; Warteschlangenpreise bleiben unverändert.

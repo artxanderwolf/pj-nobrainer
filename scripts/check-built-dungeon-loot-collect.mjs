@@ -53,11 +53,11 @@ const probeScript = `<script>
       inventoryQty: Number(saved?.state?.inventory?.[${JSON.stringify(String(materialId))}]?.qty || 0),
       canonicalMaterialId: Number(saved?.state?.inventory?.[${JSON.stringify(String(materialId))}]?.materialId || 0),
       legacyInventoryKeyPresent: Boolean(saved?.state?.inventory?.[${JSON.stringify(materialName)}]),
-      legacyDungeonLootKeyPresent: Boolean(saved?.state?.dungeons?.[1]?.dungeonLoot?.[${JSON.stringify(materialName)}]),
+      legacyDungeonLootKeyPresent: Boolean(saved?.state?.teams?.[1]?.dungeonLoot?.[${JSON.stringify(materialName)}]),
       materialCount: document.getElementById('matCount')?.textContent?.trim() || '',
       storageText: document.getElementById('inventoryRows')?.textContent?.replace(/\\s+/g, ' ').trim() || '',
       dungeonLootText: document.getElementById('dungeonLoot')?.textContent?.replace(/\\s+/g, ' ').trim() || '',
-      overviewText: document.getElementById('dungeonOverviewAction')?.textContent?.replace(/\\s+/g, ' ').trim() || '',
+      overviewText: document.querySelector('#dungeonOverviewOpenBtn .menu-card-title')?.textContent?.replace(/\\s+/g, ' ').trim() || '',
       primaryText: document.getElementById('dungeonPrimaryBtn')?.textContent?.replace(/\\s+/g, ' ').trim() || '',
       runtimeError: document.querySelector('.legacy-host')?.getAttribute('data-runtime-error') || '',
       browserErrors: Array.isArray(window.__lootErrors) ? window.__lootErrors : []
@@ -70,9 +70,10 @@ const probeScript = `<script>
 
   const started = Date.now();
   const timer = setInterval(() => {
-    const button = document.getElementById('dungeonOverviewAction');
-    if (button && !button.disabled && /Loot sammeln/.test(button.textContent || '')) {
+    const button = document.getElementById('dungeonCollectLootBtn');
+    if (button && !button.disabled && /Einsammeln/.test(button.textContent || '')) {
       clearInterval(timer);
+      document.getElementById('dungeonOverviewOpenBtn')?.click();
       button.click();
       setTimeout(() => finish('clicked'), 750);
       return;
@@ -176,7 +177,7 @@ try {
   const result = JSON.parse(decoded);
 
   assert.equal(result.status, 'clicked', `Der unsichtbare Dungeon-Loot-Kompatibilitätsanker wurde zum Einsammeln nicht verwendbar: ${JSON.stringify(result)}`);
-  assert.equal(result.saveVersion, 16, `Der migrierte Altstand wurde nicht als Save v16 persistiert: ${JSON.stringify(result)}`);
+  assert.equal(result.saveVersion, 17, `Der migrierte Altstand wurde nicht als Save v17 persistiert: ${JSON.stringify(result)}`);
   assert.equal(result.inventoryQty, 2, `Dungeon-Loot wurde nicht in das ID-keyed gespeicherte Inventar übertragen: ${JSON.stringify(result)}`);
   assert.equal(result.canonicalMaterialId, materialId, `Der kanonische Lagereintrag trägt nicht die erwartete Material-ID: ${JSON.stringify(result)}`);
   assert.equal(result.legacyInventoryKeyPresent, false, `Der Materialname blieb fälschlich als Inventarschlüssel erhalten: ${JSON.stringify(result)}`);
@@ -185,11 +186,11 @@ try {
   assert.equal(result.materialCount, '2', `Der Materialzähler wurde nach dem Einsammeln nicht aktualisiert: ${JSON.stringify(result)}`);
   assert.match(result.storageText, /Morsche Fichte/, `Das Materiallager zeigt den eingesammelten Loot nicht mit Anzeigenamen: ${JSON.stringify(result)}`);
   assert.equal(result.dungeonLootText, '', `Die Dungeon-Lootanzeige wurde nach dem Einsammeln nicht geleert: ${JSON.stringify(result)}`);
-  assert.equal(result.overviewText, 'Trainingslager öffnen', `Nach dem Einsammeln muss der unsichtbare Hub-Kompatibilitätsanker wieder das Trainingslager-Popup anbieten: ${JSON.stringify(result)}`);
+  assert.equal(result.overviewText, 'Team 1', `Nach dem Einsammeln muss der Teamkarte wieder das Teamfenster anbieten: ${JSON.stringify(result)}`);
   assert.equal(result.primaryText, 'Lauf starten', `Nach dem Einsammeln muss der Trainingslager-Popup-Button wieder einen neuen Lauf anbieten: ${JSON.stringify(result)}`);
   assert.equal(result.runtimeError, '', `Die Runtime meldet während des Loot-E2E-Tests einen Fehler: ${JSON.stringify(result)}`);
 
-  console.log('Dungeon-Loot-Browserregression: v9-Namensloot wird zu ID-keyed Save v16 migriert, eingesammelt und im Trainingslager-Popup korrekt angezeigt.');
+  console.log('Dungeon-Loot-Browserregression: v9-Namensloot wird zu ID-keyed Save v17 migriert, eingesammelt und im Trainingslager-Popup korrekt angezeigt.');
 } finally {
   if (child) await stopBrowser(child);
   rmSync(browserProfile, { recursive: true, force: true });

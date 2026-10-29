@@ -30,6 +30,7 @@ if (DATA_META.schemaVersion !== 1 || DATA_META.baselineVersion !== '0.13.10') {
 }
 
 replaceData(baseline.CONFIG, GENERATED_CONFIG);
+export const CONFIG = baseline.CONFIG as typeof baseline.CONFIG & { upgrades: typeof GENERATED_CONFIG.upgrades };
 replaceData(baseline.CHARACTER_CLASSES, GENERATED_CHARACTER_CLASSES);
 replaceData(baseline.MATERIAL_SALE_RARITY_BONUS, GENERATED_MATERIAL_SALE_RARITY_BONUS);
 // Die alte Baseline benötigt für die noch vorhandene Legacy-Runtime weiterhin eine Namensprojektion.
