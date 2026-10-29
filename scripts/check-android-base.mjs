@@ -15,6 +15,8 @@ const appShell = read('src/app/game/app-shell-presentation-core.ts');
 const appComponent = read('src/app/app.component.ts');
 const saveCodec = read('src/app/game/save-codec.ts');
 const gitignore = read('.gitignore');
+const bootstrap = read('scripts/bootstrap-android.mjs');
+assert.match(bootstrap, /const ANDROID_VERSION_CODE = 9;/, 'Android-Vorbereitung muss den Installationscode 9 erhalten.');
 
 assert.equal(packageJson.version, APP_VERSION, 'Android-Gate-C muss App-Version 0.5.0.0 verwenden.');
 assert.equal(packageJson.dependencies?.['@capacitor/core'], CAPACITOR_VERSION, 'Capacitor Core muss exakt gepinnt sein.');
