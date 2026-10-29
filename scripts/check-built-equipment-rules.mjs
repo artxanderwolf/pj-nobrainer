@@ -41,7 +41,7 @@ const probe = String.raw`<script>
    const phase=localStorage.getItem(phaseKey)||'fresh';
    if(phase==='fresh'){
     const initial=save();
-    check(initial.saveVersion===16,'Save-Version verändert');
+    check(initial.saveVersion===17,'Save-Version verändert');
     const starter=initial.state.weaponInventory.find(w=>w.id===0);
     check(starter?.weaponForm==='sword','Startschwert ohne stabile Waffenform');
     check(initial.state.characters[0].equipment.rightHand===0,'Startschwert abgelegt');
@@ -86,6 +86,7 @@ const probe = String.raw`<script>
     fixture.state.characters[3].equipment={leftHand:null,rightHand:205};
     fixture.savedAt=Date.now();
     delete fixture.state.dungeons;
+    delete fixture.state.teams;
     fixture.state.dungeonAuto=true;fixture.state.expeditionActive=true;fixture.state.dungeonTeamSlots=[2,null,null,null];
     fixture.state.dungeonCycleOriginalIds=[2];fixture.state.dungeonCycleActiveIds=[2];fixture.state.dungeonSessionEndsAt=Date.now()+100000;
     fixture.state.dungeonRun={dungeonId:1,startedAt:Date.now(),participantIds:[2],energyShare:0,totalEnergyCost:0,enemies:[{id:'e1',name:'G Test',classId:'recruit',hp:1000000,maxHp:1000000,alive:true,armor:0,dodge:0,strengthFactor:1,precision:1,distance:1,damage:1,speed:1,hitChance:.5,penetration:0,lootMaterialIds:[1],xpDrop:10}],attackPoints:[{side:'player',ownerId:2,kind:'weapon',weaponId:201,label:'Alt',nextAt:Date.now()+60000},{side:'player',ownerId:2,kind:'weapon',weaponId:202,label:'Alt',nextAt:Date.now()+60000},{side:'enemy',ownerId:'e1',kind:'enemy',nextAt:Date.now()+60000}]};
@@ -102,8 +103,8 @@ const probe = String.raw`<script>
       check(JSON.stringify(chars.map(c=>c.equipment))===JSON.stringify([{leftHand:null,rightHand:102},{leftHand:null,rightHand:null},{leftHand:null,rightHand:204},{leftHand:205,rightHand:205}]),'Geladene Ausrüstung falsch bereinigt');
       const identity=result.state.weaponInventory.filter(w=>w.id!==0).map(w=>({id:w.id,name:w.name,weaponForm:w.weaponForm,marker:w.marker,materials:(w.slots||[]).filter(s=>s.materialId!=null).map(s=>s.materialId)}));
       check(JSON.stringify(identity)===JSON.stringify(report.inventory),'Inventargegenstände beim Import verändert');
-      check(result.state.dungeons[1].dungeonRun?.attackPoints.some(p=>p.ownerId===2&&p.kind==='fist'),'Aktiver Dungeon ohne neuen Faustangriff');
-      check(!result.state.dungeons[1].dungeonRun.attackPoints.some(p=>p.weaponId===201||p.weaponId===202),'Dungeon verwendet abgelegte Waffen weiter');
+      check(result.state.teams[1].dungeonRun?.attackPoints.some(p=>p.ownerId===2&&p.kind==='fist'),'Aktiver Dungeon ohne neuen Faustangriff');
+      check(!result.state.teams[1].dungeonRun.attackPoints.some(p=>p.weaponId===201||p.weaponId===202),'Dungeon verwendet abgelegte Waffen weiter');
       check(chars.every(c=>c.hp<=7.01&&c.energy<=3.1),'Bereinigung hat geheilt');
       check(window.__equipmentAlerts.filter(m=>m.startsWith('Ausrüstung an')).length===1,'Keine gesammelte einmalige Meldung');
       report.cleaned=chars.map(c=>c.equipment);report.notice=true;localStorage.setItem(reportKey,JSON.stringify(report));localStorage.setItem(phaseKey,'reloaded');location.reload();

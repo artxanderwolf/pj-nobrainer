@@ -62,6 +62,6 @@ if (channel.available) {
 } else {
   assert.deepEqual(stable, { schemaVersion: 1, available: false });
 }
-assert.match(saveCodec, /export const SAVE_VERSION = 16;/, 'Der Android-Updater verwendet das aktuelle gemeinsame Save-Format.');
+assert.match(saveCodec, /export const SAVE_VERSION = 17;/, 'Der Android-Updater verwendet das aktuelle gemeinsame Save-Format.');
 
 console.log('Android Gate C: gültiger Stable-Kanal; geprüfte APK wird über den System-Dateidialog exportiert und ausschließlich außerhalb der App installiert.');

@@ -1,4 +1,4 @@
-import { getDungeonSession, type DungeonWorldState } from './parallel-dungeon-core.ts';
+import { getTeamSession, type TeamWorldState } from './team-core.ts';
 import { QUALIFIED_RUN_WAVES } from './dungeon-progress-rules.ts';
 import { getWeaponUnlockState, WEAPON_CRAFT_UNLOCK_TARGET, type WeaponCraftCounts } from './forge-core.ts';
 export interface ReleaseProgress {
@@ -11,7 +11,7 @@ export interface ReleaseProgress {
     healerDefeated: number;
 
 }
-export interface MissionState extends DungeonWorldState {
+export interface MissionState extends TeamWorldState {
     releaseProgress?: ReleaseProgress;
     weaponCraftCounts?: WeaponCraftCounts;
     selectedDungeonId?: number;
@@ -74,13 +74,15 @@ export function claimMission(state: MissionState, id: string): boolean {
     refreshMissionNotifications(state);
     return true;
 }
-export function startProgressSession(state: MissionState, dungeonId: number): void {
+export function startProgressSession(state: MissionState, teamId: number): void {
     const p = initializeReleaseProgress(state);
-    getDungeonSession(state,dungeonId).progress = { dungeonId, waves: 0, qualified: false, searchEligible: count(p.qualifiedRuns[dungeonId]) >= 20 };
+    const dungeonId = getTeamSession(state,teamId).dungeonId;
+    getTeamSession(state,teamId).progress = { dungeonId, waves: 0, qualified: false, searchEligible: count(p.qualifiedRuns[dungeonId]) >= 20 };
 }
 /** Called only after successful waves; roll provider is never invoked before eligibility or after a find. */
-export function recordSuccessfulWave(state: MissionState, dungeonId: number, random: () => number): void {
-    const p = initializeReleaseProgress(state), session = getDungeonSession(state,dungeonId).progress;
+export function recordSuccessfulWave(state: MissionState, teamId: number, random: () => number): void {
+    const dungeonId = getTeamSession(state,teamId).dungeonId;
+    const p = initializeReleaseProgress(state), session = getTeamSession(state,teamId).progress;
     if (!session || session.dungeonId !== dungeonId)
         return;
     session.waves++;

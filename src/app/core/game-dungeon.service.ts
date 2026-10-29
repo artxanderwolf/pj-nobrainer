@@ -1,4 +1,4 @@
-import { DUNGEON_IDS, getDungeonSession, migrateParallelDungeons, characterDungeonReservation, type DungeonSessionState } from '../game/parallel-dungeon-core.ts';
+import { teamIds, getTeamSession, migrateTeams, characterTeamReservation, type TeamSessionState } from '../game/team-core.ts';
 import { getDungeonDefinition } from '../game/dungeon-definitions.ts';
 import { healParty } from '../game/healing-core.ts';
 import { dungeonUnlocked, initializeReleaseProgress, recordSuccessfulWave, startProgressSession, type MissionState } from '../game/mission-core.ts';
@@ -49,7 +49,7 @@ import {
 import { GameStateService, type MutableGameState } from './game-state.service';
 
 export interface DungeonRuntimeEvent {
-  dungeonId?: number;
+  teamId?: number;
   text: string;
   className?: string;
 }
@@ -114,8 +114,8 @@ type RuntimeDungeonState = MutableGameState & MissionState & {
   characters: RuntimeDungeonCharacter[];
   weaponInventory: RuntimeDungeonWeapon[];
   inventory: MaterialStorageInventory;
-  session: DungeonSessionState;
-  dungeons: Record<number,DungeonSessionState>;
+  session: TeamSessionState;
+  teams: Record<number,TeamSessionState>;
 };
 
 @Injectable({ providedIn: 'root' })
@@ -124,8 +124,8 @@ export class GameDungeonService {
 
   constructor(private readonly gameState: GameStateService) {}
 
-  update(now = Date.now(), dungeonId = 1): DungeonUpdateResult {
-    const state = this.getState(dungeonId);
+  update(now = Date.now(), teamId = 1): DungeonUpdateResult {
+    const state = this.getState(teamId);
     const outcome: DungeonUpdateResult = { events: [], saveRequested: false, catchingUp: false };
     const firstEventAt = this.getFirstEventAt(state, now);
     const catchingUp = isDungeonCatchup(firstEventAt, now);
@@ -209,8 +209,8 @@ export class GameDungeonService {
     return outcome;
   }
 
-  toggleAuto(at = Date.now(), dungeonId = 1): DungeonActionResult {
-    const state = this.getState(dungeonId);
+  toggleAuto(at = Date.now(), teamId = 1): DungeonActionResult {
+    const state = this.getState(teamId);
     const outcome = this.createOutcome();
     const sessionActive = Boolean(
       state.session.dungeonAuto || state.session.dungeonRun || state.session.dungeonSearch || state.session.dungeonLootCollect || state.session.dungeonStopRequested
@@ -253,9 +253,9 @@ export class GameDungeonService {
     initializeReleaseProgress(state);
     const selectedDungeonId = state.session.dungeonId;
     if (!dungeonUnlocked(state, selectedDungeonId)) { outcome.alertMessage = 'Dungeon noch nicht freigeschaltet.'; return outcome; }
-    const occupied = selectedIds.find(id => characterDungeonReservation(state,id,selectedDungeonId)!==null);
+    const occupied = selectedIds.find(id => characterTeamReservation(state,id,state.session.teamId)!==null);
     if (occupied !== undefined) { outcome.alertMessage = 'Ein gewählter Charakter befindet sich bereits in einem anderen Dungeon.'; return outcome; }
-    startProgressSession(state, selectedDungeonId);
+    startProgressSession(state, state.session.teamId);
     state.session.log = [];
     state.session.dungeonStopRequested = false;
     state.session.dungeonCycleOriginalIds = [...selectedIds];
@@ -270,8 +270,8 @@ export class GameDungeonService {
     return outcome;
   }
 
-  collectLoot(dungeonId = 1): DungeonActionResult {
-    const state = this.getState(dungeonId);
+  collectLoot(teamId = 1): DungeonActionResult {
+    const state = this.getState(teamId);
     const outcome = this.createOutcome();
     normalizeMaterialInventory(state.session.dungeonLoot);
     const entries = getMaterialStorageEntries(state.session.dungeonLoot).filter(entry => entry.qty > 0);
@@ -290,11 +290,11 @@ export class GameDungeonService {
 
   /** Migriert alte Namensreferenzen in Dungeon-Beute und ausstehenden Drops auf stabile IDs. */
   normalizeMaterialReferences(): number {
-    return DUNGEON_IDS.reduce((sum,id)=>sum+this.normalizeDungeonMaterialReferences(id),0);
+    return teamIds(this.gameState.getState()).reduce((sum,id)=>sum+this.normalizeDungeonMaterialReferences(id),0);
   }
 
-  private normalizeDungeonMaterialReferences(dungeonId: number): number {
-    const state = this.getState(dungeonId);
+  private normalizeDungeonMaterialReferences(teamId: number): number {
+    const state = this.getState(teamId);
     let changed = normalizeMaterialInventory(state.session.dungeonLoot);
     const collect = state.session.dungeonLootCollect;
     if (!collect?.drops?.length) return changed;
@@ -312,8 +312,8 @@ export class GameDungeonService {
     return changed;
   }
 
-  getSessionWaveCount(dungeonId = 1): number {
-    const state = this.getState(dungeonId);
+  getSessionWaveCount(teamId = 1): number {
+    const state = this.getState(teamId);
     const start = Number.isFinite(Number(state.session.dungeonSessionStartWaves))
       ? Number(state.session.dungeonSessionStartWaves)
       : Number(state.session.dungeonWavesDefeated) || 0;
@@ -394,7 +394,7 @@ export class GameDungeonService {
 
     if (success) {
       const drops = this.rollDrops(run.enemies, run.dungeonId);
-      recordSuccessfulWave(state, run.dungeonId, () => Math.random());
+      recordSuccessfulWave(state, state.session.teamId, () => Math.random());
       this.grantWaveExperience(state, run, outcome);
       state.session.dungeonWavesDefeated = (Number(state.session.dungeonWavesDefeated) || 0) + 1;
       state.session.dungeonCycleActiveIds = run.participantIds
@@ -492,7 +492,7 @@ export class GameDungeonService {
     const teamNames = teamIds
       .map(id => this.getCharacterById(state, id)?.name)
       .filter((name): name is string => Boolean(name));
-    const waves = this.getSessionWaveCount(state.session.dungeonId);
+    const waves = this.getSessionWaveCount(state.session.teamId);
     const loot = getMaterialStorageEntries(state.session.dungeonLoot)
       .filter(entry => entry.qty > 0)
       .sort((a, b) => a.displayName.localeCompare(b.displayName))
@@ -828,14 +828,14 @@ export class GameDungeonService {
     if (!this.catchupMode) this.addEvent(outcome, text, className);
   }
 
-  private getState(dungeonId = 1): RuntimeDungeonState {
+  private getState(teamId = 1): RuntimeDungeonState {
     const root=this.gameState.getState();
     initializeReleaseProgress(root);
-    if(!root['dungeons'])migrateParallelDungeons(root);
+    if(!root['teams'])migrateTeams(root);
     return {
       characters:root['characters'], weaponInventory:root['weaponInventory'], inventory:root['inventory'],
       releaseProgress:root['releaseProgress'], weaponCraftCounts:root['weaponCraftCounts'],
-      dungeons:root['dungeons'], session:getDungeonSession(root,dungeonId)
+      teams:root['teams'], session:getTeamSession(root,teamId)
     } as RuntimeDungeonState;
   }
 }

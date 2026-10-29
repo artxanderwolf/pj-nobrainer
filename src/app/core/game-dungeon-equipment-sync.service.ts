@@ -1,4 +1,4 @@
-import { DUNGEON_IDS, getDungeonSession, type DungeonSessionState } from '../game/parallel-dungeon-core.ts';
+import { teamIds, getTeamSession, type TeamSessionState } from '../game/team-core.ts';
 import { Injectable } from '@angular/core';
 import {
   filterActiveDungeonAttackPoints,
@@ -27,7 +27,7 @@ interface RuntimeDungeonEquipmentSyncCharacter {
 type RuntimeDungeonEquipmentSyncState = MutableGameState & {
   characters: RuntimeDungeonEquipmentSyncCharacter[];
   weaponInventory: RuntimeDungeonEquipmentSyncWeapon[];
-  dungeons?: Record<number,DungeonSessionState>;
+  teams?: Record<number,TeamSessionState>;
 };
 
 @Injectable({ providedIn: 'root' })
@@ -37,8 +37,8 @@ export class GameDungeonEquipmentSyncService {
   refresh(at = Date.now()): boolean {
     const state = this.gameState.getState<RuntimeDungeonEquipmentSyncState>();
     let changed=false;
-    for(const id of DUNGEON_IDS){
-      const run=getDungeonSession(state,id).dungeonRun;
+    for(const id of teamIds(state)){
+      const run=getTeamSession(state,id).dungeonRun;
       if(run)changed=this.refreshRun(state,run,at)||changed;
     }
     return changed;

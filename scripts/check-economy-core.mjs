@@ -46,8 +46,8 @@ try {
   assert.equal(calculateRecruitCost(2), 3500, 'Zweite zusätzliche Rekrutierung muss mit Faktor 1,75 skalieren.');
   assert.equal(calculateRecruitCost(3), 6125, 'Rekrutierungskosten müssen auf Nickel gerundet werden.');
 
-  assert.equal(calculateUpgradeCost('inn', 2), 2500, 'Erster Inn-Ausbau muss nach dem Mini-Patch 2,5 Bronze kosten.');
-  assert.equal(calculateUpgradeCost('inn', 3), 5000, 'Inn-Ausbau muss sich weiterhin pro Kauf verdoppeln.');
+  assert.equal(calculateUpgradeCost('inn', 2), 5000, 'Erster Inn-Ausbau muss nach dem Mini-Patch 5 Bronze kosten.');
+  assert.equal(calculateUpgradeCost('inn', 3), 10000, 'Inn-Ausbau muss sich weiterhin pro Kauf verdoppeln.');
   assert.equal(calculateUpgradeCost('forgeQueue', 1), 1000, 'Erster Schmiede-Warteschlangenplatz muss nach dem Mini-Patch 1 Bronze kosten.');
 
   assert.equal(rarityFactorFromRarity(1), 1, 'Legacy-Verkaufsfaktor bleibt für Kompatibilität erhalten.');
