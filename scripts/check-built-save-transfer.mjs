@@ -7,6 +7,8 @@ import { extname, join, normalize, resolve } from 'node:path';
 
 const distRoot = resolve('dist/nobrainer/browser');
 const basePath = '/pj-nobrainer/';
+const appVersion = JSON.parse(readFileSync('package.json', 'utf8')).version;
+const escapedAppVersion = appVersion.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 assert.ok(existsSync(join(distRoot, 'index.html')), 'Der gebaute Angular-Index fehlt.');
 
 const browser = ['google-chrome', 'google-chrome-stable', 'chromium', 'chromium-browser'].find(candidate => {
@@ -275,7 +277,7 @@ try {
   assert.equal(result.first.ui.importLabel, 'JSON laden');
   assert.match(result.first.ui.accept, /json/i, 'Die Dateiauswahl ist nicht auf JSON ausgerichtet.');
   assert.match(result.first.exportStatus, /JSON-Datei exportiert:/, 'Der JSON-Export wurde nicht bestätigt.');
-  assert.match(result.first.exportStatus, /NoBrainer-Spielstand-v0\.5\.0\.0-/, 'Der Export verwendet nicht den versionierten JSON-Dateinamen.');
+  assert.match(result.first.exportStatus, new RegExp(`NoBrainer-Spielstand-v${escapedAppVersion}-`), 'Der Export verwendet nicht den versionierten JSON-Dateinamen.');
   assert.match(result.first.invalidStatus, /kein vollständiger NoBrainer-Spielstand/, 'Eine ungültige JSON-Datei wird nicht verständlich abgelehnt.');
   assert.equal(result.first.unchangedAfterInvalid, true, 'Ein ungültiger Import verändert den lokalen Spielstand.');
   assert.equal(result.second.importedGold, result.second.expectedImportedGold, 'Der gültige JSON-Import wurde nach dem Reload nicht geladen.');
