@@ -1,4 +1,4 @@
-export const APP_UI_VERSION = '0.5.0.1';
+export const APP_UI_VERSION = '0.5.0.2';
 
 export const APP_SHELL_PAGE_IDS = [
   'base',
@@ -38,7 +38,10 @@ const APP_SHELL_BEFORE_PAGES = `<div class="app modular-ui" data-ui-version="${A
         <h1 id="pageTitle" class="city-name-editable" contenteditable="true" spellcheck="false" aria-label="Stadtname bearbeiten">Stadt Name</h1>
       </div>
       <div class="top-actions">
-        <div class="pill money-pill">Geld <b id="gold">0 Nickel</b></div>
+        <div class="pill money-pill" aria-label="Stadtgeld">
+          <img id="goldIcon" class="city-currency-icon" src="ui/coin_1nic_32.png" alt="" aria-hidden="true">
+          <b id="gold">0 Nickel</b>
+        </div>
         <button id="questHeaderButton" class="help-btn icon-action-btn" type="button" aria-label="Missionen öffnen">
           <img class="header-action-icon" src="ui/quest_32.png" alt="" aria-hidden="true">
           <span id="questHeaderBadge" class="header-action-badge" hidden></span>
