@@ -27,7 +27,6 @@ const contentTypes = new Map([
 
 const probeScript = `
 (() => {
-  const started=Date.now();
   let phase=0;
   const result={};
   const finish=payload=>{
@@ -43,16 +42,12 @@ const probeScript = `
     const bg=document.getElementById('cityOverviewBackground');
     const shell=document.querySelector('.modular-ui');
     const nav=document.getElementById('nav');
-    if(!(city&&bg&&shell&&nav&&bg.complete&&bg.naturalWidth)){
-      if(Date.now()-started>7000){clearInterval(timer);finish({status:'not-ready'});}
-      return;
-    }
+    if(!(city&&bg&&shell&&nav))return;
 
     if(phase===0){
       const enabledIds=['recruit','market','dungeon','roster','forge','materials','weapons','missions'];
       const disabledIds=['team-2','team-3','team-4','team-5','team-6','team-7','team-8','team-9','team-10','armor','upgrade','activity'];
       result.backgroundSrc=bg.getAttribute('src');
-      result.backgroundSize=[bg.naturalWidth,bg.naturalHeight];
       result.cityOwner=city.dataset.cityOverviewOwner;
       result.baseShellActive=shell.classList.contains('city-overview-active');
       result.baseNavDisplay=getComputedStyle(nav).display;
@@ -97,6 +92,8 @@ const probeScript = `
       const modal=document.getElementById('dungeon-select');
       if(!dungeon?.classList.contains('active')||!modal||modal.hidden)return;
       result.teamOpened=modal.dataset.teamId==='1' && modal.getAttribute('aria-hidden')==='false';
+      result.backgroundComplete=bg.complete;
+      result.backgroundSize=[bg.naturalWidth,bg.naturalHeight];
       clearInterval(timer);
       finish({status:'passed',...result});
     }
@@ -148,7 +145,7 @@ try {
     '--no-default-browser-check',
     '--window-size=500,961',
     `--user-data-dir=${browserProfile}`,
-    '--virtual-time-budget=9000',
+    '--virtual-time-budget=12000',
     '--dump-dom',
     pageUrl
   ], { stdio: ['ignore', 'pipe', 'pipe'] });
@@ -166,6 +163,7 @@ try {
   const result=JSON.parse(match[1].replaceAll('&quot;','"').replaceAll('&amp;','&'));
   assert.equal(result.status,'passed',`Stadtübersicht konnte nicht vollständig geprüft werden: ${JSON.stringify(result)}`);
   assert.equal(result.backgroundSrc,'ui/city.png');
+  assert.equal(result.backgroundComplete,true,'Der Stadt-Hintergrund wurde im Browser nicht vollständig geladen.');
   assert.deepEqual(result.backgroundSize,[256,465],'Der Stadt-Hintergrund wird nicht als 256x465-PNG geladen.');
   assert.equal(result.cityOwner,'angular');
   assert.equal(result.baseShellActive,true,'Die Übersicht aktiviert den Stadtmodus der Shell nicht.');
