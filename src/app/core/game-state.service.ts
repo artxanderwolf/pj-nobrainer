@@ -4,6 +4,16 @@ import { Injectable } from '@angular/core';
 
 export type MutableGameState = Record<string, unknown>;
 
+export const DEFAULT_CITY_NAME = 'Stadt Name';
+export const CITY_NAME_MAX_LENGTH = 40;
+
+export function normalizeCityName(value: unknown): string {
+  const normalized = typeof value === 'string'
+    ? value.replace(/\s+/g, ' ').trim()
+    : '';
+  return (normalized || DEFAULT_CITY_NAME).slice(0, CITY_NAME_MAX_LENGTH);
+}
+
 interface GameStateBootstrap {
   initialize(initialState: MutableGameState): MutableGameState;
   replace(nextState: MutableGameState): MutableGameState;
@@ -74,6 +84,7 @@ export class GameStateService {
     for (const key of Object.keys(this.state)) delete this.state[key];
     this.dungeonMigrationPending = !nextState['teams'];
     Object.assign(this.state, nextState);
+    this.state['cityName'] = normalizeCityName(this.state['cityName']);
     initializeReleaseProgress(this.state);
     this.dungeonMigrationPending = migrateTeams(this.state) || this.dungeonMigrationPending;
   }
