@@ -57,7 +57,7 @@ export class GameDungeonPresentationService {
     const hub = document.querySelector('#dungeon .screen-menu')!;
     hub.addEventListener('click', event => {
       const target = (event.target as Element).closest<HTMLElement>('button');
-      if (target?.dataset['openTeam']) this.openModal(Number(target.dataset['openTeam']));
+      if (target?.dataset['openTeam']) this.openTeam(Number(target.dataset['openTeam']));
       if (target?.id === 'buyTeamButton') {
         const result = buyTeam(this.gameState.getState() as MutableGameState & {gold:number});
         if (result.ok) this.handleResult({events:[],saveRequested:true});
@@ -195,7 +195,7 @@ export class GameDungeonPresentationService {
     grid.prepend(card);
   }
 
-  private openModal(teamId = this.dungeonSession.getOpenedTeamId()): void {
+  openTeam(teamId = this.dungeonSession.getOpenedTeamId()): void {
     const team = getTeamSession(this.gameState.getState(),teamId);
     if(!dungeonUnlocked(this.gameState.getState(),team.dungeonId))return;
     const modal = document.getElementById('dungeon-select');
@@ -378,7 +378,7 @@ export class GameDungeonPresentationService {
       this.handleResult(result, result.events.length > 0);
       return;
     }
-    this.openModal();
+    this.openTeam();
   }
 
   private handleTeamClick(event: Event): void {

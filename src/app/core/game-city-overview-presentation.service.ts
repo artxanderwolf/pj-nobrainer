@@ -7,6 +7,7 @@ import {
   type CityOverviewActionPresentation
 } from '../game/city-overview-presentation-core';
 import { teamIds, type TeamWorldState } from '../game/team-core';
+import { GameDungeonPresentationService } from './game-dungeon-presentation.service';
 import { GameStateService, type MutableGameState } from './game-state.service';
 
 type CityNavigationWindow = Window & { go?: (pageId: string) => void };
@@ -20,7 +21,10 @@ export class GameCityOverviewPresentationService {
   private basePage: HTMLElement | null = null;
   private activeObserver: MutationObserver | null = null;
 
-  constructor(private readonly gameState: GameStateService) {}
+  constructor(
+    private readonly gameState: GameStateService,
+    private readonly dungeonPresentation: GameDungeonPresentationService
+  ) {}
 
   render(): void {
     const root = this.ensureInstalled();
@@ -119,7 +123,7 @@ export class GameCityOverviewPresentationService {
     }
     if (action.kind === 'team' && action.teamId) {
       this.navigate('dungeon');
-      document.querySelector<HTMLButtonElement>(`#dungeon button[data-open-team="${action.teamId}"]`)?.click();
+      this.dungeonPresentation.openTeam(action.teamId);
     }
   };
 
