@@ -56,7 +56,7 @@ for (const coin of ['coin_1nic_32.png', 'coin_2bro_32.png', 'coin_3sil_32.png', 
 assert.match(missionService, /mission-overview-icon[\s\S]*ui\/quest_32\.png/, 'Der Legacy-Missionszugang verwendet nicht das gemeinsame Quest-PNG, bevor die Stadtkarte ihn ersetzt.');
 assert.match(missionService, /questHeaderBadge/, 'Der Missionszähler wird nicht mehr als Badge am Quest-Icon geführt.');
 assert.doesNotMatch(missionService, /📜/, 'Die alte Schriftrollen-Emoji-Darstellung darf nicht mehr aktiv sein.');
-assert.match(cityOverviewService, /data-city-overview-owner=\\"angular\\"/, 'Die Stadtübersicht besitzt keinen Angular-Ownership-Marker.');
+assert.match(cityOverviewService, /data-city-overview-owner="angular"/, 'Die Stadtübersicht besitzt keinen Angular-Ownership-Marker.');
 assert.match(cityOverviewService, /document\.getElementById\('questHeaderButton'\)\?\.click\(\)/, 'Der Stadt-Missionsbutton verwendet nicht den bestehenden Missionszugang.');
 assert.match(cityOverviewService, /this\.navigate\('dungeon'\)/, 'Teamaktionen verwenden nicht den bestehenden Dungeon-Bereich.');
 assert.match(stateService, /DEFAULT_CITY_NAME = 'Stadt Name'/, 'Der Standard-Stadtname fehlt.');
