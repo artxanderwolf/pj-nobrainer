@@ -112,8 +112,8 @@ const firstProbe = `
     const coin=document.getElementById('goldIcon');
     const quest=document.querySelector('#questHeaderButton img');
     const help=document.querySelector('button[aria-label="Hilfe"] img');
-    const overview=document.querySelector('#questOverviewButton img');
-    if(!(title&&base&&characterButton&&baseButton&&money&&coin&&quest&&help&&overview&&coin.complete&&quest.complete&&help.complete&&overview.complete)){
+    const city=document.getElementById('cityOverview');
+    if(!(title&&base&&characterButton&&baseButton&&money&&coin&&quest&&help&&city&&coin.complete&&quest.complete&&help.complete)){
       if(Date.now()-started>7000){clearInterval(timer);finish({status:'not-ready'});}
       return;
     }
@@ -157,10 +157,8 @@ const firstProbe = `
         coinSize:[coin.naturalWidth,coin.naturalHeight],
         questSrc:quest.getAttribute('src'),
         helpSrc:help.getAttribute('src'),
-        overviewSrc:overview.getAttribute('src'),
         questSize:[quest.naturalWidth,quest.naturalHeight],
-        helpSize:[help.naturalWidth,help.naturalHeight],
-        overviewSize:[overview.naturalWidth,overview.naturalHeight]
+        helpSize:[help.naturalWidth,help.naturalHeight]
       });
     }
   },50);
@@ -207,10 +205,8 @@ try {
   assert.deepEqual(first.coinSize, [32, 32], 'Das Nickel-PNG wird nicht als echtes 32x32-Asset geladen.');
   assert.equal(first.questSrc, 'ui/quest_32.png');
   assert.equal(first.helpSrc, 'ui/fragezeichen_32.png');
-  assert.equal(first.overviewSrc, 'ui/quest_32.png');
   assert.deepEqual(first.questSize, [32, 32], 'Das Quest-PNG wird nicht als echtes 32x32-Asset geladen.');
   assert.deepEqual(first.helpSize, [32, 32], 'Das Hilfe-PNG wird nicht als echtes 32x32-Asset geladen.');
-  assert.deepEqual(first.overviewSize, [32, 32], 'Der Missionszugang verwendet nicht dasselbe Quest-PNG.');
 
   await delay(250);
   const second = await runBrowser(secondProbe, 'cityHeaderReloadResult');
