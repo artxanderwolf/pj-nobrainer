@@ -3,11 +3,18 @@ import {
   NAVIGATION_PRESENTATION_CORE_BRIDGE,
   type NavigationPresentationCoreBridge
 } from '../game/navigation-presentation-core';
+import { GameRuntimeService } from './game-runtime.service';
 import { GameStateService, normalizeCityName } from './game-state.service';
+
+interface CityNamePresentationBridge {
+  getCityName(): string;
+  setCityName(value: string): string;
+}
 
 declare global {
   interface Window {
     NoBrainerNavigationPresentationCore?: NavigationPresentationCoreBridge;
+    NoBrainerCityNamePresentation?: CityNamePresentationBridge;
   }
 }
 
@@ -52,6 +59,25 @@ const NAVIGATION_GO_BRIDGE = [
   '  }',
   '}',
   '',
+  'function commitCityName(){',
+  '  const titleElement=document.getElementById("pageTitle");',
+  '  const current=document.querySelector(".page.active");',
+  '  if(!titleElement||current?.id!=="base")return;',
+  '  titleElement.textContent=window.NoBrainerCityNamePresentation.setCityName(titleElement.textContent||"");',
+  '}',
+  '',
+  'function bindCityNameEditor(){',
+  '  const titleElement=document.getElementById("pageTitle");',
+  '  if(!titleElement||titleElement.dataset.cityNameBound==="1")return;',
+  '  titleElement.dataset.cityNameBound="1";',
+  '  titleElement.addEventListener("blur",commitCityName);',
+  '  titleElement.addEventListener("keydown",event=>{',
+  '    if(event.key==="Enter"){event.preventDefault();titleElement.blur();}',
+  '    if(event.key==="Escape"){event.preventDefault();titleElement.textContent=window.NoBrainerCityNamePresentation.getCityName();titleElement.blur();}',
+  '  });',
+  '}',
+  'bindCityNameEditor();',
+  '',
   'function go(page){',
   '  const presentation=window.NoBrainerNavigationPresentationCore.getNavigationPresentation(page);',
   '  applyNavigationPresentation(presentation);',
@@ -68,7 +94,10 @@ const NAVIGATION_GO_BRIDGE = [
 
 @Injectable({ providedIn: 'root' })
 export class LegacyNavigationPresentationAdapterService {
-  constructor(private readonly gameState: GameStateService) {}
+  constructor(
+    private readonly gameState: GameStateService,
+    private readonly gameRuntime: GameRuntimeService
+  ) {}
 
   adapt(source: string): string {
     window.NoBrainerNavigationPresentationCore = {
@@ -77,6 +106,10 @@ export class LegacyNavigationPresentationAdapterService {
         if (presentation.pageId !== 'base') return presentation;
         return { ...presentation, title: this.currentCityName() };
       }
+    };
+    window.NoBrainerCityNamePresentation = {
+      getCityName: () => this.currentCityName(),
+      setCityName: (value: string) => this.setCityName(value)
     };
 
     let adapted = this.replaceOnce(source, LEGACY_TITLES, '', 'Legacy-Seitentitel');
@@ -90,6 +123,16 @@ export class LegacyNavigationPresentationAdapterService {
     } catch {
       return normalizeCityName(undefined);
     }
+  }
+
+  private setCityName(value: string): string {
+    const cityName = normalizeCityName(value);
+    const state = this.gameState.getState();
+    if (state['cityName'] !== cityName) {
+      state['cityName'] = cityName;
+      this.gameRuntime.save(false);
+    }
+    return cityName;
   }
 
   private replaceOnce(source: string, search: string, replacement: string, label: string): string {
