@@ -88,11 +88,6 @@ const NAVIGATION_GO_BRIDGE = [
   '}',
   'bindCityNameEditor();',
   'bindCityHeaderHelp();',
-  'queueMicrotask(()=>{',
-  '  const current=document.querySelector(".page.active");',
-  '  if((current?.id||"base")!=="base")return;',
-  '  applyNavigationPresentation(window.NoBrainerNavigationPresentationCore.getNavigationPresentation("base"));',
-  '});',
   '',
   'function go(page){',
   '  const presentation=window.NoBrainerNavigationPresentationCore.getNavigationPresentation(page);',
@@ -131,6 +126,17 @@ export class LegacyNavigationPresentationAdapterService {
     let adapted = this.replaceOnce(source, LEGACY_TITLES, '', 'Legacy-Seitentitel');
     adapted = this.replaceOnce(adapted, LEGACY_GO, NAVIGATION_GO_BRIDGE, 'Legacy-Navigation');
     return adapted;
+  }
+
+  syncLoadedCityName(): void {
+    const currentPageId = document.querySelector<HTMLElement>('.page.active')?.id ?? 'base';
+    if (currentPageId !== 'base') return;
+    const titleElement = document.getElementById('pageTitle');
+    if (!titleElement) return;
+    titleElement.textContent = this.currentCityName();
+    titleElement.contentEditable = 'true';
+    titleElement.classList.add('city-name-editable');
+    titleElement.setAttribute('aria-label', 'Stadtname bearbeiten');
   }
 
   private currentCityName(): string {
