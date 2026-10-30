@@ -9,21 +9,22 @@ const stateService = readFileSync('src/app/core/game-state.service.ts', 'utf8');
 const navigationAdapter = readFileSync('src/app/core/legacy-navigation-presentation-adapter.service.ts', 'utf8');
 const missionService = readFileSync('src/app/core/game-mission.service.ts', 'utf8');
 const cityOverviewService = readFileSync('src/app/core/game-city-overview-presentation.service.ts', 'utf8');
+const dungeonPresentationService = readFileSync('src/app/core/game-dungeon-presentation.service.ts', 'utf8');
 const cityHeaderStyles = readFileSync('src/city-header-v0.5.0.1.css', 'utf8');
 const currencyHeaderStyles = readFileSync('src/currency-header-v0.5.0.2.css', 'utf8');
 const cityOverviewStyles = readFileSync('src/city-overview-v0.6.0.0.css', 'utf8');
 const probePage = '<section class="page" id="probe">Probe</section>';
 const shell = composeAppShell(probePage);
 
-assert.equal(APP_UI_VERSION, '0.6.0.2', 'Die gemeinsame sichtbare Web-App-Version muss v0.6.0.2 sein.');
+assert.equal(APP_UI_VERSION, '0.6.0.3', 'Die gemeinsame sichtbare Web-App-Version muss v0.6.0.3 sein.');
 assert.equal(packageJson.version, APP_UI_VERSION, 'package.json und sichtbare App-Version dürfen nicht auseinanderlaufen.');
 assert.equal(APP_SHELL_PAGE_IDS[0], 'base');
 for (const required of ['character', 'storage', 'forge-preview', 'market-jobs', 'dungeon-select', 'index']) {
   assert.ok(APP_SHELL_PAGE_IDS.includes(required), `Modulare Seite ${required} fehlt in der Shell-Seitenliste.`);
 }
-assert.match(shell, /^<div class="app modular-ui" data-ui-version="0\.6\.0\.2">/, 'Die modulare UI-v0.6.0.2-Shell fehlt.');
+assert.match(shell, /^<div class="app modular-ui" data-ui-version="0\.6\.0\.3">/, 'Die modulare UI-v0.6.0.3-Shell fehlt.');
 assert.match(shell, /id="backBtn"[\s\S]*onclick="goBack\(\)"/, 'Der globale Zurück-Button fehlt.');
-assert.match(shell, /<div class="ui-version">SMITHS OF ELDRAVAR · v0\.6\.0\.2<\/div>/, 'Die sichtbare Versionsanzeige ist nicht v0.6.0.2.');
+assert.match(shell, /<div class="ui-version">SMITHS OF ELDRAVAR · v0\.6\.0\.3<\/div>/, 'Die sichtbare Versionsanzeige ist nicht v0.6.0.3.');
 assert.match(shell, /<h1 id="pageTitle" class="city-name-editable" contenteditable="true"[^>]*>Stadt Name<\/h1>/, 'Die editierbare Stadt-Headline fehlt.');
 assert.match(shell, /class="pill money-pill" aria-label="Stadtgeld"[\s\S]*id="goldIcon"[\s\S]*src="ui\/coin_1nic_32\.png"[\s\S]*id="gold">0 Nickel<\/b>/, 'Der Stadtgeld-Pill besitzt nicht den Nickel-Fallback mit Münzicon.');
 assert.doesNotMatch(shell, /class="pill money-pill">Geld/, 'Der alte sichtbare Geld-Text darf nicht vor dem dynamischen Münzicon stehen.');
@@ -67,6 +68,11 @@ assert.match(cityOverviewService, /action\.kind === 'team' && action\.teamId/, '
 assert.match(cityOverviewService, /city-map-action-image/, 'Bildbasierte Stadtbuttons rendern ihr PNG nicht als Bildinhalt.');
 assert.match(cityOverviewService, /document\.getElementById\('questHeaderButton'\)\?\.click\(\)/, 'Der Stadt-Missionsbutton verwendet nicht den bestehenden Missionszugang.');
 assert.match(cityOverviewService, /this\.navigate\('dungeon'\)/, 'Teamaktionen verwenden nicht den bestehenden Dungeon-Bereich.');
+assert.match(cityOverviewService, /this\.dungeonPresentation\.openTeam\(action\.teamId\)/, 'Stadt-Teamaktionen öffnen das Teamfenster nicht direkt über die stabile Team-ID.');
+assert.doesNotMatch(cityOverviewService, /querySelector<HTMLButtonElement>\(`#[^`]*data-open-team/, 'Die Stadtübersicht darf kein Dungeon-Hub-UI mehr künstlich anklicken.');
+assert.match(dungeonPresentationService, /openTeam\(teamId = this\.dungeonSession\.getOpenedTeamId\(\)\): void/, 'Der Dungeon-Präsentationsdienst besitzt keinen stabilen direkten Team-Einstieg.');
+assert.match(dungeonPresentationService, /dataset\['openTeam'\]\) this\.openTeam\(Number\(target\.dataset\['openTeam'\]\)\)/, 'Der Dungeon-Hub verwendet nicht dieselbe direkte Team-Öffnung wie die Stadtkarte.');
+assert.doesNotMatch(dungeonPresentationService, /private openModal/, 'Die alte private Team-Öffnung darf nicht parallel zur direkten Team-Schnittstelle bestehen bleiben.');
 assert.match(stateService, /DEFAULT_CITY_NAME = 'Stadt Name'/, 'Der Standard-Stadtname fehlt.');
 assert.match(stateService, /this\.state\['cityName'\] = normalizeCityName/, 'Der Stadtname wird beim Laden nicht normalisiert.');
 assert.match(navigationAdapter, /presentation\.pageId !== 'base'/, 'Der Stadtname ist nicht auf die Übersichtsseite begrenzt.');
@@ -102,4 +108,4 @@ assert.match(appComponent, /this\.gameRuntime\.prepare\(\);[\s\S]*this\.legacyNa
 assert.doesNotMatch(appComponent, /DOMParser/, 'Der App-Component parst weiterhin die Legacy-HTML.');
 assert.match(appComponent, /const LEGACY_RUNTIME_PATH = 'legacy\/NoBrainer_GitHub_v0\.12\.2\.runtime\.js';/, 'Der App-Component verweist nicht auf das eigenständige Runtime-Asset.');
 
-console.log('App-Shell-Präsentation: Web-UI v0.6.0.2 mit editierbarem Stadtname, dynamischem Stadtgeld, Stadtkarte, Missions- und Teamgebäuden sowie Quest-/Hilfe-PNGs ist Angular-eigen.');
+console.log('App-Shell-Präsentation: Web-UI v0.6.0.3 mit direkter Team-ID-Navigation, editierbarem Stadtname, dynamischem Stadtgeld, Stadtkarte, Missions- und Teamgebäuden sowie Quest-/Hilfe-PNGs ist Angular-eigen.');
