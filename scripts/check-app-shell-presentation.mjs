@@ -52,7 +52,8 @@ assert.match(stateService, /this\.state\['cityName'\] = normalizeCityName/, 'Der
 assert.match(navigationAdapter, /presentation\.pageId !== 'base'/, 'Der Stadtname ist nicht auf die Übersichtsseite begrenzt.');
 assert.match(navigationAdapter, /NoBrainerCityNamePresentation/, 'Die Stadtname-Bearbeitung ist nicht an die Navigation angebunden.');
 assert.match(navigationAdapter, /this\.gameRuntime\.save\(false\)/, 'Eine Stadtname-Änderung wird nicht gespeichert.');
-assert.match(navigationAdapter, /queueMicrotask/, 'Der gespeicherte Stadtname wird beim initialen Laden nicht in die Headline synchronisiert.');
+assert.match(navigationAdapter, /syncLoadedCityName\(\): void/, 'Die Stadt-Headline besitzt keine explizite Synchronisierung nach dem Save-Laden.');
+assert.doesNotMatch(navigationAdapter, /queueMicrotask/, 'Die Stadt-Headline darf nicht mehr über einen zeitabhängigen Microtask vor dem Save-Laden synchronisiert werden.');
 assert.match(cityHeaderStyles, /\.header-action-icon/, 'Die gemeinsamen Header-Icon-Styles fehlen.');
 assert.match(cityHeaderStyles, /\.city-name-editable/, 'Die editierbare Stadt-Headline besitzt keine eigenen Styles.');
 
@@ -68,7 +69,8 @@ assert.ok(styles.includes('src/dungeon-modal-v0.15.0.css'), 'Das Trainingslager-
 
 assert.match(appComponent, /composePageMarkup\(APP_SHELL_PAGE_IDS\)/, 'Der App-Component bezieht die Seiten nicht mehr vollständig aus dem Angular-eigenen Seiten-Composer.');
 assert.match(appComponent, /composeAppShell\(pageMarkup\)/, 'Der App-Component baut die Oberfläche nicht mehr über die Angular-eigene Shell auf.');
+assert.match(appComponent, /this\.gameRuntime\.prepare\(\);[\s\S]*this\.legacyNavigationPresentationAdapter\.syncLoadedCityName\(\);/, 'Die Stadt-Headline wird nicht direkt nach dem Laden des Spielstands synchronisiert.');
 assert.doesNotMatch(appComponent, /DOMParser/, 'Der App-Component parst weiterhin die Legacy-HTML.');
 assert.match(appComponent, /const LEGACY_RUNTIME_PATH = 'legacy\/NoBrainer_GitHub_v0\.12\.2\.runtime\.js';/, 'Der App-Component verweist nicht auf das eigenständige Runtime-Asset.');
 
-console.log('App-Shell-Präsentation: Web-UI v0.5.0.1 mit editierbarem Stadtname sowie gemeinsamen Quest-/Hilfe-PNGs ist Angular-eigen; bestehende Navigation und Spielbereiche bleiben erhalten.');
+console.log('App-Shell-Präsentation: Web-UI v0.5.0.1 mit editierbarem Stadtname sowie gemeinsamen Quest-/Hilfe-PNGs ist Angular-eigen; der geladene Stadtname wird deterministisch nach der Runtime-Vorbereitung synchronisiert.');
