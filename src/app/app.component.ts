@@ -100,6 +100,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     try {
       await this.mountGameRuntime();
       this.gameRuntime.prepare();
+      this.legacyNavigationPresentationAdapter.syncLoadedCityName();
       this.gameRuntime.startTick();
       try { this.gameRuntime.renderInitial(); } catch (error: unknown) { console.error('Der erste NoBrainer-Render ist fehlgeschlagen.', error); }
     } catch (error: unknown) {
