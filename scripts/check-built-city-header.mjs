@@ -108,10 +108,12 @@ const firstProbe = `
     const base=document.getElementById('base');
     const characterButton=document.querySelector('#nav button[data-page="character"]');
     const baseButton=document.querySelector('#nav button[data-page="base"]');
+    const money=document.getElementById('gold');
+    const coin=document.getElementById('goldIcon');
     const quest=document.querySelector('#questHeaderButton img');
     const help=document.querySelector('button[aria-label="Hilfe"] img');
     const overview=document.querySelector('#questOverviewButton img');
-    if(!(title&&base&&characterButton&&baseButton&&quest&&help&&overview&&quest.complete&&help.complete&&overview.complete)){
+    if(!(title&&base&&characterButton&&baseButton&&money&&coin&&quest&&help&&overview&&coin.complete&&quest.complete&&help.complete&&overview.complete)){
       if(Date.now()-started>7000){clearInterval(timer);finish({status:'not-ready'});}
       return;
     }
@@ -149,6 +151,10 @@ const firstProbe = `
         characterEditable:window.__characterEditable,
         baseEditable:title.contentEditable==='true',
         cityName:title.textContent.trim(),
+        moneyText:money.textContent.trim(),
+        moneyDenomination:money.dataset.currencyDenomination,
+        coinSrc:coin.getAttribute('src'),
+        coinSize:[coin.naturalWidth,coin.naturalHeight],
         questSrc:quest.getAttribute('src'),
         helpSrc:help.getAttribute('src'),
         overviewSrc:overview.getAttribute('src'),
@@ -195,6 +201,10 @@ try {
   assert.equal(first.characterEditable, false, 'Der Seitentitel bleibt außerhalb der Übersicht bearbeitbar.');
   assert.equal(first.baseEditable, true, 'Der Stadtname ist nach Rückkehr zur Übersicht nicht bearbeitbar.');
   assert.equal(first.cityName, 'Eisenfels');
+  assert.equal(first.moneyText, '0 Nickel', 'Ein frischer Spielstand wird im Header nicht als Nickel dargestellt.');
+  assert.equal(first.moneyDenomination, 'Nickel', 'Die sichtbare Münzstufe ist beim frischen Spielstand nicht Nickel.');
+  assert.equal(first.coinSrc, 'ui/coin_1nic_32.png', 'Das Nickel-PNG wird für den frischen Stadtgeldbestand nicht verwendet.');
+  assert.deepEqual(first.coinSize, [32, 32], 'Das Nickel-PNG wird nicht als echtes 32x32-Asset geladen.');
   assert.equal(first.questSrc, 'ui/quest_32.png');
   assert.equal(first.helpSrc, 'ui/fragezeichen_32.png');
   assert.equal(first.overviewSrc, 'ui/quest_32.png');
@@ -209,7 +219,7 @@ try {
   assert.equal(second.savedCityName, 'Eisenfels');
   assert.equal(second.editable, true);
 
-  console.log('Stadt-Header-Browserregression: Bearbeiten, Speichern, Seitentitelwechsel, Browser-Neustart sowie Quest-/Hilfe-PNGs sind konsistent.');
+  console.log('Stadt-Header-Browserregression: Stadtname, Browser-Neustart, Nickel-Stadtgeld-PNG sowie Quest-/Hilfe-PNGs sind konsistent.');
 } finally {
   rmSync(browserProfile, { recursive: true, force: true });
   await new Promise(resolveClose => server.close(resolveClose));
