@@ -134,6 +134,8 @@ export class GameRuntimeService {
     });
     this.dungeonPresentation.bindActions((result, inventoryChanged) => this.applyDungeonResult(runtime, result, inventoryChanged));
 
+    // Moderne Dungeon-Sitzungen mit persistierter Endzeit bleiben beim Laden aktiv.
+    // Alte oder verwaiste Laufzustände ohne belastbare Endzeit werden einmalig bereinigt.
     const dungeonSessionPreparation = this.dungeonSession.prepareLoadedSession(Date.now());
     this.applyDungeonResult(runtime, dungeonSessionPreparation);
 
@@ -216,8 +218,10 @@ export class GameRuntimeService {
   }
 
   private scheduleNextTick(): void {
-    if (this.tickHandle !== null) return;
-    this.scheduleNextTick();
+    this.tickHandle = window.setTimeout(() => {
+      this.runTickCycle();
+      if (this.tickHandle !== null) this.scheduleNextTick();
+    }, 250);
   }
 
   private runTickCycle(): void {
