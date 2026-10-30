@@ -8,10 +8,14 @@ const runtime = readFileSync('src/app/core/game-runtime.service.ts', 'utf8');
 const registration = readFileSync('src/app/core/legacy-runtime-registration-adapter.service.ts', 'utf8');
 
 assert.match(service, /constructor\(private readonly gameState: GameStateService\)/, 'Ressourcen-Präsentation liest nicht aus dem Angular-State.');
-assert.match(service, /getResourceHeaderPresentation\(state\.gold, state\.inventory, formatHighestCurrency\)/, 'Ressourcen-Präsentation verwendet den bestehenden Presentation-Core nicht.');
+assert.match(service, /getResourceHeaderPresentation\(state\.gold, state\.inventory\)/, 'Ressourcen-Präsentation verwendet den bestehenden Presentation-Core nicht.');
+assert.doesNotMatch(service, /formatHighestCurrency/, 'Die Stadtgeld-Kopfzeile darf nicht mehr die globale Economy-Formatierung für die Münzstufe verwenden.');
 assert.match(service, /document\.getElementById\('gold'\)/);
+assert.match(service, /document\.getElementById\('goldIcon'\)/);
 assert.match(service, /document\.getElementById\('matCount'\)/);
 assert.match(service, /resourcePresentationOwner'\] = 'angular'/, 'Browser-nachweisbarer Angular-Ownership-Marker fehlt.');
+assert.match(service, /currencyDenomination'\] = presentation\.goldDenomination/, 'Die sichtbare Münzstufe wird nicht am Angular-Geldanker markiert.');
+assert.match(service, /goldIcon\.setAttribute\('src', presentation\.goldIconSrc\)/, 'Das Münzicon wird nicht durch Angular anhand des Nickelbestands aktualisiert.');
 assert.match(service, /window\.NoBrainerResourcePresentationCompatibility = \{ render: \(\) => this\.render\(\) \};/);
 assert.match(service, /delete window\.NoBrainerResourcePresentationCompatibility;/);
 
@@ -42,4 +46,4 @@ assert.match(app, /private readonly gameResourcePresentation: GameResourcePresen
 assert.match(app, /ngOnDestroy\(\): void \{[\s\S]*this\.gameResourcePresentation\.closeLegacyCompatibilityBridge\(\);/);
 assert.match(app, /const APP_VERSION = APP_UI_VERSION;/);
 
-console.log('Ressourcen-Präsentations-Eigentümerschaft: Gold und Materialgesamtzahl werden direkt durch Angular aus dem Angular-State gerendert; Legacy besitzt nur noch einen dünnen Renderwrapper.');
+console.log('Ressourcen-Präsentations-Eigentümerschaft: Nickel-State, sichtbare Münzstufe und Münzicon werden direkt durch Angular gerendert; Legacy besitzt nur noch einen dünnen Renderwrapper.');
