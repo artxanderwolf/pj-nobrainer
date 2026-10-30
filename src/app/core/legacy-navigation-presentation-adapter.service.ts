@@ -82,7 +82,7 @@ const NAVIGATION_GO_BRIDGE = [
   '  if(!help||help.querySelector("[data-city-header-help]"))return;',
   '  const note=document.createElement("p");',
   '  note.dataset.cityHeaderHelp="1";',
-  '  note.textContent="Kopfzeile: Auf der Übersicht kannst du den Stadtnamen direkt in der Überschrift bearbeiten. Die Schriftrolle öffnet Missionen; das Fragezeichen öffnet die Hilfe. Der Stadtname wird mit dem Spielstand gespeichert und nur auf der Übersicht angezeigt.";',
+  '  note.textContent="Kopfzeile: Auf der Übersicht kannst du den Stadtnamen direkt in der Überschrift bearbeiten. Die Schriftrolle öffnet Missionen; das Fragezeichen öffnet die Hilfe. Der Stadtname wird mit dem Spielstand gespeichert und nur auf der Übersicht angezeigt. Das Stadtgeld wird intern weiterhin in Nickel berechnet; die Münze im Kopf wechselt bei jedem Faktor 1.000 automatisch von Nickel zu Bronze, Silber, Gold und Netherit.";',
   '  const heading=help.querySelector("h2");',
   '  if(heading?.nextSibling)help.insertBefore(note,heading.nextSibling);else help.append(note);',
   '}',
