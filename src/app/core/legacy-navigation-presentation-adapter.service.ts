@@ -3,10 +3,18 @@ import {
   NAVIGATION_PRESENTATION_CORE_BRIDGE,
   type NavigationPresentationCoreBridge
 } from '../game/navigation-presentation-core';
+import { GameRuntimeService } from './game-runtime.service';
+import { GameStateService, normalizeCityName } from './game-state.service';
+
+interface CityNamePresentationBridge {
+  getCityName(): string;
+  setCityName(value: string): string;
+}
 
 declare global {
   interface Window {
     NoBrainerNavigationPresentationCore?: NavigationPresentationCoreBridge;
+    NoBrainerCityNamePresentation?: CityNamePresentationBridge;
   }
 }
 
@@ -37,13 +45,49 @@ const NAVIGATION_GO_BRIDGE = [
   '  const sectionButton=document.querySelector(`#nav button[data-section="${presentation.sectionId}"]`);',
   '  if(sectionButton)sectionButton.classList.add("active");',
   '  const titleElement=document.getElementById("pageTitle");',
-  '  if(titleElement)titleElement.textContent=presentation.title;',
+  '  if(titleElement){',
+  '    titleElement.textContent=presentation.title;',
+  '    const cityEditable=presentation.pageId==="base";',
+  '    titleElement.contentEditable=cityEditable?"true":"false";',
+  '    titleElement.classList.toggle("city-name-editable",cityEditable);',
+  '    titleElement.setAttribute("aria-label",cityEditable?"Stadtname bearbeiten":presentation.title);',
+  '  }',
   '  const backButton=document.getElementById("backBtn");',
   '  if(backButton){',
   '    backButton.hidden=!presentation.parentPageId;',
   '    backButton.dataset.parentPage=presentation.parentPageId||"";',
   '  }',
   '}',
+  '',
+  'function commitCityName(){',
+  '  const titleElement=document.getElementById("pageTitle");',
+  '  const current=document.querySelector(".page.active");',
+  '  if(!titleElement||current?.id!=="base")return;',
+  '  titleElement.textContent=window.NoBrainerCityNamePresentation.setCityName(titleElement.textContent||"");',
+  '}',
+  '',
+  'function bindCityNameEditor(){',
+  '  const titleElement=document.getElementById("pageTitle");',
+  '  if(!titleElement||titleElement.dataset.cityNameBound==="1")return;',
+  '  titleElement.dataset.cityNameBound="1";',
+  '  titleElement.addEventListener("blur",commitCityName);',
+  '  titleElement.addEventListener("keydown",event=>{',
+  '    if(event.key==="Enter"){event.preventDefault();titleElement.blur();}',
+  '    if(event.key==="Escape"){event.preventDefault();titleElement.textContent=window.NoBrainerCityNamePresentation.getCityName();titleElement.blur();}',
+  '  });',
+  '}',
+  '',
+  'function bindCityHeaderHelp(){',
+  '  const help=document.querySelector("[data-release-help]");',
+  '  if(!help||help.querySelector("[data-city-header-help]"))return;',
+  '  const note=document.createElement("p");',
+  '  note.dataset.cityHeaderHelp="1";',
+  '  note.textContent="Kopfzeile: Auf der Übersicht kannst du den Stadtnamen direkt in der Überschrift bearbeiten. Die Schriftrolle öffnet Missionen; das Fragezeichen öffnet die Hilfe. Der Stadtname wird mit dem Spielstand gespeichert und nur auf der Übersicht angezeigt.";',
+  '  const heading=help.querySelector("h2");',
+  '  if(heading?.nextSibling)help.insertBefore(note,heading.nextSibling);else help.append(note);',
+  '}',
+  'bindCityNameEditor();',
+  'bindCityHeaderHelp();',
   '',
   'function go(page){',
   '  const presentation=window.NoBrainerNavigationPresentationCore.getNavigationPresentation(page);',
@@ -61,12 +105,56 @@ const NAVIGATION_GO_BRIDGE = [
 
 @Injectable({ providedIn: 'root' })
 export class LegacyNavigationPresentationAdapterService {
+  constructor(
+    private readonly gameState: GameStateService,
+    private readonly gameRuntime: GameRuntimeService
+  ) {}
+
   adapt(source: string): string {
-    window.NoBrainerNavigationPresentationCore = NAVIGATION_PRESENTATION_CORE_BRIDGE;
+    window.NoBrainerNavigationPresentationCore = {
+      getNavigationPresentation: (pageId: string) => {
+        const presentation = NAVIGATION_PRESENTATION_CORE_BRIDGE.getNavigationPresentation(pageId);
+        if (presentation.pageId !== 'base') return presentation;
+        return { ...presentation, title: this.currentCityName() };
+      }
+    };
+    window.NoBrainerCityNamePresentation = {
+      getCityName: () => this.currentCityName(),
+      setCityName: (value: string) => this.setCityName(value)
+    };
 
     let adapted = this.replaceOnce(source, LEGACY_TITLES, '', 'Legacy-Seitentitel');
     adapted = this.replaceOnce(adapted, LEGACY_GO, NAVIGATION_GO_BRIDGE, 'Legacy-Navigation');
     return adapted;
+  }
+
+  syncLoadedCityName(): void {
+    const currentPageId = document.querySelector<HTMLElement>('.page.active')?.id ?? 'base';
+    if (currentPageId !== 'base') return;
+    const titleElement = document.getElementById('pageTitle');
+    if (!titleElement) return;
+    titleElement.textContent = this.currentCityName();
+    titleElement.contentEditable = 'true';
+    titleElement.classList.add('city-name-editable');
+    titleElement.setAttribute('aria-label', 'Stadtname bearbeiten');
+  }
+
+  private currentCityName(): string {
+    try {
+      return normalizeCityName(this.gameState.getState()['cityName']);
+    } catch {
+      return normalizeCityName(undefined);
+    }
+  }
+
+  private setCityName(value: string): string {
+    const cityName = normalizeCityName(value);
+    const state = this.gameState.getState();
+    if (state['cityName'] !== cityName) {
+      state['cityName'] = cityName;
+      this.gameRuntime.save(false);
+    }
+    return cityName;
   }
 
   private replaceOnce(source: string, search: string, replacement: string, label: string): string {

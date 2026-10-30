@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 
 const APP_VERSION = JSON.parse(readFileSync('package.json', 'utf8')).version;
+const ANDROID_VERSION_NAME = '0.5.0.0';
 const ANDROID_VERSION_CODE = 9;
 const APP_ID = 'com.smithsofeldravar.game';
 const APP_NAME = 'Smiths of Eldravar';
@@ -72,6 +73,6 @@ if (existsSync('android/app/build.gradle')) {
   const gradlePath = 'android/app/build.gradle';
   let gradle = read(gradlePath);
   gradle = gradle.replace(/versionCode\s+\d+/, `versionCode ${ANDROID_VERSION_CODE}`);
-  gradle = gradle.replace(/versionName\s+"[^"]+"/, `versionName "${APP_VERSION}"`);
+  gradle = gradle.replace(/versionName\s+"[^"]+"/, `versionName "${ANDROID_VERSION_NAME}"`);
   write(gradlePath, gradle);
 }

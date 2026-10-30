@@ -180,6 +180,10 @@ export class GameRuntimeService {
     }
   }
 
+  save(manual = false): boolean {
+    return this.getRuntime().save(manual);
+  }
+
   stopTick(): void {
     if (this.tickHandle === null) return;
     window.clearTimeout(this.tickHandle);
