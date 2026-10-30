@@ -45,6 +45,9 @@ jobs:
       - name: Smoke test built runtime
         run: node scripts/check-built-runtime-startup.mjs
 
+      - name: Test city overview in browser
+        run: node scripts/check-built-city-overview.mjs
+
       - name: Test class equipment rules and save repair in browser
         run: node scripts/check-built-equipment-rules.mjs
 
