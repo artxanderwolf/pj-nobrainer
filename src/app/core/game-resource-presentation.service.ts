@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { getResourceHeaderPresentation } from '../game/resource-presentation-core';
+import { GameCityOverviewPresentationService } from './game-city-overview-presentation.service';
 import { GameStateService, type MutableGameState } from './game-state.service';
 
 type RuntimeResourcePresentationState = MutableGameState & {
@@ -19,9 +20,14 @@ declare global {
 
 @Injectable({ providedIn: 'root' })
 export class GameResourcePresentationService {
-  constructor(private readonly gameState: GameStateService) {}
+  constructor(
+    private readonly gameState: GameStateService,
+    private readonly cityOverview: GameCityOverviewPresentationService
+  ) {}
 
   render(): void {
+    this.cityOverview.render();
+
     const gold = document.getElementById('gold');
     const goldIcon = document.getElementById('goldIcon') as HTMLImageElement | null;
     const materials = document.getElementById('matCount');
@@ -50,6 +56,7 @@ export class GameResourcePresentationService {
   }
 
   closeLegacyCompatibilityBridge(): void {
+    this.cityOverview.destroy();
     delete window.NoBrainerResourcePresentationCompatibility;
   }
 }
