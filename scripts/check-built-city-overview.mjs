@@ -44,7 +44,9 @@ const probeScript = `
     const nav=document.getElementById('nav');
     const missionButton=document.getElementById('cityAction-missions');
     const missionImage=missionButton?.querySelector('img.city-map-action-image');
-    if(!(city&&bg&&shell&&nav&&missionButton&&missionImage))return;
+    const teamButtons=Array.from({length:10},(_,index)=>document.getElementById('cityAction-team-'+(index+1)));
+    const teamImages=teamButtons.map(button=>button?.querySelector('img.city-map-action-image'));
+    if(!(city&&bg&&shell&&nav&&missionButton&&missionImage&&teamButtons.every(Boolean)&&teamImages.every(Boolean)))return;
 
     if(phase===0){
       const enabledIds=['recruit','market','dungeon','roster','forge','materials','weapons','missions'];
@@ -60,6 +62,9 @@ const probeScript = `
       result.missionVisibleText=missionButton.textContent?.trim()??'';
       result.missionAriaLabel=missionButton.getAttribute('aria-label');
       result.missionImageSrc=missionImage.getAttribute('src');
+      result.teamVisibleTexts=teamButtons.map(button=>button.textContent?.trim()??'');
+      result.teamAriaLabels=teamButtons.map(button=>button.getAttribute('aria-label'));
+      result.teamImageSrcs=teamImages.map(image=>image.getAttribute('src'));
       click('cityAction-roster');
       phase=1;
       return;
@@ -95,15 +100,20 @@ const probeScript = `
     if(phase===4){
       const dungeon=document.getElementById('dungeon');
       const modal=document.getElementById('dungeon-select');
-      if(!dungeon?.classList.contains('active')||!modal||modal.hidden||!missionImage.complete)return;
+      if(!dungeon?.classList.contains('active')||!modal||modal.hidden||!missionImage.complete||!teamImages.every(image=>image.complete))return;
       result.teamOpened=modal.dataset.teamId==='1' && modal.getAttribute('aria-hidden')==='false';
       result.backgroundComplete=bg.complete;
       result.backgroundSize=[bg.naturalWidth,bg.naturalHeight];
       result.missionImageComplete=missionImage.complete;
       result.missionImageSize=[missionImage.naturalWidth,missionImage.naturalHeight];
+      result.teamImagesComplete=teamImages.every(image=>image.complete);
+      result.teamImageSizes=teamImages.map(image=>[image.naturalWidth,image.naturalHeight]);
       const missionStyle=getComputedStyle(missionButton);
       result.missionBorderStyle=missionStyle.borderTopStyle;
       result.missionBorderWidth=missionStyle.borderTopWidth;
+      const team1Style=getComputedStyle(teamButtons[0]);
+      result.team1BorderStyle=team1Style.borderTopStyle;
+      result.team1BorderWidth=team1Style.borderTopWidth;
       clearInterval(timer);
       finish({status:'passed',...result});
     }
@@ -184,18 +194,25 @@ try {
   for (const [id,disabled] of Object.entries(result.disabledStates)) assert.equal(disabled,true,`${id} ist trotz fehlender Freischaltung/Mechanik aktiv.`);
   assert.equal(result.missionVisibleText,'','Der Stadt-Missionsbutton darf keinen sichtbaren Schriftzug mehr enthalten.');
   assert.equal(result.missionAriaLabel,'Missionen','Der bildbasierte Missionsbutton benötigt weiterhin einen zugänglichen Namen.');
-  assert.equal(result.missionImageSrc,'ui/mission_gebaeude_64.png','Der Stadt-Missionsbutton verwendet nicht das neue Missionsgebäude-PNG.');
+  assert.equal(result.missionImageSrc,'ui/mission_gebaeude_64.png','Der Stadt-Missionsbutton verwendet nicht das Missionsgebäude-PNG.');
   assert.equal(result.missionImageComplete,true,'Das Missionsgebäude-PNG wurde im Browser nicht vollständig geladen.');
   assert.deepEqual(result.missionImageSize,[64,64],'Das Missionsgebäude wird nicht als echtes 64x64-PNG geladen.');
   assert.notEqual(result.missionBorderStyle,'none','Der sichtbare Rahmen des Missionsbuttons wurde entfernt.');
   assert.notEqual(result.missionBorderWidth,'0px','Der Missionsbutton besitzt keinen sichtbaren Rahmen mehr.');
+  assert.deepEqual(result.teamVisibleTexts,Array(10).fill(''),'Team 1–10 dürfen auf der Stadtkarte keinen sichtbaren Schriftzug mehr enthalten.');
+  assert.deepEqual(result.teamAriaLabels,Array.from({length:10},(_,index)=>`Team ${index+1}`),'Die bildbasierten Teamgebäude benötigen weiterhin ihre zugänglichen Teamnamen.');
+  assert.deepEqual(result.teamImageSrcs,Array.from({length:10},(_,index)=>`ui/team_gebaeude_${index+1}_64.png`),'Die Teamgebäude sind nicht korrekt über Team-ID 1–10 zugeordnet.');
+  assert.equal(result.teamImagesComplete,true,'Mindestens ein Teamgebäude-PNG wurde im Browser nicht vollständig geladen.');
+  assert.deepEqual(result.teamImageSizes,Array.from({length:10},()=>[64,64]),'Nicht alle Teamgebäude werden als echte 64x64-PNGs geladen.');
+  assert.notEqual(result.team1BorderStyle,'none','Der sichtbare Rahmen des Teambuttons wurde entfernt.');
+  assert.notEqual(result.team1BorderWidth,'0px','Der Teambutton besitzt keinen sichtbaren Rahmen mehr.');
   assert.equal(result.rosterOpened,true,'Der Kader-Button öffnet nicht die bestehende Kaderseite.');
   assert.equal(result.subpageShellActive,false,'Der Stadtmodus bleibt auf einer Unterseite aktiv.');
   assert.equal(result.subpageNavVisible,true,'Die bestehende Hauptnavigation erscheint auf Unterseiten nicht wieder.');
   assert.equal(result.missionsOpened,true,'Der Missionsbutton öffnet nicht den bestehenden Missionsdialog.');
   assert.equal(result.teamOpened,true,'Team 1 öffnet nicht das bestehende Team-/Dungeonfenster.');
 
-  console.log('Stadtübersicht-Browserregression: Hintergrund, Missionsgebäude ohne Schriftzug mit sichtbarem Buttonrahmen, aktive/deaktivierte Stadtbuttons, Kader, Missionen, Team 1 und Shell-Umschaltung funktionieren.');
+  console.log('Stadtübersicht-Browserregression: Hintergrund, Missions- und Teamgebäude ohne sichtbare Schriftzüge mit Buttonrahmen, aktive/deaktivierte Stadtbuttons, Kader, Missionen, Team 1 und Shell-Umschaltung funktionieren.');
 } finally {
   rmSync(browserProfile,{recursive:true,force:true});
   await new Promise(resolveClose=>server.close(resolveClose));

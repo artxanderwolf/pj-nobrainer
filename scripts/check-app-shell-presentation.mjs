@@ -15,15 +15,15 @@ const cityOverviewStyles = readFileSync('src/city-overview-v0.6.0.0.css', 'utf8'
 const probePage = '<section class="page" id="probe">Probe</section>';
 const shell = composeAppShell(probePage);
 
-assert.equal(APP_UI_VERSION, '0.6.0.1', 'Die gemeinsame sichtbare Web-App-Version muss v0.6.0.1 sein.');
+assert.equal(APP_UI_VERSION, '0.6.0.2', 'Die gemeinsame sichtbare Web-App-Version muss v0.6.0.2 sein.');
 assert.equal(packageJson.version, APP_UI_VERSION, 'package.json und sichtbare App-Version dürfen nicht auseinanderlaufen.');
 assert.equal(APP_SHELL_PAGE_IDS[0], 'base');
 for (const required of ['character', 'storage', 'forge-preview', 'market-jobs', 'dungeon-select', 'index']) {
   assert.ok(APP_SHELL_PAGE_IDS.includes(required), `Modulare Seite ${required} fehlt in der Shell-Seitenliste.`);
 }
-assert.match(shell, /^<div class="app modular-ui" data-ui-version="0\.6\.0\.1">/, 'Die modulare UI-v0.6.0.1-Shell fehlt.');
+assert.match(shell, /^<div class="app modular-ui" data-ui-version="0\.6\.0\.2">/, 'Die modulare UI-v0.6.0.2-Shell fehlt.');
 assert.match(shell, /id="backBtn"[\s\S]*onclick="goBack\(\)"/, 'Der globale Zurück-Button fehlt.');
-assert.match(shell, /<div class="ui-version">SMITHS OF ELDRAVAR · v0\.6\.0\.1<\/div>/, 'Die sichtbare Versionsanzeige ist nicht v0.6.0.1.');
+assert.match(shell, /<div class="ui-version">SMITHS OF ELDRAVAR · v0\.6\.0\.2<\/div>/, 'Die sichtbare Versionsanzeige ist nicht v0.6.0.2.');
 assert.match(shell, /<h1 id="pageTitle" class="city-name-editable" contenteditable="true"[^>]*>Stadt Name<\/h1>/, 'Die editierbare Stadt-Headline fehlt.');
 assert.match(shell, /class="pill money-pill" aria-label="Stadtgeld"[\s\S]*id="goldIcon"[\s\S]*src="ui\/coin_1nic_32\.png"[\s\S]*id="gold">0 Nickel<\/b>/, 'Der Stadtgeld-Pill besitzt nicht den Nickel-Fallback mit Münzicon.');
 assert.doesNotMatch(shell, /class="pill money-pill">Geld/, 'Der alte sichtbare Geld-Text darf nicht vor dem dynamischen Münzicon stehen.');
@@ -51,6 +51,9 @@ assert.ok(existsSync('public/ui/quest_32.png'), 'Das neue Quest-PNG fehlt im Web
 assert.ok(existsSync('public/ui/fragezeichen_32.png'), 'Das neue Hilfe-PNG fehlt im Web-Asset-Verzeichnis.');
 assert.ok(existsSync('public/ui/city.png'), 'Der Stadt-Hintergrund fehlt im Web-Asset-Verzeichnis.');
 assert.ok(existsSync('public/ui/mission_gebaeude_64.png'), 'Das Missionsgebäude-PNG fehlt im Web-Asset-Verzeichnis.');
+for (let teamId = 1; teamId <= 10; teamId += 1) {
+  assert.ok(existsSync(`public/ui/team_gebaeude_${teamId}_64.png`), `Das Teamgebäude-PNG für Team ${teamId} fehlt im Web-Asset-Verzeichnis.`);
+}
 for (const coin of ['coin_1nic_32.png', 'coin_2bro_32.png', 'coin_3sil_32.png', 'coin_4gol_32.png', 'coin_5net_32.png']) {
   assert.ok(existsSync(`public/ui/${coin}`), `Das Münzasset ${coin} fehlt im Web-Asset-Verzeichnis.`);
 }
@@ -59,7 +62,9 @@ assert.match(missionService, /questHeaderBadge/, 'Der Missionszähler wird nicht
 assert.doesNotMatch(missionService, /📜/, 'Die alte Schriftrollen-Emoji-Darstellung darf nicht mehr aktiv sein.');
 assert.match(cityOverviewService, /data-city-overview-owner="angular"/, 'Die Stadtübersicht besitzt keinen Angular-Ownership-Marker.');
 assert.match(cityOverviewService, /CITY_OVERVIEW_MISSION_ASSET = 'ui\/mission_gebaeude_64\.png'/, 'Das Missionsgebäude ist nicht als stabiles Stadtübersicht-Asset hinterlegt.');
-assert.match(cityOverviewService, /city-map-action-image/, 'Der Stadt-Missionsbutton rendert das Missionsgebäude-PNG nicht als Bildinhalt.');
+assert.match(cityOverviewService, /CITY_OVERVIEW_TEAM_ASSET_PREFIX = 'ui\/team_gebaeude_'/, 'Die Teamgebäude besitzen keinen stabilen technischen Asset-Präfix.');
+assert.match(cityOverviewService, /action\.kind === 'team' && action\.teamId/, 'Teamgebäude werden nicht über die stabile Team-ID aufgelöst.');
+assert.match(cityOverviewService, /city-map-action-image/, 'Bildbasierte Stadtbuttons rendern ihr PNG nicht als Bildinhalt.');
 assert.match(cityOverviewService, /document\.getElementById\('questHeaderButton'\)\?\.click\(\)/, 'Der Stadt-Missionsbutton verwendet nicht den bestehenden Missionszugang.');
 assert.match(cityOverviewService, /this\.navigate\('dungeon'\)/, 'Teamaktionen verwenden nicht den bestehenden Dungeon-Bereich.');
 assert.match(stateService, /DEFAULT_CITY_NAME = 'Stadt Name'/, 'Der Standard-Stadtname fehlt.');
@@ -75,7 +80,7 @@ assert.match(cityHeaderStyles, /\.city-name-editable/, 'Die editierbare Stadt-He
 assert.match(currencyHeaderStyles, /\.city-currency-icon/, 'Die Stadtgeld-Münze besitzt keine eigenen Styles.');
 assert.match(currencyHeaderStyles, /width: 32px/, 'Die Stadtgeld-Münze wird nicht in der vorgesehenen 32px-Assetgröße geführt.');
 assert.match(cityOverviewStyles, /\.city-overview-stage/, 'Die neue Stadtkarte besitzt keine eigene responsive Bühne.');
-assert.match(cityOverviewStyles, /\.city-map-action-image/, 'Das Missionsgebäude besitzt keine eigene Bilddarstellung innerhalb des Stadtbuttons.');
+assert.match(cityOverviewStyles, /\.city-map-action-image/, 'Die Gebäude-PNGs besitzen keine gemeinsame Bilddarstellung innerhalb der Stadtbuttons.');
 assert.match(cityOverviewStyles, /\.city-map-action:disabled/, 'Gesperrte Stadtziele besitzen keinen sichtbaren Disabled-Zustand.');
 assert.match(cityOverviewStyles, /\.modular-ui\.city-overview-active \.bottom-nav/, 'Die alte Bottom-Navigation wird auf der Stadtübersicht nicht gezielt ausgeblendet.');
 
@@ -97,4 +102,4 @@ assert.match(appComponent, /this\.gameRuntime\.prepare\(\);[\s\S]*this\.legacyNa
 assert.doesNotMatch(appComponent, /DOMParser/, 'Der App-Component parst weiterhin die Legacy-HTML.');
 assert.match(appComponent, /const LEGACY_RUNTIME_PATH = 'legacy\/NoBrainer_GitHub_v0\.12\.2\.runtime\.js';/, 'Der App-Component verweist nicht auf das eigenständige Runtime-Asset.');
 
-console.log('App-Shell-Präsentation: Web-UI v0.6.0.1 mit editierbarem Stadtname, dynamischem Stadtgeld, Stadtkarte, Missionsgebäude sowie Quest-/Hilfe-PNGs ist Angular-eigen.');
+console.log('App-Shell-Präsentation: Web-UI v0.6.0.2 mit editierbarem Stadtname, dynamischem Stadtgeld, Stadtkarte, Missions- und Teamgebäuden sowie Quest-/Hilfe-PNGs ist Angular-eigen.');

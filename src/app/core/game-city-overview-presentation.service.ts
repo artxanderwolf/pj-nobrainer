@@ -12,6 +12,7 @@ import { GameStateService, type MutableGameState } from './game-state.service';
 type CityNavigationWindow = Window & { go?: (pageId: string) => void };
 
 const CITY_OVERVIEW_MISSION_ASSET = 'ui/mission_gebaeude_64.png';
+const CITY_OVERVIEW_TEAM_ASSET_PREFIX = 'ui/team_gebaeude_';
 
 @Injectable({ providedIn: 'root' })
 export class GameCityOverviewPresentationService {
@@ -77,12 +78,19 @@ export class GameCityOverviewPresentationService {
     const position = action.position;
     const style = `--city-left:${position.left}%;--city-top:${position.top}%;--city-width:${position.width}%;--city-height:${position.height}%;`;
     const label = this.escapeHtml(action.label);
-    const missionClass = action.kind === 'mission' ? ' city-map-action--image' : '';
-    const accessibleLabel = action.kind === 'mission' ? ` aria-label="${label}"` : '';
-    const content = action.kind === 'mission'
-      ? `<img class="city-map-action-image" src="${CITY_OVERVIEW_MISSION_ASSET}" alt="" aria-hidden="true">`
+    const imageAsset = this.actionImageAsset(action);
+    const imageClass = imageAsset ? ' city-map-action--image' : '';
+    const accessibleLabel = imageAsset ? ` aria-label="${label}"` : '';
+    const content = imageAsset
+      ? `<img class="city-map-action-image" src="${imageAsset}" alt="" aria-hidden="true">`
       : label;
-    return `<button id="cityAction-${action.id}" class="btn city-map-action${missionClass}" type="button" data-city-action="${action.id}"${accessibleLabel} style="${style}">${content}</button>`;
+    return `<button id="cityAction-${action.id}" class="btn city-map-action${imageClass}" type="button" data-city-action="${action.id}"${accessibleLabel} style="${style}">${content}</button>`;
+  }
+
+  private actionImageAsset(action: CityOverviewActionDefinition): string | null {
+    if (action.kind === 'mission') return CITY_OVERVIEW_MISSION_ASSET;
+    if (action.kind === 'team' && action.teamId) return `${CITY_OVERVIEW_TEAM_ASSET_PREFIX}${action.teamId}_64.png`;
+    return null;
   }
 
   private currentPresentation(): CityOverviewActionPresentation[] {
