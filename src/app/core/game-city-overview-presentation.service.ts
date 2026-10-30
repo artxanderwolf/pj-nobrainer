@@ -11,6 +11,8 @@ import { GameStateService, type MutableGameState } from './game-state.service';
 
 type CityNavigationWindow = Window & { go?: (pageId: string) => void };
 
+const CITY_OVERVIEW_MISSION_ASSET = 'ui/mission_gebaeude_64.png';
+
 @Injectable({ providedIn: 'root' })
 export class GameCityOverviewPresentationService {
   private root: HTMLElement | null = null;
@@ -74,7 +76,13 @@ export class GameCityOverviewPresentationService {
   private renderActionButton(action: CityOverviewActionDefinition): string {
     const position = action.position;
     const style = `--city-left:${position.left}%;--city-top:${position.top}%;--city-width:${position.width}%;--city-height:${position.height}%;`;
-    return `<button id="cityAction-${action.id}" class="btn city-map-action" type="button" data-city-action="${action.id}" style="${style}">${this.escapeHtml(action.label)}</button>`;
+    const label = this.escapeHtml(action.label);
+    const missionClass = action.kind === 'mission' ? ' city-map-action--image' : '';
+    const accessibleLabel = action.kind === 'mission' ? ` aria-label="${label}"` : '';
+    const content = action.kind === 'mission'
+      ? `<img class="city-map-action-image" src="${CITY_OVERVIEW_MISSION_ASSET}" alt="" aria-hidden="true">`
+      : label;
+    return `<button id="cityAction-${action.id}" class="btn city-map-action${missionClass}" type="button" data-city-action="${action.id}"${accessibleLabel} style="${style}">${content}</button>`;
   }
 
   private currentPresentation(): CityOverviewActionPresentation[] {
