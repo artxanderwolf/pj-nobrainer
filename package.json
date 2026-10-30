@@ -1,11 +1,11 @@
 {
   "name": "pj-nobrainer",
-  "version": "0.5.0.0",
+  "version": "0.5.0.1",
   "private": true,
   "scripts": {
     "start": "npm run prepare:legacy-runtime && ng serve",
     "prepare:legacy-runtime": "node scripts/prepare-legacy-runtime.mjs",
-    "precheck": "npm run prepare:legacy-runtime",
+    "precheck": "npm run prepare-legacy-runtime",
     "check:legacy": "node scripts/check-legacy.mjs",
     "check:legacy-runtime-source": "node scripts/check-legacy-runtime-source.mjs",
     "check:runtime-ownership": "node scripts/check-runtime-ownership.mjs",
