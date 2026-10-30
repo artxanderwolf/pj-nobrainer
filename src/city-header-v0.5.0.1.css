@@ -1,0 +1,72 @@
+.modular-topbar .page-heading {
+  min-width: 0;
+}
+
+.modular-topbar .page-heading h1.city-name-editable {
+  cursor: text;
+  border-radius: 8px;
+  padding: 2px 4px;
+  margin-left: -4px;
+  outline: none;
+  transition: background-color .15s ease, box-shadow .15s ease;
+}
+
+.modular-topbar .page-heading h1.city-name-editable:hover,
+.modular-topbar .page-heading h1.city-name-editable:focus {
+  background: var(--panel);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.icon-action-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px;
+}
+
+.header-action-icon {
+  display: block;
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.header-action-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--bg);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  box-sizing: border-box;
+}
+
+.header-action-badge[hidden] {
+  display: none;
+}
+
+.mission-overview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.mission-overview-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
