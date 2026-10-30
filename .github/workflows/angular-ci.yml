@@ -37,6 +37,9 @@ jobs:
       - name: Smoke test built runtime
         run: node scripts/check-built-runtime-startup.mjs
 
+      - name: Test city headline and header icons in browser
+        run: node scripts/check-built-city-header.mjs
+
       - name: Test weapon image pilot in browser
         run: node --no-warnings --experimental-strip-types scripts/check-built-weapon-image-pilot.mjs
 
