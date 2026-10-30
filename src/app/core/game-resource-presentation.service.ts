@@ -1,5 +1,4 @@
 import { Injectable } from '@angular/core';
-import { formatHighestCurrency } from '../game/economy-core';
 import { getResourceHeaderPresentation } from '../game/resource-presentation-core';
 import { GameStateService, type MutableGameState } from './game-state.service';
 
@@ -24,15 +23,21 @@ export class GameResourcePresentationService {
 
   render(): void {
     const gold = document.getElementById('gold');
+    const goldIcon = document.getElementById('goldIcon') as HTMLImageElement | null;
     const materials = document.getElementById('matCount');
-    if (!gold && !materials) return;
+    if (!gold && !goldIcon && !materials) return;
 
     const state = this.gameState.getState<RuntimeResourcePresentationState>();
-    const presentation = getResourceHeaderPresentation(state.gold, state.inventory, formatHighestCurrency);
+    const presentation = getResourceHeaderPresentation(state.gold, state.inventory);
 
     if (gold) {
       gold.dataset['resourcePresentationOwner'] = 'angular';
+      gold.dataset['currencyDenomination'] = presentation.goldDenomination;
       gold.textContent = presentation.goldText;
+    }
+    if (goldIcon) {
+      goldIcon.dataset['resourcePresentationOwner'] = 'angular';
+      goldIcon.setAttribute('src', presentation.goldIconSrc);
     }
     if (materials) materials.textContent = presentation.materialCountText;
   }
