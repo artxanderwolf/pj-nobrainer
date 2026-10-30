@@ -7,6 +7,11 @@ const state=gameStateBootstrap.initialize(createDefaultState());
 function replaceGameState(nextState){gameStateBootstrap.replace(nextState);}`;
 
 const LOADED_STATE_ASSIGNMENT = 'state=normalizeLoadedState(parsed.state);';
+const ANGULAR_LOADED_STATE_ASSIGNMENT = `const normalizedLoadedState=normalizeLoadedState(parsed.state);
+if(parsed.state&&typeof parsed.state==="object"&&!Array.isArray(parsed.state)&&Object.prototype.hasOwnProperty.call(parsed.state,"cityName")){
+  normalizedLoadedState.cityName=parsed.state.cityName;
+}
+replaceGameState(normalizedLoadedState);`;
 const RESET_STATE_ASSIGNMENT = 'state=createDefaultState();';
 
 @Injectable({ providedIn: 'root' })
@@ -21,7 +26,7 @@ export class LegacyStateAdapterService {
     adapted = this.replaceOnce(
       adapted,
       LOADED_STATE_ASSIGNMENT,
-      'replaceGameState(normalizeLoadedState(parsed.state));',
+      ANGULAR_LOADED_STATE_ASSIGNMENT,
       'Spielzustand beim Laden'
     );
     adapted = this.replaceOnce(
