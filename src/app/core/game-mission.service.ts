@@ -24,7 +24,7 @@ export class GameMissionService {
             const button = document.createElement('button');
             button.id = 'questOverviewButton';
             button.className = 'btn mission-overview';
-            button.textContent = '📜 Missionen öffnen';
+            button.innerHTML = '<img class="mission-overview-icon" src="ui/quest_32.png" alt="" aria-hidden="true"><span>Missionen öffnen</span>';
             button.onclick = () => this.show();
             base?.append(button);
             const dialog = document.createElement('dialog');
@@ -58,9 +58,13 @@ export class GameMissionService {
         const list = missions(state), visible = list.filter(m => m.visible && !m.claimed);
         const ready = visible.filter(m => m.complete && !m.claimed).length;
         const header = document.getElementById('questHeaderButton');
+        const badge = document.getElementById('questHeaderBadge');
         if (header) {
-            header.textContent = ready ? `📜 ${ready}` : '📜';
             header.setAttribute('aria-label', `Missionen öffnen${ready ? `, ${ready} einsammelbereit` : ''}`);
+        }
+        if (badge) {
+            badge.textContent = ready ? String(ready) : '';
+            badge.hidden = ready === 0;
         }
         if (this.open) {
             const root = document.getElementById('missionList');
