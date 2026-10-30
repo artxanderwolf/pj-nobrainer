@@ -201,10 +201,10 @@ try {
   assert.equal(first.characterEditable, false, 'Der Seitentitel bleibt außerhalb der Übersicht bearbeitbar.');
   assert.equal(first.baseEditable, true, 'Der Stadtname ist nach Rückkehr zur Übersicht nicht bearbeitbar.');
   assert.equal(first.cityName, 'Eisenfels');
-  assert.equal(first.moneyText, '2 Bronze', 'Der initiale Nickelbestand wird im Header nicht als Bronze dargestellt.');
-  assert.equal(first.moneyDenomination, 'Bronze', 'Die sichtbare Münzstufe ist beim Start nicht Bronze.');
-  assert.equal(first.coinSrc, 'ui/coin_2bro_32.png', 'Das Bronze-PNG wird für den initialen Stadtgeldbestand nicht verwendet.');
-  assert.deepEqual(first.coinSize, [32, 32], 'Das Bronze-PNG wird nicht als echtes 32x32-Asset geladen.');
+  assert.equal(first.moneyText, '0 Nickel', 'Ein frischer Spielstand wird im Header nicht als Nickel dargestellt.');
+  assert.equal(first.moneyDenomination, 'Nickel', 'Die sichtbare Münzstufe ist beim frischen Spielstand nicht Nickel.');
+  assert.equal(first.coinSrc, 'ui/coin_1nic_32.png', 'Das Nickel-PNG wird für den frischen Stadtgeldbestand nicht verwendet.');
+  assert.deepEqual(first.coinSize, [32, 32], 'Das Nickel-PNG wird nicht als echtes 32x32-Asset geladen.');
   assert.equal(first.questSrc, 'ui/quest_32.png');
   assert.equal(first.helpSrc, 'ui/fragezeichen_32.png');
   assert.equal(first.overviewSrc, 'ui/quest_32.png');
@@ -219,7 +219,7 @@ try {
   assert.equal(second.savedCityName, 'Eisenfels');
   assert.equal(second.editable, true);
 
-  console.log('Stadt-Header-Browserregression: Stadtname, Browser-Neustart, Bronze-Stadtgeld-PNG sowie Quest-/Hilfe-PNGs sind konsistent.');
+  console.log('Stadt-Header-Browserregression: Stadtname, Browser-Neustart, Nickel-Stadtgeld-PNG sowie Quest-/Hilfe-PNGs sind konsistent.');
 } finally {
   rmSync(browserProfile, { recursive: true, force: true });
   await new Promise(resolveClose => server.close(resolveClose));
