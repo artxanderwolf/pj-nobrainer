@@ -42,7 +42,9 @@ const probeScript = `
     const bg=document.getElementById('cityOverviewBackground');
     const shell=document.querySelector('.modular-ui');
     const nav=document.getElementById('nav');
-    if(!(city&&bg&&shell&&nav))return;
+    const missionButton=document.getElementById('cityAction-missions');
+    const missionImage=missionButton?.querySelector('img.city-map-action-image');
+    if(!(city&&bg&&shell&&nav&&missionButton&&missionImage))return;
 
     if(phase===0){
       const enabledIds=['recruit','market','dungeon','roster','forge','materials','weapons','missions'];
@@ -55,6 +57,9 @@ const probeScript = `
       result.team1Disabled=document.getElementById('cityAction-team-1')?.disabled;
       result.enabledStates=Object.fromEntries(enabledIds.map(id=>[id,document.getElementById('cityAction-'+id)?.disabled===false]));
       result.disabledStates=Object.fromEntries(disabledIds.map(id=>[id,document.getElementById('cityAction-'+id)?.disabled===true]));
+      result.missionVisibleText=missionButton.textContent?.trim()??'';
+      result.missionAriaLabel=missionButton.getAttribute('aria-label');
+      result.missionImageSrc=missionImage.getAttribute('src');
       click('cityAction-roster');
       phase=1;
       return;
@@ -90,10 +95,15 @@ const probeScript = `
     if(phase===4){
       const dungeon=document.getElementById('dungeon');
       const modal=document.getElementById('dungeon-select');
-      if(!dungeon?.classList.contains('active')||!modal||modal.hidden)return;
+      if(!dungeon?.classList.contains('active')||!modal||modal.hidden||!missionImage.complete)return;
       result.teamOpened=modal.dataset.teamId==='1' && modal.getAttribute('aria-hidden')==='false';
       result.backgroundComplete=bg.complete;
       result.backgroundSize=[bg.naturalWidth,bg.naturalHeight];
+      result.missionImageComplete=missionImage.complete;
+      result.missionImageSize=[missionImage.naturalWidth,missionImage.naturalHeight];
+      const missionStyle=getComputedStyle(missionButton);
+      result.missionBorderStyle=missionStyle.borderTopStyle;
+      result.missionBorderWidth=missionStyle.borderTopWidth;
       clearInterval(timer);
       finish({status:'passed',...result});
     }
@@ -172,13 +182,20 @@ try {
   assert.equal(result.team1Disabled,false,'Das vorhandene Startteam ist auf der Stadtkarte deaktiviert.');
   for (const [id,enabled] of Object.entries(result.enabledStates)) assert.equal(enabled,true,`${id} ist trotz vorhandener Mechanik nicht aktiv.`);
   for (const [id,disabled] of Object.entries(result.disabledStates)) assert.equal(disabled,true,`${id} ist trotz fehlender Freischaltung/Mechanik aktiv.`);
+  assert.equal(result.missionVisibleText,'','Der Stadt-Missionsbutton darf keinen sichtbaren Schriftzug mehr enthalten.');
+  assert.equal(result.missionAriaLabel,'Missionen','Der bildbasierte Missionsbutton benötigt weiterhin einen zugänglichen Namen.');
+  assert.equal(result.missionImageSrc,'ui/mission_gebaeude_64.png','Der Stadt-Missionsbutton verwendet nicht das neue Missionsgebäude-PNG.');
+  assert.equal(result.missionImageComplete,true,'Das Missionsgebäude-PNG wurde im Browser nicht vollständig geladen.');
+  assert.deepEqual(result.missionImageSize,[64,64],'Das Missionsgebäude wird nicht als echtes 64x64-PNG geladen.');
+  assert.notEqual(result.missionBorderStyle,'none','Der sichtbare Rahmen des Missionsbuttons wurde entfernt.');
+  assert.notEqual(result.missionBorderWidth,'0px','Der Missionsbutton besitzt keinen sichtbaren Rahmen mehr.');
   assert.equal(result.rosterOpened,true,'Der Kader-Button öffnet nicht die bestehende Kaderseite.');
   assert.equal(result.subpageShellActive,false,'Der Stadtmodus bleibt auf einer Unterseite aktiv.');
   assert.equal(result.subpageNavVisible,true,'Die bestehende Hauptnavigation erscheint auf Unterseiten nicht wieder.');
   assert.equal(result.missionsOpened,true,'Der Missionsbutton öffnet nicht den bestehenden Missionsdialog.');
   assert.equal(result.teamOpened,true,'Team 1 öffnet nicht das bestehende Team-/Dungeonfenster.');
 
-  console.log('Stadtübersicht-Browserregression: Hintergrund, aktive/deaktivierte Stadtbuttons, Kader, Missionen, Team 1 und Shell-Umschaltung funktionieren.');
+  console.log('Stadtübersicht-Browserregression: Hintergrund, Missionsgebäude ohne Schriftzug mit sichtbarem Buttonrahmen, aktive/deaktivierte Stadtbuttons, Kader, Missionen, Team 1 und Shell-Umschaltung funktionieren.');
 } finally {
   rmSync(browserProfile,{recursive:true,force:true});
   await new Promise(resolveClose=>server.close(resolveClose));
