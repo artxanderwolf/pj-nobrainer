@@ -1,4 +1,4 @@
-export const APP_UI_VERSION = '0.5.0.0';
+export const APP_UI_VERSION = '0.5.0.1';
 
 export const APP_SHELL_PAGE_IDS = [
   'base',
@@ -35,12 +35,17 @@ const APP_SHELL_BEFORE_PAGES = `<div class="app modular-ui" data-ui-version="${A
       <button id="backBtn" class="back-btn" type="button" aria-label="Zurück" onclick="goBack()" hidden>←</button>
       <div class="page-heading">
         <div class="ui-version">SMITHS OF ELDRAVAR · v${APP_UI_VERSION}</div>
-        <h1 id="pageTitle">Übersicht</h1>
+        <h1 id="pageTitle" class="city-name-editable" contenteditable="true" spellcheck="false" aria-label="Stadtname bearbeiten">Stadt Name</h1>
       </div>
       <div class="top-actions">
         <div class="pill money-pill">Geld <b id="gold">0 Nickel</b></div>
-        <button id="questHeaderButton" class="help-btn" type="button" aria-label="Missionen öffnen">📜</button>
-        <button class="help-btn" type="button" aria-label="Hilfe" onclick="go('index')">?</button>
+        <button id="questHeaderButton" class="help-btn icon-action-btn" type="button" aria-label="Missionen öffnen">
+          <img class="header-action-icon" src="ui/quest_32.png" alt="" aria-hidden="true">
+          <span id="questHeaderBadge" class="header-action-badge" hidden></span>
+        </button>
+        <button class="help-btn icon-action-btn" type="button" aria-label="Hilfe" onclick="go('index')">
+          <img class="header-action-icon" src="ui/fragezeichen_32.png" alt="" aria-hidden="true">
+        </button>
       </div>
       <span id="matCount" class="sr-only">0</span>
       <span id="saveStatus" class="sr-only">Noch nicht gespeichert</span>
