@@ -1,4 +1,5 @@
 import {migrateTeams,createTeam} from '../src/app/game/team-core.ts';
+import {decodeSave,encodeSave} from '../src/app/game/save-codec.ts';
 import assert from 'node:assert/strict';
 import { readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 
@@ -253,6 +254,10 @@ try {
   parallelService.update(2000, 2);
   assert.equal(parallelState.teams[1].dungeonRun.enemies.length, 4);
   assert.equal(parallelState.teams[2].dungeonRun.enemies.length, 1);
+  const restoredParallelState = decodeSave(encodeSave(parallelState)).state;
+  assert.deepEqual(restoredParallelState.teams[1].dungeonCycleOriginalIds, [1, 2, 3, 4]);
+  assert.deepEqual(restoredParallelState.teams[2].dungeonCycleOriginalIds, [5],
+    'Die Startgruppe jedes Teams muss Save-17-Export und -Import unverändert überstehen.');
 
   const failureState = makeState(2);
   const failureService = new GameDungeonService({ getState: () => failureState });
