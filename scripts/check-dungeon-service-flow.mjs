@@ -1,4 +1,5 @@
-import {migrateTeams} from '../src/app/game/team-core.ts';
+import {migrateTeams,createTeam} from '../src/app/game/team-core.ts';
+import {decodeSave,encodeSave} from '../src/app/game/save-codec.ts';
 import assert from 'node:assert/strict';
 import { readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 
@@ -175,6 +176,89 @@ try {
   assert.equal(splitState.characters[0].xp, 5);
   assert.equal(splitState.characters[1].xp, 5, '10 Basis-XP eines Gegners werden gleichmäßig auf zwei Teilnehmer verteilt.');
 
+
+  // S02: Der gleiche Zufallswurf ergibt für 4 / 3 / 1 Lebende normalerweise 4 / 3 / 1 Gegner.
+  // Während eines mit vier Figuren begonnenen Laufes muss er dagegen immer 4 Gegner ergeben.
+  const fixedState = makeState(4);
+  fixedState.teams[1].dungeonTeamSlots = [1, 2, 3, 4];
+  const fixedService = new GameDungeonService({ getState: () => fixedState });
+  fixedService.toggleAuto(1000);
+  assert.deepEqual(fixedState.teams[1].dungeonCycleOriginalIds, [1, 2, 3, 4]);
+
+  for (const aliveCount of [4, 3, 1]) {
+    fixedState.characters.forEach((character, index) => {
+      character.alive = index < aliveCount;
+      character.hp = character.alive ? character.maxHp : 0;
+    });
+    fixedState.teams[1].dungeonCycleActiveIds = fixedState.characters
+      .filter(character => character.alive).map(character => character.id);
+    const searchAt = fixedState.teams[1].dungeonSearch?.nextCheckAt;
+    assert.ok(Number.isFinite(searchAt), 'Die nächste Suche muss terminiert sein.');
+    { const draws = [0, 0.5]; Math.random = () => draws.shift() ?? 0.5; }
+    fixedService.update(searchAt);
+    const run = fixedState.teams[1].dungeonRun;
+    assert.ok(run, 'Es muss eine neue Welle beginnen.');
+    assert.equal(run.participantIds.length, aliveCount);
+    assert.equal(run.enemies.length, 4, 'S02: Startgröße vier bleibt auch bei gefallenen Teammitgliedern maßgeblich.');
+
+    // Besiegte Gegner simulieren, um den Übergang über Loot und Suche real durchzulaufen.
+    run.enemies.forEach(enemy => { enemy.alive = false; enemy.hp = 0; });
+    Math.random = () => 0.5;
+    fixedService.update(searchAt + 1);
+    assert.ok(fixedState.teams[1].dungeonLootCollect, 'Nach einer gewonnenen Welle muss die Beutephase folgen.');
+    fixedService.update(fixedState.teams[1].dungeonLootCollect.readyAt);
+    assert.ok(fixedState.teams[1].dungeonSearch, 'Danach muss erneut gesucht werden.');
+    assert.deepEqual(fixedState.teams[1].dungeonCycleOriginalIds, [1, 2, 3, 4],
+      'Der Startgruppen-Snapshot darf zwischen den Wellen nicht verändert werden.');
+  }
+
+  // Ein vollständig neuer Lauf legt die Bemessungsgröße neu fest.
+  const restartState = makeState(4);
+  restartState.teams[1].dungeonTeamSlots = [1, 2, 3, 4];
+  const restartService = new GameDungeonService({ getState: () => restartState });
+  restartService.toggleAuto(1000);
+  restartService.toggleAuto(1500);
+  restartState.teams[1].dungeonTeamSlots = [1, 2, null, null];
+  restartService.toggleAuto(3000);
+  assert.deepEqual(restartState.teams[1].dungeonCycleOriginalIds, [1, 2]);
+  { const draws = [0, 0.5]; Math.random = () => draws.shift() ?? 0.5; }
+  restartService.update(4000);
+  assert.equal(restartState.teams[1].dungeonRun.enemies.length, 2,
+    'Ein neuer Lauf mit zwei Charakteren muss die Gegnerskalierung erneut bestimmen.');
+
+  // Alt-Saves ohne das Startgruppenfeld können auf die gespeicherte Teamauswahl zurückgreifen.
+  const oldState = makeState(4);
+  oldState.teams[1].dungeonTeamSlots = [1, 2, 3, 4];
+  const oldService = new GameDungeonService({ getState: () => oldState });
+  oldService.toggleAuto(1000);
+  oldState.teams[1].dungeonCycleOriginalIds = [];
+  oldState.characters[3].alive = false;
+  oldState.characters[3].hp = 0;
+  oldState.teams[1].dungeonCycleActiveIds = [1, 2, 3];
+  { const draws = [0, 0.5]; Math.random = () => draws.shift() ?? 0.5; }
+  oldService.update(2000);
+  assert.equal(oldState.teams[1].dungeonRun.enemies.length, 4,
+    'Alt-Save ohne Snapshot: gespeicherte Teamauswahl statt aktuelle Überlebende.');
+
+  // Zwei unabhängige Teams mit verschiedenen Startgrößen dürfen sich nicht beeinflussen.
+  const parallelState = makeState(5);
+  parallelState.teams[1].dungeonTeamSlots = [1, 2, 3, 4];
+  parallelState.teams[2] = createTeam(2);
+  parallelState.teams[2].dungeonTeamSlots = [5, null, null, null];
+  const parallelService = new GameDungeonService({ getState: () => parallelState });
+  parallelService.toggleAuto(1000, 1);
+  parallelService.toggleAuto(1000, 2);
+  { const draws = [0, 0.5]; Math.random = () => draws.shift() ?? 0.5; }
+  parallelService.update(2000, 1);
+  { const draws = [0, 0.5]; Math.random = () => draws.shift() ?? 0.5; }
+  parallelService.update(2000, 2);
+  assert.equal(parallelState.teams[1].dungeonRun.enemies.length, 4);
+  assert.equal(parallelState.teams[2].dungeonRun.enemies.length, 1);
+  const restoredParallelState = decodeSave(encodeSave(parallelState)).state;
+  assert.deepEqual(restoredParallelState.teams[1].dungeonCycleOriginalIds, [1, 2, 3, 4]);
+  assert.deepEqual(restoredParallelState.teams[2].dungeonCycleOriginalIds, [5],
+    'Die Startgruppe jedes Teams muss Save-17-Export und -Import unverändert überstehen.');
+
   const failureState = makeState(2);
   const failureService = new GameDungeonService({ getState: () => failureState });
   failureService.toggleAuto(1000);
@@ -235,7 +319,7 @@ try {
   assert.equal(noEnergyState.characters[0].energy, 0, 'Dungeon 1 darf Energie weder auffüllen noch abbuchen.');
   assert.equal(noEnergyResult.events.some(event => event.text.includes('Nicht genügend Energie')), false);
 
-  console.log('Dungeon-Service-Ablauf: Laufstart ohne Energie, Wiederholung, ID-only Loot, Altstand-Migration, Domain-Abbruch, XP/Level und Beute sind konsistent.');
+  console.log('Dungeon-Service-Ablauf: S02-Startgruppengröße, 4/3/1 Überlebende, Neulauf, parallele Teams, Alt-Saves, XP und ID-Loot geprüft.');
 } finally {
   Math.random = originalRandom;
   for (const url of temporaryFiles.reverse()) {
