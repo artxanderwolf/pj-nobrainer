@@ -357,7 +357,10 @@ export class GameDungeonService {
     }
 
     payDungeonEnergy(check.participants, check.share);
-    const enemyCount = rollEnemyCount(check.participants.length, Math.random());
+    // S02: Die ursprüngliche Teamgröße bestimmt die Gegnerverteilung für jede Welle.
+    // Laufende Alt-Saves ohne Startgruppen-Snapshot nutzen die gespeicherte Teamauswahl.
+    const startingTeamSize = state.session.dungeonCycleOriginalIds?.length || this.getSelectedIds(state).length || check.participants.length;
+    const enemyCount = rollEnemyCount(startingTeamSize, Math.random());
     const enemies = createDungeonEnemies(enemyCount, () => Math.random(), state.session.dungeonId, () => Math.random());
     const attackPoints = createDungeonAttackPoints(
       check.participants,
