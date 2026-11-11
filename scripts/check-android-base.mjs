@@ -40,7 +40,7 @@ const sharedVersionPattern = packageJson.version.replaceAll('.', '\\.');
 assert.match(appShell, new RegExp(`APP_UI_VERSION\\s*=\\s*'${sharedVersionPattern}'`), 'Gemeinsame sichtbare App-Version und package.json müssen übereinstimmen.');
 assert.match(appShell, /SMITHS OF ELDRAVAR · v\$\{APP_UI_VERSION\}/, 'Offizieller Spielname fehlt in der sichtbaren Shell.');
 assert.match(appComponent, /Smiths of Eldravar – v\$\{APP_UI_VERSION\}/, 'Dokumenttitel verwendet nicht den offiziellen Spielnamen.');
-assert.match(saveCodec, /export const SAVE_VERSION = 17;/, 'Android muss dasselbe Save-Format wie die gemeinsame Anwendung verwenden.');
+assert.match(saveCodec, /export const SAVE_VERSION = 18;/, 'Android muss dasselbe Save-Format wie die gemeinsame Anwendung verwenden.');
 
 for (const ignored of ['*.jks', '*.keystore', '*.p12', 'keystore.properties']) {
   assert.ok(gitignore.split(/\r?\n/).includes(ignored), `${ignored} muss von Git ausgeschlossen sein.`);
@@ -68,4 +68,4 @@ if (existsSync('android/app/build.gradle')) {
   assert.ok(existsSync('android/gradlew'), 'Gradle Wrapper fehlt im versionierten Android-Projekt.');
 }
 
-console.log(`Android Gate C: native Android-Version ${ANDROID_VERSION_NAME}/9 bleibt fest; gemeinsame Angular-Web-Version ${packageJson.version}, Save-Version 17 und schlüsselfreie Release-Signing-Konfiguration sind konsistent.`);
+console.log(`Android Gate C: native Android-Version ${ANDROID_VERSION_NAME}/9 bleibt fest; gemeinsame Angular-Web-Version ${packageJson.version}, Save-Version 18 und schlüsselfreie Release-Signing-Konfiguration sind konsistent.`);
