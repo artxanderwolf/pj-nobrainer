@@ -106,7 +106,14 @@ try{
   }
   assert.equal(createDungeonEnemies(1,()=>0,2,()=>.009999)[0].boss,true);assert.equal(createDungeonEnemies(1,()=>0,2,()=>.01)[0].boss,false);
   const service=new GameDungeonService({getState:()=>({})});
-  for(const [roll,id] of [[0,10],[.49999,10],[.50001,11],[.79999,11],[.80001,12],[.94999,12],[.95001,13]]){Math.random=()=>roll;assert.equal(service.rollDrops([createDungeonEnemy(1,'recruit',2)],2)[0].materialId,id);}
+  for(const [roll,id] of [[0,10],[.49999,10],[.50001,11],[.79999,11],[.80001,12],[.94999,12],[.95001,13]]){
+    let draw=0;
+    Math.random=()=>draw++===0?.5:roll; // erst 60-%-Erfolgswurf, dann der unveränderte Materialpool
+    assert.equal(service.rollDrops([createDungeonEnemy(1,'recruit',2)],2)[0].materialId,id);
+  }
+  Math.random=()=>.6;
+  assert.deepEqual(service.rollDrops([createDungeonEnemy(1,'recruit',2)],2),[],
+    'Bei 40 % der Ergebnisse darf kein Material gewählt werden.');
   const healer={id:1,classId:'healer',hp:1,maxHp:22,alive:true,equipment:{leftHand:null,rightHand:null},name:'Heiler',level:1};
   const enemy=createDungeonEnemy(1,'recruit');const hp=enemy.hp;
   const runtime={characters:[healer],weaponInventory:[],dungeonTeamSlots:[1,null,null,null]};const svc=new GameDungeonService({getState:()=>runtime});
