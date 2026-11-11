@@ -50,11 +50,9 @@ assert.doesNotMatch(shell, /onclick="resetSave\(\)"/, 'Spielstand-Reset soll nic
 
 assert.ok(existsSync('public/ui/quest_32.png'), 'Das neue Quest-PNG fehlt im Web-Asset-Verzeichnis.');
 assert.ok(existsSync('public/ui/fragezeichen_32.png'), 'Das neue Hilfe-PNG fehlt im Web-Asset-Verzeichnis.');
-assert.ok(existsSync('public/ui/city.png'), 'Der Stadt-Hintergrund fehlt im Web-Asset-Verzeichnis.');
-assert.ok(existsSync('public/ui/mission_gebaeude_64.png'), 'Das Missionsgebäude-PNG fehlt im Web-Asset-Verzeichnis.');
-for (let teamId = 1; teamId <= 10; teamId += 1) {
-  assert.ok(existsSync(`public/ui/team_gebaeude_${teamId}_64.png`), `Das Teamgebäude-PNG für Team ${teamId} fehlt im Web-Asset-Verzeichnis.`);
-}
+
+
+
 for (const coin of ['coin_1nic_32.png', 'coin_2bro_32.png', 'coin_3sil_32.png', 'coin_4gol_32.png', 'coin_5net_32.png']) {
   assert.ok(existsSync(`public/ui/${coin}`), `Das Münzasset ${coin} fehlt im Web-Asset-Verzeichnis.`);
 }
@@ -62,13 +60,20 @@ assert.match(missionService, /mission-overview-icon[\s\S]*ui\/quest_32\.png/, 'D
 assert.match(missionService, /questHeaderBadge/, 'Der Missionszähler wird nicht mehr als Badge am Quest-Icon geführt.');
 assert.doesNotMatch(missionService, /📜/, 'Die alte Schriftrollen-Emoji-Darstellung darf nicht mehr aktiv sein.');
 assert.match(cityOverviewService, /data-city-overview-owner="angular"/, 'Die Stadtübersicht besitzt keinen Angular-Ownership-Marker.');
-assert.match(cityOverviewService, /CITY_OVERVIEW_MISSION_ASSET = 'ui\/mission_gebaeude_64\.png'/, 'Das Missionsgebäude ist nicht als stabiles Stadtübersicht-Asset hinterlegt.');
-assert.match(cityOverviewService, /CITY_OVERVIEW_TEAM_ASSET_PREFIX = 'ui\/team_gebaeude_'/, 'Die Teamgebäude besitzen keinen stabilen technischen Asset-Präfix.');
-assert.match(cityOverviewService, /action\.kind === 'team' && action\.teamId/, 'Teamgebäude werden nicht über die stabile Team-ID aufgelöst.');
-assert.match(cityOverviewService, /city-map-action-image/, 'Bildbasierte Stadtbuttons rendern ihr PNG nicht als Bildinhalt.');
-assert.match(cityOverviewService, /document\.getElementById\('questHeaderButton'\)\?\.click\(\)/, 'Der Stadt-Missionsbutton verwendet nicht den bestehenden Missionszugang.');
-assert.match(cityOverviewService, /this\.navigate\('dungeon'\)/, 'Teamaktionen verwenden nicht den bestehenden Dungeon-Bereich.');
-assert.match(cityOverviewService, /this\.dungeonPresentation\.openTeam\(action\.teamId\)/, 'Stadt-Teamaktionen öffnen das Teamfenster nicht direkt über die stabile Team-ID.');
+assert.match(cityOverviewService, /data-city-building-id/, 'Die Stadt muss auf stabile Gebäude-Instanz-IDs klicken.');
+assert.match(cityOverviewService, /getCityOverviewPresentation\(state\.cityLayout, teamIds\(state\)\)/,
+  'Gebäude-Navigation darf nicht mit dem gespeicherten Stadtraster konkurrieren.');
+assert.match(cityOverviewService, /data-city-asset-key/, 'Gebäude brauchen einen stabilen technischen Asset-Key.');
+assert.match(cityOverviewService, /getCityLegacyTeamAccess/, 'Bereits bezahlte weitere Teams dürfen während S08-S12 nicht verschwinden.');
+assert.match(cityOverviewService, /data-city-quick-id/, 'Dungeon, Lager und Missionen brauchen weiterhin direkte Stadtzugänge.');
+assert.match(cityOverviewService, /document\.getElementById\('questHeaderButton'\)\?\.click\(\)/,
+  'Die Stadt-Missionen müssen den vorhandenen Missionsdialog öffnen.');
+assert.match(cityOverviewService, /this\.navigate\('dungeon'\)/,
+  'Teamzugänge müssen den vorhandenen Dungeonbereich verwenden.');
+assert.match(cityOverviewService, /this\.dungeonPresentation\.openTeam\(teamId\)/,
+  'Teamzugänge müssen über die ID die vorhandene Teamansicht öffnen.');
+assert.doesNotMatch(cityOverviewService, /cityOverviewBackground|ui\/city\.png|city-map-action/,
+  'S08 darf nicht wieder die alte Stadtgrafik mit Prozent-Hotspots zeichnen.');
 assert.doesNotMatch(cityOverviewService, /querySelector<HTMLButtonElement>\(`#[^`]*data-open-team/, 'Die Stadtübersicht darf kein Dungeon-Hub-UI mehr künstlich anklicken.');
 assert.match(dungeonPresentationService, /openTeam\(teamId = this\.dungeonSession\.getOpenedTeamId\(\)\): void/, 'Der Dungeon-Präsentationsdienst besitzt keinen stabilen direkten Team-Einstieg.');
 assert.match(dungeonPresentationService, /dataset\['openTeam'\]\) this\.openTeam\(Number\(target\.dataset\['openTeam'\]\)\)/, 'Der Dungeon-Hub verwendet nicht dieselbe direkte Team-Öffnung wie die Stadtkarte.');
@@ -86,8 +91,9 @@ assert.match(cityHeaderStyles, /\.city-name-editable/, 'Die editierbare Stadt-He
 assert.match(currencyHeaderStyles, /\.city-currency-icon/, 'Die Stadtgeld-Münze besitzt keine eigenen Styles.');
 assert.match(currencyHeaderStyles, /width: 32px/, 'Die Stadtgeld-Münze wird nicht in der vorgesehenen 32px-Assetgröße geführt.');
 assert.match(cityOverviewStyles, /\.city-overview-stage/, 'Die neue Stadtkarte besitzt keine eigene responsive Bühne.');
-assert.match(cityOverviewStyles, /\.city-map-action-image/, 'Die Gebäude-PNGs besitzen keine gemeinsame Bilddarstellung innerhalb der Stadtbuttons.');
-assert.match(cityOverviewStyles, /\.city-map-action:disabled/, 'Gesperrte Stadtziele besitzen keinen sichtbaren Disabled-Zustand.');
+assert.match(cityOverviewStyles, /\.city-grid-map/, 'Die Stadt benötigt eine responsive Grid-Darstellung.');
+assert.match(cityOverviewStyles, /\.city-grid-viewport/, 'Die Karte muss auf Smartphones horizontal scrollbar bleiben.');
+assert.match(cityOverviewStyles, /\.city-grid-building:disabled/, 'Noch gesperrte Gebäude müssen sichtbar deaktiviert werden.');
 assert.match(cityOverviewStyles, /\.modular-ui\.city-overview-active \.bottom-nav/, 'Die alte Bottom-Navigation wird auf der Stadtübersicht nicht gezielt ausgeblendet.');
 
 const styles = angularConfig.projects?.nobrainer?.architect?.build?.options?.styles ?? [];
