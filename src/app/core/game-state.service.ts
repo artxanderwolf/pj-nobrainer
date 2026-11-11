@@ -1,5 +1,6 @@
 import { initializeReleaseProgress } from '../game/mission-core.ts';
 import { migrateTeams } from '../game/team-core.ts';
+import { migrateCityLayout } from '../game/city-layout-core.ts';
 import { Injectable } from '@angular/core';
 
 export type MutableGameState = Record<string, unknown>;
@@ -30,6 +31,13 @@ export class GameStateService {
   private readonly state: MutableGameState = {};
   private initialized = false;
   private dungeonMigrationPending = false;
+  private cityMigrationPending = false;
+
+  consumeCityMigration(): boolean {
+    const pending = this.cityMigrationPending;
+    this.cityMigrationPending = false;
+    return pending;
+  }
 
   consumeDungeonMigration(): boolean {
     const pending=this.dungeonMigrationPending;
@@ -81,7 +89,11 @@ export class GameStateService {
       throw new Error('Ungültiger NoBrainer-Spielzustand.');
     }
 
+    // Fehlerhafte vorhandene Stadt-Saves vor dem Ersetzen prüfen. So kann ein
+    // ungültiger Import den bereits geladenen Zustand nicht teilweise löschen.
+    const cityMigrationChanged = migrateCityLayout(nextState);
     for (const key of Object.keys(this.state)) delete this.state[key];
+    this.cityMigrationPending = cityMigrationChanged;
     this.dungeonMigrationPending = !nextState['teams'];
     Object.assign(this.state, nextState);
     this.state['cityName'] = normalizeCityName(this.state['cityName']);
