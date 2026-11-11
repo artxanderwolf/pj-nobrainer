@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, Injector } from '@angular/core';
 import {
   CITY_QUICK_ACCESS,
   getCityLegacyTeamAccess,
@@ -6,9 +6,11 @@ import {
   type CityBuildingPresentation
 } from '../game/city-overview-presentation-core.ts';
 import { type CityLayoutWorldState, type CityLayoutState } from '../game/city-layout-core.ts';
+import { expandCityLayout, moveCityBuilding, type CityExpandDirection } from '../game/city-placement-core.ts';
 import { teamIds, type TeamWorldState } from '../game/team-core.ts';
 import { GameDungeonPresentationService } from './game-dungeon-presentation.service';
 import { GameStateService, type MutableGameState } from './game-state.service';
+import { GameRuntimeService } from './game-runtime.service';
 
 type CityNavigationWindow = Window & { go?: (pageId: string) => void };
 
@@ -18,10 +20,14 @@ export class GameCityOverviewPresentationService {
   private basePage: HTMLElement | null = null;
   private activeObserver: MutationObserver | null = null;
   private renderedSignature = '';
+  private moveMode = false;
+  private moveBuildingId: string | null = null;
+  private moveNotice = '';
 
   constructor(
     private readonly gameState: GameStateService,
-    private readonly dungeonPresentation: GameDungeonPresentationService
+    private readonly dungeonPresentation: GameDungeonPresentationService,
+    private readonly injector: Injector
   ) {}
 
   render(): void {
@@ -31,7 +37,13 @@ export class GameCityOverviewPresentationService {
     const layout = state.cityLayout;
     if (!layout) throw new Error('S08: Stadtlayout fehlt nach der S07-Save-Migration.');
     const ownedIds = teamIds(state);
-    const signature = JSON.stringify({ layout, ownedIds });
+    if (this.moveBuildingId && !layout.buildings.some(building => building.buildingInstanceId === this.moveBuildingId)) {
+      this.moveBuildingId = null;
+    }
+    const signature = JSON.stringify({
+      layout, ownedIds, moveMode: this.moveMode,
+      moveBuildingId: this.moveBuildingId, moveNotice: this.moveNotice
+    });
     if (signature !== this.renderedSignature) {
       const viewport = root.querySelector<HTMLElement>('.city-grid-viewport');
       const scrollLeft = viewport?.scrollLeft ?? 0;
@@ -51,9 +63,13 @@ export class GameCityOverviewPresentationService {
     this.activeObserver?.disconnect();
     this.activeObserver = null;
     this.root?.removeEventListener('click', this.handleClick);
+    this.root?.removeEventListener('change', this.handleChange);
     this.root = null;
     this.basePage = null;
     this.renderedSignature = '';
+    this.moveMode = false;
+    this.moveBuildingId = null;
+    this.moveNotice = '';
     document.querySelector<HTMLElement>('.modular-ui')?.classList.remove('city-overview-active');
   }
 
@@ -68,6 +84,7 @@ export class GameCityOverviewPresentationService {
     const root = basePage.querySelector<HTMLElement>('#cityOverview');
     if (!root) return null;
     root.addEventListener('click', this.handleClick);
+    root.addEventListener('change', this.handleChange);
     this.root = root;
     this.basePage = basePage;
     this.renderedSignature = '';
@@ -86,6 +103,8 @@ export class GameCityOverviewPresentationService {
     const extraTeams = getCityLegacyTeamAccess(layout, ownedIds);
     const gridColumns = layout.grid.width;
     const gridRows = layout.grid.height;
+    const tools = this.renderPlacementToolbar(buildings, layout);
+    const moveCells = this.moveMode ? this.renderMoveCells(layout) : '';
     const quickLinks = CITY_QUICK_ACCESS.map(access => {
       return `<button id="cityAction-${access.id}" type="button" class="city-grid-quick-link" data-city-quick-id="${access.id}"><span aria-hidden="true">${access.icon}</span>${this.escapeHtml(access.label)}</button>`;
     }).join('');
@@ -100,10 +119,12 @@ export class GameCityOverviewPresentationService {
         <h2>Stadtgebäude</h2>
         <p>${gridColumns} × ${gridRows} Felder · ${buildings.length} Gebäude · Berühre ein Gebäude zum Öffnen</p>
       </header>
+      ${tools}
       <div class="city-grid-scroll-hint">Karte seitlich verschieben, um alle Gebäude zu erreichen.</div>
       <div class="city-grid-viewport" tabindex="0" role="region" aria-label="Stadtraster, horizontal scrollbar">
         <div id="cityGrid" class="city-grid-map" role="group" aria-label="Gebäuderaster" data-grid-width="${gridColumns}" data-grid-height="${gridRows}" style="--city-grid-columns:${gridColumns};--city-grid-rows:${gridRows}">
           ${buildings.map(building => this.renderBuilding(building, layout)).join('')}
+          ${moveCells}
         </div>
       </div>
       <nav class="city-grid-links" aria-label="Weitere Stadtzugänge">
@@ -111,6 +132,97 @@ export class GameCityOverviewPresentationService {
         <div class="city-grid-link-list">${quickLinks}</div>
       </nav>
       ${legacyTeamLinks}`;
+  }
+
+  private renderPlacementToolbar(
+    buildings: readonly CityBuildingPresentation[], layout: CityLayoutState
+  ): string {
+    const modeLabel = this.moveMode ? 'Verschiebemodus beenden' : 'Gebäude verschieben';
+    const selectedId = this.moveBuildingId ?? buildings[0]?.buildingInstanceId ?? null;
+    const options = buildings.map(building =>
+      `<option value="${building.buildingInstanceId}"${selectedId === building.buildingInstanceId ? ' selected' : ''}>${this.escapeHtml(building.label)} · ${building.buildingInstanceId}</option>`
+    ).join('');
+    const selection = this.moveMode
+      ? `<label class="city-placement-selector" for="cityMoveBuildingSelect">Gebäude wählen
+           <select id="cityMoveBuildingSelect" data-city-move-select>${options}</select>
+         </label><p class="city-placement-hint">Tippe auf das gewünschte Rasterfeld. Es wird die linke obere Ecke des Gebäudes. Überlappungen und Felder außerhalb der Stadt werden abgelehnt.</p>`
+      : '';
+    return `<section class="city-placement-tools" aria-label="Stadtfläche und Platzierung">
+      <div class="city-placement-primary">
+        <button type="button" class="btn city-placement-toggle" data-city-move-toggle aria-pressed="${this.moveMode}">${modeLabel}</button>
+        <span class="city-placement-coordinates">Stadtursprung: ${layout.grid.minX}/${layout.grid.minY}</span>
+      </div>
+      ${selection}
+      <p class="city-placement-notice" role="status" aria-live="polite">${this.escapeHtml(this.moveNotice)}</p>
+      <fieldset class="city-expand-controls">
+        <legend>Stadtfläche um vier Felder erweitern</legend>
+        <button type="button" class="btn" data-city-expand="left">← Links +4</button>
+        <button type="button" class="btn" data-city-expand="right">Rechts +4 →</button>
+        <button type="button" class="btn" data-city-expand="up">↑ Oben +4</button>
+        <button type="button" class="btn" data-city-expand="down">Unten +4 ↓</button>
+      </fieldset>
+      <p class="city-placement-hint">S09-Testphase: Flächenerweiterungen ohne Nickelabbuchung; künftige Preise müssen in S10 gesondert festgelegt werden. Neue Gebäude kaufen und Bauaufträge folgen in S10/S11.</p>
+    </section>`;
+  }
+
+  private renderMoveCells(layout: CityLayoutState): string {
+    const buttons: string[] = [];
+    for (let row = 0; row < layout.grid.height; row++) {
+      for (let column = 0; column < layout.grid.width; column++) {
+        const x = layout.grid.minX + column;
+        const y = layout.grid.minY + row;
+        buttons.push(`<button type="button" class="city-placement-cell" data-city-target-x="${x}" data-city-target-y="${y}" aria-label="Gebäude setzen: Spalte ${x}, Reihe ${y}" title="Ziel ${x}/${y}"></button>`);
+      }
+    }
+    return `<div class="city-placement-cell-overlay" aria-label="Zielfelder zum Verschieben">${buttons.join('')}</div>`;
+  }
+
+  private readonly handleChange = (event: Event): void => {
+    const select = event.target;
+    if (!(select instanceof HTMLSelectElement) || !select.matches('[data-city-move-select]') ||
+        !this.root?.contains(select)) return;
+    this.moveBuildingId = select.value;
+    this.moveNotice = 'Gebäude ausgewählt. Jetzt ein freies Zielfeld auf der Karte antippen.';
+    this.render();
+  };
+
+  private applyMove(x: number, y: number): void {
+    if (!this.moveMode) return;
+    const state = this.gameState.getState<MutableGameState & CityLayoutWorldState>();
+    if (!state.cityLayout) return;
+    const buildingId = this.moveBuildingId ?? state.cityLayout.buildings[0]?.buildingInstanceId;
+    if (!buildingId) return;
+    const attempt = moveCityBuilding(state.cityLayout, buildingId, x, y);
+    if (!attempt.ok) {
+      this.moveNotice = attempt.message;
+      this.render();
+      return;
+    }
+    const existing = state.cityLayout;
+    state.cityLayout = attempt.layout;
+    try {
+      if (!this.injector.get(GameRuntimeService).save(false)) throw new Error('Der Spielstand konnte nicht geschrieben werden.');
+      this.moveNotice = `Gebäude ${buildingId} kostenlos auf ${x}/${y} verschoben und gespeichert.`;
+    } catch {
+      state.cityLayout = existing;
+      this.moveNotice = 'Speichern fehlgeschlagen. Das Gebäude steht weiterhin am ursprünglichen Platz.';
+    }
+    this.render();
+  }
+
+  private applyExpansion(direction: CityExpandDirection): void {
+    const state = this.gameState.getState<MutableGameState & CityLayoutWorldState>();
+    if (!state.cityLayout) return;
+    const existing = state.cityLayout;
+    try {
+      state.cityLayout = expandCityLayout(existing, direction);
+      if (!this.injector.get(GameRuntimeService).save(false)) throw new Error('Der Spielstand konnte nicht geschrieben werden.');
+      this.moveNotice = 'Stadtfläche um vier Felder erweitert und gespeichert (S09 ohne Nickelabzug).';
+    } catch {
+      state.cityLayout = existing;
+      this.moveNotice = 'Stadtfläche konnte nicht erweitert oder gespeichert werden. Der bisherige Stand ist erhalten.';
+    }
+    this.render();
   }
 
   private renderBuilding(building: CityBuildingPresentation, layout: CityLayoutState): string {
@@ -137,6 +249,34 @@ export class GameCityOverviewPresentationService {
 
   private readonly handleClick = (event: Event): void => {
     if (!(event.target instanceof Element)) return;
+    const toggle = event.target.closest<HTMLButtonElement>('[data-city-move-toggle]');
+    if (toggle && this.root?.contains(toggle)) {
+      this.moveMode = !this.moveMode;
+      if (this.moveMode && !this.moveBuildingId) {
+        const state = this.gameState.getState<MutableGameState & CityLayoutWorldState>();
+        this.moveBuildingId = state.cityLayout?.buildings[0]?.buildingInstanceId ?? null;
+      }
+      this.moveNotice = this.moveMode
+        ? 'Gebäude auswählen und ein Zielfeld auf dem Raster antippen.'
+        : 'Verschiebemodus beendet.';
+      this.render();
+      return;
+    }
+
+    const expand = event.target.closest<HTMLButtonElement>('[data-city-expand]');
+    if (expand && this.root?.contains(expand)) {
+      const direction = expand.dataset['cityExpand'];
+      if (direction === 'left' || direction === 'right' || direction === 'up' || direction === 'down') {
+        this.applyExpansion(direction);
+      }
+      return;
+    }
+
+    const cell = event.target.closest<HTMLButtonElement>('[data-city-target-x][data-city-target-y]');
+    if (cell && this.root?.contains(cell)) {
+      this.applyMove(Number(cell.dataset['cityTargetX']), Number(cell.dataset['cityTargetY']));
+      return;
+    }
 
     const buildingButton = event.target.closest<HTMLButtonElement>('button[data-city-building-id]');
     if (buildingButton && this.root?.contains(buildingButton) && !buildingButton.disabled) {
@@ -201,7 +341,7 @@ export class GameCityOverviewPresentationService {
     }
     card.innerHTML = `<h2>Stadtraster und Gebäude</h2>
       <p class="index-note">Die bisherige starre Stadtgrafik wurde durch die gespeicherten Gebäude aus dem 12×8-Raster ersetzt. Jedes Gebäude besitzt eine feste technische ID und öffnet die passende bestehende Spielseite. Auf Smartphones lässt sich das Raster seitlich verschieben. Dungeonweg, Materiallager, Waffenlager und Missionen sind über die Zugänge unter der Karte erreichbar.</p>
-      <p class="index-note">Die Bauhütte ist bereits sichtbar, aber Bauaufträge kommen erst mit S11. Gebäude verschieben, neue Gebäude bauen und Stadtfläche erweitern sind noch nicht möglich (S09–S11). Deine bisherigen Ausbauplätze und zusätzlichen Teams bleiben bestehen. Bereits gekaufte Teams ohne Gebäude werden vorübergehend unter der Karte angeboten; die Umstellung auf eigene Teamgebäude erfolgt in S10–S12.</p>`;
+      <p class="index-note">Die Bauhütte ist bereits sichtbar, aber Bauaufträge kommen erst mit S11. Über den Verschiebemodus kannst du ein bestehendes Gebäude auswählen und danach kostenlos auf ein freies Rasterfeld setzen; belegte oder zu kleine Flächen werden abgelehnt. Die Karte kannst du links, rechts, oben oder unten um jeweils vier Felder vergrößern. Die Flächenerweiterung ist in S09 vorläufig ohne Nickelabzug; endgültige Preise folgen nach gesonderter Entscheidung in S10. Neue Gebäude kaufen und Bauaufträge folgen erst in S10/S11. Deine bisherigen Ausbauplätze und zusätzlichen Teams bleiben bestehen. Bereits gekaufte Teams ohne Gebäude werden vorübergehend unter der Karte angeboten; die Umstellung auf eigene Teamgebäude erfolgt in S10–S12.</p>`;
   }
 
   private escapeHtml(value: string): string {

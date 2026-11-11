@@ -121,7 +121,76 @@ const probeScript = `
         const modal=document.getElementById('dungeon-select');
         if(!dungeon?.classList.contains('active')||!modal||modal.hidden) return;
         result.teamOpened=modal.dataset.teamId==='1'&&modal.getAttribute('aria-hidden')==='false';
-        result.saveUnchanged=JSON.parse(localStorage.getItem('nobrainer_save_v1')||'{}').state?.cityLayout?.buildings?.length===6;
+        const initial=JSON.parse(localStorage.getItem('nobrainer_save_v1')||'{}');
+        result.saveUnchanged=initial.state?.cityLayout?.buildings?.length===6;
+        result.goldBefore=initial.state?.gold;
+        result.initialBuildings=initial.state?.cityLayout?.buildings;
+        window.go('base');
+        phase=5;
+        return;
+      }
+
+      if(phase===5) {
+        if(!active('base')) return;
+        const toggle=document.querySelector('[data-city-move-toggle]');
+        if(!toggle) throw new Error('S09 Verschiebemodus-Schaltfläche fehlt.');
+        toggle.click();
+        const select=document.getElementById('cityMoveBuildingSelect');
+        if(!(select instanceof HTMLSelectElement))throw new Error('S09 Gebäude-Auswahl fehlt.');
+        result.moveModeReady=!!document.querySelector('[data-city-target-x="4"][data-city-target-y="0"]');
+        select.value='building-3';
+        select.dispatchEvent(new Event('change',{bubbles:true}));
+        phase=6;
+        return;
+      }
+
+      if(phase===6) {
+        const invalidCell=document.querySelector('[data-city-target-x="4"][data-city-target-y="0"]');
+        if(!invalidCell)return;
+        invalidCell.click();
+        phase=7;
+        return;
+      }
+
+      if(phase===7) {
+        const unchanged=JSON.parse(localStorage.getItem('nobrainer_save_v1')||'{}').state?.cityLayout;
+        result.invalidMoveUnchanged=JSON.stringify(unchanged?.buildings)===JSON.stringify(result.initialBuildings);
+        result.invalidMoveMessage=document.querySelector('.city-placement-notice')?.textContent?.trim()||'';
+        const target=document.querySelector('[data-city-target-x="8"][data-city-target-y="2"]');
+        if(!target) throw new Error('S09 gültiges Zielfeld fehlt.');
+        target.click();
+        phase=8;
+        return;
+      }
+
+      if(phase===8) {
+        const snapshot=JSON.parse(localStorage.getItem('nobrainer_save_v1')||'{}');
+        const forge=snapshot.state?.cityLayout?.buildings?.find(b=>b.buildingInstanceId==='building-3');
+        result.movedForge=[forge?.x,forge?.y];
+        result.movedJobFieldsStable=forge?.buildingInstanceId===result.initialBuildings?.[2]?.buildingInstanceId &&
+          forge?.unitSlots===result.initialBuildings?.[2]?.unitSlots &&
+          forge?.activeJobId===result.initialBuildings?.[2]?.activeJobId;
+        result.goldAfterMove=snapshot.state?.gold;
+        for(const direction of ['left','right','up','down']){
+          const button=document.querySelector('[data-city-expand="'+direction+'"]');
+          if(!button)throw new Error('S09 Erweiterungsrichtung fehlt: '+direction);
+          button.click();
+        }
+        phase=9;
+        return;
+      }
+
+      if(phase===9) {
+        const snapshot=JSON.parse(localStorage.getItem('nobrainer_save_v1')||'{}');
+        const layout=snapshot.state?.cityLayout;
+        result.gridAfterExpand=layout?.grid;
+        result.goldAfterExpand=snapshot.state?.gold;
+        result.saveVersion=snapshot.saveVersion;
+        result.buildingsAfterExpand=layout?.buildings?.map(b=>b.buildingInstanceId);
+        result.moveStillSaved=layout?.buildings?.find(b=>b.buildingInstanceId==='building-3')?.y===2;
+        result.noConstructionStarted=layout?.buildings?.length===6;
+        result.cellCount=document.querySelectorAll('.city-placement-cell').length;
+        result.finalNotice=document.querySelector('.city-placement-notice')?.textContent?.trim()||'';
         clearInterval(timer);
         finish({ status:'passed', ...result });
       }
@@ -219,8 +288,23 @@ try {
   assert.equal(result.missionsOpened,true,'Missionen müssen über die Stadt geöffnet werden.');
   assert.equal(result.teamOpened,true,'Team 1 muss die richtige Teamansicht öffnen.');
   assert.equal(result.saveUnchanged,true,'Reine Stadtanzeige darf keine Gebäudedaten verlieren.');
+  assert.equal(result.moveModeReady,true,'Verschiebemodus muss für alle Zielfelder bedienbar sein.');
+  assert.equal(result.invalidMoveUnchanged,true,'Kollision darf weder State noch Save verändern.');
+  assert.match(result.invalidMoveMessage,/belegt/, 'Ungültiges Zielfeld benötigt verständliche Rückmeldung.');
+  assert.deepEqual(result.movedForge,[8,2], 'Die Schmiede muss auf das freie Zielfeld verschoben und gespeichert sein.');
+  assert.equal(result.movedJobFieldsStable,true, 'Gebäude-ID, Plätze und Auftragsbezug müssen beim Move erhalten bleiben.');
+  assert.equal(result.goldAfterMove,result.goldBefore,'Kostenloses Verschieben darf keinen Nickel abziehen.');
+  assert.deepEqual(result.gridAfterExpand,{minX:-4,minY:-4,width:20,height:16},
+    'Links/rechts/oben/unten müssen jeweils genau vier Felder anfügen.');
+  assert.equal(result.goldAfterExpand,result.goldBefore,'Flächenerweiterung in S09 darf vor S10 keine Nickelpreise erfinden.');
+  assert.equal(result.saveVersion,18,'S09 nutzt das vorhandene Save18-Schema.');
+  assert.deepEqual(result.buildingsAfterExpand,result.buildingIds,'Alle Gebäude-IDs müssen identisch bleiben.');
+  assert.equal(result.moveStillSaved,true,'Die verschobene Position muss auch nach Erweiterungen persistiert bleiben.');
+  assert.equal(result.noConstructionStarted,true,'S09 darf keine kostenlosen zusätzlichen Gebäude bauen.');
+  assert.equal(result.cellCount,20*16,'Zielfeld-Overlay muss mit der gewachsenen Stadtfläche mitwachsen.');
+  assert.match(result.finalNotice,/erweitert/, 'Erweiterung muss einen gespeicherten Erfolg anzeigen.');
 
-  console.log('S08-Stadt-Browserregression: 12x8-Raster aus Save18, sechs persistierte Gebäude-IDs, mobile Scrollbarkeit, sieben Ziele, Missionen, Team1 und Navigation erfolgreich.');
+  console.log('S09-Stadt-Browserregression: sechs Gebäude-IDs, alle Navigationsziele, Kollisionsablehnung, kostenloser persistenter Gebäude-Move und Erweiterungen in vier Richtungen erfolgreich.');
 } finally {
   rmSync(browserProfile,{recursive:true,force:true});
   await new Promise(resolveClose=>server.close(resolveClose));
