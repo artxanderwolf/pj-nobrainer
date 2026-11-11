@@ -97,7 +97,8 @@ const probeScript = `<script>
       color: icon ? getComputedStyle(icon).backgroundColor : '',
       label: option.textContent?.replace(/\\s+/g,' ').trim() || '',
       unownedMaterialAbsent: !dialog.querySelector('[data-forge-material-id="5"]'),
-      mobileWidth: Math.round(dialog.getBoundingClientRect().width)
+      mobileWidth: Math.round(dialog.getBoundingClientRect().width),
+      viewportWidth: window.innerWidth
     };
     option.click();
     materialPickerProof.closedAfterSelection = !document.querySelector('.forge-material-dialog[open]');
@@ -267,8 +268,11 @@ try {
     'Ein Material muss Name, Bedarf, Lager, Rest und reale Statänderung zeigen.');
   assert.equal(result.materialPickerProof.unownedMaterialAbsent, true,
     'Nicht vorhandene Materialien dürfen im Materialdialog nicht auswählbar sein.');
-  assert.ok(result.materialPickerProof.mobileWidth > 200 && result.materialPickerProof.mobileWidth < 390,
-    'Der Materialdialog muss in der 390px-Mobilansicht Platz haben.');
+  assert.ok(
+    result.materialPickerProof.mobileWidth > 200 &&
+    result.materialPickerProof.mobileWidth <= result.materialPickerProof.viewportWidth - 22,
+    'Der Materialdialog muss in die tatsächliche Browserbreite passen.'
+  );
 
   assert.equal(result.finalForm, 'bow');
   assert.equal(result.previewNextDisabled, false, 'Der Vorschau-Button darf nach der Materialauswahl nicht blockiert bleiben.');
