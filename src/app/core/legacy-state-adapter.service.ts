@@ -8,8 +8,11 @@ function replaceGameState(nextState){gameStateBootstrap.replace(nextState);}`;
 
 const LOADED_STATE_ASSIGNMENT = 'state=normalizeLoadedState(parsed.state);';
 const ANGULAR_LOADED_STATE_ASSIGNMENT = `const normalizedLoadedState=normalizeLoadedState(parsed.state);
-if(parsed.state&&typeof parsed.state==="object"&&!Array.isArray(parsed.state)&&Object.prototype.hasOwnProperty.call(parsed.state,"cityName")){
-  normalizedLoadedState.cityName=parsed.state.cityName;
+if(parsed.state&&typeof parsed.state==="object"&&!Array.isArray(parsed.state)){
+  if(Object.prototype.hasOwnProperty.call(parsed.state,"cityName"))normalizedLoadedState.cityName=parsed.state.cityName;
+  // S07: Aktive Legacy-Normalisierung kennt das neue ID-Stadtfeld noch nicht.
+  // Nur unverändert durchreichen; allein der Angular-Stadt-Core validiert es.
+  if(Object.prototype.hasOwnProperty.call(parsed.state,"cityLayout"))normalizedLoadedState.cityLayout=parsed.state.cityLayout;
 }
 replaceGameState(normalizedLoadedState);`;
 const RESET_STATE_ASSIGNMENT = 'state=createDefaultState();';
