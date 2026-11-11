@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, Injector } from '@angular/core';
 import {
   CITY_QUICK_ACCESS,
   getCityLegacyTeamAccess,
@@ -27,7 +27,7 @@ export class GameCityOverviewPresentationService {
   constructor(
     private readonly gameState: GameStateService,
     private readonly dungeonPresentation: GameDungeonPresentationService,
-    private readonly gameRuntime: GameRuntimeService
+    private readonly injector: Injector
   ) {}
 
   render(): void {
@@ -201,7 +201,7 @@ export class GameCityOverviewPresentationService {
     const existing = state.cityLayout;
     state.cityLayout = attempt.layout;
     try {
-      if (!this.gameRuntime.save(false)) throw new Error('Der Spielstand konnte nicht geschrieben werden.');
+      if (!this.injector.get(GameRuntimeService).save(false)) throw new Error('Der Spielstand konnte nicht geschrieben werden.');
       this.moveNotice = `Gebäude ${buildingId} kostenlos auf ${x}/${y} verschoben und gespeichert.`;
     } catch {
       state.cityLayout = existing;
@@ -216,7 +216,7 @@ export class GameCityOverviewPresentationService {
     const existing = state.cityLayout;
     try {
       state.cityLayout = expandCityLayout(existing, direction);
-      if (!this.gameRuntime.save(false)) throw new Error('Der Spielstand konnte nicht geschrieben werden.');
+      if (!this.injector.get(GameRuntimeService).save(false)) throw new Error('Der Spielstand konnte nicht geschrieben werden.');
       this.moveNotice = 'Stadtfläche um vier Felder erweitert und gespeichert (S09 ohne Nickelabzug).';
     } catch {
       state.cityLayout = existing;
