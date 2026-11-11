@@ -1,4 +1,6 @@
 import { Injectable } from '@angular/core';
+import { Capacitor } from '@capacitor/core';
+import { AndroidSystem } from './android-system.plugin';
 import { APP_UI_VERSION } from '../game/app-shell-presentation-core';
 import { decodeSave } from '../game/save-codec';
 import {
@@ -13,6 +15,7 @@ export class GameSaveTransferService {
   private boundPage: HTMLElement | null = null;
   private boundInput: HTMLInputElement | null = null;
   private saveNow: (() => boolean) | null = null;
+  private exportInProgress = false;
 
   constructor(private readonly saveStorage: SaveStorageService) {}
 
@@ -70,6 +73,7 @@ export class GameSaveTransferService {
       <div class="card span-12">
         <h2>Spielstand</h2>
         <p class="index-note">NoBrainer speichert automatisch lokal. Hier kannst du zusätzlich sofort speichern, den aktuellen vollständigen Spielstand als JSON-Datei sichern oder eine zuvor exportierte JSON-Datei laden.</p>
+        <p class="index-note">In der Android-App öffnet „JSON exportieren“ den Systemdialog „Speichern unter“. Wähle dort einen Speicherort; erst nach erfolgreichem Schreiben und Prüfen wird die Speicherung bestätigt. Der Web-Export bleibt ein normaler Browserdownload.</p>
         <p class="index-note">Beim Laden wird der aktuelle lokale Spielstand ersetzt. Vorher legt NoBrainer automatisch eine Sicherung des bisherigen Stands an. Danach wird das Spiel neu geladen, damit derselbe normale Lade-, Migrations- und Offline-Fortschrittspfad verwendet wird.</p>
         <p id="saveTransferStatus" class="status-line">Spielstand wird geprüft …</p>
         <div class="actions">
@@ -102,7 +106,7 @@ export class GameSaveTransferService {
     const action = button.dataset['saveTransferAction'];
 
     if (action === 'save') this.saveCurrent();
-    else if (action === 'export') this.exportCurrent();
+    else if (action === 'export') void this.exportCurrent();
     else if (action === 'import') this.openImportPicker();
     else if (action === 'undo') this.undoLastImport();
   };
@@ -144,7 +148,8 @@ export class GameSaveTransferService {
     this.renderStorageState('Spielstand wurde jetzt gespeichert.');
   }
 
-  private exportCurrent(): void {
+  private async exportCurrent(): Promise<void> {
+    if (this.exportInProgress) return;
     if (!this.saveNow?.()) {
       this.setStatus('Der Spielstand konnte vor dem Export nicht gespeichert werden.', true);
       return;
@@ -161,11 +166,36 @@ export class GameSaveTransferService {
       return;
     }
 
+    const fileName = buildSaveExportFilename(APP_UI_VERSION, validation.savedAt);
+    if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android') {
+      this.exportInProgress = true;
+      const button = this.boundPage?.querySelector<HTMLButtonElement>('#saveTransferExportBtn');
+      if (button) button.disabled = true;
+      this.setStatus('Android-Dateiauswahl geöffnet: Bitte Speicherort für den Spielstand auswählen.');
+      try {
+        const result = await AndroidSystem.exportSave({ json: raw, fileName });
+        if (result.status === 'saved' && result.bytesWritten === new TextEncoder().encode(raw).length) {
+          this.renderStorageState(`JSON-Datei gespeichert und geprüft: ${result.fileName || fileName}`);
+        } else if (result.status === 'cancelled') {
+          this.renderStorageState('Export abgebrochen – es wurde keine Datei gespeichert.');
+        } else {
+          this.setStatus('Android konnte den vollständigen Spielstandexport nicht bestätigen.', true);
+        }
+      } catch (error) {
+        const detail = error instanceof Error ? error.message : String(error);
+        this.setStatus(`JSON-Export fehlgeschlagen: ${detail}`, true);
+      } finally {
+        this.exportInProgress = false;
+        if (button) button.disabled = false;
+      }
+      return;
+    }
+
     const blob = new Blob([raw], { type: 'application/json;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
-    anchor.download = buildSaveExportFilename(APP_UI_VERSION, validation.savedAt);
+    anchor.download = fileName;
     anchor.style.display = 'none';
     document.body.appendChild(anchor);
     anchor.click();
