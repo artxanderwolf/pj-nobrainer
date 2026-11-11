@@ -60,7 +60,8 @@ const probe = String.raw`<script>
      const id=Object.keys(allowed).indexOf(classId)+1;open(id);picker('leftHand');
      entries.forEach((permitted,i)=>{
       const button=document.querySelector('[data-roster-action="equip-weapon"][data-weapon-id="'+(101+i)+'"]');
-      check(button&&button.disabled===!permitted,classId+'/'+forms[i]+' Freigabe falsch: '+(button?.outerHTML||'missing')+' '+JSON.stringify(read().state.weaponInventory.map(w=>w.id)));
+      check(Boolean(button)===Boolean(permitted) && (!button||!button.disabled),classId+'/'+forms[i]+' Freigabe falsch: '+(button?.outerHTML||'missing')+' '+JSON.stringify(read().state.weaponInventory.map(w=>w.id)));
+       check(Boolean(document.querySelector('[data-roster-candidate-weapon-id="'+(101+i)+'"]'))===Boolean(permitted),'Kader-Kandidat nicht nach Ausrüstbarkeit gefiltert: '+classId+'/'+forms[i]);
       const preview=document.querySelector('[data-equipment-preview="'+(101+i)+'"]');
       check(Boolean(preview)===Boolean(permitted),'Vorschau für verbotene Waffe oder fehlende Vorschau');combinations++;
       const options=[...document.querySelectorAll('select[data-weapon-inventory-select="'+(101+i)+'"] option')].filter(o=>o.value.startsWith(id+':'));
@@ -68,14 +69,19 @@ const probe = String.raw`<script>
      });
      picker('leftHand');
     }
-    open(1);picker('leftHand');equip(102,'leftHand');picker('rightHand');
+    open(1);picker('leftHand');equip(102,'leftHand');picker('leftHand');
+    check(document.querySelector('[data-roster-current-weapon-id="102"]'),'Ausgerüstete Waffe muss fest im Vergleich stehen.');
+    check(!document.querySelector('[data-roster-candidate-weapon-id="102"]'),'Aktuelle Waffe darf nicht erneut als Wechselwaffe angeboten werden.');
+    check(document.querySelectorAll('.roster-weapon-current .weapon-stat').length===document.querySelectorAll('.roster-weapon-candidate:first-child .weapon-stat').length,'Aktuelle Waffe und eine einzelne Wechselwaffe müssen dieselben Statwerte zeigen.');
+    check(document.querySelector('.roster-weapon-current .weapon-card-image'),'Die aktuelle Waffe muss ihr Waffenbild behalten.');
+    picker('leftHand');picker('rightHand');
     check(document.querySelector('[data-equipment-preview="101"]').textContent.includes('82,5'),'Schwert-Dolch-Vorschau fehlt');
     equip(101,'rightHand');check(Math.abs(factor()-.825)<1e-12,'Schwert+Dolch nicht 82,5 %');
     clear('rightHand');picker('rightHand');equip(104,'rightHand');check(factor()===.75,'Zwei Einhänder nicht 75 %');
     clear('rightHand');clear('leftHand');
     for(const [id,weaponId] of [[2,103],[3,106],[4,107]]){open(id);picker('leftHand');equip(weaponId,'leftHand');check(factor()===1.1,'Klassenpräferenz fehlt');clear('leftHand');}
     open(2);picker('leftHand');equip(102,'leftHand');picker('rightHand');
-    check(document.querySelector('[data-roster-action="equip-weapon"][data-weapon-id="104"]').disabled,'Kämpfer kann zwei Einhänder tragen');
+    check(!document.querySelector('[data-roster-action="equip-weapon"][data-weapon-id="104"]'),'Kämpfer darf keine unzulässige zweite Einhandwaffe angeboten bekommen');
     const after=save();check(after.state.characters[1].equipment.rightHand===null,'Verbotene Kombination wurde geschrieben');
     const fixture=JSON.parse(localStorage.getItem('__equipment_model')), model=fixture.state.weaponInventory[1];
     const extra=(id,weaponForm)=>({...structuredClone(model),id,weaponForm,name:'Alt '+id,marker:'preserve-'+id});
