@@ -176,6 +176,7 @@ export const INDEX_PAGE_MARKUP = `<section class="page" id="index">
 
         <div class="card span-12">
           <h2>Wirtschaft, Herstellung & Verkauf</h2>
+          <p class="index-note">Schmiede-Materialien: Berühre ein Bauteil, um den farbigen Materialdialog zu öffnen. Angezeigt werden nur geeignete Materialien mit ausreichendem Bestand, inklusive Materialname, benötigter Menge, Lagerrest und dem konkreten Beitrag zu den Waffen- und Charakterwerten. Die Materialfarbe entspricht der späteren Waffenfarbe. Die Werte beziehen sich auf die aktuell ausgewählten anderen Bauteile; für die vollständige Waffe ist weiterhin die Waffenvorschau maßgeblich. Fehlende oder nicht mehr gültige Materialauswahlen werden ausdrücklich angezeigt.</p>
           <p class="index-note">Ausbaupreise für Unterkunft, Schmiede und Markt verwenden halbierte Basispreise; die jeweiligen Wachstumsfaktoren bleiben unverändert. Rekrutierungskosten sind davon nicht betroffen.</p>
           <div class="formula">Materialwert = 10 Nickel × Seltenheit</div>
           <div class="formula">Positiver SPE auf einem Material → Materialwert × 1,10</div>
