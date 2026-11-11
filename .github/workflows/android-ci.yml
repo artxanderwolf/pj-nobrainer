@@ -124,6 +124,9 @@ jobs:
       - name: Test save JSON export and import in browser
         run: node scripts/check-built-save-transfer.mjs
 
+      - name: Test browser back navigation in browser
+        run: node scripts/check-built-browser-back.mjs
+
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
