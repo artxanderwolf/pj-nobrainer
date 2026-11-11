@@ -100,6 +100,7 @@ const probeScript = `<script>
           if(!baseline){finish({status:'missing-baseline',ui,exportStatus});return;}
           const original=JSON.parse(baseline);
           const originalGold=Number(original.state?.gold||0);
+          const cityBeforeImport={version:original.saveVersion,grid:original.state?.cityLayout?.grid,buildings:original.state?.cityLayout?.buildings?.length,ids:original.state?.cityLayout?.buildings?.map(b=>b.buildingInstanceId)};
           const invalidFile=new File(['{\\"saveVersion\\":14}'],'ungueltig.json',{type:'application/json'});
           assignFile(input,invalidFile);
           const invalidStartedAt=Date.now();
@@ -122,7 +123,10 @@ const probeScript = `<script>
             const importedGold=originalGold+12345;
             imported.savedAt=Date.now();
             imported.state.gold=importedGold;
-            localStorage.setItem(FIRST_KEY,JSON.stringify({ui,exportStatus,invalidStatus,unchangedAfterInvalid}));
+            // S07: einen echten alten Save-17-Zustand ohne Stadtstruktur importieren.
+            imported.saveVersion=17;
+            delete imported.state.cityLayout;
+            localStorage.setItem(FIRST_KEY,JSON.stringify({ui,exportStatus,invalidStatus,unchangedAfterInvalid,cityBeforeImport}));
             localStorage.setItem(ORIGINAL_GOLD_KEY,String(originalGold));
             localStorage.setItem(IMPORTED_GOLD_KEY,String(importedGold));
             localStorage.setItem(PHASE_KEY,'imported');
@@ -142,7 +146,10 @@ const probeScript = `<script>
         importedGold:Number(current.state?.gold),
         expectedImportedGold:importedGold,
         backupExists:localStorage.getItem(BACKUP_KEY)!==null,
-        undoEnabled:!undoBtn.disabled
+        undoEnabled:!undoBtn.disabled,
+        migratedSaveVersion:current.saveVersion,
+        migratedCityGrid:current.state?.cityLayout?.grid,
+        migratedBuildingIds:current.state?.cityLayout?.buildings?.map(b=>b.buildingInstanceId)
       };
       localStorage.setItem(SECOND_KEY,JSON.stringify(second));
       localStorage.setItem(PHASE_KEY,'restored');
@@ -162,7 +169,9 @@ const probeScript = `<script>
         second,
         restoredGold:Number(current.state?.gold),
         expectedOriginalGold:originalGold,
-        backupRemoved:localStorage.getItem(BACKUP_KEY)===null
+        backupRemoved:localStorage.getItem(BACKUP_KEY)===null,
+        restoredSaveVersion:current.saveVersion,
+        restoredBuildingIds:current.state?.cityLayout?.buildings?.map(b=>b.buildingInstanceId)
       };
       [PHASE_KEY,FIRST_KEY,SECOND_KEY,ORIGINAL_GOLD_KEY,IMPORTED_GOLD_KEY].forEach(key=>localStorage.removeItem(key));
       finish(result);
@@ -286,10 +295,19 @@ try {
   assert.match(result.first.exportStatus, new RegExp(`NoBrainer-Spielstand-v${escapedAppVersion}-`), 'Der Export verwendet nicht den versionierten JSON-Dateinamen.');
   assert.match(result.first.invalidStatus, /kein vollständiger NoBrainer-Spielstand/, 'Eine ungültige JSON-Datei wird nicht verständlich abgelehnt.');
   assert.equal(result.first.unchangedAfterInvalid, true, 'Ein ungültiger Import verändert den lokalen Spielstand.');
+  assert.equal(result.first.cityBeforeImport.version, 18, 'S07: Ein neues Spiel muss Save 18 speichern.');
+  assert.deepEqual(result.first.cityBeforeImport.grid, { minX: 0, minY: 0, width: 12, height: 8 }, 'S07: Stadtgrundraster nach erstem Save.');
+  assert.equal(result.first.cityBeforeImport.buildings, 6, 'S07: sechs Startgebäude müssen im Browser-Save sein.');
+  assert.equal(new Set(result.first.cityBeforeImport.ids).size, 6, 'S07: Start-IDs müssen eindeutig sein.');
   assert.equal(result.second.importedGold, result.second.expectedImportedGold, 'Der gültige JSON-Import wurde nach dem Reload nicht geladen.');
+  assert.equal(result.second.migratedSaveVersion, 18, 'S07: alter Save 17 muss beim Start automatisch auf Save 18 migrieren.');
+  assert.deepEqual(result.second.migratedCityGrid, { minX: 0, minY: 0, width: 12, height: 8 });
+  assert.equal(result.second.migratedBuildingIds.length, 6, 'S07: sechs Anfangsgebäude auch nach Altimport.');
   assert.equal(result.second.backupExists, true, 'Vor dem Import wurde keine automatische Sicherung angelegt.');
   assert.equal(result.second.undoEnabled, true, 'Die Rückgängig-Aktion ist nach dem Import nicht verfügbar.');
   assert.equal(result.restoredGold, result.expectedOriginalGold, 'Rückgängig stellt den vorherigen Spielstand nicht wieder her.');
+  assert.equal(result.restoredSaveVersion, 18, 'S07: Undo muss Save 18 zurückholen.');
+  assert.deepEqual(result.restoredBuildingIds, result.first.cityBeforeImport.ids, 'S07: Undo muss dieselben Gebäude-IDs wiederherstellen.');
   assert.equal(result.backupRemoved, true, 'Die verwendete Import-Sicherung bleibt nach erfolgreicher Wiederherstellung liegen.');
 
   console.log('Spielstandtransfer-E2E: Reiter wechseln sichtbar korrekt; manuelles Speichern, JSON-Export, Importvalidierung, Reload und Import-Rückgängig sind funktionsfähig.');

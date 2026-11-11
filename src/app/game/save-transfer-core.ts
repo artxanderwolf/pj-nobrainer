@@ -1,4 +1,5 @@
 import { decodeSave, SAVE_VERSION } from './save-codec.ts';
+import { validateCityLayout } from './city-layout-core.ts';
 
 export const MIN_IMPORT_SAVE_VERSION = 8;
 export const MAX_IMPORT_FILE_BYTES = 5_000_000;
@@ -58,6 +59,17 @@ export function validateImportedSave(raw: string): SaveImportValidation {
   }
   if (!Array.isArray(state['characters']) || !isRecord(state['inventory'])) {
     return { ok: false, reason: 'invalid-state', message: 'Der Spielstand enthält keinen gültigen NoBrainer-Spielzustand.' };
+  }
+
+  if (Object.prototype.hasOwnProperty.call(state, 'cityLayout')) {
+    try {
+      validateCityLayout(state['cityLayout']);
+    } catch {
+      return {
+        ok: false, reason: 'invalid-state',
+        message: 'Der Spielstand enthält ein beschädigtes Stadt- oder Gebäudelayout.'
+      };
+    }
   }
 
   return { ok: true, saveVersion, savedAt, state };

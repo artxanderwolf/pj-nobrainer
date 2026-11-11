@@ -221,7 +221,7 @@ try {
   assert.equal(first.runtimeError, '', `Runtimefehler beim Dungeonstart: ${JSON.stringify(first)}`);
   assert.equal(first.primaryText, 'Lauf abbrechen', 'Der Trainingslagerlauf wurde nicht gestartet.');
   assert.equal(first.stateActive, true, 'Der gestartete Dungeon ist im Save nicht aktiv.');
-  assert.equal(first.saveVersion, 17, 'Ein neuer persistenter Dungeonlauf wird nicht als Save-Version 17 gespeichert.');
+  assert.equal(first.saveVersion, 18, 'Ein neuer persistenter Dungeonlauf wird nicht als Save-Version 18 gespeichert.');
   assert.ok(Number.isFinite(first.endsAt) && first.endsAt > Date.now(), 'Der gestartete Dungeon besitzt keine zukünftige persistierte Endzeit.');
   assert.ok(first.remainingMs > 4.9 * 60 * 60 * 1000, 'Die gespeicherte Restzeit startet nicht nahe fünf Stunden.');
 
@@ -232,7 +232,7 @@ try {
   assert.equal(resumed.runtimeError, '', `Runtimefehler nach Neustart: ${JSON.stringify(resumed)}`);
   assert.equal(resumed.primaryText, 'Lauf abbrechen', 'Browser-Neustart beendet den modernen Trainingslagerlauf.');
   assert.equal(resumed.stateActive, true, 'Der moderne Dungeon ist nach Browser-Neustart im Save nicht mehr aktiv.');
-  assert.equal(resumed.saveVersion, 17, 'Der fortgesetzte Dungeon verliert die Save-Version 17.');
+  assert.equal(resumed.saveVersion, 18, 'Der fortgesetzte Dungeon verliert die Save-Version 18.');
   assert.equal(resumed.endsAt, first.endsAt, 'Browser-Neustart vergibt dem Dungeon eine neue Endzeit.');
   assert.ok(resumed.remainingMs > 0 && resumed.remainingMs <= first.remainingMs, 'Die Restzeit wird nach Browser-Neustart nicht aus derselben Endzeit fortgeführt.');
   assert.deepEqual(resumed.teamSlots, first.teamSlots, 'Die Dungeon-Teamauswahl verändert sich beim Browser-Neustart.');
@@ -244,7 +244,7 @@ try {
   assert.equal(legacy.runtimeError, '', `Runtimefehler bei Altstand-Migration: ${JSON.stringify(legacy)}`);
   assert.equal(legacy.primaryText, 'Lauf starten', 'Ein aktiver v13-Altstand ohne Endzeit wird nicht einmalig beendet.');
   assert.equal(legacy.stateActive, false, 'v13-Altstand ohne Endzeit bleibt nach Migration aktiv.');
-  assert.equal(legacy.saveVersion, 17, 'Ein migrierter v13-Dungeonstand wird nicht als Save-Version 17 zurückgeschrieben.');
+  assert.equal(legacy.saveVersion, 18, 'Ein migrierter v13-Dungeonstand wird nicht als Save-Version 18 zurückgeschrieben.');
   assert.equal(legacy.dungeonAuto, false, 'Altstand-Migration lässt dungeonAuto aktiv.');
   assert.equal(legacy.hasRun, false, 'Altstand-Migration lässt eine aktive Kampfwelle bestehen.');
   assert.equal(legacy.hasSearch, false, 'Altstand-Migration lässt eine aktive Suche bestehen.');
@@ -253,7 +253,7 @@ try {
   assert.deepEqual(legacy.teamSlots, first.teamSlots, 'Altstand-Migration löscht die gespeicherte Teamauswahl.');
   assert.equal(legacy.weaponCount, first.weaponCount, 'Altstand-Migration verändert das Waffeninventar.');
 
-  console.log('Dungeon-Neustart-Browserregression: Save v17 persistiert die absolute Endzeit über Browserprozesse; aktive v13-Altstände ohne Endzeit werden einmalig bereinigt und als v16 zurückgeschrieben, Team und Inventar bleiben erhalten.');
+  console.log('Dungeon-Neustart-Browserregression: Save v18 persistiert die absolute Endzeit über Browserprozesse; aktive v13-Altstände ohne Endzeit werden einmalig bereinigt und als v18 zurückgeschrieben, Team und Inventar bleiben erhalten.');
 } finally {
   rmSync(profile, { recursive: true, force: true });
   await new Promise(resolveClose => server.close(resolveClose));
