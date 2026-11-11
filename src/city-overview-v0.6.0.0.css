@@ -1,98 +1,237 @@
+/* S08 – Eine einzige, aus S07-CityLayout erzeugte Stadtkarte. */
 .modular-ui.city-overview-active .app-main {
   padding-bottom: env(safe-area-inset-bottom);
 }
+.modular-ui.city-overview-active .bottom-nav { display: none; }
+.modular-ui.city-overview-active .page-stack { min-height: 0; }
+.modular-ui.city-overview-active #base.active { margin-top: calc(-1 * var(--ui-page-gap)); }
 
-.modular-ui.city-overview-active .bottom-nav {
-  display: none;
-}
-
-.modular-ui.city-overview-active .page-stack {
-  min-height: 0;
-}
-
-.modular-ui.city-overview-active #base.active {
-  margin-top: calc(-1 * var(--ui-page-gap));
-}
-
-.city-overview-stage {
-  position: relative;
-  width: min(100%, 500px);
-  aspect-ratio: 256 / 465;
+.city-overview-stage.city-grid-overview {
+  width: min(100%, 980px);
   margin: 0 auto;
-  overflow: hidden;
-  background: #102817;
+  color: var(--text, #e8ebef);
+  padding: 8px 4px 28px;
+  box-sizing: border-box;
+}
+
+.city-grid-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px 10px;
+}
+.city-grid-heading h2 { margin: 0; font-size: clamp(17px, 3vw, 22px); }
+.city-grid-heading p {
+  margin: 0;
+  color: var(--muted, #b9c1c8);
+  font-size: 12px;
+}
+.city-grid-scroll-hint {
+  margin: 0 10px 7px;
+  color: #c0cbd0;
+  font-size: 11px;
+}
+.city-grid-viewport {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x pan-y;
+  scrollbar-width: thin;
+  border: 1px solid #4c6157;
+  border-radius: 12px;
+  background: #172921;
+  box-shadow: inset 0 0 28px rgba(0, 0, 0, .35);
+}
+.city-grid-viewport:focus-visible {
+  outline: 3px solid var(--accent, #e4bc83);
+  outline-offset: 2px;
+}
+.city-grid-map {
+  --city-cell-size: clamp(48px, 5.4vw, 64px);
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(var(--city-grid-columns), var(--city-cell-size));
+  grid-template-rows: repeat(var(--city-grid-rows), var(--city-cell-size));
+  width: max-content;
+  min-height: 0;
+  gap: 0;
+  padding: 0;
+  background-color: #264532;
+  background-image:
+    linear-gradient(to right, rgba(202, 222, 176, .12) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(202, 222, 176, .12) 1px, transparent 1px),
+    radial-gradient(ellipse at 25% 25%, rgba(75, 118, 71, .3), transparent 63%),
+    radial-gradient(ellipse at 78% 70%, rgba(20, 52, 39, .55), transparent 58%);
+  background-size:
+    var(--city-cell-size) var(--city-cell-size),
+    var(--city-cell-size) var(--city-cell-size),
+    100% 100%,
+    100% 100%;
   isolation: isolate;
 }
-
-.city-overview-background {
+.city-grid-map::before {
+  content: '';
   position: absolute;
   inset: 0;
-  z-index: 0;
-  width: 100%;
-  height: 100%;
-  display: block;
-  object-fit: contain;
-  user-select: none;
+  border: 3px solid rgba(207, 180, 120, .48);
   pointer-events: none;
-}
-
-.city-map-action {
-  position: absolute;
   z-index: 1;
-  left: var(--city-left);
-  top: var(--city-top);
-  width: var(--city-width);
-  height: var(--city-height);
-  min-width: 0;
-  min-height: 0;
-  padding: 2px 4px;
+}
+.city-grid-building {
+  --city-roof: #48677b;
+  --city-roof-dark: #1e3443;
+  --city-trim: #c9dbe4;
+  z-index: 2;
+  position: relative;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 5px;
+  min-width: 0;
+  min-height: 0;
+  margin: 4px;
+  padding: 5px 4px;
+  border: 2px solid var(--city-trim);
+  border-radius: 10px;
+  color: #f9f8ef;
+  font: inherit;
   text-align: center;
-  white-space: normal;
-  overflow: hidden;
-  line-height: 1.05;
-  font-size: clamp(7px, 2.3vw, 13px);
-  font-weight: 700;
-  text-wrap: balance;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, .34);
+  cursor: pointer;
+  background:
+    linear-gradient(142deg, rgba(255, 255, 255, .16), transparent 37%),
+    repeating-linear-gradient(125deg, transparent 0 16px, rgba(0, 0, 0, .09) 16px 19px),
+    linear-gradient(155deg, var(--city-roof), var(--city-roof-dark));
+  box-shadow:
+    inset 0 -4px 0 rgba(0, 0, 0, .24),
+    0 5px 8px rgba(0, 0, 0, .36);
+  transition: filter .15s ease, transform .15s ease;
 }
-
-.city-map-action--image {
-  padding: 2px;
-}
-
-.city-map-action-image {
-  width: 100%;
-  height: 100%;
-  display: block;
-  object-fit: contain;
-  user-select: none;
-  pointer-events: none;
-}
-
-.city-map-action:hover:not(:disabled),
-.city-map-action:focus-visible:not(:disabled) {
-  background: var(--panel);
-  outline: 2px solid var(--accent);
+.city-grid-building:focus-visible {
+  outline: 3px solid #fce1a6;
   outline-offset: 1px;
 }
-
-.city-map-action:disabled {
-  opacity: .48;
-  filter: grayscale(.8);
-  box-shadow: none;
+.city-grid-building:hover:not(:disabled) {
+  filter: brightness(1.2);
+  transform: translateY(-2px);
 }
+.city-grid-building:active:not(:disabled) { transform: translateY(1px); }
+.city-grid-building:disabled {
+  cursor: not-allowed;
+  filter: saturate(.55);
+  opacity: .83;
+}
+.city-grid-building--roster {
+  --city-roof: #657f99; --city-roof-dark: #253d55; --city-trim: #adc4d8;
+}
+.city-grid-building--tavern {
+  --city-roof: #9d7545; --city-roof-dark: #5d402b; --city-trim: #dfb980;
+}
+.city-grid-building--forge {
+  --city-roof: #934e3e; --city-roof-dark: #442b2a; --city-trim: #d9a392;
+}
+.city-grid-building--market {
+  --city-roof: #747b49; --city-roof-dark: #3a4b2c; --city-trim: #d6da94;
+}
+.city-grid-building--team {
+  --city-roof: #5d6d8e; --city-roof-dark: #2d3857; --city-trim: #aebce6;
+}
+.city-grid-building--builder {
+  --city-roof: #7f6147; --city-roof-dark: #483629; --city-trim: #ccb68a;
+}
+.city-grid-building--runeWorkshop {
+  --city-roof: #65538d; --city-roof-dark: #382957; --city-trim: #b7a9ee;
+}
+.city-grid-building-icon {
+  font-size: clamp(26px, 3.2vw, 37px);
+  line-height: 1;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .35));
+}
+.city-grid-building-name {
+  display: block;
+  line-height: 1.1;
+  font-size: 11px;
+  font-weight: 800;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, .6);
+}
+.city-grid-building-state {
+  display: block;
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1.1;
+  opacity: .9;
+  text-wrap: balance;
+}
+.city-grid-links,
+.city-grid-legacy-teams {
+  margin: 15px 2px 0;
+  padding: 12px;
+  background: var(--panel, #20262a);
+  border: 1px solid var(--line, #465052);
+  border-radius: 11px;
+}
+.city-grid-links h3,
+.city-grid-legacy-teams h3 {
+  margin: 0 0 10px;
+  font-size: 14px;
+}
+.city-grid-legacy-teams p {
+  margin: 0 0 10px;
+  font-size: 11px;
+  color: var(--muted, #c0c7ce);
+}
+.city-grid-link-list,
+.city-grid-legacy-list {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.city-grid-quick-link {
+  min-width: 0;
+  min-height: 43px;
+  padding: 8px 6px;
+  border: 1px solid #667469;
+  border-radius: 8px;
+  color: var(--text, #eff3f2);
+  background: #26382e;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+/* Die globale nav-button-Regel darf die Karten-Direktzugänge nicht unsichtbar machen. */
+#cityOverview .city-grid-quick-link {
+  margin: 0;
+  padding: 8px 6px;
+  border: 1px solid #667469;
+  background: #26382e;
+  color: var(--text, #eff3f2);
+  text-align: center;
+}
+#cityOverview .city-grid-quick-link:hover { background: #354f40; color: #fff; }
+
+.city-grid-quick-link:focus-visible { outline: 2px solid #fce1a6; outline-offset: 2px; }
 
 @media (max-width: 560px) {
-  .city-map-action {
-    padding: 1px 2px;
-    font-size: clamp(7px, 2.55vw, 12px);
-    border-radius: 6px;
-  }
-
-  .city-map-action--image {
-    padding: 1px;
-  }
+  .city-overview-stage.city-grid-overview { padding: 5px 0 20px; }
+  .city-grid-heading { padding: 6px 6px 9px; }
+  .city-grid-scroll-hint { margin-left: 7px; }
+  .city-grid-building { margin: 3px; padding: 3px; gap: 4px; border-radius: 8px; }
+  .city-grid-building-icon { font-size: 27px; }
+  .city-grid-building-name { font-size: 10px; }
+  .city-grid-building-state { font-size: 9px; }
+  .city-grid-link-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .city-grid-legacy-list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .city-grid-building { transition: none; }
 }
