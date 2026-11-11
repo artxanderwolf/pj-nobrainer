@@ -25,7 +25,7 @@ const contentTypes = new Map([
   ['.ico', 'image/x-icon']
 ]);
 
-const probeScript = `<script>
+const probeScript = `
 (() => {
   const result = { openedPages: {}, errors: [] };
   let phase = 0;
@@ -131,7 +131,7 @@ const probeScript = `<script>
     }
   },50);
 })();
-</script>`;
+`;
 
 const server = createServer((request, response) => {
   const url = new URL(request.url ?? '/', 'http://127.0.0.1');
