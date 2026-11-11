@@ -208,7 +208,17 @@
   justify-content: center;
   gap: 7px;
 }
-.city-grid-quick-link:hover { background: #354f40; }
+/* Die globale nav-button-Regel darf die Karten-Direktzugänge nicht unsichtbar machen. */
+#cityOverview .city-grid-quick-link {
+  margin: 0;
+  padding: 8px 6px;
+  border: 1px solid #667469;
+  background: #26382e;
+  color: var(--text, #eff3f2);
+  text-align: center;
+}
+#cityOverview .city-grid-quick-link:hover { background: #354f40; color: #fff; }
+
 .city-grid-quick-link:focus-visible { outline: 2px solid #fce1a6; outline-offset: 2px; }
 
 @media (max-width: 560px) {
