@@ -259,6 +259,51 @@ try {
   assert.deepEqual(restoredParallelState.teams[2].dungeonCycleOriginalIds, [5],
     'Die Startgruppe jedes Teams muss Save-17-Export und -Import unverändert überstehen.');
 
+
+  // S03: Ein regulärer besiegter Gegner darf 0 Material, aber weiterhin XP liefern.
+  const noMaterialState = makeState(1);
+  const noMaterialService = new GameDungeonService({ getState: () => noMaterialState });
+  noMaterialService.toggleAuto(1000);
+  { const draws = [0, 0, 0.5, 0]; Math.random = () => draws.shift() ?? 0.5; }
+  noMaterialService.update(2000);
+  assert.equal(noMaterialState.teams[1].dungeonRun.enemies[0].xpDrop, 10);
+  Math.random = () => 0.95; // 40-%-Kein-Material-Zweig
+  noMaterialService.update(3000);
+  assert.deepEqual(noMaterialState.teams[1].dungeonLootCollect.drops, []);
+  assert.equal(noMaterialState.characters[0].xp, 10,
+    'Der Material-Dropwurf darf die XP-Belohnung nicht beeinflussen.');
+  noMaterialService.update(4000);
+  assert.deepEqual(noMaterialState.teams[1].dungeonLoot, {},
+    'Ein erfolgreicher Kampf ohne Materialdrop darf keine Phantommaterialien erzeugen.');
+
+  // Bosse: 40 Basis-XP im Trainingslager, aber ebenfalls nur 60-%-Materialchance.
+  const noBossLootState = makeState(1);
+  const noBossLootService = new GameDungeonService({ getState: () => noBossLootState });
+  noBossLootService.toggleAuto(1000);
+  { const draws = [0, 0, 0]; Math.random = () => draws.shift() ?? 0.5; }
+  noBossLootService.update(2000);
+  const bossRun = noBossLootState.teams[1].dungeonRun;
+  assert.equal(bossRun.enemies[0].boss, true);
+  assert.equal(bossRun.enemies[0].xpDrop, 40);
+  bossRun.enemies.forEach(enemy => { enemy.alive = false; enemy.hp = 0; });
+  Math.random = () => 0.95;
+  noBossLootService.update(2500);
+  assert.deepEqual(noBossLootState.teams[1].dungeonLootCollect.drops, [],
+    'Boss ohne erfolgreichen Materialwurf erzeugt keine Materialien.');
+  assert.equal(noBossLootState.characters[0].xp, 40);
+
+  const bossLootState = makeState(1);
+  const bossLootService = new GameDungeonService({ getState: () => bossLootState });
+  bossLootService.toggleAuto(1000);
+  { const draws = [0, 0, 0]; Math.random = () => draws.shift() ?? 0.5; }
+  bossLootService.update(2000);
+  bossLootState.teams[1].dungeonRun.enemies.forEach(enemy => { enemy.alive = false; enemy.hp = 0; });
+  Math.random = () => 0.5; // 60-%-Erfolg, danach unveränderte fünf Ziehungen ohne Zurücklegen
+  bossLootService.update(2500);
+  const bossDrops = bossLootState.teams[1].dungeonLootCollect.drops.map(drop => drop.materialId);
+  assert.equal(bossDrops.length, 5, 'Erfolgreicher Boss-Materialwurf muss die alte Fünferbeute erhalten.');
+  assert.equal(new Set(bossDrops).size, 5, 'Bossmaterialien werden weiterhin ohne Duplikate gezogen.');
+
   const failureState = makeState(2);
   const failureService = new GameDungeonService({ getState: () => failureState });
   failureService.toggleAuto(1000);
@@ -319,7 +364,7 @@ try {
   assert.equal(noEnergyState.characters[0].energy, 0, 'Dungeon 1 darf Energie weder auffüllen noch abbuchen.');
   assert.equal(noEnergyResult.events.some(event => event.text.includes('Nicht genügend Energie')), false);
 
-  console.log('Dungeon-Service-Ablauf: S02-Startgruppengröße, 4/3/1 Überlebende, Neulauf, parallele Teams, Alt-Saves, XP und ID-Loot geprüft.');
+  console.log('Dungeon-Service-Ablauf: S02-Startgruppe und S03-XP/Material 60/40, Boss-Beute, Alt-Saves, Team-Trennung und ID-Loot geprüft.');
 } finally {
   Math.random = originalRandom;
   for (const url of temporaryFiles.reverse()) {
