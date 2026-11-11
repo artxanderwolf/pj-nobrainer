@@ -86,9 +86,9 @@ assert.equal(MATERIALS.Tanne.dungeonDropWeight, 2);
 assert.equal(getMaterialById(9)?.[0], 'Lederfetzen');
 assert.equal(getDungeonMaterialDropWeight(1, 'Kupfer'), 8);
 assert.deepEqual(getDungeonEnemyDefinition(1, 'recruit'), { name: 'Neuling', lootMaterialIds: [5, 3], xpDrop: 10 });
-assert.deepEqual(getDungeonEnemyDefinition(1, 'fighter'), { name: 'Tank', lootMaterialIds: [4, 6], xpDrop: 10 });
-assert.deepEqual(getDungeonEnemyDefinition(1, 'archer'), { name: 'Jäger', lootMaterialIds: [9, 8, 7], xpDrop: 10 });
-assert.deepEqual(getDungeonEnemyDefinition(1, 'scholar'), { name: 'Lehrling', lootMaterialIds: [9, 2, 1], xpDrop: 10 });
+assert.deepEqual(getDungeonEnemyDefinition(1, 'fighter'), { name: 'Tank', lootMaterialIds: [4, 6], xpDrop: 14 });
+assert.deepEqual(getDungeonEnemyDefinition(1, 'archer'), { name: 'Jäger', lootMaterialIds: [9, 8, 7], xpDrop: 14 });
+assert.deepEqual(getDungeonEnemyDefinition(1, 'scholar'), { name: 'Lehrling', lootMaterialIds: [9, 2, 1], xpDrop: 16 });
 
 const daggerSlots = [
   { slot: 'workingPart', material: 'Kupfer' },

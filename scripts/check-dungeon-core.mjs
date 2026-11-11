@@ -14,6 +14,8 @@ try {
     checkDungeonStart,
     createDungeonAttackPoints,
     createDungeonEnemy,
+    MATERIAL_DROP_CHANCE,
+    materialDropSucceeds,
     filterActiveDungeonAttackPoints,
     getDungeonPhase,
     getNextDueAttack,
@@ -55,6 +57,33 @@ try {
   assert.equal(enemy.hitChance, 0.5);
   assert.deepEqual(enemy.lootMaterialIds, [5, 3]);
   assert.equal(enemy.xpDrop, 10);
+
+  // S03: Jede Gegnerklasse erhält eigene Trainingslager-XP, höhere Dungeons
+  // skalieren anhand der bereits vorhandenen Gegner-Schadensfaktoren.
+  const classXp = { recruit: 10, fighter: 14, archer: 14, scholar: 16 };
+  const factors = { 1: 1, 2: 2, 3: 4, 4: 8, 5: 16 };
+  for (const [dungeon, factor] of Object.entries(factors)) {
+    for (const [classId, baseXp] of Object.entries(classXp)) {
+      assert.equal(createDungeonEnemy(1, classId, Number(dungeon)).xpDrop, baseXp * factor,
+        `S03: ${classId} in Dungeon ${dungeon} muss den Schwierigkeitsfaktor erhalten.`);
+    }
+    assert.equal(createDungeonEnemy(1, 'recruit', Number(dungeon), true).xpDrop, 40 * factor,
+      `S03: Boss in Dungeon ${dungeon} erhält 40 Basis-XP mal Schwierigkeit.`);
+  }
+  assert.equal(createDungeonEnemy(1, 'healer', 4).xpDrop, 128,
+    'Der bisherige Heiler-Gegner bleibt bis S18 kompatibel.');
+
+  assert.equal(MATERIAL_DROP_CHANCE, 0.6);
+  assert.equal(materialDropSucceeds(0), true);
+  assert.equal(materialDropSucceeds(0.599999), true);
+  assert.equal(materialDropSucceeds(0.6), false);
+  assert.equal(materialDropSucceeds(0.999), false);
+  assert.equal(materialDropSucceeds(-1), false);
+  let successfulRolls = 0;
+  for (let roll = 0; roll < 10_000; roll++) {
+    if (materialDropSucceeds(roll / 10_000)) successfulRolls++;
+  }
+  assert.equal(successfulRolls, 6000, 'Exakt 60 % der gleichmäßig verteilten Prüfwürfe müssen erfolgreich sein.');
 
   const points = createDungeonAttackPoints([character], [enemy], 1000, () => [{ kind: 'fist', speed: 1 }]);
   assert.equal(points.length, 2);

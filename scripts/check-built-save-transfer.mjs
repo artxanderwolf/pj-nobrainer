@@ -102,8 +102,13 @@ const probeScript = `<script>
           const originalGold=Number(original.state?.gold||0);
           const invalidFile=new File(['{\\"saveVersion\\":14}'],'ungueltig.json',{type:'application/json'});
           assignFile(input,invalidFile);
-          setTimeout(()=>{
+          const invalidStartedAt=Date.now();
+          const pollInvalidImport=()=>{
             const invalidStatus=normalize(document.getElementById('saveTransferStatus')?.textContent);
+            if(!/kein vollständiger NoBrainer-Spielstand/.test(invalidStatus)&&Date.now()-invalidStartedAt<5000){
+              setTimeout(pollInvalidImport,50);
+              return;
+            }
             // A scheduled normal save may update timestamps while File.text() resolves.
             // Compare all persisted gameplay data, excluding only those two clocks.
             const gameplaySnapshot=raw=>{
@@ -122,7 +127,8 @@ const probeScript = `<script>
             localStorage.setItem(IMPORTED_GOLD_KEY,String(importedGold));
             localStorage.setItem(PHASE_KEY,'imported');
             assignFile(input,new File([JSON.stringify(imported)],'NoBrainer-Test-Spielstand.json',{type:'application/json'}));
-          },600);
+          };
+          setTimeout(pollInvalidImport,50);
         },150);
       },100);
       return;

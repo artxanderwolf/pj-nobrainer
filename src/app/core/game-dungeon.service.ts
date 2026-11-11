@@ -14,6 +14,7 @@ import {
   getNextDueAttack,
   isDungeonCatchup,
   payDungeonEnergy,
+  materialDropSucceeds,
   resetDungeonCycle,
   resolveSearchStep,
   rescheduleDungeonAttack,
@@ -717,6 +718,8 @@ export class GameDungeonService {
   private rollDrops(enemies: readonly DungeonEnemy[], dungeonId: number): RuntimeDungeonDrop[] {
     const result: RuntimeDungeonDrop[] = [];
     for (const enemy of enemies) {
+      // Kein Materialwurf verändert den Gegnerpool; der separate Runendrop (S23) bleibt unabhängig.
+      if (!materialDropSucceeds(Math.random())) continue;
       if (enemy.boss) {
         const ids = [...new Set(Object.values(CHARACTER_CLASSES).flatMap(cls => getDungeonEnemyDefinition(dungeonId, cls.id)?.lootMaterialIds ?? []))];
         for (let draw=0; draw<5 && ids.length; draw++) result.push({materialId: ids.splice(Math.floor(Math.random()*ids.length),1)[0]});
