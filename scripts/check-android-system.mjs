@@ -1,0 +1,58 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { chooseAndroidBackAction } from '../src/app/game/android-back-navigation-core.ts';
+
+const source = path => readFileSync(path, 'utf8');
+const plugin = source('android/app/src/main/java/com/smithsofeldravar/game/AndroidSystemPlugin.java');
+const activity = source('android/app/src/main/java/com/smithsofeldravar/game/MainActivity.java');
+const bridge = source('src/app/core/android-system.plugin.ts');
+const navigation = source('src/app/core/game-android-back.service.ts');
+const runtime = source('src/app/core/game-runtime.service.ts');
+const saveTransfer = source('src/app/core/game-save-transfer.service.ts');
+const saveCodec = source('src/app/game/save-codec.ts');
+
+const base = { dialogOpen: false, characterDetailOpen: false, dungeonModalOpen: false,
+  saveTabOpen: false, activePageId: 'base', pageBackAvailable: false };
+const decide = values => chooseAndroidBackAction({ ...base, ...values });
+assert.equal(decide({}), 'stay');
+assert.equal(decide({ activePageId:'forge', pageBackAvailable:true }), 'page');
+assert.equal(decide({ activePageId:'forge', pageBackAvailable:true, dialogOpen:true }), 'dialog');
+assert.equal(decide({ activePageId:'roster', pageBackAvailable:true, characterDetailOpen:true }), 'character-detail');
+assert.equal(decide({ activePageId:'dungeon', pageBackAvailable:true, dungeonModalOpen:true }), 'dungeon-modal');
+assert.equal(decide({ activePageId:'index', pageBackAvailable:true, saveTabOpen:true }), 'save-tab');
+assert.equal(decide({ activePageId:'base', dungeonModalOpen:true }), 'dungeon-modal');
+assert.equal(decide({ activePageId:'index', pageBackAvailable:true, saveTabOpen:true, dialogOpen:true }), 'dialog');
+assert.equal(decide({ activePageId:'roster', pageBackAvailable:true, characterDetailOpen:true, dungeonModalOpen:true }), 'character-detail');
+assert.equal(decide({ activePageId:'index', pageBackAvailable:false }), 'stay');
+
+assert.match(activity, /registerPlugin\(AndroidUpdaterPlugin\.class\)/);
+assert.match(activity, /registerPlugin\(AndroidSystemPlugin\.class\)/);
+assert.match(plugin, /@CapacitorPlugin\(name = "AndroidSystem"\)/);
+assert.match(plugin, /getOnBackPressedDispatcher\(\)\.addCallback/);
+assert.match(plugin, /new OnBackPressedCallback\(true\)/);
+assert.match(plugin, /soe:android-back/);
+assert.match(plugin, /Intent\.ACTION_CREATE_DOCUMENT/);
+assert.match(plugin, /intent\.setType\("application\/json"\)/);
+assert.match(plugin, /@ActivityCallback/);
+assert.match(plugin, /getContentResolver\(\)\.openOutputStream\(destination, "wt"\)/);
+assert.match(plugin, /getContentResolver\(\)\.openInputStream\(destination\)/);
+assert.match(plugin, /MessageDigest\.isEqual/);
+assert.match(plugin, /"cancelled"/);
+assert.match(plugin, /"saved"/);
+assert.doesNotMatch(plugin, /WRITE_EXTERNAL_STORAGE|MANAGE_EXTERNAL_STORAGE|REQUEST_INSTALL_PACKAGES/);
+assert.match(bridge, /registerPlugin<AndroidSystemBridge>\('AndroidSystem'\)/);
+assert.match(navigation, /Capacitor\.isNativePlatform\(\)/);
+assert.match(navigation, /window\.addEventListener\('soe:android-back'/);
+assert.match(navigation, /'backBtn'/);
+assert.match(navigation, /'dungeonModalCloseBtn'/);
+assert.match(navigation, /'indexInfoTab'/);
+assert.doesNotMatch(navigation, /window\.history\.back\(\)|location\.href|window\.close\(\)/);
+assert.match(runtime, /this\.androidBack\.bind\(\)/);
+assert.match(saveTransfer, /Capacitor\.isNativePlatform\(\)/);
+assert.match(saveTransfer, /AndroidSystem\.exportSave\(\{ json: raw, fileName \}\)/);
+assert.match(saveTransfer, /result\.status === 'cancelled'/);
+assert.match(saveTransfer, /result\.status === 'saved'/);
+assert.match(saveTransfer, /const blob = new Blob\(\[raw\]/);
+assert.match(saveTransfer, /validateImportedSave\(raw\)/);
+assert.match(saveCodec, /export const SAVE_VERSION = 17;/);
+console.log('S04/S04a: Native Back-Hierarchie, Android-SAF-Export, Web-Fallback und Save 17 geprüft.');
