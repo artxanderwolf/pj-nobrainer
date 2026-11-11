@@ -89,7 +89,9 @@ const probeScript = `<script>
   };
   run().catch(error=>finish({status:'error',message:String(error?.stack||error)}));
 })();
-</script>`;\n\nconst contentTypes = new Map([
+</script>`;
+
+const contentTypes = new Map([
   ['.html', 'text/html; charset=utf-8'],
   ['.js', 'application/javascript; charset=utf-8'],
   ['.css', 'text/css; charset=utf-8'],
