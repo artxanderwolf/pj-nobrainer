@@ -5,6 +5,7 @@ const html = readFileSync('NoBrainer_GitHub_v0.12.2.html', 'utf8');
 const appComponent = readFileSync('src/app/app.component.ts', 'utf8');
 const stateService = readFileSync('src/app/core/game-state.service.ts', 'utf8');
 const stateAdapter = readFileSync('src/app/core/legacy-state-adapter.service.ts', 'utf8');
+assert.match(stateAdapter, /normalizedLoadedState\.cityLayout=parsed\.state\.cityLayout;/, 'Die aktive Legacy-Savenormalisierung darf das neue persistierte ID-Stadtlayout nicht verlieren.');
 
 const scriptMatch = html.match(/<script>([\s\S]*?)<\/script>\s*<\/body>/);
 assert.ok(scriptMatch, 'Das Legacy-Script konnte für den State-Regressionscheck nicht extrahiert werden.');
@@ -31,6 +32,8 @@ assert.match(stateService, /private readonly state: MutableGameState = \{\};/, '
 assert.match(stateService, /getState<TState extends MutableGameState = MutableGameState>\(\): TState/, 'Der Angular-State kann nicht typisiert an Fachservices übergeben werden.');
 assert.match(stateService, /initialize: \(initialState: MutableGameState\) => this\.initializeState\(initialState\)/, 'Der State-Bootstrap initialisiert den Angular-Container nicht.');
 assert.match(stateService, /replace: \(nextState: MutableGameState\) => this\.replaceState\(nextState\)/, 'Der State-Bootstrap ersetzt State-Inhalte nicht über Angular.');
+assert.match(stateService, /const cityMigrationChanged = migrateCityLayout\(nextState\);/, 'Der zentrale Angular-State muss die Stadt vor dem Ersetzen prüfen.');
+assert.match(stateService, /consumeCityMigration\(\)/, 'Stadtmigration muss als Save-Auslöser signalisiert werden.');
 assert.match(stateService, /for \(const key of Object\.keys\(this\.state\)\) delete this\.state\[key\];[\s\S]*Object\.assign\(this\.state, nextState\);/, 'State-Ersetzungen erhalten die Root-Objektidentität nicht.');
 assert.match(stateService, /delete window\.NoBrainerStateBootstrap;/, 'Der temporäre State-Bootstrap wird nach dem Start nicht entfernt.');
 const sourceAdapterIndex = appComponent.indexOf('let adaptedScript = this.legacySourceAdapter.adapt(source);');
