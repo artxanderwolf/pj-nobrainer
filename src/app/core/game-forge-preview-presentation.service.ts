@@ -13,6 +13,7 @@ import {
   type WeaponUnlockState
 } from '../game/forge-core';
 import { getForgePreviewPresentation } from '../game/forge-presentation-core';
+import { getForgeMaterialEffects, getForgeMaterialIcon } from '../game/forge-material-picker-core';
 import { getMaterialQuantityById, type MaterialStorageInventory } from '../game/material-storage-core';
 import { GameForgeService } from './game-forge.service';
 import { GameStateService, type MutableGameState } from './game-state.service';
@@ -322,7 +323,192 @@ export class GameForgePreviewPresentationService {
       select.value = previousValue && Array.from(select.options).some(option => option.value === previousValue)
         ? previousValue
         : '';
+
+      const invalidSelection = previousMaterialId !== null && select.value === '';
+      const missingName = invalidSelection
+        ? MATERIAL_REFERENCES_BY_ID[previousMaterialId]?.displayName ?? `Material #${previousMaterialId}`
+        : '';
+      // Ein bereits gewaehltes Material wird nicht unbemerkt auf ein anderes umgestellt.
+      // Der Nutzer erhaelt eine sichtbare Begruendung, falls der Bestand nicht reicht.
+      this.renderMaterialTrigger(
+        select,
+        binding,
+        needed,
+        invalidSelection ? `${missingName} ist für dieses Bauteil nicht mehr ausreichend verfügbar oder ungeeignet. Bitte neu auswählen.` : ''
+      );
+      selections.set(binding.id, this.readSelectedMaterialId(binding.id));
     }
+  }
+
+  private renderMaterialTrigger(
+    select: HTMLSelectElement,
+    binding: { id: string; rowId: string; slot: WeaponCraftingSlotId },
+    needed: number,
+    noticeText: string
+  ): void {
+    select.classList.add('forge-material-native');
+    select.setAttribute('aria-hidden', 'true');
+    select.tabIndex = -1;
+
+    let trigger = document.getElementById(`forgeMaterialTrigger-${binding.slot}`) as HTMLButtonElement | null;
+    if (!trigger) {
+      trigger = document.createElement('button');
+      trigger.type = 'button';
+      trigger.id = `forgeMaterialTrigger-${binding.slot}`;
+      trigger.className = 'forge-material-trigger';
+      trigger.dataset['forgeMaterialSlot'] = binding.slot;
+      trigger.setAttribute('aria-haspopup', 'dialog');
+      trigger.addEventListener('click', () => this.openMaterialDialog(binding));
+      select.insertAdjacentElement('afterend', trigger);
+    }
+
+    trigger.replaceChildren();
+    const selectedId = this.readSelectedMaterialId(binding.id);
+    const selectedReference = selectedId ? MATERIAL_REFERENCES_BY_ID[selectedId] : null;
+    const icon = this.createMaterialIcon(selectedId, selectedReference?.definition.category ?? '');
+    const content = document.createElement('span');
+    content.className = 'forge-material-trigger-content';
+    const name = document.createElement('span');
+    name.className = 'forge-material-trigger-name';
+    name.textContent = selectedReference?.displayName ?? (select.options.length > 1 ? 'Material auswählen' : 'Kein Material verfügbar');
+    const details = document.createElement('span');
+    details.className = 'forge-material-trigger-detail';
+    const currentOption = Array.from(select.options).find(option => option.value === select.value);
+    const stock = selectedId ? getMaterialQuantityById(this.state().inventory, selectedId) : 0;
+    details.textContent = selectedReference
+      ? `S${selectedReference.definition.rarity} · Lager ${stock} · benötigt ${needed}`
+      : `Benötigt ${needed} · ${Math.max(0, select.options.length - 1)} verfügbare Materialien`;
+    content.append(name, details);
+    const arrow = document.createElement('span');
+    arrow.className = 'forge-material-trigger-arrow';
+    arrow.setAttribute('aria-hidden', 'true');
+    arrow.textContent = '⌄';
+    trigger.append(icon, content, arrow);
+    trigger.title = currentOption?.textContent ?? '';
+
+    const row = document.getElementById(binding.rowId);
+    let notice = row?.querySelector<HTMLElement>('.forge-material-selection-notice') ?? null;
+    if (!notice && row) {
+      notice = document.createElement('span');
+      notice.className = 'forge-material-selection-notice';
+      notice.setAttribute('role', 'status');
+      trigger.insertAdjacentElement('afterend', notice);
+    }
+    if (notice) {
+      notice.textContent = noticeText;
+      notice.hidden = !noticeText;
+    }
+  }
+
+  private createMaterialIcon(materialId: number | null, category: string): HTMLElement {
+    const appearance = getForgeMaterialIcon(materialId ?? 0, category);
+    const icon = document.createElement('span');
+    icon.className = `forge-material-icon forge-material-icon--${appearance.kind}`;
+    icon.style.setProperty('--forge-material-color', appearance.color);
+    icon.setAttribute('aria-hidden', 'true');
+    return icon;
+  }
+
+  private openMaterialDialog(binding: {
+    id: string; rowId: string; slot: WeaponCraftingSlotId
+  }): void {
+    const select = document.getElementById(binding.id) as HTMLSelectElement | null;
+    if (!select || select.disabled) return;
+
+    const weaponForm = (document.getElementById('weaponForm') as HTMLSelectElement | null)?.value ?? 'dagger';
+    const needed = this.gameForge.selectionQuantities(weaponForm)[binding.slot] ?? 0;
+    const currentSlots = this.getForgeSelection();
+    const inventory = this.state().inventory;
+    const row = document.getElementById(binding.rowId);
+    const partName = row?.querySelector('th')?.textContent?.trim() || 'Bauteil';
+    const dialog = document.createElement('dialog');
+    dialog.className = 'forge-material-dialog';
+    dialog.setAttribute('aria-label', `Material wählen: ${partName}`);
+
+    const heading = document.createElement('h2');
+    heading.textContent = `Material wählen: ${partName}`;
+    const info = document.createElement('p');
+    info.className = 'forge-material-dialog-intro';
+    info.textContent = `Nur Materialien mit ausreichendem Lagerbestand. Die Werte zeigen den genauen Beitrag dieses Bauteils zur aktuellen Waffenberechnung; der vollständige Endwert steht in der Waffenvorschau.`;
+    const choices = document.createElement('div');
+    choices.className = 'forge-material-choices';
+
+    const availableIds = Array.from(select.options)
+      .map(option => Number(option.value))
+      .filter(materialId => Number.isInteger(materialId) && materialId > 0);
+
+    for (const materialId of availableIds) {
+      const material = MATERIAL_REFERENCES_BY_ID[materialId];
+      if (!material) continue;
+      const stock = getMaterialQuantityById(inventory, materialId);
+      const reservedOtherSlots = currentSlots
+        .filter(slot => slot.slot !== binding.slot && slot.materialId === materialId)
+        .reduce((sum, slot) => sum + (this.gameForge.selectionQuantities(weaponForm)[slot.slot as WeaponCraftingSlotId] ?? 0), 0);
+      const remaining = stock - reservedOtherSlots - needed;
+      if (remaining < 0) continue;
+
+      const item = document.createElement('button');
+      item.type = 'button';
+      item.className = 'forge-material-choice';
+      item.dataset['forgeMaterialId'] = String(materialId);
+      item.setAttribute('aria-pressed', String(select.value === String(materialId)));
+      const icon = this.createMaterialIcon(materialId, material.definition.category);
+      const body = document.createElement('span');
+      body.className = 'forge-material-choice-body';
+      const title = document.createElement('strong');
+      title.textContent = `${material.displayName} · S${material.definition.rarity}`;
+      const available = document.createElement('span');
+      available.className = 'forge-material-choice-inventory';
+      available.textContent = `Benötigt ${needed} · Lager ${stock} · danach ${remaining}`;
+      const effect = getForgeMaterialEffects(weaponForm, binding.slot, materialId, currentSlots);
+      const stats = document.createElement('span');
+      stats.className = 'forge-material-choice-stats';
+      stats.textContent = effect.weapon.length
+        ? `Waffe: ${effect.weapon.join(' · ')}`
+        : 'Waffe: keine direkte Änderung';
+      const modifiers = document.createElement('span');
+      modifiers.className = 'forge-material-choice-modifiers';
+      modifiers.textContent = effect.character.length
+        ? `Charakterwerte: ${effect.character.join(' · ')}`
+        : 'Charakterwerte: keine zusätzliche Änderung';
+      body.append(title, available, stats, modifiers);
+      item.append(icon, body);
+      item.addEventListener('click', () => {
+        dialog.close();
+        select.value = String(materialId);
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+      choices.append(item);
+    }
+
+    if (!choices.children.length) {
+      const empty = document.createElement('p');
+      empty.className = 'forge-material-choice-empty';
+      empty.textContent = `Für dieses Bauteil fehlen Materialien in ausreichender Menge (benötigt: ${needed}).`;
+      choices.append(empty);
+    }
+
+    const actions = document.createElement('div');
+    actions.className = 'forge-material-dialog-actions';
+    const reset = document.createElement('button');
+    reset.type = 'button';
+    reset.className = 'btn';
+    reset.textContent = 'Auswahl entfernen';
+    reset.addEventListener('click', () => {
+      dialog.close();
+      select.value = '';
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    const cancel = document.createElement('button');
+    cancel.type = 'button';
+    cancel.className = 'btn';
+    cancel.textContent = 'Schließen';
+    cancel.addEventListener('click', () => dialog.close());
+    actions.append(reset, cancel);
+    dialog.append(heading, info, choices, actions);
+    dialog.addEventListener('close', () => dialog.remove(), { once: true });
+    document.body.append(dialog);
+    dialog.showModal();
   }
 
   private getForgeSelection(): WeaponSlot[] {
