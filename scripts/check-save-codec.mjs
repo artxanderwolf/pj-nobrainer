@@ -48,6 +48,12 @@ assert.deepEqual(
   'Kaputtes JSON darf den Import nicht erreichen.'
 );
 assert.equal(validateImportedSave(JSON.stringify(state)).ok, false, 'Ein Legacy-Rohzustand ohne Save-Envelope darf nicht als Importdatei akzeptiert werden.');
+assert.equal(validateImportedSave(JSON.stringify({
+  saveVersion: SAVE_VERSION, savedAt,
+  state: { ...state, cityLayout: { schemaVersion: 1, grid: { minX: 0, minY: 0, width: 12, height: 8 }, buildings: [{ buildingInstanceId: 'building-1' }, { buildingInstanceId: 'building-1' }], nextBuildingNumber: 2 } }
+})).reason, 'invalid-state', 'Beschädigtes Stadtlayout darf nicht zum Neustart importiert werden.');
+
+
 assert.equal(
   validateImportedSave(JSON.stringify({ saveVersion: SAVE_VERSION + 1, savedAt, state })).reason,
   'future-version',
