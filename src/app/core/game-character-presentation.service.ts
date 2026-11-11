@@ -4,6 +4,7 @@ import {
   CHARACTER_CLASSES,
   CONFIG,
   calculateCharacterStats,
+  getMaterialDisplayNameById,
   weaponDamageAfterArmor,
   type ResolvedCharacterStats
 } from '../game/game-core';
@@ -219,27 +220,67 @@ export class GameCharacterPresentationService {
 
   private renderWeaponPicker(character: CharacterState, handPresentation: CharacterHandPresentation): string {
     const currentWeapon = this.getWeaponById(handPresentation.weaponId);
-    const cards = this.state().weaponInventory.map(weapon => {
-      const picker = this.gameEquipment.getWeaponPickerPresentation(weapon.id, character.id, handPresentation.hand);
-      const disabled = picker.disabled;
-      const label = disabled ? picker.status : 'Ausrüsten';
-      const actions = `<div class="weapon-card-actions"><button class="btn ${disabled ? '' : 'primary'}" ${disabled ? 'disabled' : ''} data-roster-action="equip-weapon" data-character-id="${character.id}" data-hand="${handPresentation.hand}" data-weapon-id="${weapon.id}">${label}</button></div>`;
-      const preview = disabled ? null : this.gameEquipment.previewWeaponEquip(weapon.id, character.id, handPresentation.hand);
-      let comparison = '';
-      if (preview) {
-        const stats = calculateCharacterStats(character.classId, preview.weapons, characterStatLevelMultiplier(character.level));
-        const after = this.offenseForWeapons(character, preview.weapons, stats);
-        const before = this.effectiveOffense(character, this.effectiveStats(character));
-        const delta = after - before;
-        comparison = `<p class="index-note" data-equipment-preview="${weapon.id}">Charakter-ROH danach: ${after.toFixed(2)} (${delta >= 0 ? '+' : ''}${delta.toFixed(2)}) · Waffenschadenfaktor: ${(preview.factor * 100).toLocaleString('de-DE')} %</p>`;
-      }
-      return this.weaponPresentation.renderCard(weapon, currentWeapon, picker.status, actions) + comparison;
-    }).join('');
-    const clearAction = currentWeapon
-      ? `<div class="weapon-card-actions"><button class="btn" data-roster-action="clear-hand" data-character-id="${character.id}" data-hand="${handPresentation.hand}">Hand leeren</button></div>`
-      : '';
+    // S06: Nur tatsaechlich ausruestbare Ersatzwaffen anzeigen. Die Anzeige
+    // verwendet dieselbe zentrale Pruefung wie der finale Equip-Vorgang.
+    // Keine zweite, abweichende Klassen-/Hand-/Slot-Regelliste anlegen.
+    const cards = this.state().weaponInventory
+      .map(weapon => ({
+        weapon,
+        picker: this.gameEquipment.getWeaponPickerPresentation(weapon.id, character.id, handPresentation.hand)
+      }))
+      .filter(({ picker }) => !picker.disabled)
+      .map(({ weapon, picker }) => {
+        const actions = `<div class="weapon-card-actions"><button class="btn primary" type="button" data-roster-action="equip-weapon" data-character-id="${character.id}" data-hand="${handPresentation.hand}" data-weapon-id="${weapon.id}">Ausrüsten</button></div>`;
+        const preview = this.gameEquipment.previewWeaponEquip(weapon.id, character.id, handPresentation.hand);
+        let comparison = '';
+        if (preview) {
+          const stats = calculateCharacterStats(character.classId, preview.weapons, characterStatLevelMultiplier(character.level));
+          const after = this.offenseForWeapons(character, preview.weapons, stats);
+          const before = this.effectiveOffense(character, this.effectiveStats(character));
+          const delta = after - before;
+          comparison = `<p class="index-note" data-equipment-preview="${weapon.id}">Charakter-ROH danach: ${after.toFixed(2)} (${delta >= 0 ? '+' : ''}${delta.toFixed(2)}) · Waffenschadenfaktor: ${(preview.factor * 100).toLocaleString('de-DE')} %</p>`;
+        }
+        const card = this.weaponPresentation.renderCard(weapon, currentWeapon, picker.status, actions);
+        return `<article class="roster-weapon-candidate" data-roster-candidate-weapon-id="${weapon.id}">${card}${this.renderWeaponParts(weapon)}${comparison}</article>`;
+      })
+      .join('');
 
-    return `<div class="weapon-picker roster-weapon-picker"><div class="weapon-picker-title">${handPresentation.label} · Waffenkarten zeigen Gegenstandsgrundwerte. Charakter-ROH berücksichtigt die gesamte Ausrüstung und Klassenfaktoren.</div>${clearAction}<div class="weapon-card-list">${cards || '<div class="empty">Keine Waffen im Lager.</div>'}</div></div>`;
+    const clearAction = currentWeapon
+      ? `<div class="weapon-card-actions"><button class="btn" type="button" data-roster-action="clear-hand" data-character-id="${character.id}" data-hand="${handPresentation.hand}">Hand leeren</button></div>`
+      : '';
+    const currentCard = currentWeapon
+      ? `<div class="roster-current-weapon-card" data-roster-current-weapon-id="${currentWeapon.id}">${this.weaponPresentation.renderCard(currentWeapon, null, 'AUSGERÜSTET', clearAction)}${this.renderWeaponParts(currentWeapon)}</div>`
+      : '<div class="roster-current-weapon-empty">Diese Hand ist leer. Wähle rechts beziehungsweise unten eine passende Waffe.</div>';
+
+    return `<section class="weapon-picker roster-weapon-picker" data-roster-comparison-hand="${handPresentation.hand}">
+      <div class="weapon-picker-title">${handPresentation.label} · Links/oben die aktuelle Waffe, rechts/unten passende Wechselwaffen. Waffenwerte und Klassenfaktoren werden unverändert berechnet.</div>
+      <div class="roster-weapon-compare">
+        <aside class="roster-weapon-current" aria-label="Aktuell ausgerüstete Waffe">
+          <h3>Aktuell ausgerüstet</h3>
+          ${currentCard}
+        </aside>
+        <section class="roster-weapon-available" aria-label="Ausrüstbare Ersatzwaffen">
+          <h3>Passende Waffen</h3>
+          <div class="roster-weapon-candidate-scroll"><div class="weapon-card-list">${cards || '<div class="empty">Keine weiteren ausrüstbaren Waffen im Lager.</div>'}</div></div>
+        </section>
+      </div>
+    </section>`;
+  }
+
+  private renderWeaponParts(weapon: RuntimeWeaponPresentation): string {
+    const slotNames: Record<string, string> = {
+      workingPart: 'Arbeitsstück', back: 'Rücken', gripCore: 'Griffkern',
+      gripWrap: 'Griffwicklung', special: 'Spezialteil', parry: 'Parierstange',
+      bowstring: 'Sehne'
+    };
+    const parts = (weapon.slots ?? [])
+      .filter(slot => slot.materialId !== null && slot.materialId !== undefined && Number(slot.materialId) > 0)
+      .map(slot => {
+        const id = Number(slot.materialId);
+        const name = getMaterialDisplayNameById(id) ?? `Material #${id}`;
+        return `${slotNames[String(slot.slot ?? '')] ?? String(slot.slot ?? 'Bauteil')}: ${name}`;
+      });
+    return `<div class="roster-weapon-parts" aria-label="Materialien und Bauteile">Bauteile: ${parts.length ? this.escapeHtml(parts.join(' · ')) : 'Keine Materialangaben'}</div>`;
   }
 
   private effectiveStats(character: CharacterState): ResolvedCharacterStats {
