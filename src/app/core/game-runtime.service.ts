@@ -107,6 +107,7 @@ export class GameRuntimeService {
     const before = this.saveStorage.readSnapshot();
     runtime.prepare();
     const dungeonMigrationChanged = this.gameState.consumeDungeonMigration();
+    const cityMigrationChanged = this.gameState.consumeCityMigration();
     const equipmentRepairs = this.gameEquipment.normalizeEquipment();
     const equipmentChanged = equipmentRepairs.length > 0;
     if (equipmentChanged) {
@@ -155,7 +156,7 @@ export class GameRuntimeService {
       runtime.save(false);
       const after = this.saveStorage.readSnapshot();
       if (after) this.offlineProgress.showSummary(before, after);
-    } else if (equipmentChanged || materialReferencesChanged || dungeonSessionPreparation.saveRequested || dungeonMigrationChanged) {
+    } else if (equipmentChanged || materialReferencesChanged || dungeonSessionPreparation.saveRequested || dungeonMigrationChanged || cityMigrationChanged) {
       runtime.save(false);
     }
 
