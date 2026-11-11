@@ -80,6 +80,30 @@ const probeScript = `<script>
     return select.value === value;
   };
 
+  let materialPickerProof = null;
+  const chooseViaMaterialDialog = (slot, materialId) => {
+    const select = document.getElementById('slot' + slot.charAt(0).toUpperCase() + slot.slice(1));
+    const trigger = document.querySelector('[data-forge-material-slot="' + slot + '"]');
+    if (!(select instanceof HTMLSelectElement) || !(trigger instanceof HTMLButtonElement)) return false;
+    trigger.click();
+    const dialog = document.querySelector('.forge-material-dialog[open]');
+    const option = dialog?.querySelector('[data-forge-material-id="' + materialId + '"]');
+    if (!(dialog instanceof HTMLDialogElement) || !(option instanceof HTMLButtonElement)) return false;
+    const icon = option.querySelector('.forge-material-icon');
+    materialPickerProof = {
+      open: dialog.open,
+      nativeSelectHidden: getComputedStyle(select).clipPath.includes('inset'),
+      optionCount: dialog.querySelectorAll('[data-forge-material-id]').length,
+      color: icon ? getComputedStyle(icon).backgroundColor : '',
+      label: option.textContent?.replace(/\\s+/g,' ').trim() || '',
+      unownedMaterialAbsent: !dialog.querySelector('[data-forge-material-id="5"]'),
+      mobileWidth: Math.round(dialog.getBoundingClientRect().width)
+    };
+    option.click();
+    materialPickerProof.closedAfterSelection = !document.querySelector('.forge-material-dialog[open]');
+    return select.value === materialId;
+  };
+
   const chooseWeapon = value => {
     const picker = document.getElementById('forgeWeaponPicker');
     const button = picker?.querySelector('[data-weapon-form="' + value + '"]');
@@ -101,7 +125,7 @@ const probeScript = `<script>
         const incompletePreview = describeImage(document.querySelector('#forgeWeaponImagePreview .forge-preview-weapon-image'));
         const previewOwner = document.getElementById('forgeWeaponImagePreview')?.dataset.forgeWeaponImageOwner || '';
         const selected = {
-          back: choose('slotBack', '2'),
+          back: chooseViaMaterialDialog('back', '2'),
           gripCore: choose('slotGripCore', '2'),
           gripWrap: choose('slotGripWrap', '9'),
           special: choose('slotSpecial', '2'),
@@ -152,6 +176,7 @@ const probeScript = `<script>
                 completePreview,
                 activeJobImage: describeImage(document.querySelector('#forgeJobCard .forge-job-weapon-image')),
                 compactUi,
+                materialPickerProof,
                 beforeStart,
                 forgeJobText: document.getElementById('forgeJobCard')?.textContent?.replace(/\\s+/g, ' ').trim() || '',
                 forgeQueueText: document.getElementById('forgeQueueCard')?.textContent?.replace(/\\s+/g, ' ').trim() || '',
@@ -232,6 +257,19 @@ try {
   assert.equal(result.browserErrors.length, 0, `Bei der Schmiedeauswahl oder beim Schmiedestart trat ein Browserfehler auf: ${JSON.stringify(result)}`);
   assert.equal(result.runtimeError, '', `Die Runtime meldet bei der Schmiedeauswahl einen Fehler: ${JSON.stringify(result)}`);
   assert.deepEqual(result.selected, { back: true, gripCore: true, gripWrap: true, special: true, bowstring: true, form: true });
+  assert.ok(result.materialPickerProof, 'Der farbige Materialdialog muss im Schmiede-E2E geöffnet werden.');
+  assert.equal(result.materialPickerProof.open, true);
+  assert.equal(result.materialPickerProof.closedAfterSelection, true);
+  assert.equal(result.materialPickerProof.nativeSelectHidden, true, 'Der alte technische Select darf keine zweite sichtbare Auswahl sein.');
+  assert.ok(result.materialPickerProof.optionCount > 0);
+  assert.equal(result.materialPickerProof.color, 'rgb(126, 88, 53)', 'Fichte muss die exakte Waffen-Materialfarbe tragen.');
+  assert.match(result.materialPickerProof.label, /Fichte.*Benötigt.*Lager.*danach.*Waffe:/,
+    'Ein Material muss Name, Bedarf, Lager, Rest und reale Statänderung zeigen.');
+  assert.equal(result.materialPickerProof.unownedMaterialAbsent, true,
+    'Nicht vorhandene Materialien dürfen im Materialdialog nicht auswählbar sein.');
+  assert.ok(result.materialPickerProof.mobileWidth > 200 && result.materialPickerProof.mobileWidth < 390,
+    'Der Materialdialog muss in der 390px-Mobilansicht Platz haben.');
+
   assert.equal(result.finalForm, 'bow');
   assert.equal(result.previewNextDisabled, false, 'Der Vorschau-Button darf nach der Materialauswahl nicht blockiert bleiben.');
   assert.equal(result.previewOwner, 'angular', 'Die Waffengrafik der Schmiedevorschau ist nicht Angular-eigen.');
