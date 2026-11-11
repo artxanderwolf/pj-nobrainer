@@ -116,7 +116,7 @@ export function validateCityLayout(input: unknown): asserts input is CityLayoutS
 
   const buildings = input['buildings'] as unknown[];
   const usedIds = new Set<string>();
-  const occupied = new Set<string>();
+  const occupied: Array<{ x: number; y: number; width: number; height: number }> = [];
   let greatestId = 0;
 
   for (const building of buildings) {
@@ -171,15 +171,17 @@ export function validateCityLayout(input: unknown): asserts input is CityLayoutS
         y + height > (grid['minY'] as number) + (grid['height'] as number)) {
       throw new Error('Ungültige Stadtdaten: Gebäude liegt außerhalb der Stadt.');
     }
-    for (let cellX = x; cellX < x + width; cellX++) {
-      for (let cellY = y; cellY < y + height; cellY++) {
-        const key = `${cellX}:${cellY}`;
-        if (occupied.has(key)) {
-          throw new Error('Ungültige Stadtdaten: Gebäude überlappen sich.');
-        }
-        occupied.add(key);
+    // Rechteck-Schnittprüfung statt Iteration über jede Zelle: Auch manipulierte
+    // sehr große Abmessungen können den Ladeprozess so nicht festlaufen lassen.
+    for (const existing of occupied) {
+      if (x < existing.x + existing.width &&
+          x + width > existing.x &&
+          y < existing.y + existing.height &&
+          y + height > existing.y) {
+        throw new Error('Ungültige Stadtdaten: Gebäude überlappen sich.');
       }
     }
+    occupied.push({ x, y, width, height });
   }
 
   assertInteger(input['nextBuildingNumber'], 'nächste Gebäude-ID', greatestId + 1);
