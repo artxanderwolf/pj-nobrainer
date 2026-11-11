@@ -23,7 +23,7 @@ window.addEventListener('error',event=>window.__browserBackErrors.push(String(ev
 window.addEventListener('unhandledrejection',event=>window.__browserBackErrors.push(String(event.reason?.stack||event.reason||'rejection')));
 </script>`;
 
-const probeScript = \`<script>
+const probeScript = `<script>
 (() => {
   const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
   const page = () => document.querySelector('.page.active')?.id || '';
@@ -89,7 +89,7 @@ const probeScript = \`<script>
   };
   run().catch(error=>finish({status:'error',message:String(error?.stack||error)}));
 })();
-</script>\`;\n\nconst contentTypes = new Map([
+</script>`;\n\nconst contentTypes = new Map([
   ['.html', 'text/html; charset=utf-8'],
   ['.js', 'application/javascript; charset=utf-8'],
   ['.css', 'text/css; charset=utf-8'],
