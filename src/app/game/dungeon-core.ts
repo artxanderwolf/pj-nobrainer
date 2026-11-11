@@ -98,6 +98,13 @@ export function rollWeightedIndex(weights: readonly number[], roll: number): num
   return normalized.length - 1;
 }
 
+export const MATERIAL_DROP_CHANCE = 0.6;
+
+/** S03: Vor dem unveränderten Materialpool entscheidet ein separater 60-%-Wurf. */
+export function materialDropSucceeds(roll: number): boolean {
+  return Number.isFinite(roll) && roll >= 0 && roll < MATERIAL_DROP_CHANCE;
+}
+
 export function rollEnemyCount(teamSize: number, roll: number): number {
   const size = Math.max(1, Math.min(4, Math.floor(Number(teamSize) || 1))) as 1 | 2 | 3 | 4;
   return rollWeightedIndex(CONFIG.dungeon.enemyCountWeights[size], roll) + 1;
@@ -132,7 +139,9 @@ export function createDungeonEnemy(index: number, classId: CharacterClassId, dun
     hitChance: Math.min(1, base.hitChance * multipliers.hitChance),
     penetration: Math.max(0, Math.min(1, base.penetration * multipliers.penetration)),
     lootMaterialIds: [...(definition?.lootMaterialIds ?? [])],
-    xpDrop: Math.max(0, Number(definition?.xpDrop) || 0) * (boss && dungeonId > 1 ? 100 : 1)
+    // xpDrop der Balancingtabelle ist der Klassen-Grundwert; der aktuelle Dungeon-Schadensmultiplikator
+    // skaliert die XP (1/2/4/8/16). Bosse beginnen bei 40 XP, ohne alten x100-Sonderfaktor.
+    xpDrop: Math.max(0, Math.round((boss ? 40 : Number(definition?.xpDrop) || 0) * multipliers.damage))
   };
 }
 
@@ -263,6 +272,7 @@ export const DUNGEON_CORE_BRIDGE = {
   checkDungeonStart,
   payDungeonEnergy,
   resetDungeonCycle,
+  materialDropSucceeds,
   rollEnemyCount,
   rollEnemyClass,
   createDungeonEnemy,
