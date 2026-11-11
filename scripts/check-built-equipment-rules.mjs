@@ -72,7 +72,7 @@ const probe = String.raw`<script>
     open(1);picker('leftHand');equip(102,'leftHand');picker('leftHand');
     check(document.querySelector('[data-roster-current-weapon-id="102"]'),'Ausgerüstete Waffe muss fest im Vergleich stehen.');
     check(!document.querySelector('[data-roster-candidate-weapon-id="102"]'),'Aktuelle Waffe darf nicht erneut als Wechselwaffe angeboten werden.');
-    check(document.querySelectorAll('.roster-weapon-current .weapon-stat').length===document.querySelectorAll('.roster-weapon-candidate .weapon-stat').length,'Aktuelle und alternative Waffen müssen dieselben Statwerte zeigen.');
+    check(document.querySelectorAll('.roster-weapon-current .weapon-stat').length===document.querySelectorAll('.roster-weapon-candidate:first-child .weapon-stat').length,'Aktuelle Waffe und eine einzelne Wechselwaffe müssen dieselben Statwerte zeigen.');
     check(document.querySelector('.roster-weapon-current .weapon-card-image'),'Die aktuelle Waffe muss ihr Waffenbild behalten.');
     picker('leftHand');picker('rightHand');
     check(document.querySelector('[data-equipment-preview="101"]').textContent.includes('82,5'),'Schwert-Dolch-Vorschau fehlt');
