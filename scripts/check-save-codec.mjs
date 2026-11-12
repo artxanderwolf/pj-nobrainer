@@ -20,12 +20,12 @@ const savedAt = 1_760_000_000_000;
 const encoded = encodeSave(state, savedAt);
 const parsed = JSON.parse(encoded);
 
-assert.equal(parsed.saveVersion, 21, 'Save-Version muss für das persistierte Stadtlayout 19 sein.');
-assert.equal(SAVE_VERSION, 21, 'TypeScript-Save-Version muss 19 sein.');
+assert.equal(parsed.saveVersion, 22, 'Save-Version muss für das persistierte Stadtlayout 19 sein.');
+assert.equal(SAVE_VERSION, 22, 'TypeScript-Save-Version muss 19 sein.');
 assert.equal(parsed.savedAt, savedAt, 'savedAt muss unverändert gespeichert werden.');
 assert.equal(parsed.state.dungeonSessionEndsAt, state.dungeonSessionEndsAt, 'Die absolute Dungeon-Endzeit muss im Save erhalten bleiben.');
 assert.deepEqual(parsed.state, state, 'State muss unverändert im Save-Envelope liegen.');
-assert.deepEqual(decodeSave(encoded), { state, savedAt, saveVersion: 21 }, 'Aktuelles Save-Envelope muss verlustfrei decodiert werden.');
+assert.deepEqual(decodeSave(encoded), { state, savedAt, saveVersion: 22 }, 'Aktuelles Save-Envelope muss verlustfrei decodiert werden.');
 assert.deepEqual(decodeSave(JSON.stringify(state)), { state, savedAt: null, saveVersion: null }, 'Legacy-Rohzustand muss weiterhin geladen werden.');
 
 for (const version of [17, 16, 15, 14, 13, 12, 11, 10, 9, 8]) {
@@ -35,9 +35,9 @@ for (const version of [17, 16, 15, 14, 13, 12, 11, 10, 9, 8]) {
 }
 
 const currentImport = validateImportedSave(encoded);
-assert.equal(currentImport.ok, true, 'Aktuelles Save v21 muss als JSON-Datei importierbar sein.');
+assert.equal(currentImport.ok, true, 'Aktuelles Save v22 muss als JSON-Datei importierbar sein.');
 if (currentImport.ok) {
-  assert.equal(currentImport.saveVersion, 21);
+  assert.equal(currentImport.saveVersion, 22);
   assert.equal(currentImport.savedAt, savedAt);
   assert.deepEqual(currentImport.state, state);
 }
@@ -77,4 +77,4 @@ assert.equal(
   'Der Exportdateiname muss App-Version und lokalen Speicherzeitpunkt enthalten.'
 );
 
-console.log('Save-Codec v21 für ID-basiertes Stadtmodell; JSON-Export/Import akzeptiert v8 bis v21 und blockiert ungültige oder zukünftige Saves.');
+console.log('Save-Codec v22 für ID-basiertes Stadtmodell; JSON-Export/Import akzeptiert v8 bis v22 und blockiert ungültige oder zukünftige Saves.');
