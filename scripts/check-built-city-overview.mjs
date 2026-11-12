@@ -316,7 +316,7 @@ try {
   assert.ok(purchases>=0 && purchases<=4,'Keine unautorisierte Stadterweiterung.');
   assert.equal(result.gridAfterExpand.width,12+4*Math.min(purchases,2));
   assert.equal(result.gridAfterExpand.height,8+4*Math.max(0,purchases-2));
-  assert.equal(result.saveVersion,21,'S14 verwendet Save21.');
+  assert.equal(result.saveVersion,22,'S14 verwendet Save22.');
   assert.deepEqual(result.buildingsAfterExpand,result.buildingIds,'Alle Gebäude-IDs müssen identisch bleiben.');
   assert.equal(result.moveStillSaved,true,'Die verschobene Position muss auch nach Erweiterungen persistiert bleiben.');
   assert.equal(result.noConstructionStarted,true,'S09 darf keine kostenlosen zusätzlichen Gebäude bauen.');
