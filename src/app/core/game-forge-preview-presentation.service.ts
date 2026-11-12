@@ -25,6 +25,7 @@ type RuntimeForgePreviewState = MutableGameState & CityLayoutWorldState & {
   inventory: MaterialStorageInventory;
   forgeJobs: unknown[];
   forgeQueue: unknown[];
+  forgeReadyJobs?: unknown[];
   upgrades: {
     forgeSlots: number;
     forgeQueue: number;
@@ -77,7 +78,7 @@ export class GameForgePreviewPresentationService {
         complete,
         hasMaterials: this.gameForge.hasMaterials(requirements),
         hasCapacity:
-          state.forgeJobs.length + state.forgeQueue.length <
+          state.forgeJobs.length + state.forgeQueue.length + (state.forgeReadyJobs?.length ?? 0) <
           productionActiveSlots(state, 'forge') + state.upgrades.forgeQueue,
         seconds: preview.seconds,
         valueNickel: preview.valueNickel,
