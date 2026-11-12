@@ -110,7 +110,7 @@ const teamGame=game();
 const teamJob=startCityConstruction(teamGame,'team',2,0,now);
 assert.equal(teamJob.ok,true);
 assert.equal(teamGame.teams[2],undefined);
-assert.equal(getTeamOffer(teamGame).reason,'building-pending','Alter Teamkauf darf nicht parallel doppelt bezahlen.');
+assert.equal(getTeamOffer(teamGame).reason,'building-required','Zusätzliche Teams dürfen nur über Teamgebäude gekauft werden.');
 finishCityConstruction(teamGame,now+CITY_CONSTRUCTION_DURATION_MS);
 assert.ok(teamGame.teams[2]);
 assert.equal(teamGame.cityLayout.buildings.find(b=>b.buildingTypeId==='team'&&b.teamId===2).status,'placed');
