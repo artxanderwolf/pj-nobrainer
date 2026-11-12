@@ -40,7 +40,12 @@ export class GameProgressionService {
   }
 
   getUpgradeOffer(kind: UpgradeKind): ReturnType<typeof getUpgradeOffer> {
-    return getUpgradeOffer(this.state(), kind);
+    const state = this.state();
+    if (kind === 'forgeSlots' || kind === 'marketSlots') {
+      const offer = getUpgradeOffer(state, kind);
+      return { ...offer, ok: false as const, reason: 'max' as const };
+    }
+    return getUpgradeOffer(state, kind);
   }
 
   recruit(classId = 'recruit') {
@@ -60,6 +65,9 @@ export class GameProgressionService {
   }
 
   buyUpgrade(kind: UpgradeKind) {
+    if (kind === 'forgeSlots' || kind === 'marketSlots') {
+      return { ...this.getUpgradeOffer(kind), ok: false as const, reason: 'max' as const };
+    }
     return buyUpgrade(this.state(), kind);
   }
 
