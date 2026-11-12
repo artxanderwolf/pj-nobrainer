@@ -1,6 +1,5 @@
 import { DUNGEON_IDS, dungeonSessionActive } from '../game/parallel-dungeon-core.ts';
-import { teamIds, getTeamSession, assignTeamCharacter, characterTeamReservation, getTeamOffer, buyTeam, selectTeamDungeon, type TeamSessionState } from '../game/team-core.ts';
-import { formatCurrencyNickel } from '../game/economy-core.ts';
+import { teamIds, getTeamSession, assignTeamCharacter, characterTeamReservation, selectTeamDungeon, type TeamSessionState } from '../game/team-core.ts';
 import { dungeonUnlocked } from '../game/mission-core.ts';
 import { getDungeonDefinition } from '../game/dungeon-definitions.ts';
 import { Injectable } from '@angular/core';
@@ -58,10 +57,6 @@ export class GameDungeonPresentationService {
     hub.addEventListener('click', event => {
       const target = (event.target as Element).closest<HTMLElement>('button');
       if (target?.dataset['openTeam']) this.openTeam(Number(target.dataset['openTeam']));
-      if (target?.id === 'buyTeamButton') {
-        const result = buyTeam(this.gameState.getState() as MutableGameState & {gold:number});
-        if (result.ok) this.handleResult({events:[],saveRequested:true});
-      }
     });
     hub.addEventListener('change', event => {
       const select = event.target as HTMLSelectElement;
@@ -233,7 +228,7 @@ export class GameDungeonPresentationService {
     const key = ids.join(',');
     if (key !== this.hubTeamKey || !hub.querySelector('[data-team-card]')) {
       this.hubTeamKey = key;
-      hub.innerHTML = ids.map(id=>`<div class="menu-card dungeon-overview-card" data-team-card="${id}"><label class="small" for="teamTarget${id}">Ziel-Dungeon</label><select class="dungeon-team-target" id="teamTarget${id}" data-team-target="${id}" aria-label="Ziel-Dungeon für Team ${id}">${DUNGEON_IDS.map(d=>`<option value="${d}">${getDungeonDefinition(d).displayName}</option>`).join('')}</select><button ${id===1?'id="dungeonOverviewOpenBtn"':''} data-open-team="${id}" class="menu-card-main" type="button"><span class="menu-card-title">Team ${id}</span><span class="menu-card-copy"></span></button></div>`).join('') + '<button id="buyTeamButton" class="btn primary" type="button"></button>';
+      hub.innerHTML = ids.map(id=>`<div class="menu-card dungeon-overview-card" data-team-card="${id}"><label class="small" for="teamTarget${id}">Ziel-Dungeon</label><select class="dungeon-team-target" id="teamTarget${id}" data-team-target="${id}" aria-label="Ziel-Dungeon für Team ${id}">${DUNGEON_IDS.map(d=>`<option value="${d}">${getDungeonDefinition(d).displayName}</option>`).join('')}</select><button ${id===1?'id="dungeonOverviewOpenBtn"':''} data-open-team="${id}" class="menu-card-main" type="button"><span class="menu-card-title">Team ${id}</span><span class="menu-card-copy"></span></button></div>`).join('') + '<p class="index-note" data-team-building-hint>Weitere Teams werden in der Stadt als eigene Teamgebäude gebaut. Team 1 bleibt kostenlos.</p>';
     }
     for (const id of ids) {
       const team = getTeamSession(state,id);
@@ -248,12 +243,7 @@ export class GameDungeonPresentationService {
         ? `${getDungeonDefinition(team.dungeonId).displayName} · ${this.formatDuration(this.dungeonSession.getTiming(Date.now(),id).remainingMs)} verbleibend`
         : this.getLootTotal({session:team} as DungeonPresentationState)>0 ? 'Beute bereit · Fenster zum Einsammeln öffnen' : '5 Stunden Laufzeit · Teamfenster öffnen';
     }
-    const offer = getTeamOffer(state as MutableGameState & {gold:number});
-    const buy = hub.querySelector<HTMLButtonElement>('#buyTeamButton')!;
-    buy.textContent = offer.reason==='max' ? `Maximum erreicht · ${offer.max} Teams` :
-      offer.reason==='building-pending' ? 'Teamgebäude im Bau · weiteren Teamkauf vorübergehend gesperrt' :
-      `Weiteres Team kaufen · ${formatCurrencyNickel(offer.costNickel)} (${offer.current}/${offer.max})`;
-    buy.disabled = !offer.ok;
+
   }
 
   private renderTeam(): void {

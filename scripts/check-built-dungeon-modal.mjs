@@ -236,7 +236,7 @@ try {
   assert.equal(/\bEN\b|Energie|\bHP\b/i.test(result.first.teamText), false, `Dungeon-Team zeigt weiterhin numerische Ressourcenlabels: ${result.first.teamText}`);
   assert.equal(result.first.timeText, '05:00:00', 'Trainingslager startet nicht mit fünf Stunden Laufzeit.');
   assert.equal(result.first.timeWidth, '100%', 'Laufzeitbalken startet nicht vollständig gefüllt.');
-  assert.equal(result.first.teamPurchasePresent, true, 'Der alte zusätzliche Dungeon-Hubknopf ist weiterhin sichtbar.');
+  assert.equal(result.first.teamPurchasePresent, false, 'Der alte separate Team-Kaufknopf muss entfallen.');
   assert.ok(result.first.layout, 'Layoutmessung fehlt.');
   assert.equal(result.first.layout.dialogOverflowY, 'hidden', 'Der Trainingslager-Dialog ist weiterhin scrollbar.');
   assert.equal(result.first.layout.layoutOverflowY, 'hidden', 'Die Trainingslager-Gesamtansicht ist weiterhin scrollbar.');
