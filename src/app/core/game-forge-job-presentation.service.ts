@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { productionActiveSlots } from '../game/city-production-capacity-core.ts';
+import { type CityLayoutWorldState } from '../game/city-layout-core.ts';
 import { formatCurrencyNickel, formatDuration } from '../game/economy-core';
 import { type ForgeJob } from '../game/forge-core';
 import {
@@ -10,7 +11,7 @@ import { GameProgressionPresentationService } from './game-progression-presentat
 import { GameStateService, type MutableGameState } from './game-state.service';
 import { GameWeaponPresentationService } from './game-weapon-presentation.service';
 
-type RuntimeForgeJobPresentationState = MutableGameState & {
+type RuntimeForgeJobPresentationState = MutableGameState & CityLayoutWorldState & {
   forgeJobs: ForgeJob[];
   forgeQueue: ForgeJob[];
   upgrades: {
