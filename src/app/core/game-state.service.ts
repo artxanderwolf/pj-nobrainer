@@ -1,6 +1,7 @@
 import { initializeReleaseProgress } from '../game/mission-core.ts';
 import { migrateTeams } from '../game/team-core.ts';
 import { migrateCityLayout } from '../game/city-layout-core.ts';
+import { migrateCityEconomy } from '../game/city-economy-core.ts';
 import { Injectable } from '@angular/core';
 
 export type MutableGameState = Record<string, unknown>;
@@ -99,5 +100,6 @@ export class GameStateService {
     this.state['cityName'] = normalizeCityName(this.state['cityName']);
     initializeReleaseProgress(this.state);
     this.dungeonMigrationPending = migrateTeams(this.state) || this.dungeonMigrationPending;
+    this.cityMigrationPending = migrateCityEconomy(this.state) || this.cityMigrationPending;
   }
 }
