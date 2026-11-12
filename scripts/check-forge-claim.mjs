@@ -29,7 +29,7 @@ assert.equal(state.weaponInventory.length,0,'Keine Waffe vor Claim einlagern.');
 assert.deepEqual(state.inventory,{4:100},'Keine zweite Materialreservierung.');
 const beforeSave=structuredClone(state);
 const raw=encodeSave(state,t+10_000);
-assert.equal(SAVE_VERSION,21);
+assert.equal(SAVE_VERSION,22);
 assert.equal(validateImportedSave(raw).ok,true);
 const restored=decodeSave(raw).state;
 assert.deepEqual(restored,beforeSave);
