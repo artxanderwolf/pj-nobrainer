@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { productionActiveSlots } from '../game/city-production-capacity-core.ts';
+import { type CityLayoutWorldState } from '../game/city-layout-core.ts';
 import { getMaterialDisplayNameById, getMaterialIdByName, type WeaponSlot } from '../game/game-core';
 import { materialSellDataById, weaponSellData } from '../game/economy-core';
 import { getWeaponEquipLocation, type EquipmentCharacterLike } from '../game/equipment-core';
@@ -47,7 +48,7 @@ interface RuntimeMarketWeapon {
   starter?: boolean;
 }
 
-type RuntimeMarketState = MutableGameState & MarketStateLike & {
+type RuntimeMarketState = MutableGameState & CityLayoutWorldState & MarketStateLike & {
   inventory: MaterialStorageInventory;
   weaponInventory: RuntimeMarketWeapon[];
   characters: EquipmentCharacterLike[];
