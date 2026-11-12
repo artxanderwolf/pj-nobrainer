@@ -38,7 +38,7 @@ assert.equal(advanceForgeJobsToReady(restored,2,t+10_000),0,'Kein Offline-Doppel
 const id=restored.forgeReadyJobs[0].jobId;
 const taken=takeReadyForgeJob(restored,id);
 assert.equal(taken.jobId,id);
-assert.equal(taken.status,'ready');
+assert.equal(taken.status,'claimed');
 assert.equal(takeReadyForgeJob(restored,id),null,'Doppelclaim ist unmöglich.');
 assert.equal(restored.forgeReadyJobs.length,1);
 assert.equal(hasForgeCapacity(restored,2,5),true,'Abholung schafft erst jetzt neuen Gesamtplatz.');
