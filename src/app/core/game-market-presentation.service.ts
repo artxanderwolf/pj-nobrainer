@@ -4,6 +4,7 @@ import { getWeaponEquipLocation, type EquipmentCharacterLike } from '../game/equ
 import { getMaterialStorageEntries, type MaterialStorageInventory } from '../game/material-storage-core';
 import { getMaterialDisplayNameById, type WeaponSlot } from '../game/game-core';
 import { type MarketJob } from '../game/market-core';
+import { type IdentifiedMarketJob } from '../game/market-claim-core.ts';
 import {
   getActiveMarketJobPresentation,
   getMarketMaterialPresentation,
@@ -31,6 +32,7 @@ type RuntimeMarketPresentationState = MutableGameState & {
   characters: EquipmentCharacterLike[];
   marketJobs: MarketJob[];
   marketQueue: MarketJob[];
+  marketReadyJobs?: IdentifiedMarketJob[];
 };
 
 interface MarketPresentationCompatibilityBridge {
@@ -45,6 +47,7 @@ declare global {
 
 @Injectable({ providedIn: 'root' })
 export class GameMarketPresentationService {
+  private claimActionsBound = false;
   constructor(
     private readonly gameState: GameStateService,
     private readonly gameMarket: GameMarketService,
@@ -84,6 +87,25 @@ export class GameMarketPresentationService {
         return `<div class="sell-row market-job-row"${weaponId}>${imageHtml}<div class="market-job-copy"><strong>${presentation.title}</strong><div class="sell-meta">${presentation.metaText}</div></div><button class="btn smallbtn" data-market-cancel="queue" data-market-index="${index}">Entfernen</button></div>`;
       }).join('') : 'Warteschlange leer.';
       this.bindCancelActions(queue);
+    }
+    if (queue) {
+      let readyBox = document.getElementById('marketReadyCard');
+      if (!readyBox) {
+        readyBox = document.createElement('div');
+        readyBox.id = 'marketReadyCard';
+        readyBox.className = 'card';
+        queue.insertAdjacentElement('afterend',readyBox);
+      }
+      const ready = state.marketReadyJobs ?? [];
+      readyBox.innerHTML = '<h3>Fertige Verkäufe zur Auszahlung (' + ready.length + ')</h3>' +
+        (ready.length ? '<button type="button" class="btn primary" data-market-claim-all>Alle auszahlen</button>' : '') +
+        ready.map(job => {
+          const title = this.presentationJob(job).name;
+          const image = this.weaponSnapshot(job);
+          const weaponHtml = image ? this.weaponPresentation.renderImage(image,'market-job-weapon-image',`${image.name} verkauft`) : '';
+          return `<div class="sell-row market-job-row">${weaponHtml}<div class="market-job-copy"><strong>${this.escape(title)}</strong><p class="muted">Verkauft · ${formatCurrencyNickel(job.valueNickel)} abholbereit</p></div><button type="button" class="btn" data-market-claim-id="${job.jobId}">Auszahlen</button></div>`;
+        }).join('') + (!ready.length ? '<p>Keine fertigen Verkäufe.</p>' : '');
+      this.bindClaimActions();
     }
     this.progressionPresentation.render();
   }
@@ -184,6 +206,32 @@ export class GameMarketPresentationService {
   }
 
   closeLegacyCompatibilityBridge(): void { delete window.NoBrainerMarketPresentationCompatibility; }
+
+  private bindClaimActions(): void {
+    if (this.claimActionsBound) return;
+    this.claimActionsBound = true;
+    document.addEventListener('click', event => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const button = target.closest<HTMLButtonElement>('button[data-market-claim-id],button[data-market-claim-all]');
+      if (!button || button.disabled || !document.getElementById('marketReadyCard')?.contains(button)) return;
+      const sales = button.hasAttribute('data-market-claim-all')
+        ? this.gameMarket.claimAll()
+        : [this.gameMarket.claim(button.dataset['marketClaimId'] ?? '')].filter(
+            (sale): sale is NonNullable<typeof sale> => sale !== null
+          );
+      if (!sales.length) return;
+      for (const sale of sales) {
+        this.combatLog.add(`Markt ausgezahlt: ${sale.name} – ${formatCurrencyNickel(sale.valueNickel)}.`, 'good');
+      }
+      document.dispatchEvent(new Event('market-claim-changed'));
+      this.renderAll();
+    });
+  }
+
+  private escape(text: string): string {
+    return text.replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch] ?? ch));
+  }
 
   private startMaterial(materialId: number, quantity: number): void {
     const result = this.gameMarket.startMaterialById(materialId, quantity, Date.now());
