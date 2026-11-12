@@ -305,7 +305,7 @@ export class GameRuntimeService {
 
   private logForgeCompletions(completedNames: readonly string[]): void {
     for (const name of completedNames) {
-      this.combatLog.add(`Schmiede fertig: ${name} wurde dem Waffeninventar hinzugefügt.`, 'good');
+      this.combatLog.add(`Schmiede fertig: ${name} ist zur Abholung bereit.`, 'good');
     }
   }
 
