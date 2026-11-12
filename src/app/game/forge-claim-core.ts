@@ -1,7 +1,7 @@
 import { type ForgeJob, type ForgeStateLike, fillForgeSlots } from './forge-core.ts';
 
 /** S14: persisted, stable manufacturing identity and non-running completed orders. */
-export interface IdentifiedForgeJob extends ForgeJob { jobId: string; status: 'queued' | 'active' | 'ready'; }
+export interface IdentifiedForgeJob extends ForgeJob { jobId: string; status: 'queued' | 'active' | 'ready' | 'claimed'; }
 export interface ForgeClaimWorldState extends ForgeStateLike {
   forgeReadyJobs?: IdentifiedForgeJob[];
   nextForgeJobNumber?: number;
@@ -97,5 +97,7 @@ export function takeReadyForgeJob(state: ForgeClaimWorldState, jobId: string): I
   initializeForgeClaims(state);
   const i = state.forgeReadyJobs!.findIndex(job=>job.jobId===jobId && job.status==='ready');
   if (i < 0) return null;
-  return state.forgeReadyJobs!.splice(i,1)[0];
+  const claimed = state.forgeReadyJobs!.splice(i,1)[0];
+  claimed.status = 'claimed';
+  return claimed;
 }
