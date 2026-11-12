@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { productionActiveSlots } from '../game/city-production-capacity-core.ts';
 import { formatCurrencyNickel } from '../game/economy-core';
 import {
   getUpgradeCardsPresentation,
@@ -61,15 +62,21 @@ export class GameProgressionPresentationService {
       characterCount: state.characters.length,
       innCapacity: state.upgrades.innCapacity,
       forgeJobCount: state.forgeJobs.length,
-      forgeSlotCapacity: state.upgrades.forgeSlots,
+      forgeSlotCapacity: productionActiveSlots(state, 'forge'),
       forgeQueueCount: state.forgeQueue.length,
       forgeQueueCapacity: state.upgrades.forgeQueue,
       marketJobCount: state.marketJobs.length,
-      marketSlotCapacity: state.upgrades.marketSlots,
+      marketSlotCapacity: productionActiveSlots(state, 'market'),
       marketQueueCount: state.marketQueue.length,
       marketQueueCapacity: state.upgrades.marketQueue,
       offers
     }, formatCurrencyNickel);
+
+    // S13: Betriebsplätze werden ausschließlich über fertige Gebäude erzeugt.
+    presentation.forge.buttons = presentation.forge.buttons.filter(button => button.kind !== 'forgeSlots');
+    presentation.market.buttons = presentation.market.buttons.filter(button => button.kind !== 'marketSlots');
+    presentation.forge.note = 'Aktive Schmiedeplätze: ein Platz pro fertiger Schmiede. Weitere Schmieden in der Stadt bauen.';
+    presentation.market.note = 'Aktive Verkaufsplätze: ein Platz pro fertigem Markt. Weitere Märkte in der Stadt bauen.';
 
     if (inn) {
       inn.dataset['progressionPresentationOwner'] = 'angular';
