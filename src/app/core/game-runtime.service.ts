@@ -1,4 +1,5 @@
 import { GameMissionService } from './game-mission.service';
+import { finishCityConstruction, type CityConstructionWorldState } from '../game/city-construction-core.ts';
 import { Injectable } from '@angular/core';
 import { formatCurrencyNickel } from '../game/economy-core';
 import { normalizeMaterialInventory, type MaterialStorageInventory } from '../game/material-storage-core';
@@ -58,6 +59,7 @@ export class GameRuntimeService {
   private hiddenSnapshot: SaveSnapshot | null = null;
   private visibilityHandlerRegistered = false;
   private equipmentRepairMessages: string[] = [];
+  private lastCityConstructionSecond = -1;
 
   constructor(
     private readonly saveStorage: SaveStorageService,
@@ -108,6 +110,7 @@ export class GameRuntimeService {
     runtime.prepare();
     const dungeonMigrationChanged = this.gameState.consumeDungeonMigration();
     const cityMigrationChanged = this.gameState.consumeCityMigration();
+    const constructionCompleted = finishCityConstruction(this.gameState.getState<MutableGameState & CityConstructionWorldState>(), Date.now()).length > 0;
     const equipmentRepairs = this.gameEquipment.normalizeEquipment();
     const equipmentChanged = equipmentRepairs.length > 0;
     if (equipmentChanged) {
@@ -156,7 +159,7 @@ export class GameRuntimeService {
       runtime.save(false);
       const after = this.saveStorage.readSnapshot();
       if (after) this.offlineProgress.showSummary(before, after);
-    } else if (equipmentChanged || materialReferencesChanged || dungeonSessionPreparation.saveRequested || dungeonMigrationChanged || cityMigrationChanged) {
+    } else if (equipmentChanged || materialReferencesChanged || dungeonSessionPreparation.saveRequested || dungeonMigrationChanged || cityMigrationChanged || constructionCompleted) {
       runtime.save(false);
     }
 
@@ -241,6 +244,14 @@ export class GameRuntimeService {
     this.applyDungeonResult(runtime, dungeonUpdate);
     this.gameEnergy.update();
     this.missions.render();
+    const now = Date.now();
+    const finishedCityJobs = finishCityConstruction(this.gameState.getState<MutableGameState & CityConstructionWorldState>(), now);
+    if (finishedCityJobs.length) runtime.save(false);
+    const citySecond = Math.floor(now / 1000);
+    if (finishedCityJobs.length || citySecond !== this.lastCityConstructionSecond) {
+      this.lastCityConstructionSecond = citySecond;
+      document.dispatchEvent(new Event('city-construction-updated'));
+    }
 
     this.forgeJobPresentation.render();
     runtime.renderMarketJob();
