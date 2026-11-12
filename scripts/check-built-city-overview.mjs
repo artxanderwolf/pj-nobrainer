@@ -193,6 +193,19 @@ const probeScript = `
         result.noConstructionStarted=layout?.buildings?.length===6;
         result.cellCount=document.querySelectorAll('.city-placement-cell').length;
         result.finalNotice=document.querySelector('.city-placement-notice')?.textContent?.trim()||'';
+        const buildToggle=document.querySelector('[data-city-build-toggle]');
+        result.buildTogglePresent=buildToggle instanceof HTMLButtonElement;
+        buildToggle?.click();
+        result.buildSelectPresent=document.querySelector('[data-city-build-select]') instanceof HTMLSelectElement;
+        result.build30MinutesShown=Boolean(document.querySelector('.city-placement-tools')?.textContent?.includes('30 Minuten'));
+        const beforeBuild=JSON.parse(localStorage.getItem('nobrainer_save_v1')||'{}');
+        const buildCell=document.querySelector('[data-city-target-x="2"][data-city-target-y="0"]');
+        if(!buildCell)throw new Error('S11 Baumodus muss ein freies Zielfeld anbieten.');
+        buildCell.click();
+        const afterBuild=JSON.parse(localStorage.getItem('nobrainer_save_v1')||'{}');
+        result.buildNoNickelRejected=beforeBuild.state?.gold===afterBuild.state?.gold &&
+          beforeBuild.state?.cityLayout?.buildings?.length===afterBuild.state?.cityLayout?.buildings?.length &&
+          /Nicht genügend Nickel/.test(document.querySelector('.city-placement-notice')?.textContent||'');
         clearInterval(timer);
         finish({ status:'passed', ...result });
       }
@@ -309,6 +322,10 @@ try {
   assert.equal(result.noConstructionStarted,true,'S09 darf keine kostenlosen zusätzlichen Gebäude bauen.');
   assert.equal(result.cellCount,result.gridAfterExpand.width*result.gridAfterExpand.height,'Zielfeld-Overlay wächst mit.');
   if(purchases>0) assert.match(result.finalNotice,/erweitert/,'Kostenpflichtige Erweiterung muss bestätigt werden.');
+  assert.equal(result.buildTogglePresent,true,'S11 benötigt einen sichtbaren Baumodus.');
+  assert.equal(result.buildSelectPresent,true,'S11 benötigt eine Gebäudetyp-Auswahl.');
+  assert.equal(result.build30MinutesShown,true,'S11 zeigt 30 Minuten Bauzeit an.');
+  assert.equal(result.buildNoNickelRejected,true,'S11 darf ohne Nickel weder bauen noch abbuchen.');
 
   console.log('S09-Stadt-Browserregression: sechs Gebäude-IDs, alle Navigationsziele, Kollisionsablehnung, kostenloser persistenter Gebäude-Move und S10-Kaufprüfung erfolgreich.');
 } finally {
