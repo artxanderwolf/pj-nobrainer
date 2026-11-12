@@ -50,8 +50,8 @@ for(const amount of [1,2,5]){
  assert.equal(hasMarketCapacity(s,amount,3),false);
  assert.equal(s.forgeQueue.length,3);
  assert.equal(s.marketQueue.length,3);
- assert.equal(advanceForgeJobs(s,amount,200_000,()=>{}),amount+3);
- assert.equal(advanceMarketJobs(s,amount,200_000,()=>{}),amount+3);
+ assert.equal(advanceForgeJobs(s,amount,1_000_000,()=>{}),amount+3);
+ assert.equal(advanceMarketJobs(s,amount,1_000_000,()=>{}),amount+3);
  assert.equal(s.forgeJobs.length,0);
  assert.equal(s.marketJobs.length,0);
  assert.equal(s.forgeQueue.length,0);
