@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { productionActiveSlots } from '../game/city-production-capacity-core.ts';
 import { formatCurrencyNickel } from '../game/economy-core';
 import {
   MATERIAL_REFERENCES_BY_ID,
@@ -76,7 +77,7 @@ export class GameForgePreviewPresentationService {
         hasMaterials: this.gameForge.hasMaterials(requirements),
         hasCapacity:
           state.forgeJobs.length + state.forgeQueue.length <
-          state.upgrades.forgeSlots + state.upgrades.forgeQueue,
+          productionActiveSlots(state, 'forge') + state.upgrades.forgeQueue,
         seconds: preview.seconds,
         valueNickel: preview.valueNickel,
         factor: preview.factor,
