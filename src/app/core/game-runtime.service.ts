@@ -126,9 +126,17 @@ export class GameRuntimeService {
     this.androidBack.bind();
     const materialStorageChanged = this.normalizeMaterialStorage() > 0;
     const dungeonMaterialReferencesChanged = this.gameDungeon.normalizeMaterialReferences() > 0;
+    const forgeClaimMigrationChanged = this.gameForge.initializeClaims();
     const forgeMaterialReferencesChanged = this.gameForge.normalizeMaterialReferences() > 0;
     const marketMaterialReferencesChanged = this.gameMarket.normalizeMaterialReferences() > 0;
     const materialReferencesChanged = materialStorageChanged || dungeonMaterialReferencesChanged || forgeMaterialReferencesChanged || marketMaterialReferencesChanged;
+    this.forgeJobPresentation.bindActions(() => {
+      runtime.save(false);
+      this.forgeJobPresentation.render();
+      this.forgePreviewPresentation.render();
+      this.weaponInventoryPresentation.render();
+      runtime.renderMarketWeapons();
+    });
     this.characterPresentation.bindActions(() => {
       this.dungeonEquipmentSync.refresh();
       this.weaponInventoryPresentation.render();
@@ -163,7 +171,7 @@ export class GameRuntimeService {
       runtime.save(false);
       const after = this.saveStorage.readSnapshot();
       if (after) this.offlineProgress.showSummary(before, after);
-    } else if (equipmentChanged || materialReferencesChanged || dungeonSessionPreparation.saveRequested || dungeonMigrationChanged || cityMigrationChanged || constructionCompleted) {
+    } else if (equipmentChanged || materialReferencesChanged || dungeonSessionPreparation.saveRequested || dungeonMigrationChanged || cityMigrationChanged || constructionCompleted || forgeClaimMigrationChanged) {
       runtime.save(false);
     }
 
@@ -250,7 +258,7 @@ export class GameRuntimeService {
     this.gameEnergy.update();
     this.missions.render();
     const now = Date.now();
-    if (productionReplay.constructionCompleted) runtime.save(false);
+    if (productionReplay.constructionCompleted || forgeCompleted) runtime.save(false);
     const citySecond = Math.floor(now / 1000);
     if (productionReplay.constructionCompleted || citySecond !== this.lastCityConstructionSecond) {
       this.lastCityConstructionSecond = citySecond;
@@ -297,7 +305,7 @@ export class GameRuntimeService {
 
   private logForgeCompletions(completedNames: readonly string[]): void {
     for (const name of completedNames) {
-      this.combatLog.add(`Schmiede fertig: ${name} wurde dem Waffeninventar hinzugefügt.`, 'good');
+      this.combatLog.add(`Schmiede fertig: ${name} ist zur Abholung bereit.`, 'good');
     }
   }
 
