@@ -1,5 +1,6 @@
 import { GameMissionService } from './game-mission.service';
-import { finishCityConstruction, type CityConstructionWorldState } from '../game/city-construction-core.ts';
+import { type CityConstructionWorldState } from '../game/city-construction-core.ts';
+import { replayProductionConstructionMilestones } from '../game/city-production-capacity-core.ts';
 import { Injectable } from '@angular/core';
 import { formatCurrencyNickel } from '../game/economy-core';
 import { normalizeMaterialInventory, type MaterialStorageInventory } from '../game/material-storage-core';
@@ -110,7 +111,6 @@ export class GameRuntimeService {
     runtime.prepare();
     const dungeonMigrationChanged = this.gameState.consumeDungeonMigration();
     const cityMigrationChanged = this.gameState.consumeCityMigration();
-    const constructionCompleted = finishCityConstruction(this.gameState.getState<MutableGameState & CityConstructionWorldState>(), Date.now()).length > 0;
     const equipmentRepairs = this.gameEquipment.normalizeEquipment();
     const equipmentChanged = equipmentRepairs.length > 0;
     if (equipmentChanged) {
@@ -146,6 +146,10 @@ export class GameRuntimeService {
     const dungeonSessionPreparation = this.dungeonSession.prepareLoadedSession(Date.now());
     this.applyDungeonResult(runtime, dungeonSessionPreparation);
 
+    // S13: Eine offline fertiggestellte Schmiede / ein Markt übernimmt die
+    // gemeinsame Queue ab seinem tatsächlichen Bau-Endzeitpunkt.
+    const offlineProduction = this.replayCityProduction(Date.now());
+    const constructionCompleted = offlineProduction.constructionCompleted;
     const forgeUpdate = this.gameForge.update();
     this.logForgeCompletions(forgeUpdate.completedNames);
     const marketUpdate = this.gameMarket.update();
@@ -234,21 +238,21 @@ export class GameRuntimeService {
   private runTickCycle(): void {
     const runtime = this.getRuntime();
 
+    const productionReplay = this.replayCityProduction(Date.now());
     const forgeUpdate = this.gameForge.update();
-    const forgeCompleted = forgeUpdate.completedCount > 0;
+    const forgeCompleted = forgeUpdate.completedCount > 0 || productionReplay.forgeCompleted;
     this.logForgeCompletions(forgeUpdate.completedNames);
     const marketUpdate = this.gameMarket.update();
-    const marketCompleted = marketUpdate.completedCount > 0;
+    const marketCompleted = marketUpdate.completedCount > 0 || productionReplay.marketCompleted;
     this.logMarketCompletions(marketUpdate.completedSales);
     const dungeonUpdate = this.dungeonSession.update();
     this.applyDungeonResult(runtime, dungeonUpdate);
     this.gameEnergy.update();
     this.missions.render();
     const now = Date.now();
-    const finishedCityJobs = finishCityConstruction(this.gameState.getState<MutableGameState & CityConstructionWorldState>(), now);
-    if (finishedCityJobs.length) runtime.save(false);
+    if (productionReplay.constructionCompleted) runtime.save(false);
     const citySecond = Math.floor(now / 1000);
-    if (finishedCityJobs.length || citySecond !== this.lastCityConstructionSecond) {
+    if (productionReplay.constructionCompleted || citySecond !== this.lastCityConstructionSecond) {
       this.lastCityConstructionSecond = citySecond;
       document.dispatchEvent(new Event('city-construction-updated'));
     }
@@ -270,6 +274,25 @@ export class GameRuntimeService {
     }
 
     if (runtime.shouldAutoSave(Date.now())) runtime.save(false);
+  }
+
+  private replayCityProduction(now: number): { constructionCompleted: boolean; forgeCompleted: boolean; marketCompleted: boolean } {
+    let forgeCompleted = false;
+    let marketCompleted = false;
+    const state = this.gameState.getState<MutableGameState & CityConstructionWorldState>();
+    const constructionJobs = replayProductionConstructionMilestones(state, now, at => {
+      const forge = this.gameForge.update(at);
+      const market = this.gameMarket.update(at);
+      if (forge.completedCount) {
+        forgeCompleted = true;
+        this.logForgeCompletions(forge.completedNames);
+      }
+      if (market.completedCount) {
+        marketCompleted = true;
+        this.logMarketCompletions(market.completedSales);
+      }
+    });
+    return { constructionCompleted: constructionJobs.length > 0, forgeCompleted, marketCompleted };
   }
 
   private logForgeCompletions(completedNames: readonly string[]): void {
