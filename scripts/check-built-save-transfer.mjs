@@ -126,6 +126,8 @@ const probeScript = `<script>
             // S07: einen echten alten Save-17-Zustand ohne Stadtstruktur importieren.
             imported.saveVersion=17;
             delete imported.state.cityLayout;
+            delete imported.state.cityEconomy;
+            delete imported.state.cityConstruction;
             localStorage.setItem(FIRST_KEY,JSON.stringify({ui,exportStatus,invalidStatus,unchangedAfterInvalid,cityBeforeImport}));
             localStorage.setItem(ORIGINAL_GOLD_KEY,String(originalGold));
             localStorage.setItem(IMPORTED_GOLD_KEY,String(importedGold));
