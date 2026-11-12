@@ -14,7 +14,7 @@ const state = {
   weaponInventory: [{ id: 7, slots: [{ slot: 'workingPart', materialId: 4 }] }],
   marketQueue: [{ type: 'material', materialId: 4, quantity: 1 }],
   dungeonWavesDefeated: 9,
-  dungeonSessionEndsAt: 1_760_019_000_000
+  dungeonSessionEndsAt: 1_760_018_000_000
 };
 const savedAt = 1_760_000_000_000;
 const encoded = encodeSave(state, savedAt);
