@@ -6,7 +6,8 @@ import {
   type CityBuildingPresentation
 } from '../game/city-overview-presentation-core.ts';
 import { type CityLayoutWorldState, type CityLayoutState } from '../game/city-layout-core.ts';
-import { expandCityLayout, moveCityBuilding, type CityExpandDirection } from '../game/city-placement-core.ts';
+import { moveCityBuilding, type CityExpandDirection } from '../game/city-placement-core.ts';
+import { buyCityExpansion, cityExpansionPrice, type CityEconomyWorldState } from '../game/city-economy-core.ts';
 import { teamIds, type TeamWorldState } from '../game/team-core.ts';
 import { GameDungeonPresentationService } from './game-dungeon-presentation.service';
 import { GameStateService, type MutableGameState } from './game-state.service';
@@ -33,7 +34,7 @@ export class GameCityOverviewPresentationService {
   render(): void {
     const root = this.ensureInstalled();
     if (!root) return;
-    const state = this.gameState.getState<MutableGameState & TeamWorldState & CityLayoutWorldState>();
+    const state = this.gameState.getState<MutableGameState & TeamWorldState & CityLayoutWorldState & CityEconomyWorldState>();
     const layout = state.cityLayout;
     if (!layout) throw new Error('S08: Stadtlayout fehlt nach der S07-Save-Migration.');
     const ownedIds = teamIds(state);
@@ -41,14 +42,14 @@ export class GameCityOverviewPresentationService {
       this.moveBuildingId = null;
     }
     const signature = JSON.stringify({
-      layout, ownedIds, moveMode: this.moveMode,
+      layout, ownedIds, gold: state.gold, cityEconomy: state.cityEconomy, moveMode: this.moveMode,
       moveBuildingId: this.moveBuildingId, moveNotice: this.moveNotice
     });
     if (signature !== this.renderedSignature) {
       const viewport = root.querySelector<HTMLElement>('.city-grid-viewport');
       const scrollLeft = viewport?.scrollLeft ?? 0;
       const scrollTop = viewport?.scrollTop ?? 0;
-      root.innerHTML = this.renderCity(layout, ownedIds);
+      root.innerHTML = this.renderCity(layout, ownedIds, state.cityEconomy?.paidExpansions ?? 0, Number(state.gold ?? 0));
       const nextViewport = root.querySelector<HTMLElement>('.city-grid-viewport');
       if (nextViewport) {
         nextViewport.scrollLeft = scrollLeft;
@@ -98,12 +99,12 @@ export class GameCityOverviewPresentationService {
     return root;
   }
 
-  private renderCity(layout: CityLayoutState, ownedIds: readonly number[]): string {
+  private renderCity(layout: CityLayoutState, ownedIds: readonly number[], paidExpansions: number, gold: number): string {
     const buildings = getCityOverviewPresentation(layout, ownedIds);
     const extraTeams = getCityLegacyTeamAccess(layout, ownedIds);
     const gridColumns = layout.grid.width;
     const gridRows = layout.grid.height;
-    const tools = this.renderPlacementToolbar(buildings, layout);
+    const tools = this.renderPlacementToolbar(buildings, layout, paidExpansions, gold);
     const moveCells = this.moveMode ? this.renderMoveCells(layout) : '';
     const quickLinks = CITY_QUICK_ACCESS.map(access => {
       return `<button id="cityAction-${access.id}" type="button" class="city-grid-quick-link" data-city-quick-id="${access.id}"><span aria-hidden="true">${access.icon}</span>${this.escapeHtml(access.label)}</button>`;
@@ -135,8 +136,10 @@ export class GameCityOverviewPresentationService {
   }
 
   private renderPlacementToolbar(
-    buildings: readonly CityBuildingPresentation[], layout: CityLayoutState
+    buildings: readonly CityBuildingPresentation[], layout: CityLayoutState, paidExpansions: number, gold: number
   ): string {
+    const expansionCost = cityExpansionPrice(paidExpansions);
+    const canExpand = gold >= expansionCost;
     const modeLabel = this.moveMode ? 'Verschiebemodus beenden' : 'Gebäude verschieben';
     const selectedId = this.moveBuildingId ?? buildings[0]?.buildingInstanceId ?? null;
     const options = buildings.map(building =>
@@ -155,13 +158,13 @@ export class GameCityOverviewPresentationService {
       ${selection}
       <p class="city-placement-notice" role="status" aria-live="polite">${this.escapeHtml(this.moveNotice)}</p>
       <fieldset class="city-expand-controls">
-        <legend>Stadtfläche um vier Felder erweitern</legend>
-        <button type="button" class="btn" data-city-expand="left">← Links +4</button>
-        <button type="button" class="btn" data-city-expand="right">Rechts +4 →</button>
-        <button type="button" class="btn" data-city-expand="up">↑ Oben +4</button>
-        <button type="button" class="btn" data-city-expand="down">Unten +4 ↓</button>
+        <legend>Stadtfläche um vier Felder erweitern · ${expansionCost.toLocaleString('de-DE')} Nickel</legend>
+        <button type="button" class="btn" data-city-expand="left"${canExpand ? "" : " disabled"}>← Links +4</button>
+        <button type="button" class="btn" data-city-expand="right"${canExpand ? "" : " disabled"}>Rechts +4 →</button>
+        <button type="button" class="btn" data-city-expand="up"${canExpand ? "" : " disabled"}>↑ Oben +4</button>
+        <button type="button" class="btn" data-city-expand="down"${canExpand ? "" : " disabled"}>Unten +4 ↓</button>
       </fieldset>
-      <p class="city-placement-hint">S09-Testphase: Flächenerweiterungen ohne Nickelabbuchung; künftige Preise müssen in S10 gesondert festgelegt werden. Neue Gebäude kaufen und Bauaufträge folgen in S10/S11.</p>
+      <p class="city-placement-hint">S10: Neue Stadterweiterungen kosten Nickel (3.000 Grundpreis × zentraler Faktor × 1,5 pro bezahlter Erweiterung). Migrationsfläche bleibt kostenlos. Gebäude-Bauaufträge folgen in S11.</p>
     </section>`;
   }
 
@@ -211,16 +214,26 @@ export class GameCityOverviewPresentationService {
   }
 
   private applyExpansion(direction: CityExpandDirection): void {
-    const state = this.gameState.getState<MutableGameState & CityLayoutWorldState>();
-    if (!state.cityLayout) return;
-    const existing = state.cityLayout;
+    const state = this.gameState.getState<MutableGameState & CityLayoutWorldState & CityEconomyWorldState>();
+    if (!state.cityLayout || !state.cityEconomy) return;
+    const oldLayout = state.cityLayout;
+    const oldEconomy = state.cityEconomy;
+    const oldGold = state.gold;
     try {
-      state.cityLayout = expandCityLayout(existing, direction);
-      if (!this.injector.get(GameRuntimeService).save(false)) throw new Error('Der Spielstand konnte nicht geschrieben werden.');
-      this.moveNotice = 'Stadtfläche um vier Felder erweitert und gespeichert (S09 ohne Nickelabzug).';
+      const result = buyCityExpansion(state, direction);
+      if (!result.ok) {
+        this.moveNotice = result.reason ?? 'Stadterweiterung nicht möglich.';
+      } else {
+        if (!this.injector.get(GameRuntimeService).save(false)) {
+          throw new Error('Der Spielstand konnte nicht geschrieben werden.');
+        }
+        this.moveNotice = `Stadtfläche für ${result.costNickel.toLocaleString('de-DE')} Nickel um vier Felder erweitert.`;
+      }
     } catch {
-      state.cityLayout = existing;
-      this.moveNotice = 'Stadtfläche konnte nicht erweitert oder gespeichert werden. Der bisherige Stand ist erhalten.';
+      state.cityLayout = oldLayout;
+      state.cityEconomy = oldEconomy;
+      state.gold = oldGold;
+      this.moveNotice = 'Erweiterung oder Speicherung fehlgeschlagen: Stadt und Nickelbestand unverändert.';
     }
     this.render();
   }
@@ -341,7 +354,7 @@ export class GameCityOverviewPresentationService {
     }
     card.innerHTML = `<h2>Stadtraster und Gebäude</h2>
       <p class="index-note">Die bisherige starre Stadtgrafik wurde durch die gespeicherten Gebäude aus dem 12×8-Raster ersetzt. Jedes Gebäude besitzt eine feste technische ID und öffnet die passende bestehende Spielseite. Auf Smartphones lässt sich das Raster seitlich verschieben. Dungeonweg, Materiallager, Waffenlager und Missionen sind über die Zugänge unter der Karte erreichbar.</p>
-      <p class="index-note">Die Bauhütte ist bereits sichtbar, aber Bauaufträge kommen erst mit S11. Über den Verschiebemodus kannst du ein bestehendes Gebäude auswählen und danach kostenlos auf ein freies Rasterfeld setzen; belegte oder zu kleine Flächen werden abgelehnt. Die Karte kannst du links, rechts, oben oder unten um jeweils vier Felder vergrößern. Die Flächenerweiterung ist in S09 vorläufig ohne Nickelabzug; endgültige Preise folgen nach gesonderter Entscheidung in S10. Neue Gebäude kaufen und Bauaufträge folgen erst in S10/S11. Deine bisherigen Ausbauplätze und zusätzlichen Teams bleiben bestehen. Bereits gekaufte Teams ohne Gebäude werden vorübergehend unter der Karte angeboten; die Umstellung auf eigene Teamgebäude erfolgt in S10–S12.</p>`;
+      <p class="index-note">Die Bauhütte ist bereits sichtbar, aber Bauaufträge kommen erst mit S11. Über den Verschiebemodus kannst du ein bestehendes Gebäude auswählen und danach kostenlos auf ein freies Rasterfeld setzen; belegte oder zu kleine Flächen werden abgelehnt. Die Karte kannst du links, rechts, oben oder unten um jeweils vier Felder vergrößern. Neue Flächenerweiterungen kosten Nickel: Grundpreis 3.000 × zentraler Kostenfaktor × 1,5 je bezahlter Erweiterung. Bereits bezahlte Schmiede-, Markt- und Teamplätze werden einmalig kostenlos als Gebäude übernommen. Bei Platzmangel wird kostenlos erweitert. Erstes Gebäude je Art kostenlos; weitere: Schmiede/Markt 5.000, Team 3.000, Bauhütte/Taverne/Runenwerkstatt 20.000 Nickel Grundpreis × zentraler Faktor × Wachstum 1,2. Maximal 10 Schmieden, Märkte, Tavernen und Teams sowie je 2 Bauhütten und Runenwerkstätten. Die Stadt ist theoretisch unbegrenzt erweiterbar. Bauaufträge folgen S11.</p>`;
   }
 
   private escapeHtml(value: string): string {
