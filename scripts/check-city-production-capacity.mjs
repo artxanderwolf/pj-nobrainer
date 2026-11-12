@@ -85,7 +85,7 @@ for(let i=0;i<2;i++){
 }
 const snapshot=structuredClone(construction);
 const stored=encodeSave(construction,t);
-assert.equal(SAVE_VERSION,21,'S14 ergänzt nun persistente Forge-Ready-Felder.');
+assert.equal(SAVE_VERSION,22,'S14 ergänzt nun persistente Forge-Ready-Felder.');
 assert.equal(validateImportedSave(stored).ok,true);
 const reloaded=decodeSave(stored).state;
 assert.deepEqual(reloaded,snapshot);

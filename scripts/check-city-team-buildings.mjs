@@ -60,7 +60,7 @@ assert.equal(reconcileCityTeamBuildings(old),false);
 assert.equal(JSON.stringify(old),saved,'Bei Reload keine zweite Migration.');
 assert.equal(getTeamOffer(old).reason,'max');
 const json=encodeSave(old);
-assert.equal(SAVE_VERSION,21,'S14 hat das bisherige Save20 um die Forge-Ready-Felder auf Save21 erweitert.');
+assert.equal(SAVE_VERSION,22,'S14 hat das bisherige Save20 um die Forge-Ready-Felder auf Save22 erweitert.');
 assert.equal(validateImportedSave(json).ok,true);
 const restored=decodeSave(json).state;
 assert.equal(reconcileCityTeamBuildings(restored),false);
@@ -91,4 +91,4 @@ assert.equal(full.gold,1_000_000);
 assert.equal(full.cityLayout.grid.minX,firstGrid.minX);
 assert.equal(full.cityLayout.buildings.filter(b=>b.buildingTypeId==='team').length,10);
 
-console.log('S12: zehn Teamgebäude und parallele Sessions, direkte ID-Navigation, Altteam-Migration, No-Doppelkauf, Save21, Baustelle und Idempotenz geprüft.');
+console.log('S12: zehn Teamgebäude und parallele Sessions, direkte ID-Navigation, Altteam-Migration, No-Doppelkauf, Save22, Baustelle und Idempotenz geprüft.');

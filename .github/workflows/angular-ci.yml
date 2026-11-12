@@ -64,6 +64,9 @@ jobs:
       - name: Test market quantity input in browser
         run: node scripts/check-built-market-quantity-input.mjs
 
+      - name: Test market manual payout in browser
+        run: node scripts/check-built-market-claim.mjs
+
       - name: Test market weapon images in browser
         run: node scripts/check-built-market-weapon-images.mjs
 

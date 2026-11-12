@@ -297,18 +297,18 @@ try {
   assert.match(result.first.exportStatus, new RegExp(`NoBrainer-Spielstand-v${escapedAppVersion}-`), 'Der Export verwendet nicht den versionierten JSON-Dateinamen.');
   assert.match(result.first.invalidStatus, /kein vollständiger NoBrainer-Spielstand/, 'Eine ungültige JSON-Datei wird nicht verständlich abgelehnt.');
   assert.equal(result.first.unchangedAfterInvalid, true, 'Ein ungültiger Import verändert den lokalen Spielstand.');
-  assert.equal(result.first.cityBeforeImport.version, 21, 'S07: Ein neues Spiel muss Save 21 speichern.');
+  assert.equal(result.first.cityBeforeImport.version, 22, 'S07: Ein neues Spiel muss Save 22 speichern.');
   assert.deepEqual(result.first.cityBeforeImport.grid, { minX: 0, minY: 0, width: 12, height: 8 }, 'S07: Stadtgrundraster nach erstem Save.');
   assert.equal(result.first.cityBeforeImport.buildings, 6, 'S07: sechs Startgebäude müssen im Browser-Save sein.');
   assert.equal(new Set(result.first.cityBeforeImport.ids).size, 6, 'S07: Start-IDs müssen eindeutig sein.');
   assert.equal(result.second.importedGold, result.second.expectedImportedGold, 'Der gültige JSON-Import wurde nach dem Reload nicht geladen.');
-  assert.equal(result.second.migratedSaveVersion, 21, 'S07: alter Save 17 muss beim Start automatisch auf Save 21 migrieren.');
+  assert.equal(result.second.migratedSaveVersion, 22, 'S07: alter Save 17 muss beim Start automatisch auf Save 22 migrieren.');
   assert.deepEqual(result.second.migratedCityGrid, { minX: 0, minY: 0, width: 12, height: 8 });
   assert.equal(result.second.migratedBuildingIds.length, 6, 'S07: sechs Anfangsgebäude auch nach Altimport.');
   assert.equal(result.second.backupExists, true, 'Vor dem Import wurde keine automatische Sicherung angelegt.');
   assert.equal(result.second.undoEnabled, true, 'Die Rückgängig-Aktion ist nach dem Import nicht verfügbar.');
   assert.equal(result.restoredGold, result.expectedOriginalGold, 'Rückgängig stellt den vorherigen Spielstand nicht wieder her.');
-  assert.equal(result.restoredSaveVersion, 21, 'S07: Undo muss Save 21 zurückholen.');
+  assert.equal(result.restoredSaveVersion, 22, 'S07: Undo muss Save 22 zurückholen.');
   assert.deepEqual(result.restoredBuildingIds, result.first.cityBeforeImport.ids, 'S07: Undo muss dieselben Gebäude-IDs wiederherstellen.');
   assert.equal(result.backupRemoved, true, 'Die verwendete Import-Sicherung bleibt nach erfolgreicher Wiederherstellung liegen.');
 
