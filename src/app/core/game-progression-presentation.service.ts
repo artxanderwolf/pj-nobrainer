@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { productionActiveSlots } from '../game/city-production-capacity-core.ts';
+import { type CityLayoutWorldState } from '../game/city-layout-core.ts';
 import { formatCurrencyNickel } from '../game/economy-core';
 import {
   getUpgradeCardsPresentation,
@@ -9,7 +10,7 @@ import {
 import { GameProgressionService } from './game-progression.service';
 import { GameStateService, type MutableGameState } from './game-state.service';
 
-type RuntimeProgressionPresentationState = MutableGameState & {
+type RuntimeProgressionPresentationState = MutableGameState & CityLayoutWorldState & {
   characters: unknown[];
   upgrades: {
     innCapacity: number;
