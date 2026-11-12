@@ -287,8 +287,8 @@ try {
     'Gebäude müssen die S07-Rasterkoordinaten verwenden.');
   assert.equal(result.assetKeys.length,6);
   assert.ok(result.assetKeys.every(key=>key?.startsWith('city.building.')));
-  assert.equal(result.builderDisabled,true,'Bauhütte darf vor S11 keine echten Bauaufträge starten.');
-  assert.match(result.builderExplanation,/S11/);
+  assert.equal(result.builderDisabled,true,'Bauhütte hat keinen eigenen Seitenzugang; Bauaufträge starten im Baumodus.');
+  assert.match(result.builderExplanation,/Baumeister/);
   assert.deepEqual(result.quickLabels,['⚔️Dungeonweg','🪵Materiallager','🗡️Waffenlager','📜Missionen']);
   assert.equal(result.backgroundAbsent,true,'Die starre alte Stadtkarte darf nicht zweite Pflichtansicht bleiben.');
   assert.equal(result.legacyHotspotAbsent,true,'Alte Prozent-Hotspots dürfen nicht weiter benutzt werden.');
