@@ -78,9 +78,10 @@ export function getTeamOffer(state: TeamWorldState & {gold:number}) {
   const current = teamIds(state).length;
   const costNickel = calculateUpgradeCost('teamSlots',current);
   const max = CONFIG.upgrades.teamSlots.max;
+  const hasCityBuildings = !!(state as TeamWorldState & {cityLayout?: {buildings?: unknown[]}}).cityLayout?.buildings;
   const pendingTeamBuild = (state as TeamWorldState & {cityLayout?: {buildings?: Array<{buildingTypeId?: string; status?: string}>}})
     .cityLayout?.buildings?.some(building => building.buildingTypeId === 'team' && building.status === 'underConstruction') ?? false;
-  const reason = current >= max ? 'max' : pendingTeamBuild ? 'building-pending' :
+  const reason = current >= max ? 'max' : hasCityBuildings ? 'building-required' : pendingTeamBuild ? 'building-pending' :
     !Number.isFinite(state.gold) || state.gold < costNickel ? 'insufficient-funds' : 'ready';
   return {ok:reason==='ready',reason,current,max,costNickel};
 }
