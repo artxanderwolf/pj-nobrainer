@@ -88,7 +88,7 @@ assert.equal(placeCityBuilding(layout, { ...laterPlacement, x: 11, y: 7 }).reaso
 assert.equal(placeCityBuilding(layout, { ...laterPlacement, buildingTypeId: 'invalid' }).reason, 'invalid-building');
 assert.equal(placeCityBuilding(layout, { ...laterPlacement, buildingTypeId: 'team', teamId: 1 }).reason, 'invalid-building');
 
-assert.equal(SAVE_VERSION, 21, 'S10 ergänzt persistente Kauf- und Migrationsdaten.');
+assert.equal(SAVE_VERSION, 22, 'S10 ergänzt persistente Kauf- und Migrationsdaten.');
 const progress = { cityLayout: moved.layout, gold: 5800, upgrades: { forgeSlots: 5, marketSlots: 3 } };
 const saved = encodeSave(progress, 1_760_000_000_000);
 const restored = decodeSave(saved);
