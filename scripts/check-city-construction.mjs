@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { createInitialCityLayout, validateCityLayout } from '../src/app/game/city-layout-core.ts';
 import { placeCityBuilding } from '../src/app/game/city-placement-core.ts';
 import { migrateCityEconomy } from '../src/app/game/city-economy-core.ts';
-import { createTeam } from '../src/app/game/team-core.ts';
+import { createTeam, getTeamOffer } from '../src/app/game/team-core.ts';
 import {
   CITY_CONSTRUCTION_DURATION_MS, initializeCityConstruction, validateCityConstruction,
   availableCityBuilders, startCityConstruction, cancelCityConstruction,
@@ -110,6 +110,7 @@ const teamGame=game();
 const teamJob=startCityConstruction(teamGame,'team',2,0,now);
 assert.equal(teamJob.ok,true);
 assert.equal(teamGame.teams[2],undefined);
+assert.equal(getTeamOffer(teamGame).reason,'building-pending','Alter Teamkauf darf nicht parallel doppelt bezahlen.');
 finishCityConstruction(teamGame,now+CITY_CONSTRUCTION_DURATION_MS);
 assert.ok(teamGame.teams[2]);
 assert.equal(teamGame.cityLayout.buildings.find(b=>b.buildingTypeId==='team'&&b.teamId===2).status,'placed');
