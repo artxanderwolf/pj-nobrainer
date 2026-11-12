@@ -16,15 +16,15 @@ const cityOverviewStyles = readFileSync('src/city-overview-v0.6.0.0.css', 'utf8'
 const probePage = '<section class="page" id="probe">Probe</section>';
 const shell = composeAppShell(probePage);
 
-assert.equal(APP_UI_VERSION, '0.9.0.0', 'Die gemeinsame sichtbare Web-App-Version muss v0.9.0.0 sein.');
+assert.equal(APP_UI_VERSION, '0.10.0.0', 'Die gemeinsame sichtbare Web-App-Version muss v0.10.0.0 sein.');
 assert.equal(packageJson.version, APP_UI_VERSION, 'package.json und sichtbare App-Version dürfen nicht auseinanderlaufen.');
 assert.equal(APP_SHELL_PAGE_IDS[0], 'base');
 for (const required of ['character', 'storage', 'forge-preview', 'market-jobs', 'dungeon-select', 'index']) {
   assert.ok(APP_SHELL_PAGE_IDS.includes(required), `Modulare Seite ${required} fehlt in der Shell-Seitenliste.`);
 }
-assert.match(shell, /^<div class="app modular-ui" data-ui-version="0\.9\.0\.0">/, 'Die modulare UI-v0.9.0.0-Shell fehlt.');
+assert.match(shell, /^<div class="app modular-ui" data-ui-version="0\.10\.0\.0">/, 'Die modulare UI-v0.10.0.0-Shell fehlt.');
 assert.match(shell, /id="backBtn"[\s\S]*onclick="goBack\(\)"/, 'Der globale Zurück-Button fehlt.');
-assert.match(shell, /<div class="ui-version">SMITHS OF ELDRAVAR · v0\.9\.0\.0<\/div>/, 'Die sichtbare Versionsanzeige ist nicht v0.9.0.0.');
+assert.match(shell, /<div class="ui-version">SMITHS OF ELDRAVAR · v0\.10\.0\.0<\/div>/, 'Die sichtbare Versionsanzeige ist nicht v0.10.0.0.');
 assert.match(shell, /<h1 id="pageTitle" class="city-name-editable" contenteditable="true"[^>]*>Stadt Name<\/h1>/, 'Die editierbare Stadt-Headline fehlt.');
 assert.match(shell, /class="pill money-pill" aria-label="Stadtgeld"[\s\S]*id="goldIcon"[\s\S]*src="ui\/coin_1nic_32\.png"[\s\S]*id="gold">0 Nickel<\/b>/, 'Der Stadtgeld-Pill besitzt nicht den Nickel-Fallback mit Münzicon.');
 assert.doesNotMatch(shell, /class="pill money-pill">Geld/, 'Der alte sichtbare Geld-Text darf nicht vor dem dynamischen Münzicon stehen.');
@@ -114,4 +114,4 @@ assert.match(appComponent, /this\.gameRuntime\.prepare\(\);[\s\S]*this\.legacyNa
 assert.doesNotMatch(appComponent, /DOMParser/, 'Der App-Component parst weiterhin die Legacy-HTML.');
 assert.match(appComponent, /const LEGACY_RUNTIME_PATH = 'legacy\/NoBrainer_GitHub_v0\.12\.2\.runtime\.js';/, 'Der App-Component verweist nicht auf das eigenständige Runtime-Asset.');
 
-console.log('App-Shell-Präsentation: Web-UI v0.9.0.0 mit direkter Team-ID-Navigation, editierbarem Stadtname, dynamischem Stadtgeld, Stadtkarte, Missions- und Teamgebäuden sowie Quest-/Hilfe-PNGs ist Angular-eigen.');
+console.log('App-Shell-Präsentation: Web-UI v0.10.0.0 mit direkter Team-ID-Navigation, editierbarem Stadtname, dynamischem Stadtgeld, Stadtkarte, Missions- und Teamgebäuden sowie Quest-/Hilfe-PNGs ist Angular-eigen.');
