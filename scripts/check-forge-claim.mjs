@@ -6,7 +6,7 @@ import { validateImportedSave } from '../src/app/game/save-transfer-core.ts';
 
 const t=1_800_000_000_000;
 function job(name, seconds=10){return {weaponName:name,weaponForm:'dagger',slots:[],stats:{},valueNickel:10,performance:1,totalSeconds:seconds};}
-const state={forgeJobs:[],forgeQueue:[],weaponInventory:[],nextWeaponId:1,inventory:{4:100}};
+const state={forgeJobs:[],forgeQueue:[],weaponInventory:[],characters:[],nextWeaponId:1,inventory:{4:100}};
 assert.equal(initializeForgeClaims(state),true);
 assert.equal(initializeForgeClaims(state),false,'Migration ist idempotent.');
 for(let i=1;i<=7;i++){
