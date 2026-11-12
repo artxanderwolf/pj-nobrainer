@@ -28,8 +28,8 @@ function addBuilding(state,type,x,y,status='placed'){
 for(const amount of [1,2,5]){
  const s=createGame();
  for(let n=1;n<amount;n++){
-   addBuilding(s,'forge',2+(n-1)*2,0);
-   addBuilding(s,'market',2+(n-1)*2,2);
+   addBuilding(s,'forge',(n-1)*2,2);
+   addBuilding(s,'market',(n-1)*2,6);
  }
  s.upgrades.forgeSlots=10;
  s.upgrades.marketSlots=10;
