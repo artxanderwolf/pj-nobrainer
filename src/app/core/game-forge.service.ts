@@ -247,9 +247,11 @@ export class GameForgeService {
 
   claim(jobId: string): boolean {
     const state = this.getState();
-    const job = takeReadyForgeJob(state, jobId);
+    // Transfer first: a failed inventory operation must not erase a ready job.
+    const job = state.forgeReadyJobs?.find(entry => entry.jobId === jobId && entry.status === 'ready');
     if (!job) return false;
     this.completeJob(state, job);
+    if (!takeReadyForgeJob(state, jobId)) throw new Error('S14: Abholung während synchroner Übertragung verschwunden.');
     return true;
   }
 
