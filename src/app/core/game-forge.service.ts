@@ -1,4 +1,5 @@
 import { weaponUnlocked } from '../game/mission-core.ts';
+import { initializeForgeClaims, identifyNewForgeJob, advanceForgeJobsToReady, takeReadyForgeJob, type ForgeClaimWorldState } from '../game/forge-claim-core.ts';
 import { productionActiveSlots } from '../game/city-production-capacity-core.ts';
 import { type CityLayoutWorldState } from '../game/city-layout-core.ts';
 import { Injectable } from '@angular/core';
@@ -16,7 +17,6 @@ import {
   type WeaponStats
 } from '../game/game-core';
 import {
-  advanceForgeJobs,
   calculateWeaponBalanceSnapshot,
   createForgeJob,
   enqueueForgeJob,
@@ -82,7 +82,7 @@ interface RuntimeWeaponInventoryEntry {
   starter?: boolean;
 }
 
-type RuntimeForgeState = MutableGameState & CityLayoutWorldState & ForgeStateLike & {
+type RuntimeForgeState = MutableGameState & CityLayoutWorldState & ForgeClaimWorldState & {
   inventory: ForgeInventory;
   upgrades: RuntimeForgeUpgrades;
   weaponInventory: RuntimeWeaponInventoryEntry[];
@@ -195,7 +195,9 @@ export class GameForgeService {
       return { status: 'incomplete' };
     }
 
-    const status = enqueueForgeJob(state, job, activeSlots, queueSlots, at);
+    const status = enqueueForgeJob(state, identifyNewForgeJob(state, job), activeSlots, queueSlots, at);
+    const stored = status === 'started' ? state.forgeJobs.at(-1) : state.forgeQueue.at(-1);
+    if (stored && 'status' in stored) (stored as {status:string}).status = status === 'started' ? 'active' : 'queued';
     if (status === 'full') throw new Error('Schmiedekapazität änderte sich während einer synchronen Auftragserstellung.');
     return { status, weaponName: job.weaponName };
   }
@@ -213,7 +215,7 @@ export class GameForgeService {
       changed += 1;
     }
 
-    for (const job of [...state.forgeJobs, ...state.forgeQueue]) {
+    for (const job of [...state.forgeJobs, ...state.forgeQueue, ...(state.forgeReadyJobs ?? [])]) {
       if (!Array.isArray(job.slots)) continue;
       const canonical = canonicalWeaponSlots(job.slots);
       if (JSON.stringify(canonical) === JSON.stringify(job.slots)) continue;
@@ -230,11 +232,30 @@ export class GameForgeService {
     const activeSlots = productionActiveSlots(state, 'forge');
     const completedNames: string[] = [];
 
-    const completedCount = advanceForgeJobs(state, activeSlots, now, (job: ForgeJob) => {
-      completedNames.push(this.completeJob(state, job));
+    const completedCount = advanceForgeJobsToReady(state, activeSlots, now, job => {
+      completedNames.push(job.weaponName);
     });
 
     return { completedCount, completedNames };
+  }
+
+  initializeClaims(): boolean {
+    return initializeForgeClaims(this.getState());
+  }
+
+  readyCount(): number { return this.getState().forgeReadyJobs?.length ?? 0; }
+
+  claim(jobId: string): boolean {
+    const state = this.getState();
+    const job = takeReadyForgeJob(state, jobId);
+    if (!job) return false;
+    this.completeJob(state, job);
+    return true;
+  }
+
+  claimAll(): number {
+    const ids = (this.getState().forgeReadyJobs ?? []).map(job => job.jobId);
+    return ids.filter(id => this.claim(id)).length;
   }
 
   openLegacyCompatibilityBridge(): void {
