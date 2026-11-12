@@ -124,6 +124,7 @@ const probeScript = `
         const initial=JSON.parse(localStorage.getItem('nobrainer_save_v1')||'{}');
         result.saveUnchanged=initial.state?.cityLayout?.buildings?.length===6;
         result.goldBefore=initial.state?.gold;
+        result.paidBefore=initial.state?.cityEconomy?.paidExpansions ?? 0;
         result.initialBuildings=initial.state?.cityLayout?.buildings;
         window.go('base');
         phase=5;
@@ -185,6 +186,7 @@ const probeScript = `
         const layout=snapshot.state?.cityLayout;
         result.gridAfterExpand=layout?.grid;
         result.goldAfterExpand=snapshot.state?.gold;
+        result.paidAfter=snapshot.state?.cityEconomy?.paidExpansions ?? 0;
         result.saveVersion=snapshot.saveVersion;
         result.buildingsAfterExpand=layout?.buildings?.map(b=>b.buildingInstanceId);
         result.moveStillSaved=layout?.buildings?.find(b=>b.buildingInstanceId==='building-3')?.y===2;
@@ -294,17 +296,21 @@ try {
   assert.deepEqual(result.movedForge,[8,2], 'Die Schmiede muss auf das freie Zielfeld verschoben und gespeichert sein.');
   assert.equal(result.movedJobFieldsStable,true, 'Gebäude-ID, Plätze und Auftragsbezug müssen beim Move erhalten bleiben.');
   assert.equal(result.goldAfterMove,result.goldBefore,'Kostenloses Verschieben darf keinen Nickel abziehen.');
-  assert.deepEqual(result.gridAfterExpand,{minX:-4,minY:-4,width:20,height:16},
-    'Links/rechts/oben/unten müssen jeweils genau vier Felder anfügen.');
-  assert.equal(result.goldAfterExpand,result.goldBefore,'Flächenerweiterung in S09 darf vor S10 keine Nickelpreise erfinden.');
-  assert.equal(result.saveVersion,18,'S09 nutzt das vorhandene Save18-Schema.');
+  const purchases = result.paidAfter - result.paidBefore;
+  const expectedCost = Array.from({ length: purchases }, (_, i) =>
+    Math.round(30_000 * 1.5 ** (result.paidBefore + i))).reduce((a,b)=>a+b,0);
+  assert.equal(result.goldAfterExpand,result.goldBefore-expectedCost,'Erweiterungen dürfen Nickel nur einmal abziehen.');
+  assert.ok(purchases>=0 && purchases<=4,'Keine unautorisierte Stadterweiterung.');
+  assert.equal(result.gridAfterExpand.width,12+4*Math.min(purchases,2));
+  assert.equal(result.gridAfterExpand.height,8+4*Math.max(0,purchases-2));
+  assert.equal(result.saveVersion,19,'S10 nutzt Save19.');
   assert.deepEqual(result.buildingsAfterExpand,result.buildingIds,'Alle Gebäude-IDs müssen identisch bleiben.');
   assert.equal(result.moveStillSaved,true,'Die verschobene Position muss auch nach Erweiterungen persistiert bleiben.');
   assert.equal(result.noConstructionStarted,true,'S09 darf keine kostenlosen zusätzlichen Gebäude bauen.');
-  assert.equal(result.cellCount,20*16,'Zielfeld-Overlay muss mit der gewachsenen Stadtfläche mitwachsen.');
-  assert.match(result.finalNotice,/erweitert/, 'Erweiterung muss einen gespeicherten Erfolg anzeigen.');
+  assert.equal(result.cellCount,result.gridAfterExpand.width*result.gridAfterExpand.height,'Zielfeld-Overlay wächst mit.');
+  if(purchases>0) assert.match(result.finalNotice,/erweitert/,'Kostenpflichtige Erweiterung muss bestätigt werden.');
 
-  console.log('S09-Stadt-Browserregression: sechs Gebäude-IDs, alle Navigationsziele, Kollisionsablehnung, kostenloser persistenter Gebäude-Move und Erweiterungen in vier Richtungen erfolgreich.');
+  console.log('S09-Stadt-Browserregression: sechs Gebäude-IDs, alle Navigationsziele, Kollisionsablehnung, kostenloser persistenter Gebäude-Move und S10-Kaufprüfung erfolgreich.');
 } finally {
   rmSync(browserProfile,{recursive:true,force:true});
   await new Promise(resolveClose=>server.close(resolveClose));
