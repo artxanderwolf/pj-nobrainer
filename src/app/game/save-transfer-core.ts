@@ -1,6 +1,7 @@
 import { decodeSave, SAVE_VERSION } from './save-codec.ts';
 import { validateCityLayout } from './city-layout-core.ts';
 import { validateCityEconomy } from './city-economy-core.ts';
+import { validateCityConstruction } from './city-construction-core.ts';
 
 export const MIN_IMPORT_SAVE_VERSION = 8;
 export const MAX_IMPORT_FILE_BYTES = 5_000_000;
@@ -76,6 +77,10 @@ export function validateImportedSave(raw: string): SaveImportValidation {
   if (Object.prototype.hasOwnProperty.call(state, 'cityEconomy')) {
     try { validateCityEconomy(state['cityEconomy']); }
     catch { return { ok: false, reason: 'invalid-state', message: 'Der Spielstand enthält ungültige Stadt-Kaufdaten.' }; }
+  }
+  if (Object.prototype.hasOwnProperty.call(state, 'cityConstruction')) {
+    try { validateCityConstruction(state); }
+    catch { return { ok: false, reason: 'invalid-state', message: 'Der Spielstand enthält beschädigte Bauaufträge.' }; }
   }
   return { ok: true, saveVersion, savedAt, state };
 }
