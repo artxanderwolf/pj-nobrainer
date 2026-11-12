@@ -59,5 +59,5 @@ assert.match(saveTransfer, /result\.status === 'cancelled'/);
 assert.match(saveTransfer, /result\.status === 'saved'/);
 assert.match(saveTransfer, /const blob = new Blob\(\[raw\]/);
 assert.match(saveTransfer, /validateImportedSave\(raw\)/);
-assert.match(saveCodec, /export const SAVE_VERSION = 19;/);
+assert.match(saveCodec, /export const SAVE_VERSION = 20;/);
 console.log('S04/S04a: Native Back-Hierarchie, Android-SAF-Export, Web-Fallback und Save 18 geprüft.');
