@@ -1,4 +1,6 @@
 import { Injectable } from '@angular/core';
+import { productionActiveSlots } from '../game/city-production-capacity-core.ts';
+import { type CityLayoutWorldState } from '../game/city-layout-core.ts';
 import { getMaterialDisplayNameById, getMaterialIdByName, type WeaponSlot } from '../game/game-core';
 import { materialSellDataById, weaponSellData } from '../game/economy-core';
 import { getWeaponEquipLocation, type EquipmentCharacterLike } from '../game/equipment-core';
@@ -46,7 +48,7 @@ interface RuntimeMarketWeapon {
   starter?: boolean;
 }
 
-type RuntimeMarketState = MutableGameState & MarketStateLike & {
+type RuntimeMarketState = MutableGameState & CityLayoutWorldState & MarketStateLike & {
   inventory: MaterialStorageInventory;
   weaponInventory: RuntimeMarketWeapon[];
   characters: EquipmentCharacterLike[];
@@ -71,7 +73,7 @@ export class GameMarketService {
 
   hasCapacity(): boolean {
     const state = this.getState();
-    return hasMarketCapacity(state, Number(state.upgrades.marketSlots) || 0, Number(state.upgrades.marketQueue) || 0);
+    return hasMarketCapacity(state, productionActiveSlots(state, 'market'), Number(state.upgrades.marketQueue) || 0);
   }
 
   /** Aktiver Angular-Pfad: Materialverkäufe werden ausschließlich über die stabile ID gestartet. */
@@ -96,7 +98,7 @@ export class GameMarketService {
     const status = enqueueMarketJob(
       state,
       job,
-      Number(state.upgrades.marketSlots) || 0,
+      productionActiveSlots(state, 'market'),
       Number(state.upgrades.marketQueue) || 0,
       at
     );
@@ -117,7 +119,7 @@ export class GameMarketService {
     const sale = weaponSellData(weapon);
     if (!sale) return { status: 'not-found' };
     const job: MarketJob = { ...sale, weaponSnapshot: weapon };
-    const status = enqueueMarketJob(state, job, Number(state.upgrades.marketSlots) || 0, Number(state.upgrades.marketQueue) || 0, at);
+    const status = enqueueMarketJob(state, job, productionActiveSlots(state, 'market'), Number(state.upgrades.marketQueue) || 0, at);
     if (status === 'full') return { status: 'full' };
     state.weaponInventory = state.weaponInventory.filter(entry => entry.id !== weaponId);
     return { status, name: weapon.name, valueNickel: job.valueNickel };
@@ -133,7 +135,7 @@ export class GameMarketService {
 
   cancel(kind: 'active' | 'queue', index: number, at = Date.now()): MarketCancelResult | null {
     const state = this.getState();
-    const job = cancelMarketJob(state, kind, index, Number(state.upgrades.marketSlots) || 0, at);
+    const job = cancelMarketJob(state, kind, index, productionActiveSlots(state, 'market'), at);
     if (!job) return null;
     normalizeMarketMaterialJob(job);
     const name = this.displayName(job);
@@ -150,7 +152,7 @@ export class GameMarketService {
     const state = this.getState();
     normalizeMarketMaterialJobs(state);
     const completedSales: MarketCompletedSale[] = [];
-    const completedCount = advanceMarketJobs(state, Number(state.upgrades.marketSlots) || 0, now, (job: MarketJob) => {
+    const completedCount = advanceMarketJobs(state, productionActiveSlots(state, 'market'), now, (job: MarketJob) => {
       state.gold += job.valueNickel;
       completedSales.push({ name: this.displayName(job), valueNickel: job.valueNickel });
     });

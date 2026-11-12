@@ -1,4 +1,6 @@
 import { weaponUnlocked } from '../game/mission-core.ts';
+import { productionActiveSlots } from '../game/city-production-capacity-core.ts';
+import { type CityLayoutWorldState } from '../game/city-layout-core.ts';
 import { Injectable } from '@angular/core';
 import { calculateWeaponEconomy } from '../game/economy-core';
 import {
@@ -80,7 +82,7 @@ interface RuntimeWeaponInventoryEntry {
   starter?: boolean;
 }
 
-type RuntimeForgeState = MutableGameState & ForgeStateLike & {
+type RuntimeForgeState = MutableGameState & CityLayoutWorldState & ForgeStateLike & {
   inventory: ForgeInventory;
   upgrades: RuntimeForgeUpgrades;
   weaponInventory: RuntimeWeaponInventoryEntry[];
@@ -170,7 +172,7 @@ export class GameForgeService {
 
   start(weaponForm: string, weaponName: string, slots: readonly WeaponSlot[], at = Date.now()): ForgeStartResult {
     const state = this.getState();
-    const activeSlots = Number(state.upgrades.forgeSlots) || 0;
+    const activeSlots = productionActiveSlots(state, 'forge');
     const queueSlots = Number(state.upgrades.forgeQueue) || 0;
 
     if (!weaponUnlocked(state, weaponForm)) return { status: 'locked', weaponForm };
@@ -225,7 +227,7 @@ export class GameForgeService {
   update(now = Date.now()): ForgeUpdateResult {
     const state = this.getState();
     this.refreshMaterialBalance(state);
-    const activeSlots = Number(state.upgrades.forgeSlots) || 0;
+    const activeSlots = productionActiveSlots(state, 'forge');
     const completedNames: string[] = [];
 
     const completedCount = advanceForgeJobs(state, activeSlots, now, (job: ForgeJob) => {

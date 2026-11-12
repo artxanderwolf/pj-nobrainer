@@ -1,4 +1,6 @@
 import { Injectable } from '@angular/core';
+import { productionActiveSlots } from '../game/city-production-capacity-core.ts';
+import { type CityLayoutWorldState } from '../game/city-layout-core.ts';
 import { formatCurrencyNickel, formatDuration } from '../game/economy-core';
 import { type ForgeJob } from '../game/forge-core';
 import {
@@ -9,7 +11,7 @@ import { GameProgressionPresentationService } from './game-progression-presentat
 import { GameStateService, type MutableGameState } from './game-state.service';
 import { GameWeaponPresentationService } from './game-weapon-presentation.service';
 
-type RuntimeForgeJobPresentationState = MutableGameState & {
+type RuntimeForgeJobPresentationState = MutableGameState & CityLayoutWorldState & {
   forgeJobs: ForgeJob[];
   forgeQueue: ForgeJob[];
   upgrades: {
@@ -112,7 +114,7 @@ export class GameForgeJobPresentationService {
       else previewPage.appendChild(status);
     }
 
-    const activeMax = Math.max(0, Number(state.upgrades?.forgeSlots) || 0);
+    const activeMax = productionActiveSlots(state, 'forge');
     const queueMax = Math.max(0, Number(state.upgrades?.forgeQueue) || 0);
     status.textContent = `Schmiede ${state.forgeJobs.length}/${activeMax} · Warteschlange ${state.forgeQueue.length}/${queueMax}`;
   }

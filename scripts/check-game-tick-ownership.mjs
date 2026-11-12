@@ -82,7 +82,7 @@ const orderedRuntimeCalls = [
   'const forgeUpdate = this.gameForge.update();',
   'this.logForgeCompletions(forgeUpdate.completedNames);',
   'const marketUpdate = this.gameMarket.update();',
-  'const marketCompleted = marketUpdate.completedCount > 0;',
+  'const marketCompleted = marketUpdate.completedCount > 0 || productionReplay.marketCompleted;',
   'this.logMarketCompletions(marketUpdate.completedSales);',
   'const dungeonUpdate = this.dungeonSession.update();',
   'this.applyDungeonResult(runtime, dungeonUpdate);',
