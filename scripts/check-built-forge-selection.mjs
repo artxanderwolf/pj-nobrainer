@@ -313,7 +313,7 @@ try {
   assert.notEqual(result.compactUi.pickerOverflowY, 'scroll', 'Die Waffenwahl darf nicht scrollbar sein.');
   assert.equal(result.beforeStart.startDisabled, false, 'Waffe herstellen muss bei vollständiger Auswahl und ausreichendem Bestand aktiv sein.');
   assert.equal(result.beforeStart.activePage, 'forge-preview', 'Der Vorschau-Button muss zur Waffenvorschau navigieren.');
-  assert.match(result.beforeStart.capacityText, /^Schmiede \d+\/\d+ · Warteschlange \d+\/\d+$/, 'Die Waffenvorschau muss aktive und maximale Schmiedekapazität anzeigen.');
+  assert.match(result.beforeStart.capacityText, /^Schmiede \d+\/\d+ · Warteschlange \d+\/\d+ · Abholbereit \d+ · Gesamt \d+\/\d+$/, 'Die Waffenvorschau muss Gesamt- und Ready-Schmiedekapazität anzeigen.');
   assert.match(result.forgeJobText, /Bogen/, 'Der Klick auf Waffe herstellen muss einen aktiven Schmiedeauftrag erzeugen.');
   assert.equal(result.afterStartDisabled, true, 'Nach vollständigem Verbrauch der ausgewählten Materialien darf kein weiterer Auftrag möglich sein.');
   assert.deepEqual(result.selectedAfterStart, { back: '', gripCore: '', gripWrap: '', special: '', bowstring: '' }, 'Verbrauchte Materialauswahlen müssen nach dem Auftrag aus den Selects entfernt werden.');
