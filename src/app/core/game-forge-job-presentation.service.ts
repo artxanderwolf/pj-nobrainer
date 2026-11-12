@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { productionActiveSlots } from '../game/city-production-capacity-core.ts';
 import { formatCurrencyNickel, formatDuration } from '../game/economy-core';
 import { type ForgeJob } from '../game/forge-core';
 import {
@@ -112,7 +113,7 @@ export class GameForgeJobPresentationService {
       else previewPage.appendChild(status);
     }
 
-    const activeMax = Math.max(0, Number(state.upgrades?.forgeSlots) || 0);
+    const activeMax = productionActiveSlots(state, 'forge');
     const queueMax = Math.max(0, Number(state.upgrades?.forgeQueue) || 0);
     status.textContent = `Schmiede ${state.forgeJobs.length}/${activeMax} · Warteschlange ${state.forgeQueue.length}/${queueMax}`;
   }
