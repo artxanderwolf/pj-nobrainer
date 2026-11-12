@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { initializeMarketClaims, identifyNewMarketJob, advanceMarketJobsToReady, takeReadyMarketJob, type MarketClaimWorldState } from '../game/market-claim-core.ts';
 import { productionActiveSlots } from '../game/city-production-capacity-core.ts';
 import { type CityLayoutWorldState } from '../game/city-layout-core.ts';
 import { getMaterialDisplayNameById, getMaterialIdByName, type WeaponSlot } from '../game/game-core';
@@ -11,7 +12,6 @@ import {
   type MaterialStorageInventory
 } from '../game/material-storage-core';
 import {
-  advanceMarketJobs,
   cancelMarketJob,
   enqueueMarketJob,
   hasMarketCapacity,
@@ -48,7 +48,7 @@ interface RuntimeMarketWeapon {
   starter?: boolean;
 }
 
-type RuntimeMarketState = MutableGameState & CityLayoutWorldState & MarketStateLike & {
+type RuntimeMarketState = MutableGameState & CityLayoutWorldState & MarketClaimWorldState & {
   inventory: MaterialStorageInventory;
   weaponInventory: RuntimeMarketWeapon[];
   characters: EquipmentCharacterLike[];
@@ -97,12 +97,14 @@ export class GameMarketService {
     };
     const status = enqueueMarketJob(
       state,
-      job,
+      identifyNewMarketJob(state, job),
       productionActiveSlots(state, 'market'),
       Number(state.upgrades.marketQueue) || 0,
       at
     );
     if (status === 'full') return { status: 'full' };
+    const stored = status === 'started' ? state.marketJobs.at(-1) : state.marketQueue.at(-1);
+    if (stored && 'status' in stored) (stored as { status: string }).status = status === 'started' ? 'active' : 'queued';
 
     if (!takeMaterialQuantityById(state.inventory, unit.materialId, qty)) {
       throw new Error(`Materialbestand änderte sich während einer synchronen Marktauftragserstellung: ID ${unit.materialId}.`);
@@ -119,7 +121,7 @@ export class GameMarketService {
     const sale = weaponSellData(weapon);
     if (!sale) return { status: 'not-found' };
     const job: MarketJob = { ...sale, weaponSnapshot: weapon };
-    const status = enqueueMarketJob(state, job, productionActiveSlots(state, 'market'), Number(state.upgrades.marketQueue) || 0, at);
+    const status = enqueueMarketJob(state, identifyNewMarketJob(state, job), productionActiveSlots(state, 'market'), Number(state.upgrades.marketQueue) || 0, at);
     if (status === 'full') return { status: 'full' };
     state.weaponInventory = state.weaponInventory.filter(entry => entry.id !== weaponId);
     return { status, name: weapon.name, valueNickel: job.valueNickel };
@@ -145,18 +147,45 @@ export class GameMarketService {
 
   /** Migriert laufende/wartende Altaufträge auf stabile Material-IDs und entfernt persistierte Anzeigenamen. */
   normalizeMaterialReferences(): number {
-    return normalizeMarketMaterialJobs(this.getState());
+    const state = this.getState();
+    return normalizeMarketMaterialJobs({marketJobs:[...state.marketJobs,...(state.marketReadyJobs ?? [])],marketQueue:state.marketQueue});
   }
 
   update(now = Date.now()): MarketUpdateResult {
     const state = this.getState();
-    normalizeMarketMaterialJobs(state);
+    this.normalizeMaterialReferences();
     const completedSales: MarketCompletedSale[] = [];
-    const completedCount = advanceMarketJobs(state, productionActiveSlots(state, 'market'), now, (job: MarketJob) => {
-      state.gold += job.valueNickel;
+    const completedCount = advanceMarketJobsToReady(state, productionActiveSlots(state, 'market'), now, (job) => {
       completedSales.push({ name: this.displayName(job), valueNickel: job.valueNickel });
     });
     return { completedCount, completedSales };
+  }
+
+  initializeClaims(): boolean { return initializeMarketClaims(this.getState()); }
+
+  claim(jobId: string): MarketCompletedSale | null {
+    const state = this.getState();
+    initializeMarketClaims(state);
+    const job = state.marketReadyJobs?.find(item => item.jobId === jobId && item.status === 'ready');
+    if (!job) return null;
+    if (!Number.isSafeInteger(job.valueNickel) || job.valueNickel < 0 ||
+        !Number.isSafeInteger(state.gold) || !Number.isSafeInteger(state.gold + job.valueNickel)) {
+      throw new Error('S15: Markt-Auszahlung überschreitet den sicheren Nickelbereich.');
+    }
+    const claimed = takeReadyMarketJob(state, jobId);
+    if (!claimed) return null;
+    state.gold += claimed.valueNickel;
+    return { name: this.displayName(claimed), valueNickel: claimed.valueNickel };
+  }
+
+  claimAll(): MarketCompletedSale[] {
+    const ids = (this.getState().marketReadyJobs ?? []).map(job => job.jobId);
+    const paid: MarketCompletedSale[] = [];
+    for (const id of ids) {
+      const sale = this.claim(id);
+      if (sale) paid.push(sale);
+    }
+    return paid;
   }
 
   openLegacyCompatibilityBridge(): void {
