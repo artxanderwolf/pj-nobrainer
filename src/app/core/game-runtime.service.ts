@@ -128,8 +128,16 @@ export class GameRuntimeService {
     const dungeonMaterialReferencesChanged = this.gameDungeon.normalizeMaterialReferences() > 0;
     const forgeClaimMigrationChanged = this.gameForge.initializeClaims();
     const forgeMaterialReferencesChanged = this.gameForge.normalizeMaterialReferences() > 0;
+    const marketClaimMigrationChanged = this.gameMarket.initializeClaims();
     const marketMaterialReferencesChanged = this.gameMarket.normalizeMaterialReferences() > 0;
     const materialReferencesChanged = materialStorageChanged || dungeonMaterialReferencesChanged || forgeMaterialReferencesChanged || marketMaterialReferencesChanged;
+    document.addEventListener('market-claim-changed', () => {
+      runtime.save(false);
+      runtime.renderMarketJob();
+      runtime.renderMarketMaterials();
+      runtime.renderMarketWeapons();
+      this.resourcePresentation.render();
+    });
     this.forgeJobPresentation.bindActions(() => {
       runtime.save(false);
       this.forgeJobPresentation.render();
@@ -171,7 +179,7 @@ export class GameRuntimeService {
       runtime.save(false);
       const after = this.saveStorage.readSnapshot();
       if (after) this.offlineProgress.showSummary(before, after);
-    } else if (equipmentChanged || materialReferencesChanged || dungeonSessionPreparation.saveRequested || dungeonMigrationChanged || cityMigrationChanged || constructionCompleted || forgeClaimMigrationChanged) {
+    } else if (equipmentChanged || materialReferencesChanged || dungeonSessionPreparation.saveRequested || dungeonMigrationChanged || cityMigrationChanged || constructionCompleted || forgeClaimMigrationChanged || marketClaimMigrationChanged) {
       runtime.save(false);
     }
 
@@ -258,7 +266,7 @@ export class GameRuntimeService {
     this.gameEnergy.update();
     this.missions.render();
     const now = Date.now();
-    if (productionReplay.constructionCompleted || forgeCompleted) runtime.save(false);
+    if (productionReplay.constructionCompleted || forgeCompleted || marketCompleted) runtime.save(false);
     const citySecond = Math.floor(now / 1000);
     if (productionReplay.constructionCompleted || citySecond !== this.lastCityConstructionSecond) {
       this.lastCityConstructionSecond = citySecond;
@@ -314,7 +322,7 @@ export class GameRuntimeService {
   ): void {
     for (const sale of completedSales) {
       this.combatLog.add(
-        `Verkauf abgeschlossen: ${sale.name} → ${formatCurrencyNickel(sale.valueNickel)}.`,
+        `Verkauf abgeschlossen: ${sale.name} – ${formatCurrencyNickel(sale.valueNickel)} zur Auszahlung bereit.`,
         'good'
       );
     }
