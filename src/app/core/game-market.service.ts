@@ -85,6 +85,7 @@ export class GameMarketService {
     const stock = getMaterialQuantityById(state.inventory, unit.materialId);
     if (stock <= 0) return { status: 'no-stock' };
 
+    if (!this.hasCapacity()) return { status: 'full' };
     const qty = Math.max(1, Math.min(stock, Math.floor(Number(quantity) || 1)));
     const job: MarketJob = {
       type: 'material',
@@ -120,9 +121,12 @@ export class GameMarketService {
     if (getWeaponEquipLocation(state.characters, weaponId)) return { status: 'equipped' };
     const sale = weaponSellData(weapon);
     if (!sale) return { status: 'not-found' };
+    if (!this.hasCapacity()) return { status: 'full' };
     const job: MarketJob = { ...sale, weaponSnapshot: weapon };
     const status = enqueueMarketJob(state, identifyNewMarketJob(state, job), productionActiveSlots(state, 'market'), Number(state.upgrades.marketQueue) || 0, at);
     if (status === 'full') return { status: 'full' };
+    const stored = status === 'started' ? state.marketJobs.at(-1) : state.marketQueue.at(-1);
+    if (stored && 'status' in stored) (stored as { status: string }).status = status === 'started' ? 'active' : 'queued';
     state.weaponInventory = state.weaponInventory.filter(entry => entry.id !== weaponId);
     return { status, name: weapon.name, valueNickel: job.valueNickel };
   }
@@ -139,6 +143,7 @@ export class GameMarketService {
     const state = this.getState();
     const job = cancelMarketJob(state, kind, index, productionActiveSlots(state, 'market'), at);
     if (!job) return null;
+    initializeMarketClaims(state); // A promoted queued order is active after cancellation.
     normalizeMarketMaterialJob(job);
     const name = this.displayName(job);
     this.returnJob(state, job);
@@ -179,7 +184,20 @@ export class GameMarketService {
   }
 
   claimAll(): MarketCompletedSale[] {
-    const ids = (this.getState().marketReadyJobs ?? []).map(job => job.jobId);
+    const state = this.getState();
+    initializeMarketClaims(state);
+    const ready = state.marketReadyJobs ?? [];
+    // Validate the complete payout before changing any order or Nickel balance.
+    let total = state.gold;
+    if (!Number.isSafeInteger(total)) throw new Error('S15: Ungültiger Nickelbestand.');
+    for (const job of ready) {
+      if (!Number.isSafeInteger(job.valueNickel) || job.valueNickel < 0 ||
+          !Number.isSafeInteger(total + job.valueNickel)) {
+        throw new Error('S15: Gesamtauszahlung überschreitet den sicheren Nickelbereich.');
+      }
+      total += job.valueNickel;
+    }
+    const ids = ready.map(job => job.jobId);
     const paid: MarketCompletedSale[] = [];
     for (const id of ids) {
       const sale = this.claim(id);
