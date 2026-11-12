@@ -82,5 +82,5 @@ assert.equal(small.gold, oldGold - 30_000);
 assert.equal(small.cityEconomy.paidExpansions, 1);
 assert.equal(buyCityExpansion(small, 'up').costNickel, 45_000);
 assert.equal(small.cityEconomy.paidExpansions, 2);
-assert.equal(SAVE_VERSION, 21);
+assert.equal(SAVE_VERSION, 22);
 console.log('S10: Nickelpreise, Grenzen, 1/3/5 Alt-Slots, 10 Teams, Gratis-Migrationsfläche, Idempotenz, Save19 und bezahlte Erweiterung geprüft.');
