@@ -126,9 +126,17 @@ export class GameRuntimeService {
     this.androidBack.bind();
     const materialStorageChanged = this.normalizeMaterialStorage() > 0;
     const dungeonMaterialReferencesChanged = this.gameDungeon.normalizeMaterialReferences() > 0;
+    const forgeClaimMigrationChanged = this.gameForge.initializeClaims();
     const forgeMaterialReferencesChanged = this.gameForge.normalizeMaterialReferences() > 0;
     const marketMaterialReferencesChanged = this.gameMarket.normalizeMaterialReferences() > 0;
     const materialReferencesChanged = materialStorageChanged || dungeonMaterialReferencesChanged || forgeMaterialReferencesChanged || marketMaterialReferencesChanged;
+    this.forgeJobPresentation.bindActions(() => {
+      runtime.save(false);
+      this.forgeJobPresentation.render();
+      this.forgePreviewPresentation.render();
+      this.weaponInventoryPresentation.render();
+      runtime.renderMarketWeapons();
+    });
     this.characterPresentation.bindActions(() => {
       this.dungeonEquipmentSync.refresh();
       this.weaponInventoryPresentation.render();
@@ -163,7 +171,7 @@ export class GameRuntimeService {
       runtime.save(false);
       const after = this.saveStorage.readSnapshot();
       if (after) this.offlineProgress.showSummary(before, after);
-    } else if (equipmentChanged || materialReferencesChanged || dungeonSessionPreparation.saveRequested || dungeonMigrationChanged || cityMigrationChanged || constructionCompleted) {
+    } else if (equipmentChanged || materialReferencesChanged || dungeonSessionPreparation.saveRequested || dungeonMigrationChanged || cityMigrationChanged || constructionCompleted || forgeClaimMigrationChanged) {
       runtime.save(false);
     }
 
