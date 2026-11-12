@@ -29,6 +29,8 @@ assert.throws(() => cityExpansionPrice(-1));
 function makeState(forgeSlots, marketSlots, teamCount) {
   return {
     gold: 500_000,
+    characters: [],
+    inventory: {},
     cityLayout: createInitialCityLayout(),
     upgrades: { forgeSlots, marketSlots },
     teams: Object.fromEntries(Array.from({ length: teamCount }, (_, i) =>
