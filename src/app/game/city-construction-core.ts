@@ -1,5 +1,5 @@
 import {
-  CITY_BUILDING_TYPES, validateCityLayout, type CityBuildingTypeId, type CityLayoutState
+  validateCityLayout, type CityBuildingTypeId, type CityLayoutState
 } from './city-layout-core.ts';
 import { placeCityBuilding } from './city-placement-core.ts';
 import {
@@ -83,7 +83,7 @@ export function validateCityConstruction(state: CityConstructionWorldState): voi
   }
   if (construction.nextJobNumber <= maxJob) throw new Error('Baujob-Zähler läuft rückwärts.');
   for (const building of state.cityLayout.buildings) {
-    if (building.activeJobId !== null &&
+    if (building.activeJobId?.startsWith('build-job-') &&
         (!jobs.has(building.activeJobId) ||
          !construction.jobs.some(j => j.jobId === building.activeJobId &&
            (j.builderInstanceId === building.buildingInstanceId ||
@@ -169,11 +169,14 @@ export function startCityConstruction(
   return { ok: true, jobId, costNickel: price };
 }
 export function cancelCityConstruction(
-  state: CityConstructionWorldState, jobId: string
+  state: CityConstructionWorldState, jobId: string, now: number
 ): { ok: boolean; refundedNickel: number; reason?: string } {
   validateCityConstruction(state);
   const job = state.cityConstruction!.jobs.find(j => j.jobId === jobId);
   if (!job) return { ok: false, refundedNickel: 0, reason: 'Bauauftrag nicht gefunden.' };
+  if (!Number.isSafeInteger(now) || now >= job.completesAt) {
+    return { ok: false, refundedNickel: 0, reason: 'Der Bauauftrag ist bereits fertiggestellt.' };
+  }
   const newGold = (state.gold ?? NaN) + job.paidNickel;
   if (!Number.isSafeInteger(newGold)) {
     return { ok: false, refundedNickel: 0, reason: 'Nickelgutschrift ist nicht möglich.' };
