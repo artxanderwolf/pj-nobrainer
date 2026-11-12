@@ -1,5 +1,6 @@
 import { weaponUnlocked } from '../game/mission-core.ts';
 import { productionActiveSlots } from '../game/city-production-capacity-core.ts';
+import { type CityLayoutWorldState } from '../game/city-layout-core.ts';
 import { Injectable } from '@angular/core';
 import { calculateWeaponEconomy } from '../game/economy-core';
 import {
@@ -81,7 +82,7 @@ interface RuntimeWeaponInventoryEntry {
   starter?: boolean;
 }
 
-type RuntimeForgeState = MutableGameState & ForgeStateLike & {
+type RuntimeForgeState = MutableGameState & CityLayoutWorldState & ForgeStateLike & {
   inventory: ForgeInventory;
   upgrades: RuntimeForgeUpgrades;
   weaponInventory: RuntimeWeaponInventoryEntry[];
