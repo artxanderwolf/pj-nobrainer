@@ -20,6 +20,7 @@ export interface MarketJob {
 export interface MarketStateLike {
   marketJobs: MarketJob[];
   marketQueue: MarketJob[];
+  marketReadyJobs?: MarketJob[];
 }
 
 /** Migriert alte Materialnamen einmalig und hält Materialaufträge danach ausschließlich ID-basiert. */
@@ -60,7 +61,7 @@ export function normalizeMarketMaterialJobs(state: MarketStateLike): number {
 }
 
 export function hasMarketCapacity(state: MarketStateLike, activeSlots: number, queueSlots: number): boolean {
-  return state.marketJobs.length + state.marketQueue.length < Math.max(0, activeSlots) + Math.max(0, queueSlots);
+  return state.marketJobs.length + state.marketQueue.length + (state.marketReadyJobs?.length ?? 0) < Math.max(0, activeSlots) + Math.max(0, queueSlots);
 }
 
 export function startMarketQueuedJob(job: MarketJob, at: number): MarketJob {
