@@ -18,7 +18,7 @@ for (const [type, base, max] of [
   assert.equal(CITY_BUILDING_ECONOMY[type].max, max);
   assert.equal(cityBuildingPrice(type, 0), 0, 'Erstbau kostenlos: ' + type);
   assert.equal(cityBuildingPrice(type, 1), base * 10);
-  assert.equal(cityBuildingPrice(type, 2), Math.round(base * 10 * 1.2));
+  if (max > 2) assert.equal(cityBuildingPrice(type, 2), Math.round(base * 10 * 1.2));
   assert.equal(cityBuildingPrice(type, max), null);
 }
 assert.equal(cityExpansionPrice(0), 30_000);
