@@ -126,6 +126,8 @@ const probeScript = `<script>
             // S07: einen echten alten Save-17-Zustand ohne Stadtstruktur importieren.
             imported.saveVersion=17;
             delete imported.state.cityLayout;
+            delete imported.state.cityEconomy;
+            delete imported.state.cityConstruction;
             localStorage.setItem(FIRST_KEY,JSON.stringify({ui,exportStatus,invalidStatus,unchangedAfterInvalid,cityBeforeImport}));
             localStorage.setItem(ORIGINAL_GOLD_KEY,String(originalGold));
             localStorage.setItem(IMPORTED_GOLD_KEY,String(importedGold));
@@ -295,18 +297,18 @@ try {
   assert.match(result.first.exportStatus, new RegExp(`NoBrainer-Spielstand-v${escapedAppVersion}-`), 'Der Export verwendet nicht den versionierten JSON-Dateinamen.');
   assert.match(result.first.invalidStatus, /kein vollständiger NoBrainer-Spielstand/, 'Eine ungültige JSON-Datei wird nicht verständlich abgelehnt.');
   assert.equal(result.first.unchangedAfterInvalid, true, 'Ein ungültiger Import verändert den lokalen Spielstand.');
-  assert.equal(result.first.cityBeforeImport.version, 19, 'S07: Ein neues Spiel muss Save 19 speichern.');
+  assert.equal(result.first.cityBeforeImport.version, 20, 'S07: Ein neues Spiel muss Save 20 speichern.');
   assert.deepEqual(result.first.cityBeforeImport.grid, { minX: 0, minY: 0, width: 12, height: 8 }, 'S07: Stadtgrundraster nach erstem Save.');
   assert.equal(result.first.cityBeforeImport.buildings, 6, 'S07: sechs Startgebäude müssen im Browser-Save sein.');
   assert.equal(new Set(result.first.cityBeforeImport.ids).size, 6, 'S07: Start-IDs müssen eindeutig sein.');
   assert.equal(result.second.importedGold, result.second.expectedImportedGold, 'Der gültige JSON-Import wurde nach dem Reload nicht geladen.');
-  assert.equal(result.second.migratedSaveVersion, 19, 'S07: alter Save 17 muss beim Start automatisch auf Save 19 migrieren.');
+  assert.equal(result.second.migratedSaveVersion, 20, 'S07: alter Save 17 muss beim Start automatisch auf Save 20 migrieren.');
   assert.deepEqual(result.second.migratedCityGrid, { minX: 0, minY: 0, width: 12, height: 8 });
   assert.equal(result.second.migratedBuildingIds.length, 6, 'S07: sechs Anfangsgebäude auch nach Altimport.');
   assert.equal(result.second.backupExists, true, 'Vor dem Import wurde keine automatische Sicherung angelegt.');
   assert.equal(result.second.undoEnabled, true, 'Die Rückgängig-Aktion ist nach dem Import nicht verfügbar.');
   assert.equal(result.restoredGold, result.expectedOriginalGold, 'Rückgängig stellt den vorherigen Spielstand nicht wieder her.');
-  assert.equal(result.restoredSaveVersion, 19, 'S07: Undo muss Save 19 zurückholen.');
+  assert.equal(result.restoredSaveVersion, 20, 'S07: Undo muss Save 20 zurückholen.');
   assert.deepEqual(result.restoredBuildingIds, result.first.cityBeforeImport.ids, 'S07: Undo muss dieselben Gebäude-IDs wiederherstellen.');
   assert.equal(result.backupRemoved, true, 'Die verwendete Import-Sicherung bleibt nach erfolgreicher Wiederherstellung liegen.');
 

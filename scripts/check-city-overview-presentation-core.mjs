@@ -37,7 +37,7 @@ assert.deepEqual(team1.navigation, { kind:'team', teamId:1 });
 assert.equal(team1.enabled, true);
 const builder = projected.find(x => x.buildingTypeId === 'builder');
 assert.equal(builder.enabled, false);
-assert.match(builder.disabledReason, /S11/);
+assert.match(builder.disabledReason, /Baumeister/);
 assert.equal(builder.navigation, null);
 
 assert.deepEqual(CITY_QUICK_ACCESS.map(x => x.id),

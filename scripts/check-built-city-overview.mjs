@@ -193,6 +193,19 @@ const probeScript = `
         result.noConstructionStarted=layout?.buildings?.length===6;
         result.cellCount=document.querySelectorAll('.city-placement-cell').length;
         result.finalNotice=document.querySelector('.city-placement-notice')?.textContent?.trim()||'';
+        const buildToggle=document.querySelector('[data-city-build-toggle]');
+        result.buildTogglePresent=buildToggle instanceof HTMLButtonElement;
+        buildToggle?.click();
+        result.buildSelectPresent=document.querySelector('[data-city-build-select]') instanceof HTMLSelectElement;
+        result.build30MinutesShown=Boolean(document.querySelector('.city-placement-tools')?.textContent?.includes('30 Minuten'));
+        const beforeBuild=JSON.parse(localStorage.getItem('nobrainer_save_v1')||'{}');
+        const buildCell=document.querySelector('[data-city-target-x="2"][data-city-target-y="0"]');
+        if(!buildCell)throw new Error('S11 Baumodus muss ein freies Zielfeld anbieten.');
+        buildCell.click();
+        const afterBuild=JSON.parse(localStorage.getItem('nobrainer_save_v1')||'{}');
+        result.buildNoNickelRejected=beforeBuild.state?.gold===afterBuild.state?.gold &&
+          beforeBuild.state?.cityLayout?.buildings?.length===afterBuild.state?.cityLayout?.buildings?.length &&
+          /Nicht genügend Nickel/.test(document.querySelector('.city-placement-notice')?.textContent||'');
         clearInterval(timer);
         finish({ status:'passed', ...result });
       }
@@ -274,8 +287,8 @@ try {
     'Gebäude müssen die S07-Rasterkoordinaten verwenden.');
   assert.equal(result.assetKeys.length,6);
   assert.ok(result.assetKeys.every(key=>key?.startsWith('city.building.')));
-  assert.equal(result.builderDisabled,true,'Bauhütte darf vor S11 keine echten Bauaufträge starten.');
-  assert.match(result.builderExplanation,/S11/);
+  assert.equal(result.builderDisabled,true,'Bauhütte hat keinen eigenen Seitenzugang; Bauaufträge starten im Baumodus.');
+  assert.match(result.builderExplanation,/Baumeister/);
   assert.deepEqual(result.quickLabels,['⚔️Dungeonweg','🪵Materiallager','🗡️Waffenlager','📜Missionen']);
   assert.equal(result.backgroundAbsent,true,'Die starre alte Stadtkarte darf nicht zweite Pflichtansicht bleiben.');
   assert.equal(result.legacyHotspotAbsent,true,'Alte Prozent-Hotspots dürfen nicht weiter benutzt werden.');
@@ -303,12 +316,16 @@ try {
   assert.ok(purchases>=0 && purchases<=4,'Keine unautorisierte Stadterweiterung.');
   assert.equal(result.gridAfterExpand.width,12+4*Math.min(purchases,2));
   assert.equal(result.gridAfterExpand.height,8+4*Math.max(0,purchases-2));
-  assert.equal(result.saveVersion,19,'S10 nutzt Save19.');
+  assert.equal(result.saveVersion,20,'S10 nutzt Save20.');
   assert.deepEqual(result.buildingsAfterExpand,result.buildingIds,'Alle Gebäude-IDs müssen identisch bleiben.');
   assert.equal(result.moveStillSaved,true,'Die verschobene Position muss auch nach Erweiterungen persistiert bleiben.');
   assert.equal(result.noConstructionStarted,true,'S09 darf keine kostenlosen zusätzlichen Gebäude bauen.');
   assert.equal(result.cellCount,result.gridAfterExpand.width*result.gridAfterExpand.height,'Zielfeld-Overlay wächst mit.');
   if(purchases>0) assert.match(result.finalNotice,/erweitert/,'Kostenpflichtige Erweiterung muss bestätigt werden.');
+  assert.equal(result.buildTogglePresent,true,'S11 benötigt einen sichtbaren Baumodus.');
+  assert.equal(result.buildSelectPresent,true,'S11 benötigt eine Gebäudetyp-Auswahl.');
+  assert.equal(result.build30MinutesShown,true,'S11 zeigt 30 Minuten Bauzeit an.');
+  assert.equal(result.buildNoNickelRejected,true,'S11 darf ohne Nickel weder bauen noch abbuchen.');
 
   console.log('S09-Stadt-Browserregression: sechs Gebäude-IDs, alle Navigationsziele, Kollisionsablehnung, kostenloser persistenter Gebäude-Move und S10-Kaufprüfung erfolgreich.');
 } finally {
