@@ -258,7 +258,7 @@ export class GameRuntimeService {
     this.gameEnergy.update();
     this.missions.render();
     const now = Date.now();
-    if (productionReplay.constructionCompleted) runtime.save(false);
+    if (productionReplay.constructionCompleted || forgeCompleted) runtime.save(false);
     const citySecond = Math.floor(now / 1000);
     if (productionReplay.constructionCompleted || citySecond !== this.lastCityConstructionSecond) {
       this.lastCityConstructionSecond = citySecond;
