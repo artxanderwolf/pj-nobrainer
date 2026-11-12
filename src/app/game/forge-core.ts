@@ -44,6 +44,7 @@ export interface WeaponBalanceSnapshot {
 export interface ForgeStateLike {
   forgeJobs: ForgeJob[];
   forgeQueue: ForgeJob[];
+  forgeReadyJobs?: ForgeJob[];
 }
 
 export const WEAPON_CRAFT_UNLOCK_TARGET = 10;
@@ -233,7 +234,7 @@ export function createForgeJob(weaponForm: string, weaponName: string, slots: re
 }
 
 export function hasForgeCapacity(state: ForgeStateLike, activeSlots: number, queueSlots: number): boolean {
-  return state.forgeJobs.length + state.forgeQueue.length < Math.max(0, activeSlots) + Math.max(0, queueSlots);
+  return state.forgeJobs.length + state.forgeQueue.length + (state.forgeReadyJobs?.length ?? 0) < Math.max(0, activeSlots) + Math.max(0, queueSlots);
 }
 
 export function startForgeQueuedJob(job: ForgeJob, at: number): ForgeJob {
