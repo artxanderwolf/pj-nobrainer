@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { productionActiveSlots } from '../game/city-production-capacity-core.ts';
+import { type CityLayoutWorldState } from '../game/city-layout-core.ts';
 import { formatCurrencyNickel } from '../game/economy-core';
 import {
   MATERIAL_REFERENCES_BY_ID,
@@ -20,7 +21,7 @@ import { GameForgeService } from './game-forge.service';
 import { GameStateService, type MutableGameState } from './game-state.service';
 import { GameWeaponPresentationService } from './game-weapon-presentation.service';
 
-type RuntimeForgePreviewState = MutableGameState & {
+type RuntimeForgePreviewState = MutableGameState & CityLayoutWorldState & {
   inventory: MaterialStorageInventory;
   forgeJobs: unknown[];
   forgeQueue: unknown[];
