@@ -85,7 +85,7 @@ export function getCityOverviewPresentation(
       navigation = { kind: 'page', pageId };
     } else {
       disabledReason = building.buildingTypeId === 'builder'
-        ? 'Bauhütte: Baumeister für Stadt-Bauaufträge'
+        ? 'Fester Baumeister für Stadt-Bauaufträge'
         : 'Gebäude noch nicht freigeschaltet';
     }
     return {
