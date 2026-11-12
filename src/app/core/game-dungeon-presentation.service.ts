@@ -250,7 +250,9 @@ export class GameDungeonPresentationService {
     }
     const offer = getTeamOffer(state as MutableGameState & {gold:number});
     const buy = hub.querySelector<HTMLButtonElement>('#buyTeamButton')!;
-    buy.textContent = offer.reason==='max' ? `Maximum erreicht · ${offer.max} Teams` : `Weiteres Team kaufen · ${formatCurrencyNickel(offer.costNickel)} (${offer.current}/${offer.max})`;
+    buy.textContent = offer.reason==='max' ? `Maximum erreicht · ${offer.max} Teams` :
+      offer.reason==='building-pending' ? 'Teamgebäude im Bau · weiteren Teamkauf vorübergehend gesperrt' :
+      `Weiteres Team kaufen · ${formatCurrencyNickel(offer.costNickel)} (${offer.current}/${offer.max})`;
     buy.disabled = !offer.ok;
   }
 
