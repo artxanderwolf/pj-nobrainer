@@ -1,4 +1,5 @@
 import { decodeSave, SAVE_VERSION } from './save-codec.ts';
+import { validateCityWorkers, type CityWorkerWorldState } from './city-worker-core.ts';
 import { validateCityLayout } from './city-layout-core.ts';
 import { validateCityEconomy } from './city-economy-core.ts';
 import { validateCityConstruction } from './city-construction-core.ts';
@@ -77,6 +78,10 @@ export function validateImportedSave(raw: string): SaveImportValidation {
   if (Object.prototype.hasOwnProperty.call(state, 'cityEconomy')) {
     try { validateCityEconomy(state['cityEconomy']); }
     catch { return { ok: false, reason: 'invalid-state', message: 'Der Spielstand enthält ungültige Stadt-Kaufdaten.' }; }
+  }
+  if (Object.prototype.hasOwnProperty.call(state,'cityLayout')) {
+    try { validateCityWorkers(state as unknown as CityWorkerWorldState); }
+    catch { return { ok:false, reason:'invalid-state', message:'Der Spielstand enthält ungültige oder doppelte Gebäudehelfer.' }; }
   }
   if (Object.prototype.hasOwnProperty.call(state, 'cityConstruction')) {
     try { validateCityConstruction(state); }
