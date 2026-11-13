@@ -30,7 +30,24 @@ const probe=`<script>
     const market=controls.find(c=>c.dataset.cityWorkerSelect==='building-4');
     if(!forge||!market)throw Error('Stammbetriebe nicht mit Helferzuweisung verbunden');
     const candidate=Array.from(forge.options).find(o=>o.value);
-    if(!candidate)throw Error('Keine Kaderfigur für Helferzuweisung auswählbar');
+    if(!candidate){
+      // The starter hero belongs to the idle starter team in a brand-new game.
+      // Release the idle selection in this *test fixture* and reload, as a player
+      // would do from their team screen before making them a city helper.
+      if(sessionStorage.getItem('__s16_unassigned_team'))throw Error('Trotz freigegebener Teamplätze kein Helfer verfügbar');
+      const previous=JSON.parse(localStorage.getItem('nobrainer_save_v1')||'{}');
+      if(!previous.state?.characters?.length)throw Error('Frischer Spielstand hat keinen Kaderhelden');
+      for(const team of Object.values(previous.state.teams||{})){
+        if(team.expeditionActive||team.dungeonRun)throw Error('Test darf keinen laufenden Dungeonlauf abziehen');
+        team.dungeonTeamSlots=[null,null,null,null];
+        team.dungeonCycleOriginalIds=[];team.dungeonCycleActiveIds=[];
+      }
+      previous.savedAt=Date.now();
+      localStorage.setItem('nobrainer_save_v1',JSON.stringify(previous));
+      sessionStorage.setItem('__s16_unassigned_team','true');
+      location.reload();
+      return;
+    }
     const id=Number(candidate.value);
     forge.value=candidate.value;
     forge.dispatchEvent(new Event('change',{bubbles:true}));
