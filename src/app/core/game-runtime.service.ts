@@ -18,6 +18,7 @@ import { GameForgeJobPresentationService } from './game-forge-job-presentation.s
 import { GameForgePreviewPresentationService } from './game-forge-preview-presentation.service';
 import { GameForgeService } from './game-forge.service';
 import { GameMarketService } from './game-market.service';
+import { GameProductionWorkerService } from './game-production-worker.service';
 import { GameResourcePresentationService } from './game-resource-presentation.service';
 import { GameSaveTransferService } from './game-save-transfer.service';
 import { GameAndroidBackService } from './game-android-back.service';
@@ -76,6 +77,7 @@ export class GameRuntimeService {
     private readonly gameEquipment: GameEquipmentService,
     private readonly gameForge: GameForgeService,
     private readonly gameMarket: GameMarketService,
+    private readonly workers: GameProductionWorkerService,
     private readonly gameDungeon: GameDungeonService,
     private readonly dungeonSession: GameDungeonSessionService,
     private readonly dungeonEquipmentSync: GameDungeonEquipmentSyncService,
@@ -130,7 +132,14 @@ export class GameRuntimeService {
     const forgeMaterialReferencesChanged = this.gameForge.normalizeMaterialReferences() > 0;
     const marketClaimMigrationChanged = this.gameMarket.initializeClaims();
     const marketMaterialReferencesChanged = this.gameMarket.normalizeMaterialReferences() > 0;
+    const productionWorkerMigrationChanged = this.workers.initialize();
     const materialReferencesChanged = materialStorageChanged || dungeonMaterialReferencesChanged || forgeMaterialReferencesChanged || marketMaterialReferencesChanged;
+    document.addEventListener('production-worker-changed', () => {
+      runtime.save(false);
+      this.forgeJobPresentation.render();
+      runtime.renderMarketJob();
+      this.dungeonPresentation.render();
+    });
     document.addEventListener('market-claim-changed', () => {
       runtime.save(false);
       runtime.renderMarketJob();
@@ -179,7 +188,7 @@ export class GameRuntimeService {
       runtime.save(false);
       const after = this.saveStorage.readSnapshot();
       if (after) this.offlineProgress.showSummary(before, after);
-    } else if (equipmentChanged || materialReferencesChanged || dungeonSessionPreparation.saveRequested || dungeonMigrationChanged || cityMigrationChanged || constructionCompleted || forgeClaimMigrationChanged || marketClaimMigrationChanged) {
+    } else if (equipmentChanged || materialReferencesChanged || dungeonSessionPreparation.saveRequested || dungeonMigrationChanged || cityMigrationChanged || constructionCompleted || forgeClaimMigrationChanged || marketClaimMigrationChanged || productionWorkerMigrationChanged) {
       runtime.save(false);
     }
 
