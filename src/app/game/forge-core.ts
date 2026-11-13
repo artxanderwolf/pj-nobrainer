@@ -20,6 +20,7 @@ import {
   type MaterialQuantityRequirements,
   type MaterialStorageInventory
 } from './material-storage-core.ts';
+import { minimumForgeSeconds } from './production-worker-core.ts';
 
 export type ForgeInventory = MaterialStorageInventory;
 export type ForgeMaterialRequirements = MaterialQuantityRequirements;
@@ -31,6 +32,9 @@ export interface ForgeJob {
   valueNickel: number;
   performance: number;
   totalSeconds: number;
+  buildingInstanceId?: string;
+  remainingWorkSeconds?: number;
+  workRate?: number;
   startedAt?: number;
   finishesAt?: number;
 }
@@ -209,7 +213,7 @@ export function refreshForgeJobBalance(job: ForgeJob, preserveDuration: boolean)
     || JSON.stringify(job.stats) !== JSON.stringify(snapshot.stats)
     || job.valueNickel !== snapshot.valueNickel
     || job.performance !== snapshot.performance
-    || (!preserveDuration && job.totalSeconds !== snapshot.forgeSeconds);
+    || (!preserveDuration && job.totalSeconds !== minimumForgeSeconds(job.weaponForm, snapshot.forgeSeconds));
 
   job.slots = snapshot.slots;
   job.stats = snapshot.stats;
@@ -229,7 +233,7 @@ export function createForgeJob(weaponForm: string, weaponName: string, slots: re
     stats: snapshot.stats,
     valueNickel: snapshot.valueNickel,
     performance: snapshot.performance,
-    totalSeconds: snapshot.forgeSeconds
+    totalSeconds: minimumForgeSeconds(weaponForm, snapshot.forgeSeconds)
   };
 }
 
