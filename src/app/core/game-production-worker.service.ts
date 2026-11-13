@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { type ProductionWorkerWorld, assignProductionHelper, migrateProductionWorkers,
   operatingBuildings, mayWorkInBuilding, type AssignmentOutcome, type ProductionKind } from '../game/production-worker-core.ts';
-import { GameStateService } from './game-state.service';
+import { GameStateService, type MutableGameState } from './game-state.service';
 import { GameForgeService } from './game-forge.service';
 import { GameMarketService } from './game-market.service';
 
@@ -20,7 +20,7 @@ export class GameProductionWorkerService {
     private readonly forge: GameForgeService,
     private readonly market: GameMarketService
   ) {}
-  state(): ProductionWorkerWorld { return this.gameState.getState<ProductionWorkerWorld>(); }
+  state(): ProductionWorkerWorld { return this.gameState.getState<MutableGameState & ProductionWorkerWorld>(); }
   buildings(kind: ProductionKind) { return operatingBuildings(this.state(),kind); }
   available(buildingId: string, id: number): boolean {
     return mayWorkInBuilding(this.state(),buildingId,id);
