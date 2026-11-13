@@ -19,12 +19,11 @@ const fixture=JSON.stringify({
     gold:500,
     marketJobs:[
       {type:'material',materialId:1,quantity:1,valueNickel:123,seconds:1,
-        startedAt:now-3000,finishesAt:now-2000},
-      {type:'weapon',name:'Testklinge',weaponId:912,
-        weaponSnapshot:{id:912,name:'Testklinge',valueNickel:231},
-        valueNickel:231,seconds:1,startedAt:now-3000,finishesAt:now-2000}
+        startedAt:now-3000,finishesAt:now-2000}
     ],
-    marketQueue:[]
+    marketQueue:[{type:'weapon',name:'Testklinge',weaponId:912,
+        weaponSnapshot:{id:912,name:'Testklinge',valueNickel:231},
+        valueNickel:231,seconds:1}]
   }
 });
 const seed=`<script>
