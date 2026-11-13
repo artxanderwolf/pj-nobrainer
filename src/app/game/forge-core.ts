@@ -219,7 +219,7 @@ export function refreshForgeJobBalance(job: ForgeJob, preserveDuration: boolean)
   job.stats = snapshot.stats;
   job.valueNickel = snapshot.valueNickel;
   job.performance = snapshot.performance;
-  if (!preserveDuration) job.totalSeconds = snapshot.forgeSeconds;
+  if (!preserveDuration) job.totalSeconds = minimumForgeSeconds(job.weaponForm, snapshot.forgeSeconds);
   return changed;
 }
 
