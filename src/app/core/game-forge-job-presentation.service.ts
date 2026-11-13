@@ -1,4 +1,6 @@
 import { Injectable } from '@angular/core';
+import { renderProductionWorkerControls } from '../game/production-worker-presentation-core.ts';
+import { GameProductionWorkerService } from './game-production-worker.service';
 import { productionActiveSlots } from '../game/city-production-capacity-core.ts';
 import { type CityLayoutWorldState } from '../game/city-layout-core.ts';
 import { formatCurrencyNickel, formatDuration } from '../game/economy-core';
@@ -39,7 +41,8 @@ export class GameForgeJobPresentationService {
     private readonly gameState: GameStateService,
     private readonly progressionPresentation: GameProgressionPresentationService,
     private readonly weaponPresentation: GameWeaponPresentationService,
-    private readonly gameForge: GameForgeService
+    private readonly gameForge: GameForgeService,
+    private readonly workers: GameProductionWorkerService
   ) {}
 
   private bound = false;
@@ -48,6 +51,13 @@ export class GameForgeJobPresentationService {
   bindActions(onClaim: () => void): void {
     this.onClaim = onClaim;
     if (this.bound) return;
+    document.addEventListener('change', event => {
+      const element=event.target;
+      if (!(element instanceof HTMLSelectElement) || element.dataset['productionHelperKind']!=='forge') return;
+      const result=this.workers.assign('forge', element.dataset['productionHelperBuilding']??'', element.value===''?null:Number(element.value));
+      if (result.status==='assigned') { document.dispatchEvent(new Event('production-worker-changed')); this.render(); }
+      else if (result.status!=='unchanged') { alert('Helfer konnte nicht zugewiesen werden: Charakter ist belegt oder Betrieb ungültig.');this.render(); }
+    });
     document.addEventListener('click',event => {
       const target = event.target;
       if (!(target instanceof Element)) return;
@@ -122,6 +132,7 @@ export class GameForgeJobPresentationService {
         ready.map(job => `<div class="sell-row forge-job-row"><div class="forge-job-copy"><strong>${this.escape(job.weaponName)}</strong><p class="muted">Fertig · wartet auf Abholung</p></div><button type="button" class="btn" data-forge-claim-id="${job.jobId}">Abholen</button></div>`).join('') +
         (!ready.length ? '<p>Keine fertigen Schmiedeaufträge.</p>' : '');
     }
+    if (queueBox) this.renderWorkers(queueBox);
     this.progressionPresentation.render();
   }
 
@@ -154,6 +165,13 @@ export class GameForgeJobPresentationService {
     const activeMax = productionActiveSlots(state, 'forge');
     const queueMax = Math.max(0, Number(state.upgrades?.forgeQueue) || 0);
     status.textContent = `Schmiede ${state.forgeJobs.length}/${activeMax} · Warteschlange ${state.forgeQueue.length}/${queueMax} · Abholbereit ${state.forgeReadyJobs?.length ?? 0} · Gesamt ${state.forgeJobs.length + state.forgeQueue.length + (state.forgeReadyJobs?.length ?? 0)}/${activeMax+queueMax}`;
+  }
+
+  private renderWorkers(anchor: HTMLElement): void {
+    let box=document.getElementById('forgeWorkerCard');
+    if (!box) {box=document.createElement('div');box.id='forgeWorkerCard';box.className='card';anchor.insertAdjacentElement('afterend',box);}
+    const markup=renderProductionWorkerControls(this.workers.state(),'forge');
+    if (box.dataset['workerMarkup']!==markup) {box.innerHTML=markup;box.dataset['workerMarkup']=markup;}
   }
 
   private escape(text: string): string { return text.replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch] ?? ch)); }
