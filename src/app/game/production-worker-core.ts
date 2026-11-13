@@ -83,9 +83,17 @@ export function migrateProductionWorkers(state: ProductionWorkerWorld): boolean 
         job.buildingInstanceId=building.buildingInstanceId; changed=true;
       }
       used.add(building.buildingInstanceId);
-      if (job.workRate===undefined) {job.workRate=1;changed=true;}
+      if (job.workRate===undefined) {
+        // New unbound job: use the building's current speed. Migrated old
+        // active jobs retain their original deadline at rate 1.
+        const work=Math.max(0,(Number(job.finishesAt)-Number(job.startedAt))/1000);
+        const oldJob=job.buildingInstanceId!==undefined && job.remainingWorkSeconds!==undefined;
+        job.workRate=oldJob?1:productionRate(building);
+        if (!oldJob) job.finishesAt=Number(job.startedAt)+Math.ceil(work*1000/job.workRate);
+        changed=true;
+      }
       if (job.remainingWorkSeconds===undefined) {
-        job.remainingWorkSeconds=Math.max(0,(Number(job.finishesAt)-Number(job.startedAt))/1000);
+        job.remainingWorkSeconds=Math.max(0,(Number(job.finishesAt)-Number(job.startedAt))/1000)*(job.workRate??1);
         changed=true;
       }
     }
