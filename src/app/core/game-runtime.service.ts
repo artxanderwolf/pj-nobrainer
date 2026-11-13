@@ -132,8 +132,9 @@ export class GameRuntimeService {
     const marketClaimMigrationChanged = this.gameMarket.initializeClaims();
     const workerState=this.gameState.getState<MutableGameState & CityWorkerWorldState>();
     validateCityWorkers(workerState);
-    const workerMigrationChanged=reconcileProductionAssignments(workerState,'forge',Date.now()) ||
-      reconcileProductionAssignments(workerState,'market',Date.now());
+    const workerForgeMigrated=reconcileProductionAssignments(workerState,'forge',Date.now());
+    const workerMarketMigrated=reconcileProductionAssignments(workerState,'market',Date.now());
+    const workerMigrationChanged=workerForgeMigrated || workerMarketMigrated;
     const marketMaterialReferencesChanged = this.gameMarket.normalizeMaterialReferences() > 0;
     const materialReferencesChanged = materialStorageChanged || dungeonMaterialReferencesChanged || forgeMaterialReferencesChanged || marketMaterialReferencesChanged;
     document.addEventListener('market-claim-changed', () => {
