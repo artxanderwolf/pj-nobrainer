@@ -1,4 +1,4 @@
-export const SAVE_VERSION = 22;
+export const SAVE_VERSION = 23;
 
 export interface SaveEnvelope<TState = unknown> {
   saveVersion: number;
