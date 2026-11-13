@@ -71,7 +71,8 @@ export function advanceMarketJobsToReady(
   state: MarketClaimWorldState,
   activeSlots: number,
   now: number,
-  onReady: (job: IdentifiedMarketJob, at: number) => void = () => {}
+  onReady: (job: IdentifiedMarketJob, at: number) => void = () => {},
+  onStart: (job: IdentifiedMarketJob, at: number) => void = () => {}
 ): number {
   initializeMarketClaims(state);
   let completed = 0;
@@ -92,10 +93,12 @@ export function advanceMarketJobsToReady(
     completed += finished.length;
     for (const job of fillMarketSlots(state, activeSlots, at) as IdentifiedMarketJob[]) {
       job.status = 'active';
+      onStart(job,at);
     }
   }
   for (const job of fillMarketSlots(state, activeSlots, now) as IdentifiedMarketJob[]) {
     job.status = 'active';
+    onStart(job,now);
   }
   return completed;
 }
