@@ -1,4 +1,7 @@
 import { Injectable, Injector } from '@angular/core';
+import { assignCityWorker, changeCityWorker, characterInDungeonTeam, workingCharacterIds, type CityWorkerWorldState } from '../game/city-worker-core.ts';
+import { GameForgeService } from './game-forge.service';
+import { GameMarketService } from './game-market.service';
 import {
   CITY_QUICK_ACCESS,
   getCityLegacyTeamAccess,
@@ -39,7 +42,7 @@ export class GameCityOverviewPresentationService {
   render(): void {
     const root = this.ensureInstalled();
     if (!root) return;
-    const state = this.gameState.getState<MutableGameState & TeamWorldState & CityLayoutWorldState & CityEconomyWorldState & CityConstructionWorldState>();
+    const state = this.gameState.getState<MutableGameState & TeamWorldState & CityLayoutWorldState & CityEconomyWorldState & CityConstructionWorldState & CityWorkerWorldState>();
     const layout = state.cityLayout;
     if (!layout) throw new Error('S08: Stadtlayout fehlt nach der S07-Save-Migration.');
     const ownedIds = teamIds(state);
@@ -48,6 +51,8 @@ export class GameCityOverviewPresentationService {
     }
     const signature = JSON.stringify({
       layout, ownedIds, gold: state.gold, cityEconomy: state.cityEconomy, construction: state.cityConstruction,
+      workerCandidates:state.characters.map(character=>({id:character.id,name:character.name})),
+      teamSelections:Object.values(state.teams ?? {}).map(team=>({slots:team.dungeonTeamSlots,active:team.expeditionActive})),
       countdownSecond: state.cityConstruction?.jobs.length ? Math.floor(Date.now()/1000) : null, buildMode: this.buildMode, buildType: this.buildType, moveMode: this.moveMode,
       moveBuildingId: this.moveBuildingId, moveNotice: this.moveNotice
     });
@@ -112,7 +117,7 @@ export class GameCityOverviewPresentationService {
     if (this.basePage?.classList.contains('active')) this.render();
   };
 
-  private renderCity(layout: CityLayoutState, ownedIds: readonly number[], paidExpansions: number, gold: number, state: CityConstructionWorldState): string {
+  private renderCity(layout: CityLayoutState, ownedIds: readonly number[], paidExpansions: number, gold: number, state: CityConstructionWorldState & CityWorkerWorldState): string {
     const buildings = getCityOverviewPresentation(layout, ownedIds);
     const extraTeams = getCityLegacyTeamAccess(layout, ownedIds);
     const gridColumns = layout.grid.width;
@@ -145,7 +150,33 @@ export class GameCityOverviewPresentationService {
         <h3>Stadtwege &amp; Lager</h3>
         <div class="city-grid-link-list">${quickLinks}</div>
       </nav>
-      ${legacyTeamLinks}`;
+      ${legacyTeamLinks}
+      ${this.renderWorkerControls(state)}`;
+  }
+
+  private renderWorkerControls(state: CityWorkerWorldState): string {
+    const active = (state.cityLayout?.buildings ?? []).filter(building =>
+      (building.buildingTypeId==='forge'||building.buildingTypeId==='market') && building.status==='placed');
+    const booked = workingCharacterIds(state);
+    const rows=active.map(building=>{
+      const candidates = state.characters.filter(char =>
+        char.id===building.workerCharacterId ||
+        (!booked.has(char.id) && !characterInDungeonTeam(state,char.id)));
+      const options = candidates.map(char=>
+        `<option value="${char.id}"${building.workerCharacterId===char.id?' selected':''}>${this.escapeHtml(char.name || 'Charakter '+char.id)}</option>`).join('');
+      return `<label class="city-placement-selector">${this.escapeHtml(CITY_BUILDING_TYPES[building.buildingTypeId].label)} · ${this.escapeHtml(building.buildingInstanceId)}
+        <select data-city-worker-select="${building.buildingInstanceId}" aria-label="Zusatzarbeiter für ${this.escapeHtml(building.buildingInstanceId)}">
+          <option value=""${building.workerCharacterId===null?' selected':''}>Nur Grundarbeiter (100 %)</option>
+          ${options}
+        </select>
+        <span class="city-placement-hint"> ${building.workerCharacterId!==null?'Kaderhelfer zugewiesen (120 %)':'Ein Grundarbeiter vorhanden (100 %)'}</span>
+      </label>`;
+    }).join('');
+    return `<section class="city-placement-tools" aria-label="Betriebshelfer">
+      <h3>Arbeiter in Schmieden und Märkten</h3>
+      <p class="city-placement-hint">Jeder Betrieb hat einen festen Grundarbeiter. Ein zusätzlicher Kaderhelfer beschleunigt die Arbeit um 20 %. Charaktere aus Dungeonteams oder anderen Betrieben können nicht gleichzeitig eingesetzt werden. Bereits erbrachte Arbeit bleibt bei Wechsel erhalten.</p>
+      ${rows||'<p>Keine betriebsfähigen Produktionsgebäude vorhanden.</p>'}
+    </section>`;
   }
 
   private renderPlacementToolbar(
@@ -217,6 +248,12 @@ export class GameCityOverviewPresentationService {
   private readonly handleChange = (event: Event): void => {
     const select = event.target;
     if (!(select instanceof HTMLSelectElement) || !this.root?.contains(select)) return;
+    if (select.matches('[data-city-worker-select]')) {
+      const buildingId=select.dataset['cityWorkerSelect'] ?? '';
+      const workerId=select.value===''?null:Number(select.value);
+      this.applyWorker(buildingId,workerId);
+      return;
+    }
     if (select.matches('[data-city-build-select]')) {
       if ((CONSTRUCTIBLE_CITY_BUILDINGS as readonly string[]).includes(select.value)) {
         this.buildType = select.value as ConstructibleCityBuildingType;
@@ -230,6 +267,35 @@ export class GameCityOverviewPresentationService {
     this.moveNotice = 'Gebäude ausgewählt. Jetzt ein freies Zielfeld auf der Karte antippen.';
     this.render();
   };
+
+  private applyWorker(buildingId:string, workerId:number|null):void {
+    const state=this.gameState.getState<MutableGameState & CityWorkerWorldState>();
+    const now=Date.now();
+    const forge=this.injector.get(GameForgeService);
+    const market=this.injector.get(GameMarketService);
+    // First settle work already completed before the worker-speed change.
+    forge.update(now);
+    market.update(now);
+    const previousLayout=structuredClone(state.cityLayout);
+    const previousForge=structuredClone(state.forgeJobs);
+    const previousMarket=structuredClone(state.marketJobs);
+    const result=changeCityWorker(state,buildingId,workerId,now);
+    if(!result.ok){
+      this.moveNotice=result.reason==='team'||result.reason==='dungeon'
+        ? 'Charakter ist einem Dungeonteam zugeordnet. Bitte erst dort entfernen.'
+        : 'Dieser Kadercharakter ist bereits anderweitig beschäftigt oder nicht verfügbar.';
+      this.render();return;
+    }
+    if(!this.injector.get(GameRuntimeService).save(false)){
+      state.cityLayout=previousLayout;
+      state.forgeJobs=previousForge;
+      state.marketJobs=previousMarket;
+      this.moveNotice='Helferzuweisung konnte nicht gespeichert werden; bisherige Einteilung bleibt erhalten.';
+    }else{
+      this.moveNotice=workerId===null?'Helfer entfernt. Der Grundarbeiter führt den Auftrag ohne Fortschrittsverlust weiter.':'Helfer zugewiesen. Verbleibende Auftragszeit bei 120 % neu berechnet.';
+    }
+    this.render();
+  }
 
   private applyMove(x: number, y: number): void {
     if (!this.moveMode) return;
