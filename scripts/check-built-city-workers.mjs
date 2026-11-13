@@ -43,7 +43,9 @@ const probe=`<script>
         team.dungeonCycleOriginalIds=[];team.dungeonCycleActiveIds=[];
       }
       previous.savedAt=Date.now();
-      localStorage.setItem('nobrainer_save_v1',JSON.stringify(previous));
+      // Bootstrap script restores the prepared fixture before Angular starts;
+      // the previous runtime may otherwise overwrite localStorage on unload.
+      sessionStorage.setItem('__s16_pending_seed',JSON.stringify(previous));
       sessionStorage.setItem('__s16_unassigned_team','true');
       location.reload();
       return;
@@ -73,6 +75,10 @@ const probe=`<script>
  setTimeout(()=>{clearInterval(timer);finish({status:'timeout',controls:document.querySelectorAll('select[data-city-worker-select]').length});},4800);
 })();
 </script>`;
+const seedScript=`<script>
+const prepared = sessionStorage.getItem('__s16_pending_seed');
+if (prepared) { localStorage.setItem('nobrainer_save_v1',prepared); sessionStorage.removeItem('__s16_pending_seed'); }
+</script>`;
 const catchScript=`<script>
 window.__workerErrors=[];
 window.addEventListener('error',e=>window.__workerErrors.push(String(e.error?.stack||e.message||e.error)));
@@ -89,7 +95,7 @@ const server=createServer((request,response)=>{
  const file=join(root,safe);
  if(!existsSync(file)){response.writeHead(404).end('Not found');return;}
  let data=readFileSync(file);
- if(safe==='index.html')data=Buffer.from(data.toString('utf8').replace('</head>',catchScript+'</head>').replace('</body>',probe+'</body>'));
+ if(safe==='index.html')data=Buffer.from(data.toString('utf8').replace('</head>',seedScript+catchScript+'</head>').replace('</body>',probe+'</body>'));
  response.writeHead(200,{'content-type':types.get(extname(file))??'application/octet-stream','cache-control':'no-store'}).end(data);
 });
 await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(0,'127.0.0.1',resolve);});
