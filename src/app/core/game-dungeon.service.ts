@@ -1,3 +1,5 @@
+import { workingCharacterIds } from '../game/city-worker-core.ts';
+import { type CityLayoutWorldState } from '../game/city-layout-core.ts';
 import { teamIds, getTeamSession, migrateTeams, characterTeamReservation, type TeamSessionState } from '../game/team-core.ts';
 import { getDungeonDefinition } from '../game/dungeon-definitions.ts';
 import { healParty } from '../game/healing-core.ts';
@@ -254,6 +256,11 @@ export class GameDungeonService {
     initializeReleaseProgress(state);
     const selectedDungeonId = state.session.dungeonId;
     if (!dungeonUnlocked(state, selectedDungeonId)) { outcome.alertMessage = 'Dungeon noch nicht freigeschaltet.'; return outcome; }
+    const assignedWorkers = workingCharacterIds(this.gameState.getState<CityLayoutWorldState & MutableGameState>());
+    if (selectedIds.some(id=>assignedWorkers.has(id))) {
+      outcome.alertMessage = 'Ein gewählter Charakter arbeitet bereits in einem Stadtgebäude.';
+      return outcome;
+    }
     const occupied = selectedIds.find(id => characterTeamReservation(state,id,state.session.teamId)!==null);
     if (occupied !== undefined) { outcome.alertMessage = 'Ein gewählter Charakter befindet sich bereits in einem anderen Dungeon.'; return outcome; }
     startProgressSession(state, state.session.teamId);

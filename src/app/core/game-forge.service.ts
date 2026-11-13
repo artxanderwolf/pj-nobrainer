@@ -3,6 +3,7 @@ import { initializeForgeClaims, identifyNewForgeJob, advanceForgeJobsToReady, ta
 import { productionActiveSlots } from '../game/city-production-capacity-core.ts';
 import { type CityLayoutWorldState } from '../game/city-layout-core.ts';
 import { Injectable } from '@angular/core';
+import { reconcileProductionAssignments, type CityWorkerWorldState } from '../game/city-worker-core.ts';
 import { calculateWeaponEconomy } from '../game/economy-core';
 import {
   CONFIG,
@@ -82,7 +83,7 @@ interface RuntimeWeaponInventoryEntry {
   starter?: boolean;
 }
 
-type RuntimeForgeState = MutableGameState & CityLayoutWorldState & ForgeClaimWorldState & {
+type RuntimeForgeState = MutableGameState & CityLayoutWorldState & CityWorkerWorldState & ForgeClaimWorldState & {
   inventory: ForgeInventory;
   upgrades: RuntimeForgeUpgrades;
   weaponInventory: RuntimeWeaponInventoryEntry[];
@@ -199,6 +200,7 @@ export class GameForgeService {
     const stored = status === 'started' ? state.forgeJobs.at(-1) : state.forgeQueue.at(-1);
     if (stored && 'status' in stored) (stored as {status:string}).status = status === 'started' ? 'active' : 'queued';
     if (status === 'full') throw new Error('Schmiedekapazität änderte sich während einer synchronen Auftragserstellung.');
+    if (status === 'started') reconcileProductionAssignments(state,'forge',at);
     return { status, weaponName: job.weaponName };
   }
 
@@ -230,11 +232,12 @@ export class GameForgeService {
     const state = this.getState();
     this.refreshMaterialBalance(state);
     const activeSlots = productionActiveSlots(state, 'forge');
+    reconcileProductionAssignments(state,'forge',now);
     const completedNames: string[] = [];
 
     const completedCount = advanceForgeJobsToReady(state, activeSlots, now, job => {
       completedNames.push(job.weaponName);
-    });
+    }, (_job,at)=>{ reconcileProductionAssignments(state,'forge',at); });
 
     return { completedCount, completedNames };
   }
@@ -303,7 +306,7 @@ export class GameForgeService {
     }
 
     for (const job of state.forgeJobs) refreshForgeJobBalance(job, true);
-    for (const job of state.forgeQueue) refreshForgeJobBalance(job, false);
+    for (const job of state.forgeQueue) refreshForgeJobBalance(job, true);
   }
 
   private getState(): RuntimeForgeState {

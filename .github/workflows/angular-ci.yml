@@ -43,6 +43,9 @@ jobs:
       - name: Test city overview in browser
         run: node scripts/check-built-city-overview.mjs
 
+      - name: Test city worker assignment and persistence in browser
+        run: node scripts/check-built-city-workers.mjs
+
       - name: Test weapon image pilot in browser
         run: node --no-warnings --experimental-strip-types scripts/check-built-weapon-image-pilot.mjs
 

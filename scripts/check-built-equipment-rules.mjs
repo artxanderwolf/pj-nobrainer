@@ -41,7 +41,7 @@ const probe = String.raw`<script>
    const phase=localStorage.getItem(phaseKey)||'fresh';
    if(phase==='fresh'){
     const initial=save();
-    check(initial.saveVersion===22,'Save-Version verändert');
+    check(initial.saveVersion===23,'Save-Version verändert');
     const starter=initial.state.weaponInventory.find(w=>w.id===0);
     check(starter?.weaponForm==='sword','Startschwert ohne stabile Waffenform');
     check(initial.state.characters[0].equipment.rightHand===0,'Startschwert abgelegt');

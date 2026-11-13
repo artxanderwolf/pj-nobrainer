@@ -92,6 +92,21 @@ export class GameForgePreviewPresentationService {
 
     this.renderWeaponImagePreview(preview.weaponForm, preview.slots, preview.form.name);
     this.setText('forgeTimePreview', presentation.timeText);
+    let workerPreview=document.getElementById('forgeWorkerTimePreview');
+    const timeNode=document.getElementById('forgeTimePreview');
+    if (!workerPreview && timeNode) {
+      workerPreview=document.createElement('small');
+      workerPreview.id='forgeWorkerTimePreview';
+      workerPreview.className='muted';
+      timeNode.insertAdjacentElement('afterend',workerPreview);
+    }
+    if (workerPreview) {
+      const assigned=state.cityLayout?.buildings.some(building=>
+        building.buildingTypeId==='forge' && building.status==='placed' && building.workerCharacterId!==null) ?? false;
+      workerPreview.textContent=preview.seconds>0
+        ? ` Grundzeit: ${preview.seconds} s · mit einem Helfer (120 %): ${Math.ceil(preview.seconds/1.2)} s${assigned?' · Helfer in Stadt zugewiesen':''}`
+        : '';
+    }
     this.setText('forgeValuePreview', presentation.valueText);
     this.setText('forgeDamagePreview', presentation.damageText);
     this.setText('forgeDamageBaseInfo', presentation.damageBaseInfo);

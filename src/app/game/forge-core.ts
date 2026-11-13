@@ -21,6 +21,14 @@ import {
   type MaterialStorageInventory
 } from './material-storage-core.ts';
 
+/** Eldravar floor applied after the existing value-dependent economy formula. */
+export const FORGE_MINIMUM_SECONDS: Readonly<Record<string,number>> = Object.freeze({
+  dagger:20, sword:45, axe1h:45, sword2h:75, axe2h:75, bow:90, staff:50
+});
+export function forgeBaseDurationSeconds(weaponForm:string, valueCalculatedSeconds:number):number {
+  return Math.max(FORGE_MINIMUM_SECONDS[weaponForm] ?? 0,valueCalculatedSeconds);
+}
+
 export type ForgeInventory = MaterialStorageInventory;
 export type ForgeMaterialRequirements = MaterialQuantityRequirements;
 export interface ForgeJob {
@@ -199,7 +207,7 @@ export function calculateWeaponBalanceSnapshot(
     stats,
     valueNickel: economy.valueNickel,
     performance: economy.performance,
-    forgeSeconds: economy.forgeSeconds
+    forgeSeconds: forgeBaseDurationSeconds(weaponForm, economy.forgeSeconds)
   };
 }
 
@@ -287,6 +295,7 @@ export function advanceForgeJobs(state: ForgeStateLike, activeSlots: number, now
 
 export const FORGE_CORE_BRIDGE = {
   forgeRequirements,
+  forgeBaseDurationSeconds,
   getForgeSelectionQuantities,
   isWeaponSelectionComplete,
   hasForgeMaterials,

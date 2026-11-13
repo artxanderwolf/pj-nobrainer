@@ -1,4 +1,5 @@
 import { GameMissionService } from './game-mission.service';
+import { validateCityWorkers, reconcileProductionAssignments, type CityWorkerWorldState } from '../game/city-worker-core.ts';
 import { type CityConstructionWorldState } from '../game/city-construction-core.ts';
 import { replayProductionConstructionMilestones } from '../game/city-production-capacity-core.ts';
 import { Injectable } from '@angular/core';
@@ -129,6 +130,11 @@ export class GameRuntimeService {
     const forgeClaimMigrationChanged = this.gameForge.initializeClaims();
     const forgeMaterialReferencesChanged = this.gameForge.normalizeMaterialReferences() > 0;
     const marketClaimMigrationChanged = this.gameMarket.initializeClaims();
+    const workerState=this.gameState.getState<MutableGameState & CityWorkerWorldState>();
+    validateCityWorkers(workerState);
+    const workerForgeMigrated=reconcileProductionAssignments(workerState,'forge',Date.now());
+    const workerMarketMigrated=reconcileProductionAssignments(workerState,'market',Date.now());
+    const workerMigrationChanged=workerForgeMigrated || workerMarketMigrated;
     const marketMaterialReferencesChanged = this.gameMarket.normalizeMaterialReferences() > 0;
     const materialReferencesChanged = materialStorageChanged || dungeonMaterialReferencesChanged || forgeMaterialReferencesChanged || marketMaterialReferencesChanged;
     document.addEventListener('market-claim-changed', () => {
@@ -179,7 +185,7 @@ export class GameRuntimeService {
       runtime.save(false);
       const after = this.saveStorage.readSnapshot();
       if (after) this.offlineProgress.showSummary(before, after);
-    } else if (equipmentChanged || materialReferencesChanged || dungeonSessionPreparation.saveRequested || dungeonMigrationChanged || cityMigrationChanged || constructionCompleted || forgeClaimMigrationChanged || marketClaimMigrationChanged) {
+    } else if (equipmentChanged || materialReferencesChanged || dungeonSessionPreparation.saveRequested || dungeonMigrationChanged || cityMigrationChanged || constructionCompleted || forgeClaimMigrationChanged || marketClaimMigrationChanged || workerMigrationChanged) {
       runtime.save(false);
     }
 

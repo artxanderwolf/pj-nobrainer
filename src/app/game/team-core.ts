@@ -64,7 +64,13 @@ export function characterTeamReservation(state: TeamWorldState, characterId: num
 export function assignTeamCharacter(state: TeamWorldState & {characters: Array<{id:number}>}, teamId: number, slot: number, characterId: number | null): boolean {
   const team = getTeamSession(state, teamId);
   if (dungeonSessionActive(team) || !Number.isInteger(slot) || slot < 0 || slot >= 4) return false;
-  if (characterId !== null && (!state.characters.some(c=>c.id===characterId) || characterTeamReservation(state,characterId,teamId)!==null || team.dungeonTeamSlots.some((id,i)=>i!==slot && id===characterId))) return false;
+  if (characterId !== null) {
+    const buildings = (state as TeamWorldState & {cityLayout?: {buildings?: Array<{workerCharacterId?:number|null}>}}).cityLayout?.buildings ?? [];
+    if (buildings.some(building=>building.workerCharacterId===characterId)) return false;
+    if (!state.characters.some(c=>c.id===characterId) ||
+        characterTeamReservation(state,characterId,teamId)!==null ||
+        team.dungeonTeamSlots.some((id,i)=>i!==slot && id===characterId)) return false;
+  }
   team.dungeonTeamSlots[slot] = characterId;
   return true;
 }

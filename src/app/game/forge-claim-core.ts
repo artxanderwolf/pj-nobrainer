@@ -65,7 +65,8 @@ export function identifyNewForgeJob(state: ForgeClaimWorldState, job: ForgeJob):
  */
 export function advanceForgeJobsToReady(
   state: ForgeClaimWorldState, activeSlots: number, now: number,
-  onReady: (job: IdentifiedForgeJob, at: number) => void = () => {}
+  onReady: (job: IdentifiedForgeJob, at: number) => void = () => {},
+  onStart: (job: IdentifiedForgeJob, at: number) => void = () => {}
 ): number {
   initializeForgeClaims(state);
   let completed = 0;
@@ -85,10 +86,10 @@ export function advanceForgeJobsToReady(
     }
     completed += finished.length;
     const started = fillForgeSlots(state, activeSlots, at) as IdentifiedForgeJob[];
-    for (const job of started) job.status = 'active';
+    for (const job of started) { job.status = 'active'; onStart(job,at); }
   }
   const started = fillForgeSlots(state, activeSlots, now) as IdentifiedForgeJob[];
-  for (const job of started) job.status = 'active';
+  for (const job of started) { job.status = 'active'; onStart(job,now); }
   return completed;
 }
 
