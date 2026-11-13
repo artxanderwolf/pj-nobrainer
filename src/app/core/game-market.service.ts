@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { reconcileProductionAssignments, type CityWorkerWorldState } from '../game/city-worker-core.ts';
 import { initializeMarketClaims, identifyNewMarketJob, advanceMarketJobsToReady, takeReadyMarketJob, type MarketClaimWorldState } from '../game/market-claim-core.ts';
 import { productionActiveSlots } from '../game/city-production-capacity-core.ts';
 import { type CityLayoutWorldState } from '../game/city-layout-core.ts';
@@ -48,7 +49,7 @@ interface RuntimeMarketWeapon {
   starter?: boolean;
 }
 
-type RuntimeMarketState = MutableGameState & CityLayoutWorldState & MarketClaimWorldState & {
+type RuntimeMarketState = MutableGameState & CityLayoutWorldState & CityWorkerWorldState & MarketClaimWorldState & {
   inventory: MaterialStorageInventory;
   weaponInventory: RuntimeMarketWeapon[];
   characters: EquipmentCharacterLike[];
@@ -104,6 +105,7 @@ export class GameMarketService {
       at
     );
     if (status === 'full') return { status: 'full' };
+    if (status === 'started') reconcileProductionAssignments(state,'market',at);
     const stored = status === 'started' ? state.marketJobs.at(-1) : state.marketQueue.at(-1);
     if (stored && 'status' in stored) (stored as { status: string }).status = status === 'started' ? 'active' : 'queued';
 
@@ -144,6 +146,7 @@ export class GameMarketService {
     const job = cancelMarketJob(state, kind, index, productionActiveSlots(state, 'market'), at);
     if (!job) return null;
     initializeMarketClaims(state); // A promoted queued order is active after cancellation.
+    reconcileProductionAssignments(state,'market',at);
     normalizeMarketMaterialJob(job);
     const name = this.displayName(job);
     this.returnJob(state, job);
@@ -159,10 +162,11 @@ export class GameMarketService {
   update(now = Date.now()): MarketUpdateResult {
     const state = this.getState();
     this.normalizeMaterialReferences();
+    reconcileProductionAssignments(state,'market',now);
     const completedSales: MarketCompletedSale[] = [];
     const completedCount = advanceMarketJobsToReady(state, productionActiveSlots(state, 'market'), now, (job) => {
       completedSales.push({ name: this.displayName(job), valueNickel: job.valueNickel });
-    });
+    }, (_job,at)=>{ reconcileProductionAssignments(state,'market',at); });
     return { completedCount, completedSales };
   }
 
