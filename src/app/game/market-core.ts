@@ -8,6 +8,9 @@ export interface MarketJob {
   materialId?: number;
   valueNickel: number;
   seconds: number;
+  buildingInstanceId?: string;
+  remainingWorkSeconds?: number;
+  workRate?: number;
   quantity?: number;
   unitValueNickel?: number;
   unitSeconds?: number;
