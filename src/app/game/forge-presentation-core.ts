@@ -40,6 +40,9 @@ export interface ForgeJobPresentationLike {
   weaponName: string;
   totalSeconds: number;
   finishesAt?: number;
+  workRemainingSeconds?: number;
+  workAnchorAt?: number;
+  workSpeed?: number;
   valueNickel: number;
   stats?: {
     expectedRaw?: number;
@@ -111,7 +114,10 @@ export function getActiveForgeJobPresentation(
 ): ActiveForgeJobPresentation {
   const remainingSeconds = Math.ceil(Math.max(0, Number(job.finishesAt ?? now) - now) / 1000);
   const totalSeconds = Math.max(1, Number(job.totalSeconds) || 1);
-  const progressPercent = Math.max(0, Math.min(100, 100 * (totalSeconds - remainingSeconds) / totalSeconds));
+  const remainingWork = Number.isFinite(job.workRemainingSeconds) && Number.isFinite(job.workAnchorAt)
+    ? Math.max(0, job.workRemainingSeconds! - Math.max(0, now-job.workAnchorAt!)/1000*(job.workSpeed ?? 1))
+    : remainingSeconds;
+  const progressPercent = Math.max(0, Math.min(100, 100 * (totalSeconds - remainingWork) / totalSeconds));
   return {
     title: `Platz ${index + 1}: ${job.weaponName}`,
     remainingText: `${formatDuration(remainingSeconds)} verbleibend`,
