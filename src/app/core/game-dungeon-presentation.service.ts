@@ -1,4 +1,6 @@
 import { DUNGEON_IDS, dungeonSessionActive } from '../game/parallel-dungeon-core.ts';
+import { workingCharacterIds } from '../game/city-worker-core.ts';
+import { type CityLayoutWorldState } from '../game/city-layout-core.ts';
 import { teamIds, getTeamSession, assignTeamCharacter, characterTeamReservation, selectTeamDungeon, type TeamSessionState } from '../game/team-core.ts';
 import { dungeonUnlocked } from '../game/mission-core.ts';
 import { getDungeonDefinition } from '../game/dungeon-definitions.ts';
@@ -280,7 +282,8 @@ export class GameDungeonPresentationService {
   ): string {
     if (this.openTeamPickerSlot !== slot) return '';
     const used = new Set(state.session.dungeonTeamSlots.filter((id, index): id is number => index !== slot && typeof id === 'number'));
-    const candidates = characters.filter(character => !used.has(character.id) && characterTeamReservation(this.gameState.getState(),character.id,state.session.teamId)===null);
+    const workers = workingCharacterIds(this.gameState.getState<CityLayoutWorldState & MutableGameState>());
+    const candidates = characters.filter(character => !workers.has(character.id) && !used.has(character.id) && characterTeamReservation(this.gameState.getState(),character.id,state.session.teamId)===null);
     if (!candidates.length) return '<div class="team-slot-picker muted small">Keine weiteren Charaktere verfügbar.</div>';
     return `<div class="team-slot-picker">${candidates.map(candidate => `<div class="team-candidate"><div><strong>${candidate.name}</strong><div class="sell-meta">${candidate.className}</div></div><button class="btn smallbtn primary" data-dungeon-action="assign" data-slot="${slot}" data-character-id="${candidate.id}">Zuweisen</button></div>`).join('')}</div>`;
   }
