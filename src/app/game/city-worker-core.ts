@@ -91,10 +91,19 @@ export function assignCityWorker(
  * Snapshots are anchored only on reassignment; no 250ms state write is needed.
  * Previously completed base work is never discarded.
  */
+export function ensureTimedWorkSnapshot(job: TimedProductionJob): void {
+  if (!Number.isFinite(job.finishesAt) || !Number.isFinite(job.startedAt)) return;
+  if (job.workSpeed !== undefined) return;
+  job.workSpeed = 1;
+  job.workAnchorAt = job.startedAt!;
+  job.workRemainingSeconds = Math.max(0,(job.finishesAt! - job.startedAt!)/1000);
+}
+
 export function setTimedJobSpeed(job: TimedProductionJob, nextSpeed: number, at: number): void {
   if (!Number.isFinite(nextSpeed) || nextSpeed <= 0 || !Number.isFinite(at))
     throw new Error('S16: Ungültige Produktionsgeschwindigkeit.');
   if (!Number.isFinite(job.finishesAt) || !Number.isFinite(job.startedAt)) return;
+  ensureTimedWorkSnapshot(job);
   const oldSpeed = Number.isFinite(job.workSpeed) && job.workSpeed! > 0 ? job.workSpeed! : 1;
   const oldAnchor = Number.isFinite(job.workAnchorAt) ? job.workAnchorAt! : job.startedAt!;
   const initialWork = Number.isFinite(job.workRemainingSeconds) && job.workRemainingSeconds! >= 0
@@ -144,6 +153,7 @@ export function reconcileProductionAssignments(
       taken.has(b.buildingInstanceId) && b.activeJobId===job.jobId);
     if(current) {
       const expected=current.workerCharacterId===null?1:HELPER_SPEED_FACTOR;
+      ensureTimedWorkSnapshot(job);
       if(job.workSpeed !== expected){
         setTimedJobSpeed(job,expected,at);
         changed=true;
@@ -155,7 +165,8 @@ export function reconcileProductionAssignments(
     job.buildingInstanceId=free.buildingInstanceId;
     free.activeJobId=job.jobId ?? null;
     taken.add(free.buildingInstanceId);
-    setTimedJobSpeed(job,free.workerCharacterId===null?1:HELPER_SPEED_FACTOR,at);
+    ensureTimedWorkSnapshot(job);
+    if (free.workerCharacterId !== null) setTimedJobSpeed(job,HELPER_SPEED_FACTOR,at);
     changed=true;
   }
   return changed;
