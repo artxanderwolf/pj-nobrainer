@@ -1,5 +1,6 @@
 import { teamIds, getTeamSession, migrateTeams, characterTeamReservation, type TeamSessionState } from '../game/team-core.ts';
 import { isProductionWorkerReserved } from '../game/production-worker-core.ts';
+import { type CityLayoutWorldState } from '../game/city-layout-core.ts';
 import { getDungeonDefinition } from '../game/dungeon-definitions.ts';
 import { healParty } from '../game/healing-core.ts';
 import { dungeonUnlocked, initializeReleaseProgress, recordSuccessfulWave, startProgressSession, type MissionState } from '../game/mission-core.ts';
@@ -255,7 +256,7 @@ export class GameDungeonService {
     initializeReleaseProgress(state);
     const selectedDungeonId = state.session.dungeonId;
     if (!dungeonUnlocked(state, selectedDungeonId)) { outcome.alertMessage = 'Dungeon noch nicht freigeschaltet.'; return outcome; }
-    const workerOccupied = selectedIds.find(id => isProductionWorkerReserved(state,id));
+    const workerOccupied = selectedIds.find(id => isProductionWorkerReserved(state as RuntimeDungeonState & CityLayoutWorldState,id));
     if (workerOccupied!==undefined) {outcome.alertMessage='Ein gewählter Charakter ist gerade als Betriebshelfer beschäftigt. Bitte vorher abziehen.';return outcome;}
     const occupied = selectedIds.find(id => characterTeamReservation(state,id,state.session.teamId)!==null);
     if (occupied !== undefined) { outcome.alertMessage = 'Ein gewählter Charakter befindet sich bereits in einem anderen Dungeon.'; return outcome; }
