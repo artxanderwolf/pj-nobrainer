@@ -1,5 +1,6 @@
 import { weaponUnlocked } from '../game/mission-core.ts';
-import { initializeForgeClaims, identifyNewForgeJob, advanceForgeJobsToReady, takeReadyForgeJob, type ForgeClaimWorldState } from '../game/forge-claim-core.ts';
+import { migrateProductionWorkers, advanceProductionToReady, type ProductionWorkerWorld } from '../game/production-worker-core.ts';
+import { initializeForgeClaims, identifyNewForgeJob, advanceForgeJobsToReady, takeReadyForgeJob, type ForgeClaimWorldState, type IdentifiedForgeJob } from '../game/forge-claim-core.ts';
 import { productionActiveSlots } from '../game/city-production-capacity-core.ts';
 import { type CityLayoutWorldState } from '../game/city-layout-core.ts';
 import { Injectable } from '@angular/core';
@@ -196,6 +197,7 @@ export class GameForgeService {
     }
 
     const status = enqueueForgeJob(state, identifyNewForgeJob(state, job), activeSlots, queueSlots, at);
+    migrateProductionWorkers(state as unknown as ProductionWorkerWorld);
     const stored = status === 'started' ? state.forgeJobs.at(-1) : state.forgeQueue.at(-1);
     if (stored && 'status' in stored) (stored as {status:string}).status = status === 'started' ? 'active' : 'queued';
     if (status === 'full') throw new Error('Schmiedekapazität änderte sich während einer synchronen Auftragserstellung.');
@@ -232,9 +234,13 @@ export class GameForgeService {
     const activeSlots = productionActiveSlots(state, 'forge');
     const completedNames: string[] = [];
 
-    const completedCount = advanceForgeJobsToReady(state, activeSlots, now, job => {
-      completedNames.push(job.weaponName);
-    });
+    migrateProductionWorkers(state as unknown as ProductionWorkerWorld);
+    const completedCount = advanceProductionToReady(
+      state as unknown as ProductionWorkerWorld, 'forge',
+      state.forgeJobs as IdentifiedForgeJob[], state.forgeQueue as IdentifiedForgeJob[],
+      state.forgeReadyJobs ?? (state.forgeReadyJobs=[]), now,
+      job => completedNames.push(job.weaponName)
+    );
 
     return { completedCount, completedNames };
   }

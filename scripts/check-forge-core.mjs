@@ -135,7 +135,7 @@ try {
 
   const bowJob = createForgeJob('bow', '', bowSlots);
   assert.equal(bowJob.weaponName, 'Bogen');
-  assert.equal(bowJob.totalSeconds, 80);
+  assert.equal(bowJob.totalSeconds, 90, 'S16: Bogen-Mindestdauer beträgt 90 s.');
   assert.equal(bowJob.valueNickel, 70);
   assertClose(bowJob.performance, 4.66393356);
   assert.deepEqual(bowJob.slots.map(slot => slot.slot), ['back', 'gripCore', 'gripWrap', 'special', 'bowstring']);
