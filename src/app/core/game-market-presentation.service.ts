@@ -1,4 +1,6 @@
 import { Injectable } from '@angular/core';
+import { renderProductionWorkerControls } from '../game/production-worker-presentation-core.ts';
+import { GameProductionWorkerService } from './game-production-worker.service';
 import { formatCurrencyNickel, formatDuration, materialSellDataById, weaponSellData } from '../game/economy-core';
 import { getWeaponEquipLocation, type EquipmentCharacterLike } from '../game/equipment-core';
 import { getMaterialStorageEntries, type MaterialStorageInventory } from '../game/material-storage-core';
@@ -53,7 +55,8 @@ export class GameMarketPresentationService {
     private readonly gameMarket: GameMarketService,
     private readonly combatLog: GameCombatLogService,
     private readonly progressionPresentation: GameProgressionPresentationService,
-    private readonly weaponPresentation: GameWeaponPresentationService
+    private readonly weaponPresentation: GameWeaponPresentationService,
+    private readonly workers: GameProductionWorkerService
   ) {}
 
   renderJobs(): void {
@@ -107,6 +110,7 @@ export class GameMarketPresentationService {
         }).join('') + (!ready.length ? '<p>Keine fertigen Verkäufe.</p>' : '');
       this.bindClaimActions();
     }
+    if (queue) this.renderWorkers(queue);
     this.progressionPresentation.render();
   }
 
@@ -206,6 +210,27 @@ export class GameMarketPresentationService {
   }
 
   closeLegacyCompatibilityBridge(): void { delete window.NoBrainerMarketPresentationCompatibility; }
+
+  private renderWorkers(anchor: HTMLElement): void {
+    let box=document.getElementById('marketWorkerCard');
+    if (!box) {box=document.createElement('div');box.id='marketWorkerCard';box.className='card';anchor.insertAdjacentElement('afterend',box);}
+    const markup=renderProductionWorkerControls(this.workers.state(),'market');
+    if (box.dataset['workerMarkup']!==markup) {box.innerHTML=markup;box.dataset['workerMarkup']=markup;}
+    this.bindWorkerActions();
+  }
+
+  private workerActionsBound=false;
+  private bindWorkerActions(): void {
+    if (this.workerActionsBound) return;
+    this.workerActionsBound=true;
+    document.addEventListener('change',event=>{
+      const element=event.target;
+      if (!(element instanceof HTMLSelectElement) || element.dataset['productionHelperKind']!=='market') return;
+      const result=this.workers.assign('market',element.dataset['productionHelperBuilding']??'',element.value===''?null:Number(element.value));
+      if (result.status==='assigned') {document.dispatchEvent(new Event('production-worker-changed'));this.renderJobs();}
+      else if(result.status!=='unchanged') {alert('Helfer konnte nicht zugewiesen werden: Charakter ist belegt oder Betrieb ungültig.');this.renderJobs();}
+    });
+  }
 
   private bindClaimActions(): void {
     if (this.claimActionsBound) return;
