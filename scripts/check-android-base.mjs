@@ -40,7 +40,7 @@ const sharedVersionPattern = packageJson.version.replaceAll('.', '\\.');
 assert.match(appShell, new RegExp(`APP_UI_VERSION\\s*=\\s*'${sharedVersionPattern}'`), 'Gemeinsame sichtbare App-Version und package.json müssen übereinstimmen.');
 assert.match(appShell, /SMITHS OF ELDRAVAR · v\$\{APP_UI_VERSION\}/, 'Offizieller Spielname fehlt in der sichtbaren Shell.');
 assert.match(appComponent, /Smiths of Eldravar – v\$\{APP_UI_VERSION\}/, 'Dokumenttitel verwendet nicht den offiziellen Spielnamen.');
-assert.match(saveCodec, /export const SAVE_VERSION = 22;/, 'Android muss dasselbe Save-Format wie die gemeinsame Anwendung verwenden.');
+assert.match(saveCodec, /export const SAVE_VERSION = 23;/, 'Android muss dasselbe Save-Format wie die gemeinsame Anwendung verwenden.');
 
 for (const ignored of ['*.jks', '*.keystore', '*.p12', 'keystore.properties']) {
   assert.ok(gitignore.split(/\r?\n/).includes(ignored), `${ignored} muss von Git ausgeschlossen sein.`);
