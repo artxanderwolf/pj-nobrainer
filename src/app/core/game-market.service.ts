@@ -127,6 +127,7 @@ export class GameMarketService {
     const job: MarketJob = { ...sale, weaponSnapshot: weapon };
     const status = enqueueMarketJob(state, identifyNewMarketJob(state, job), productionActiveSlots(state, 'market'), Number(state.upgrades.marketQueue) || 0, at);
     if (status === 'full') return { status: 'full' };
+    if (status === 'started') reconcileProductionAssignments(state,'market',at);
     const stored = status === 'started' ? state.marketJobs.at(-1) : state.marketQueue.at(-1);
     if (stored && 'status' in stored) (stored as { status: string }).status = status === 'started' ? 'active' : 'queued';
     state.weaponInventory = state.weaponInventory.filter(entry => entry.id !== weaponId);
