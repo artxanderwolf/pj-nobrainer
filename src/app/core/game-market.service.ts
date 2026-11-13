@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
-import { initializeMarketClaims, identifyNewMarketJob, advanceMarketJobsToReady, takeReadyMarketJob, type MarketClaimWorldState } from '../game/market-claim-core.ts';
+import { migrateProductionWorkers, advanceProductionToReady, type ProductionWorkerWorld } from '../game/production-worker-core.ts';
+import { initializeMarketClaims, identifyNewMarketJob, takeReadyMarketJob, type MarketClaimWorldState, type IdentifiedMarketJob } from '../game/market-claim-core.ts';
 import { productionActiveSlots } from '../game/city-production-capacity-core.ts';
 import { type CityLayoutWorldState } from '../game/city-layout-core.ts';
 import { getMaterialDisplayNameById, getMaterialIdByName, type WeaponSlot } from '../game/game-core';
@@ -106,6 +107,7 @@ export class GameMarketService {
     if (status === 'full') return { status: 'full' };
     const stored = status === 'started' ? state.marketJobs.at(-1) : state.marketQueue.at(-1);
     if (stored && 'status' in stored) (stored as { status: string }).status = status === 'started' ? 'active' : 'queued';
+    migrateProductionWorkers(state as unknown as ProductionWorkerWorld);
 
     if (!takeMaterialQuantityById(state.inventory, unit.materialId, qty)) {
       throw new Error(`Materialbestand änderte sich während einer synchronen Marktauftragserstellung: ID ${unit.materialId}.`);
@@ -144,6 +146,7 @@ export class GameMarketService {
     const job = cancelMarketJob(state, kind, index, productionActiveSlots(state, 'market'), at);
     if (!job) return null;
     initializeMarketClaims(state); // A promoted queued order is active after cancellation.
+    migrateProductionWorkers(state as unknown as ProductionWorkerWorld);
     normalizeMarketMaterialJob(job);
     const name = this.displayName(job);
     this.returnJob(state, job);
@@ -160,9 +163,13 @@ export class GameMarketService {
     const state = this.getState();
     this.normalizeMaterialReferences();
     const completedSales: MarketCompletedSale[] = [];
-    const completedCount = advanceMarketJobsToReady(state, productionActiveSlots(state, 'market'), now, (job) => {
-      completedSales.push({ name: this.displayName(job), valueNickel: job.valueNickel });
-    });
+    migrateProductionWorkers(state as unknown as ProductionWorkerWorld);
+    const completedCount = advanceProductionToReady(
+      state as unknown as ProductionWorkerWorld, 'market',
+      state.marketJobs as IdentifiedMarketJob[], state.marketQueue as IdentifiedMarketJob[],
+      state.marketReadyJobs ?? (state.marketReadyJobs=[]), now,
+      job => completedSales.push({name:this.displayName(job),valueNickel:job.valueNickel})
+    );
     return { completedCount, completedSales };
   }
 
