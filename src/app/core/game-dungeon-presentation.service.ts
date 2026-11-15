@@ -3,6 +3,8 @@ import { teamIds, getTeamSession, assignTeamCharacter, characterTeamReservation,
 import { dungeonUnlocked } from '../game/mission-core.ts';
 import { getDungeonDefinition } from '../game/dungeon-definitions.ts';
 import { Injectable } from '@angular/core';
+import { characterRaceName, resolveCharacterRaceId } from '../game/character-race-core.ts';
+import { resolveCharacterAssetId } from '../game/character-class-asset-presentation';
 import { CHARACTER_CLASSES, CONFIG, type CharacterClassId } from '../game/game-core';
 import { getMaterialStorageEntries, type MaterialStorageInventory } from '../game/material-storage-core';
 import {
@@ -268,7 +270,7 @@ export class GameDungeonPresentationService {
       const character = characters.find(entry => entry.id === slot.characterId);
       const hpPercent = character ? this.resourcePercent(character.hp, character.maxHp) : 0;
       const fallen = slot.fallen ? `<span class="tag temp">${slot.fallenLabel}</span>` : '';
-      return `<div class="team-slot${pickerOpen}"><div class="team-slot-head"><strong>${slot.title}</strong>${fallen}</div><div class="bar hp dungeon-character-hp" role="progressbar" aria-label="Leben ${character?.name ?? ''}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(hpPercent)}"><i style="width:${hpPercent}%"></i></div><div class="actions"><button class="btn" data-dungeon-action="remove" data-slot="${slot.slotIndex}" ${locked ? 'disabled' : ''}>${slot.removeLabel}</button><button class="btn" data-dungeon-action="picker" data-slot="${slot.slotIndex}" ${locked ? 'disabled' : ''}>${slot.switchLabel}</button></div>${picker}</div>`;
+      return `<div class="team-slot${pickerOpen}"><div class="team-slot-head"><strong>${slot.title}</strong>${character ? `<span class="class-emblem class-emblem-small" data-class-id="${resolveCharacterAssetId(character.classId ?? '')}" data-race-id="${resolveCharacterRaceId(character.raceId)}" role="img" aria-label="${character.raceName ?? 'Mensch'}"></span><span class="sell-meta">${character.className} · ${character.raceName}</span>` : ''}${fallen}</div><div class="bar hp dungeon-character-hp" role="progressbar" aria-label="Leben ${character?.name ?? ''}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(hpPercent)}"><i style="width:${hpPercent}%"></i></div><div class="actions"><button class="btn" data-dungeon-action="remove" data-slot="${slot.slotIndex}" ${locked ? 'disabled' : ''}>${slot.removeLabel}</button><button class="btn" data-dungeon-action="picker" data-slot="${slot.slotIndex}" ${locked ? 'disabled' : ''}>${slot.switchLabel}</button></div>${picker}</div>`;
     }).join('');
     root.innerHTML = `<div class="team-slot-grid">${slots}</div>${locked ? '<p class="status-line">Teamzuweisung ist während eines laufenden Dungeon-Runs gesperrt.</p>' : ''}`;
   }
@@ -282,7 +284,7 @@ export class GameDungeonPresentationService {
     const used = new Set(state.session.dungeonTeamSlots.filter((id, index): id is number => index !== slot && typeof id === 'number'));
     const candidates = characters.filter(character => !used.has(character.id) && characterTeamReservation(this.gameState.getState(),character.id,state.session.teamId)===null);
     if (!candidates.length) return '<div class="team-slot-picker muted small">Keine weiteren Charaktere verfügbar.</div>';
-    return `<div class="team-slot-picker">${candidates.map(candidate => `<div class="team-candidate"><div><strong>${candidate.name}</strong><div class="sell-meta">${candidate.className}</div></div><button class="btn smallbtn primary" data-dungeon-action="assign" data-slot="${slot}" data-character-id="${candidate.id}">Zuweisen</button></div>`).join('')}</div>`;
+    return `<div class="team-slot-picker">${candidates.map(candidate => `<div class="team-candidate"><div><strong>${candidate.name}</strong><div class="sell-meta">${candidate.className} · ${candidate.raceName}</div></div><button class="btn smallbtn primary" data-dungeon-action="assign" data-slot="${slot}" data-character-id="${candidate.id}">Zuweisen</button></div>`).join('')}</div>`;
   }
 
   private renderTiming(): void {
@@ -449,7 +451,10 @@ export class GameDungeonPresentationService {
       maxHp: character.maxHp,
       energy: character.energy,
       maxEnergy: character.maxEnergy,
-      className: CHARACTER_CLASSES[(character.classId as CharacterClassId) || 'recruit']?.name ?? CHARACTER_CLASSES.recruit.name
+      className: CHARACTER_CLASSES[(character.classId as CharacterClassId) || 'recruit']?.name ?? CHARACTER_CLASSES.recruit.name,
+      classId: character.classId,
+      raceId: resolveCharacterRaceId(character.raceId),
+      raceName: characterRaceName(character.raceId)
     }));
   }
 
