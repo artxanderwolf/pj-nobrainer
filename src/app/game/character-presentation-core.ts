@@ -48,6 +48,9 @@ export interface DungeonTeamPresentationCharacterLike {
   energy: number;
   maxEnergy: number;
   className: string;
+  raceName?: string;
+  classId?: string;
+  raceId?: string;
 }
 
 export interface DungeonTeamCandidatePresentation {
