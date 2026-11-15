@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import { CHARACTER_RACES, resolveCharacterRaceId, characterRaceName, migrateCharacterRaces } from '../src/app/game/character-race-core.ts';
+assert.deepEqual(Object.keys(CHARACTER_RACES), ['human','dwarf','wood-elf','high-elf','halfling']);
+assert.equal(resolveCharacterRaceId(undefined),'human');
+assert.equal(resolveCharacterRaceId('invalid'),'human');
+assert.equal(characterRaceName('high-elf'),'Hochelf');
+const legacy={characters:[{id:1,classId:'fighter',level:8,xp:120,equipment:{leftHand:2,rightHand:null}},{id:2,classId:'scholar',raceId:'wood-elf'}]};
+const preserved=structuredClone(legacy.characters[0]);
+assert.equal(migrateCharacterRaces(legacy),true);
+assert.equal(legacy.characters[0].raceId,'human');
+assert.deepEqual({...legacy.characters[0],raceId:undefined},{...preserved,raceId:undefined});
+assert.equal(legacy.characters[1].raceId,'wood-elf');
+assert.equal(migrateCharacterRaces(legacy),false);
+console.log('S17 stable race IDs and Save23 migration: OK');
