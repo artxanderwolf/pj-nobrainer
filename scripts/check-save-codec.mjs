@@ -7,7 +7,7 @@ import {
 } from '../src/app/game/save-transfer-core.ts';
 
 const state = {
-  gold: 124,
+  gold: 123,
   characters: [{ id: 1, hp: 17, energy: 42 }],
   inventory: { '4': { materialId: 4, category: 'Metall', qty: 4 } },
   dungeonLoot: { '2': { materialId: 2, category: 'Holz', qty: 1 } },
@@ -20,8 +20,8 @@ const savedAt = 1_760_000_000_000;
 const encoded = encodeSave(state, savedAt);
 const parsed = JSON.parse(encoded);
 
-assert.equal(parsed.saveVersion, 24, 'Save-Version muss für das persistierte Stadtlayout 19 sein.');
-assert.equal(SAVE_VERSION, 24, 'TypeScript-Save-Version muss 19 sein.');
+assert.equal(parsed.saveVersion, 24, 'Save-Version muss für die S17-Rassenmigration 24 sein.');
+assert.equal(SAVE_VERSION, 24, 'TypeScript-Save-Version muss 24 sein.');
 assert.equal(parsed.savedAt, savedAt, 'savedAt muss unverändert gespeichert werden.');
 assert.equal(parsed.state.dungeonSessionEndsAt, state.dungeonSessionEndsAt, 'Die absolute Dungeon-Endzeit muss im Save erhalten bleiben.');
 assert.deepEqual(parsed.state, state, 'State muss unverändert im Save-Envelope liegen.');
