@@ -39,7 +39,7 @@ try {
 
   const recruit = createRecruit(1, 'Rekrut 01', true);
   assert.deepEqual(recruit, {
-    id: 1, name: 'Rekrut 01', classId: 'recruit', level: 1, xp: 0, maxHp: 30, hp: 30,
+    id: 1, name: 'Rekrut 01', classId: 'recruit', raceId: 'human', level: 1, xp: 0, maxHp: 30, hp: 30,
     maxEnergy: 100, energy: 100, dodge: 0.10, armor: 2,
     strengthFactor: 1.00, precision: 1.00, alive: true,
     equipment: { leftHand: null, rightHand: 0 }
