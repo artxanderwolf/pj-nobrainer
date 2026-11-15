@@ -634,3 +634,16 @@
     padding-right: 4px;
   }
 }
+
+/* S17: retain class artwork and class colors, add race as a secondary band. */
+.class-emblem[data-race-id] { position: relative; }
+.class-emblem[data-race-id]::after {
+  content: ''; position: absolute; left: 8%; right: 8%; bottom: 0;
+  height: 16%; border-radius: 999px; background: var(--race-color, #8954B5);
+  border: 1px solid rgba(0,0,0,.4); pointer-events: none;
+}
+.class-emblem[data-race-id="human"] { --race-color: #8954B5; }
+.class-emblem[data-race-id="dwarf"] { --race-color: #B96F38; }
+.class-emblem[data-race-id="wood-elf"] { --race-color: #38834E; }
+.class-emblem[data-race-id="high-elf"] { --race-color: #8BCFE9; }
+.class-emblem[data-race-id="halfling"] { --race-color: #BC912B; }
