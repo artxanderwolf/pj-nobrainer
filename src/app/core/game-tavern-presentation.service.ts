@@ -241,6 +241,7 @@ export class GameTavernPresentationService {
     }
 
     this.combatLog.add(`${result.character.name} wurde für ${formatCurrencyNickel(result.costNickel)} angeworben.`, 'good');
+    document.dispatchEvent(new Event('tavern-offers-updated'));
     this.closeDetailState();
     this.render();
     this.characterPresentation.render();
