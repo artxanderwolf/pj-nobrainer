@@ -54,6 +54,7 @@ export interface DungeonRunLike {
   totalEnergyCost: number;
   enemies: DungeonEnemy[];
   attackPoints: DungeonAttackPoint[];
+  raceHealingCooldowns?: Record<number, number>;
 }
 
 export type DungeonPhase = 'loot' | 'combat' | 'search' | 'idle';
@@ -200,7 +201,8 @@ export function refreshCharacterAttackPoints(
       if (typeof source.weaponId === 'number') return point.weaponId === source.weaponId;
       return point.kind === source.kind && (point.weaponId ?? null) === (source.weaponId ?? null);
     });
-    const matchIndex = exactMatch >= 0 ? exactMatch : (unusedExisting.length ? 0 : -1);
+    const matchIndex = exactMatch >= 0 ? exactMatch :
+      (source.kind === 'race-heal' ? -1 : unusedExisting.findIndex(point => point.kind !== 'race-heal'));
     const previous = matchIndex >= 0 ? unusedExisting.splice(matchIndex, 1)[0] : undefined;
     return {
       side: 'player' as const,
