@@ -48,23 +48,23 @@ assert.equal(healParty([a,b],500,x=>x.threat).target,a);assert.equal(a.hp,100);
 assert.equal(healParty([a,b],500,x=>x.threat).target,b);assert.equal(b.hp,50);
 assert.equal(healParty([a,b,dead],10,x=>x.threat),null);assert.equal(dead.hp,0);
 const self={hp:1,maxHp:22,alive:true};assert.equal(healParty([self],4,()=>25).target,self);
-for(const key of ['maxHp','maxEnergy','armor','dodge','strengthFactor','precision','threat','critChance','critDamage'])assert.equal(CHARACTER_CLASSES.healer[key],CHARACTER_CLASSES.scholar[key]);
-assert.deepEqual(getClassEquipmentRule('healer'),getClassEquipmentRule('scholar'));
+assert.deepEqual(Object.keys(CHARACTER_CLASSES),['recruit','fighter','archer','scholar'],'S18 has four classes only');
+assert.equal(getClassEquipmentRule('healer'),null);
 const recruitState={gold:100000,characters:[],upgrades:{innCapacity:4}};
-assert.equal(getRecruitOffer(recruitState,'healer').ok,false);recruitState.releaseProgress={...p,claimed:{healer:true}};assert.equal(getRecruitOffer(recruitState,'healer').ok,true);
+assert.equal(getRecruitOffer(recruitState,'healer').ok,false);recruitState.releaseProgress={...p,claimed:{healer:true}};assert.equal(getRecruitOffer(recruitState,'healer').ok,false,'Legacy quest claim must not reenable class');
 assert.equal(MATERIAL_REFERENCES.length,77);assert.deepEqual(MATERIAL_REFERENCES.map(r=>r.materialId),Array.from({length:77},(_,i)=>i+1));
 const seen=new Set();let poolCount=0;
 for(const [did,enemies] of Object.entries(GENERATED_DUNGEON_ENEMY_DEFINITIONS)) {
   for(const enemy of Object.values(enemies)) {
     if(+did===1)continue;
-    poolCount++;assert.equal(enemy.lootMaterialIds.length,4);
-    assert.deepEqual(enemy.lootMaterialIds.map(id=>MATERIAL_REFERENCES[id-1].definition.dungeonDropWeight),[50,30,15,5]);
+    poolCount++;assert.equal(enemy.lootMaterialIds.length,+did===4&&enemy===enemies.scholar?8:4);
+    assert.deepEqual(enemy.lootMaterialIds.map(id=>MATERIAL_REFERENCES[id-1].definition.dungeonDropWeight),enemy.lootMaterialIds.length===8?[50,30,15,5,50,30,15,5]:[50,30,15,5]);
     for(const id of enemy.lootMaterialIds){assert.ok(!seen.has(id));seen.add(id);assert.match(getWeaponMaterialColorById(id),/^#[0-9A-F]{6}$/i);const r=MATERIAL_REFERENCES[id-1].definition;assert.equal(r.rarity,+did);assert.equal(r.specialEffect,null);assert.equal(r.stats.lifeSteal,0);assert.equal(r.stats.hpRegenPerMinute,0);}
   }
 }
-assert.equal(poolCount,17);assert.equal(seen.size,68);
+assert.equal(poolCount,16);assert.equal(seen.size,68);
 const catalog=JSON.parse(readFileSync(new URL('./fixtures/quick-release-materials.json',import.meta.url),'utf8'));
-const dungeonIds={'Waffenkammer':2,'Wald':3,'Einsame Stadt':4,'Heilige Ebenen':5},classIds={'Neuling':'recruit','Tank':'fighter','Jäger':'archer','Lehrling':'scholar','Heiler':'healer'};
+const dungeonIds={'Waffenkammer':2,'Wald':3,'Einsame Stadt':4,'Heilige Ebenen':5},classIds={'Neuling':'recruit','Tank':'fighter','Jäger':'archer','Lehrling':'scholar','Heiler':'scholar'};
 for(const [index,row] of catalog.rows.entries()){
   const [dungeon,enemy,name,category,color,drop,...values]=row,reference=MATERIAL_REFERENCES[index+9],m=reference.definition;
   assert.equal(reference.displayName,name);assert.equal(m.category,category);assert.equal(getWeaponMaterialColorById(reference.materialId),color);
@@ -83,7 +83,7 @@ for (const dungeon of Object.values(GENERATED_DUNGEONS)) {
   assert.equal(resolveDungeonSearch(dungeon.encounterChance,.049999),'encounter');
   assert.equal(resolveDungeonSearch(dungeon.encounterChance,.05),'miss');
 }
-assert.equal(GENERATED_DUNGEONS[4].enemyClassWeights.healer,15);
+assert.equal(GENERATED_DUNGEONS[4].enemyClassWeights.healer,undefined);assert.equal(GENERATED_DUNGEONS[4].enemyClassWeights.scholar,23.5);
 assert.equal(Object.values(GENERATED_DUNGEONS[4].enemyClassWeights).reduce((a,b)=>a+b,0),100);
 assert.equal(getStarterBlueprint().stats.expectedRaw,5.775);assert.ok(getStarterBlueprint().slots.every(s=>s.materialId<=9));
 
@@ -114,17 +114,16 @@ try{
   Math.random=()=>.6;
   assert.deepEqual(service.rollDrops([createDungeonEnemy(1,'recruit',2)],2),[],
     'Bei 40 % der Ergebnisse darf kein Material gewählt werden.');
-  const healer={id:1,classId:'healer',hp:1,maxHp:22,alive:true,equipment:{leftHand:null,rightHand:null},name:'Heiler',level:1};
+  // S18: the real service resolves periodic healing without consuming the attack damage path.
+  const highElf={id:1,classId:'archer',raceId:'high-elf',hp:1,maxHp:26,alive:true,
+    equipment:{leftHand:null,rightHand:null},name:'Bogner',level:1};
   const enemy=createDungeonEnemy(1,'recruit');const hp=enemy.hp;
-  const runtime={characters:[healer],weaponInventory:[],dungeonTeamSlots:[1,null,null,null]};const svc=new GameDungeonService({getState:()=>runtime});
-  const out={events:[],saveRequested:false};svc.playerAttack(svc.getState(1),{ownerId:1,kind:'fist'},{participantIds:[1],enemies:[enemy]},out);
-  assert.equal(enemy.hp,hp);assert.ok(healer.hp>1);assert.equal(healer.hp,2.15,'No critical healing');
-  const eh=createDungeonEnemy(2,'healer',4);eh.hp=1;svc.enemyAttack(svc.getState(1),{ownerId:eh.id},{enemies:[enemy,eh],participantIds:[1]},out);assert.ok(eh.hp>1);
-  const slayer={...healer,classId:'recruit',id:2,name:'Rekrut',equipment:{leftHand:77,rightHand:null}};
-  const killState={characters:[slayer],weaponInventory:[{id:77,weaponForm:'sword',stats:{weaponBaseDamage:100000,attackSpeed:1,weaponBaseHitChance:1}}],dungeonTeamSlots:[2]};
-  const killService=new GameDungeonService({getState:()=>killState});Math.random=()=>.5;
-  killService.playerAttack(killService.getState(1),{ownerId:2,weaponId:77,kind:'weapon'},{participantIds:[2],enemies:[eh]},out);
-  assert.equal(killState.releaseProgress.healerDefeated,1,'Kill survives immediate manual abort, before wave completion');
-  assert.equal(out.saveRequested,true);
+  const root={characters:[highElf],weaponInventory:[],inventory:{}};migrateTeams(root);
+  const svc=new GameDungeonService({getState:()=>root});
+  const out={events:[],saveRequested:false};const run={participantIds:[1],enemies:[enemy]};
+  svc.playerAttack(svc.getState(1),{ownerId:1,kind:'race-heal',nextAt:10000},run,out);
+  assert.equal(enemy.hp,hp,'A healing action must not damage opponents');
+  assert.equal(highElf.hp,2,'High Elf archer heals exactly one HP');
+  assert.equal(out.saveRequested,true,'Healing is persisted');
 }finally{Math.random=rng;unlinkSync(temporary);}
 console.log('Schnellrelease: Qualifikation, Suchgrenzen, Claims, Migration, verborgene Missionen, Heilung, 68 Materialien, Dropgrenzen, Bossloot und echte Kampfpfade erfolgreich.');
