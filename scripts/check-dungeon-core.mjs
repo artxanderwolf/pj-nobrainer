@@ -70,8 +70,7 @@ try {
     assert.equal(createDungeonEnemy(1, 'recruit', Number(dungeon), true).xpDrop, 40 * factor,
       `S03: Boss in Dungeon ${dungeon} erhält 40 Basis-XP mal Schwierigkeit.`);
   }
-  assert.equal(createDungeonEnemy(1, 'healer', 4).xpDrop, 128,
-    'Der bisherige Heiler-Gegner bleibt bis S18 kompatibel.');
+  assert.equal(createDungeonEnemy(1, 'scholar', 4).xpDrop, 128, 'S18: Gelehrter ersetzt Heiler in Dungeon 4.');
 
   assert.equal(MATERIAL_DROP_CHANCE, 0.6);
   assert.equal(materialDropSucceeds(0), true);
