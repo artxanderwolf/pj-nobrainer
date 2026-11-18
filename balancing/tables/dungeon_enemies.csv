@@ -15,7 +15,6 @@ dungeon_id,class_id,display_name,xp_drop
 4,fighter,Tank,14
 4,archer,Jäger,14
 4,scholar,Lehrling,16
-4,healer,Heiler,16
 5,recruit,Neuling,10
 5,fighter,Tank,14
 5,archer,Jäger,14

@@ -1,3 +1,4 @@
+import { migrateLegacyHealers } from '../game/healer-migration-core.ts';
 import { migrateCharacterRaces } from '../game/character-race-core.ts';
 import { initializeReleaseProgress } from '../game/mission-core.ts';
 import { migrateTeams } from '../game/team-core.ts';
@@ -37,6 +38,13 @@ export class GameStateService {
   private dungeonMigrationPending = false;
   private cityMigrationPending = false;
   private raceMigrationPending = false;
+  private healerMigrationPending = false;
+
+  consumeHealerMigration(): boolean {
+    const pending = this.healerMigrationPending;
+    this.healerMigrationPending = false;
+    return pending;
+  }
 
   consumeRaceMigration(): boolean {
     const pending = this.raceMigrationPending;
@@ -112,6 +120,7 @@ export class GameStateService {
     this.state['cityName'] = normalizeCityName(this.state['cityName']);
     initializeReleaseProgress(this.state);
     this.dungeonMigrationPending = migrateTeams(this.state) || this.dungeonMigrationPending;
+    this.healerMigrationPending = migrateLegacyHealers(this.state);
     this.cityMigrationPending = migrateCityEconomy(this.state) || this.cityMigrationPending;
     this.cityMigrationPending = initializeCityConstruction(this.state) || this.cityMigrationPending;
     this.cityMigrationPending = reconcileCityTeamBuildings(this.state) || this.cityMigrationPending;

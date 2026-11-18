@@ -57,10 +57,10 @@ dungeon_id,class_id,order,material_id
 4,scholar,2,55
 4,scholar,3,56
 4,scholar,4,57
-4,healer,1,58
-4,healer,2,59
-4,healer,3,60
-4,healer,4,61
+4,scholar,5,58
+4,scholar,6,59
+4,scholar,7,60
+4,scholar,8,61
 5,recruit,1,62
 5,recruit,2,63
 5,recruit,3,64

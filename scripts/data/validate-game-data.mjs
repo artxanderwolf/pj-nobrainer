@@ -2,7 +2,7 @@ import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 import { readAllTables } from './read-tabular-data.mjs';
 
-const CLASS_IDS = new Set(['recruit', 'fighter', 'archer', 'scholar', 'healer']);
+const CLASS_IDS = new Set(['recruit', 'fighter', 'archer', 'scholar']);
 const CATEGORIES = new Set(['Holz', 'Metall', 'Leder']);
 const PART_IDS = new Set(['workingPart', 'back', 'gripCore', 'gripWrap', 'special', 'parry', 'bowstring']);
 const SPECIAL_STATS = new Set(['', 'GES', 'P', 'DS']);
@@ -47,7 +47,7 @@ export function validateGameData(tables) {
 
   const classes = tables.character_classes.rows;
   assertUnique(classes, 'id', 'character_classes');
-  if (classes.length !== CLASS_IDS.size) fail('Phase 1 muss die vier bestehenden Klassen unverändert enthalten.');
+  if (classes.length !== CLASS_IDS.size) fail('S18 muss genau die vier Klassen Rekrut/Kämpfer/Bogner/Gelehrter enthalten.');
   for (const row of classes) {
     if (!CLASS_IDS.has(String(row.id))) fail(`Unbekannte Klasse ${row.id}.`);
     if (!String(row.display_name)) fail(`Klasse ${row.id} benötigt display_name.`);
