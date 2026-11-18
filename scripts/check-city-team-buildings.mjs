@@ -60,7 +60,7 @@ assert.equal(reconcileCityTeamBuildings(old),false);
 assert.equal(JSON.stringify(old),saved,'Bei Reload keine zweite Migration.');
 assert.equal(getTeamOffer(old).reason,'max');
 const json=encodeSave(old);
-assert.equal(SAVE_VERSION, 25,'S14 hat das bisherige Save20 um die Forge-Ready-Felder auf Save23 erweitert.');
+assert.equal(SAVE_VERSION, 26,'S14 hat das bisherige Save20 um die Forge-Ready-Felder auf Save23 erweitert.');
 assert.equal(validateImportedSave(json).ok,true);
 const restored=decodeSave(json).state;
 assert.equal(reconcileCityTeamBuildings(restored),false);
