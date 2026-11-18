@@ -1,3 +1,4 @@
+import { highElfHealingAttackSource } from '../game/high-elf-healing-core.ts';
 import { teamIds, getTeamSession, type TeamSessionState } from '../game/team-core.ts';
 import { Injectable } from '@angular/core';
 import {
@@ -16,6 +17,8 @@ interface RuntimeDungeonEquipmentSyncWeapon {
 
 interface RuntimeDungeonEquipmentSyncCharacter {
   id: number;
+  classId?: string | null;
+  raceId?: string | null;
   alive: boolean;
   hp: number;
   equipment: {
@@ -80,16 +83,13 @@ export class GameDungeonEquipmentSyncService {
       .map(entry => ({ ...entry, weapon: this.getWeaponById(state, entry.id) }))
       .filter((entry): entry is { id: number | null | undefined; label: string; weapon: RuntimeDungeonEquipmentSyncWeapon } => Boolean(entry.weapon));
 
-    if (equipped.length) {
-      return equipped.map(entry => ({
-        kind: 'weapon',
-        weaponId: entry.weapon.id,
-        label: entry.label,
-        speed: Math.max(0.01, Number(entry.weapon.stats?.attackSpeed) || 0)
-      }));
-    }
-
-    return [{ kind: 'fist', weaponId: null, label: 'Faust', speed: 1 }];
+    const attacks: CharacterAttackPointSource[] = equipped.length ? equipped.map(entry => ({
+      kind: 'weapon',
+      weaponId: entry.weapon.id,
+      label: entry.label,
+      speed: Math.max(0.01, Number(entry.weapon.stats?.attackSpeed) || 0)
+    })) : [{ kind: 'fist', weaponId: null, label: 'Faust', speed: 1 }];
+    return [...attacks, ...highElfHealingAttackSource(character)];
   }
 
   private getWeaponById(
