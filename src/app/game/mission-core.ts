@@ -55,7 +55,6 @@ export function missions(state: MissionState): Mission[] {
         const visible = form === 'sword' || form === 'axe1h' || (form === 'sword2h' && weaponUnlocked(state, 'sword')) || (form === 'axe2h' && weaponUnlocked(state, 'axe1h')) || ((form === 'bow' || form === 'staff') && weaponUnlocked(state, 'sword2h') && weaponUnlocked(state, 'axe2h'));
         list.push({ id: `weapon_${form}`, title: `Waffenform: ${FORM_NAMES[form]}`, visible, complete: old.unlocked, claimed: !!p.claimed[`weapon_${form}`], progress: prerequisites.map(r => `${FORM_NAMES[r.weaponForm]} hergestellt: ${Math.min(r.current, WEAPON_CRAFT_UNLOCK_TARGET)}/${WEAPON_CRAFT_UNLOCK_TARGET}`).join(' · ') });
     }
-    list.push({ id: 'healer', title: 'Heilkunst', visible: dungeonUnlocked(state, 4), complete: p.healerDefeated >= 1, claimed: !!p.claimed['healer'], progress: `Heiler besiegt: ${Math.min(1, count(p.healerDefeated))}/1` });
     return list;
 }
 export function refreshMissionNotifications(state: MissionState): void {
