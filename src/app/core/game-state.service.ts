@@ -1,4 +1,5 @@
 import { migrateLegacyHealers } from '../game/healer-migration-core.ts';
+import { synchronizeTavernOffers } from '../game/tavern-offers-core.ts';
 import { migrateCharacterRaces } from '../game/character-race-core.ts';
 import { initializeReleaseProgress } from '../game/mission-core.ts';
 import { migrateTeams } from '../game/team-core.ts';
@@ -39,6 +40,13 @@ export class GameStateService {
   private cityMigrationPending = false;
   private raceMigrationPending = false;
   private healerMigrationPending = false;
+  private tavernMigrationPending = false;
+
+  consumeTavernMigration(): boolean {
+    const pending = this.tavernMigrationPending;
+    this.tavernMigrationPending = false;
+    return pending;
+  }
 
   consumeHealerMigration(): boolean {
     const pending = this.healerMigrationPending;
@@ -124,5 +132,6 @@ export class GameStateService {
     this.cityMigrationPending = migrateCityEconomy(this.state) || this.cityMigrationPending;
     this.cityMigrationPending = initializeCityConstruction(this.state) || this.cityMigrationPending;
     this.cityMigrationPending = reconcileCityTeamBuildings(this.state) || this.cityMigrationPending;
+    this.tavernMigrationPending = synchronizeTavernOffers(this.state);
   }
 }
