@@ -177,7 +177,7 @@ try {
   const result = JSON.parse(decoded);
 
   assert.equal(result.status, 'clicked', `Der unsichtbare Dungeon-Loot-Kompatibilitätsanker wurde zum Einsammeln nicht verwendbar: ${JSON.stringify(result)}`);
-  assert.equal(result.saveVersion, 25, `Der migrierte Altstand wurde nicht als Save v25 persistiert: ${JSON.stringify(result)}`);
+  assert.equal(result.saveVersion, 26, `Der migrierte Altstand wurde nicht als Save v25 persistiert: ${JSON.stringify(result)}`);
   assert.equal(result.inventoryQty, 2, `Dungeon-Loot wurde nicht in das ID-keyed gespeicherte Inventar übertragen: ${JSON.stringify(result)}`);
   assert.equal(result.canonicalMaterialId, materialId, `Der kanonische Lagereintrag trägt nicht die erwartete Material-ID: ${JSON.stringify(result)}`);
   assert.equal(result.legacyInventoryKeyPresent, false, `Der Materialname blieb fälschlich als Inventarschlüssel erhalten: ${JSON.stringify(result)}`);

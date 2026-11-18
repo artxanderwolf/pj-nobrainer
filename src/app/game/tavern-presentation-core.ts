@@ -1,5 +1,8 @@
 export interface TavernCharacterClassLike {
   id: string;
+  applicantId?: string;
+  raceId?: string;
+  buildingId?: string;
   name: string;
   role: string;
   maxHp: number;
@@ -17,6 +20,9 @@ export interface TavernStatPresentation {
 
 export interface TavernOfferPresentation {
   classId: string;
+  applicantId?: string;
+  raceId?: string;
+  buildingId?: string;
   name: string;
   roleTag: string;
   stats: TavernStatPresentation[];
@@ -59,6 +65,9 @@ export function getTavernPresentation(
 
   const offers = characterClasses.map((characterClass): TavernOfferPresentation => ({
     classId: characterClass.id,
+    ...(characterClass.applicantId ? { applicantId: characterClass.applicantId } : {}),
+    ...(characterClass.raceId ? { raceId: characterClass.raceId } : {}),
+    ...(characterClass.buildingId ? { buildingId: characterClass.buildingId } : {}),
     name: characterClass.name,
     roleTag: characterClass.role.toUpperCase(),
     stats: [

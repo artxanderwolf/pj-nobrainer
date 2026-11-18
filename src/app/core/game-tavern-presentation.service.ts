@@ -1,4 +1,6 @@
 import { Injectable } from '@angular/core';
+import { characterRaceName } from '../game/character-race-core.ts';
+import { availableTavernApplicants, refreshAllTavernsOncePerDay, synchronizeTavernOffers, type TavernOfferWorldState } from '../game/tavern-offers-core.ts';
 import { resolveCharacterAssetId } from '../game/character-class-asset-presentation';
 import { formatCurrencyNickel } from '../game/economy-core';
 import { CHARACTER_CLASSES } from '../game/game-core';
@@ -9,7 +11,7 @@ import { GameProgressionService } from './game-progression.service';
 import { GameResourcePresentationService } from './game-resource-presentation.service';
 import { GameStateService, type MutableGameState } from './game-state.service';
 
-type RuntimeTavernState = MutableGameState & {
+type RuntimeTavernState = MutableGameState & TavernOfferWorldState & {
   gold: number;
   characters: unknown[];
   upgrades: {
@@ -29,7 +31,7 @@ declare global {
 
 @Injectable({ providedIn: 'root' })
 export class GameTavernPresentationService {
-  private selectedClassId: string | null = null;
+  private selectedApplicantId: string | null = null;
   private detailOpen = false;
   private boundRoot: HTMLElement | null = null;
 
@@ -48,9 +50,15 @@ export class GameTavernPresentationService {
     if (!offer && !capacity && !summary) return;
 
     const state = this.state();
+    synchronizeTavernOffers(state);
     const recruitCost = this.gameProgression.getRecruitOffer('recruit').costNickel;
+    const applicants = (state.cityLayout?.buildings ?? []).filter(building => building.buildingTypeId === 'tavern' && building.status === 'placed')
+      .flatMap(building => availableTavernApplicants(state, building.buildingInstanceId).map(applicant => ({
+        ...CHARACTER_CLASSES[applicant.classId], applicantId: applicant.applicantId,
+        raceId: applicant.raceId, buildingId: building.buildingInstanceId
+      })));
     const presentation = getTavernPresentation(
-      Object.values(CHARACTER_CLASSES),
+      applicants,
       state.characters.length,
       state.upgrades.innCapacity,
       state.gold,
@@ -65,16 +73,17 @@ export class GameTavernPresentationService {
     if (offer) {
       this.ensureActionBinding(offer);
       const listScrollTop = offer.querySelector<HTMLElement>('.character-list-scroll')?.scrollTop ?? 0;
-      const selectedOffer = this.selectedClassId === null
+      const selectedOffer = this.selectedApplicantId === null
         ? null
-        : presentation.offers.find(entry => entry.classId === this.selectedClassId) ?? null;
+        : presentation.offers.find(entry => entry.applicantId === this.selectedApplicantId) ?? null;
       if (this.detailOpen && !selectedOffer) this.closeDetailState();
 
       offer.dataset['tavernPresentationOwner'] = 'angular';
       offer.innerHTML = `<div class="character-selection-page recruitment-selection-page">
-        ${this.renderRecruitList(presentation.offers, this.detailOpen ? this.selectedClassId : null)}
+        ${this.renderRecruitList(presentation.offers, this.detailOpen ? this.selectedApplicantId : null)}
         ${presentation.statusText ? `<p class="status-line recruitment-status-line">${this.escapeHtml(presentation.statusText)}</p>` : ''}
       </div>
+      <div class="tavern-refresh-controls"><button class="btn" type="button" data-tavern-action="refresh-all" ${state.tavernOffers?.manualRefreshDate === state.tavernOffers?.berlinDate ? 'disabled' : ''}>Alle Tavernen kostenlos neu auswürfeln (1× pro Berliner Tag)</button></div>
       ${this.detailOpen && selectedOffer ? this.renderRecruitModal(selectedOffer, presentation.statusText) : ''}`;
 
       const listScroll = offer.querySelector<HTMLElement>('.character-list-scroll');
@@ -100,25 +109,28 @@ export class GameTavernPresentationService {
   private renderRecruitList(
     offers: readonly {
       classId: string;
+      applicantId?: string;
+      raceId?: string;
+      buildingId?: string;
       name: string;
       roleTag: string;
       recruitLabel: string;
       disabled: boolean;
     }[],
-    selectedClassId: string | null
+    selectedApplicantId: string | null
   ): string {
     const rows = offers.map(entry => {
-      const selected = entry.classId === selectedClassId;
+      const selected = entry.applicantId === selectedApplicantId;
       const assetId = resolveCharacterAssetId(entry.classId);
-      return `<button class="character-list-item recruitment-list-item${selected ? ' selected' : ''}" type="button" data-tavern-action="select-offer" data-class-id="${entry.classId}" aria-pressed="${selected}">
-        <span class="class-emblem class-emblem-small" data-class-id="${assetId}" aria-hidden="true"></span>
-        <span class="character-list-copy"><strong>${this.escapeHtml(entry.name)}</strong><span>${this.escapeHtml(entry.roleTag)}</span></span>
+      return `<button class="character-list-item recruitment-list-item${selected ? ' selected' : ''}" type="button" data-tavern-action="select-offer" data-class-id="${entry.classId}" data-applicant-id="${this.escapeHtml(entry.applicantId ?? '')}" aria-pressed="${selected}">
+        <span class="class-emblem class-emblem-small" data-class-id="${assetId}" data-race-id="${this.escapeHtml(entry.raceId ?? 'human')}" aria-hidden="true"></span>
+        <span class="character-list-copy"><strong>${this.escapeHtml(entry.name)} · ${this.escapeHtml(characterRaceName(entry.raceId))}</strong><span>${this.escapeHtml(entry.roleTag)} · Taverne ${this.escapeHtml(entry.buildingId ?? '')}</span></span>
         <span class="character-list-meta">Details</span>
       </button>`;
     }).join('');
 
     return `<section class="character-list-panel" aria-label="Rekrutierungsauswahl">
-      <div class="character-list-head"><span>Klasse / Rolle</span><span>Auswahl</span></div>
+      <div class="character-list-head"><span>Bewerber · Klasse / Rasse</span><span>Auswahl</span></div>
       <div class="character-list-scroll">${rows}</div>
     </section>`;
   }
@@ -126,6 +138,8 @@ export class GameTavernPresentationService {
   private renderRecruitModal(
     entry: {
       classId: string;
+      applicantId?: string;
+      raceId?: string;
       name: string;
       roleTag: string;
       stats: readonly { label: string; value: string }[];
@@ -145,14 +159,14 @@ export class GameTavernPresentationService {
         <div class="character-modal-body">
           <article class="recruitment-detail-card">
             <header class="recruitment-detail-head">
-              <div><strong>${this.escapeHtml(entry.name)}</strong><span class="tag fixed">${this.escapeHtml(entry.roleTag)}</span></div>
+              <div><strong>${this.escapeHtml(entry.name)} · ${this.escapeHtml(characterRaceName(entry.raceId))}</strong><span class="tag fixed">${this.escapeHtml(entry.roleTag)}</span></div>
             </header>
             <div class="recruitment-emblem-stage">
-              <span class="class-emblem class-emblem-large" data-class-id="${assetId}" role="img" aria-label="Klassenemblem ${this.escapeHtml(entry.name)}"></span>
+              <span class="class-emblem class-emblem-large" data-class-id="${assetId}" data-race-id="${this.escapeHtml(entry.raceId ?? 'human')}" role="img" aria-label="Emblem ${this.escapeHtml(entry.name)} · ${this.escapeHtml(characterRaceName(entry.raceId))}"></span>
             </div>
             <div class="recruitment-stat-grid">${this.renderStats(entry.stats, 'recruitment-stat')}</div>
             ${statusText ? `<p class="status-line recruitment-modal-status">${this.escapeHtml(statusText)}</p>` : ''}
-            <button class="btn primary recruitment-primary-action" type="button" data-tavern-action="recruit" data-class-id="${entry.classId}" ${entry.disabled ? 'disabled' : ''}>${this.escapeHtml(entry.recruitLabel)}</button>
+            <button class="btn primary recruitment-primary-action" type="button" data-tavern-action="recruit" data-applicant-id="${this.escapeHtml(entry.applicantId ?? '')}" ${entry.disabled ? 'disabled' : ''}>${this.escapeHtml(entry.recruitLabel)}</button>
           </article>
         </div>
       </section>
@@ -182,11 +196,20 @@ export class GameTavernPresentationService {
       return;
     }
 
-    const classId = button.dataset['classId'] ?? '';
-    if (!Object.prototype.hasOwnProperty.call(CHARACTER_CLASSES, classId)) return;
+    if (action === 'refresh-all') {
+      if (refreshAllTavernsOncePerDay(this.state())) {
+        this.closeDetailState();
+        this.render();
+        document.dispatchEvent(new Event('tavern-offers-updated'));
+      }
+      return;
+    }
+    const applicantId = button.dataset['applicantId'] ?? '';
+    const candidate = Object.values(this.state().tavernOffers?.byBuildingId ?? {}).flat().find(entry => entry.applicantId === applicantId);
+    if (!candidate) return;
 
     if (action === 'select-offer') {
-      this.selectedClassId = classId;
+      this.selectedApplicantId = applicantId;
       this.detailOpen = true;
       this.render();
       window.requestAnimationFrame(() => {
@@ -195,7 +218,7 @@ export class GameTavernPresentationService {
       return;
     }
 
-    if (action === 'recruit') this.recruit(classId);
+    if (action === 'recruit') this.recruit(applicantId);
   };
 
   private readonly handleKeyDown = (event: KeyboardEvent): void => {
@@ -205,8 +228,8 @@ export class GameTavernPresentationService {
     this.render();
   };
 
-  private recruit(classId: string): void {
-    const result = this.gameProgression.recruit(classId);
+  private recruit(applicantId: string): void {
+    const result = this.gameProgression.recruitApplicant(applicantId);
     if (!result.ok) {
       if (result.reason === 'inn-full') {
         alert('Inn voll – zuerst einen weiteren Kaderplatz kaufen.');
@@ -218,6 +241,7 @@ export class GameTavernPresentationService {
     }
 
     this.combatLog.add(`${result.character.name} wurde für ${formatCurrencyNickel(result.costNickel)} angeworben.`, 'good');
+    document.dispatchEvent(new Event('tavern-offers-updated'));
     this.closeDetailState();
     this.render();
     this.characterPresentation.render();
@@ -226,7 +250,7 @@ export class GameTavernPresentationService {
 
   private closeDetailState(): void {
     this.detailOpen = false;
-    this.selectedClassId = null;
+    this.selectedApplicantId = null;
   }
 
   private renderStats(stats: readonly { label: string; value: string }[], className = 'stat'): string {

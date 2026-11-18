@@ -1,3 +1,5 @@
+import { GameTavernPresentationService } from './game-tavern-presentation.service';
+import { synchronizeTavernOffers, type TavernOfferWorldState } from '../game/tavern-offers-core.ts';
 import { GameMissionService } from './game-mission.service';
 import { type CityConstructionWorldState } from '../game/city-construction-core.ts';
 import { replayProductionConstructionMilestones } from '../game/city-production-capacity-core.ts';
@@ -83,6 +85,7 @@ export class GameRuntimeService {
     private readonly dungeonEquipmentSync: GameDungeonEquipmentSyncService,
     private readonly dungeonPresentation: GameDungeonPresentationService,
     private readonly missions: GameMissionService,
+    private readonly tavernPresentation: GameTavernPresentationService,
     private readonly saveTransfer: GameSaveTransferService,
     private readonly androidBack: GameAndroidBackService
   ) {}
@@ -115,6 +118,7 @@ export class GameRuntimeService {
     const cityMigrationChanged = this.gameState.consumeCityMigration();
     const raceMigrationChanged = this.gameState.consumeRaceMigration();
     const healerMigrationChanged = this.gameState.consumeHealerMigration();
+    const tavernMigrationChanged = this.gameState.consumeTavernMigration();
     const equipmentRepairs = this.gameEquipment.normalizeEquipment();
     const equipmentChanged = equipmentRepairs.length > 0;
     if (equipmentChanged) {
@@ -125,6 +129,10 @@ export class GameRuntimeService {
       this.dungeonEquipmentSync.refresh(repairAt);
       runtime.save(false);
     }
+    document.addEventListener('tavern-offers-updated', () => {
+      runtime.save(false);
+      this.tavernPresentation.render();
+    });
     this.missions.prepare(() => runtime.save(false), () => { runtime.renderInitial(); this.forgePreviewPresentation.render(); this.dungeonPresentation.render(); });
     this.saveTransfer.bindActions(() => runtime.save(true));
     this.androidBack.bind();
@@ -190,7 +198,7 @@ export class GameRuntimeService {
       runtime.save(false);
       const after = this.saveStorage.readSnapshot();
       if (after) this.offlineProgress.showSummary(before, after);
-    } else if (equipmentChanged || materialReferencesChanged || dungeonSessionPreparation.saveRequested || dungeonMigrationChanged || cityMigrationChanged || raceMigrationChanged || healerMigrationChanged || constructionCompleted || forgeClaimMigrationChanged || marketClaimMigrationChanged || productionWorkerMigrationChanged) {
+    } else if (equipmentChanged || materialReferencesChanged || dungeonSessionPreparation.saveRequested || dungeonMigrationChanged || cityMigrationChanged || raceMigrationChanged || healerMigrationChanged || tavernMigrationChanged || constructionCompleted || forgeClaimMigrationChanged || marketClaimMigrationChanged || productionWorkerMigrationChanged) {
       runtime.save(false);
     }
 
@@ -266,6 +274,11 @@ export class GameRuntimeService {
     const runtime = this.getRuntime();
 
     const productionReplay = this.replayCityProduction(Date.now());
+    const tavernChanged = synchronizeTavernOffers(this.gameState.getState<MutableGameState & TavernOfferWorldState>());
+    if (tavernChanged) {
+      runtime.save(false);
+      this.tavernPresentation.render();
+    }
     const forgeUpdate = this.gameForge.update();
     const forgeCompleted = forgeUpdate.completedCount > 0 || productionReplay.forgeCompleted;
     this.logForgeCompletions(forgeUpdate.completedNames);

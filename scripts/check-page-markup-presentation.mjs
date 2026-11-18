@@ -93,8 +93,8 @@ assert.doesNotMatch(indexMarkup, /Eine 2H-Waffe kann nur ausgerüstet werden, we
 assert.doesNotMatch(indexMarkup, /Die technischen Ausrüstungsregeln für 1H- und 2H-Waffen bleiben unverändert/);
 assert.match(indexMarkup, /Ein laufender Dungeon-1-Lauf bleibt beim Schließen des Browsers gespeichert/);
 assert.match(indexMarkup, /Ein Browser-Neustart startet keine neue 5-Stunden-Frist/);
-assert.match(indexMarkup, /Rekrutierungsseite verwendet dasselbe Bedienmuster/);
-assert.match(indexMarkup, /Aktion „Anwerben“/);
+assert.match(indexMarkup, /Tavernenangebote \(S19\)/);
+assert.match(indexMarkup, /Anwerbeaktion/);
 assert.match(indexMarkup, /Rüstung = additive Prozentpunkte, begrenzt auf maximal 80 %/);
 assert.match(indexMarkup, /Materialwert = 10 Nickel × Seltenheit/);
 assert.match(indexMarkup, /40 Nickel \+ 6 × Leistungswert/);
