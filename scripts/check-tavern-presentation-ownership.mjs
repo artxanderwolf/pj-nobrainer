@@ -18,7 +18,7 @@ assert.match(service, /class="character-list-item recruitment-list-item/, 'Die k
 assert.match(service, /data-character-modal="recruitment"/, 'Rekrutierungsdetails liegen nicht in einem eigenen Modal.');
 assert.match(service, /data-tavern-action="select-offer"/, 'Rekrutierungsangebote besitzen keinen Angular-Auswahlanker.');
 assert.match(service, /data-tavern-action="recruit"/, 'Das Rekrutierungsmodal besitzt keine Angular-Rekrutierungsaktion.');
-assert.match(service, /this\.gameProgression\.recruit\(classId\)/, 'Rekrutierung läuft nicht direkt über den bestehenden Angular-Progression-Service.');
+assert.match(service, /this\.gameProgression\.recruitApplicant\(applicantId\)/, 'Rekrutierung läuft nicht direkt über den bestehenden Angular-Progression-Service.');
 assert.match(service, /this\.characterPresentation\.render\(\)/, 'Erfolgreiche Rekrutierung aktualisiert den Angular-Kader nicht.');
 assert.match(service, /this\.resourcePresentation\.render\(\)/, 'Erfolgreiche Rekrutierung aktualisiert die Geldanzeige nicht.');
 assert.doesNotMatch(service, /onclick="recruitCharacter|recruitCharacter\(/, 'Die neue Rekrutierungs-UI darf nicht mehr den Legacy-Rekrutierungsaufruf verwenden.');
