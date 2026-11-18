@@ -12,6 +12,7 @@ const source = fs.readFileSync(path.resolve('src/app/game/character-core.ts'), '
   .replace("from './game-core';", "from './game-core.ts';");
 fs.mkdirSync(generatedDir, { recursive: true });
 fs.copyFileSync(path.resolve('src/app/game/armor-core.ts'), path.join(tempDir, 'armor-core.ts'));
+fs.copyFileSync(path.resolve('src/app/game/character-race-core.ts'), path.join(tempDir, 'character-race-core.ts'));
 fs.copyFileSync(path.resolve('src/app/game/game-core.ts'), path.join(tempDir, 'game-core.ts'));
 fs.copyFileSync(path.resolve('src/app/game/game-core-v01310-baseline.ts'), path.join(tempDir, 'game-core-v01310-baseline.ts'));
 fs.copyFileSync(path.resolve('src/app/game/character-level-stats-core.ts'), path.join(tempDir, 'character-level-stats-core.ts'));
@@ -39,7 +40,7 @@ try {
 
   const recruit = createRecruit(1, 'Rekrut 01', true);
   assert.deepEqual(recruit, {
-    id: 1, name: 'Rekrut 01', classId: 'recruit', level: 1, xp: 0, maxHp: 30, hp: 30,
+    id: 1, name: 'Rekrut 01', classId: 'recruit', raceId: 'human', level: 1, xp: 0, maxHp: 30, hp: 30,
     maxEnergy: 100, energy: 100, dodge: 0.10, armor: 2,
     strengthFactor: 1.00, precision: 1.00, alive: true,
     equipment: { leftHand: null, rightHand: 0 }

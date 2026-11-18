@@ -10,6 +10,7 @@ import {
 } from '../game/game-core';
 import { type CharacterState } from '../game/character-core';
 import { characterStatLevelMultiplier } from '../game/character-progression-core';
+import { characterRaceName, resolveCharacterRaceId } from '../game/character-race-core.ts';
 import { resolveCharacterAssetId } from '../game/character-class-asset-presentation';
 import {
   getCharacterCardPresentation,
@@ -94,8 +95,8 @@ export class GameCharacterPresentationService {
       const selected = character.id === selectedCharacterId;
       const characterClass = CHARACTER_CLASSES[character.classId] ?? CHARACTER_CLASSES.recruit;
       return `<button class="character-list-item roster-list-item${selected ? ' selected' : ''}" type="button" data-roster-action="select-character" data-character-id="${character.id}" aria-pressed="${selected}">
-        <span class="class-emblem class-emblem-small" data-class-id="${assetId}" aria-hidden="true"></span>
-        <span class="character-list-copy"><strong>${this.escapeHtml(character.name)}</strong><span>${this.escapeHtml(characterClass.name)}</span></span>
+        <span class="class-emblem class-emblem-small" data-class-id="${assetId}" data-race-id="${resolveCharacterRaceId(character.raceId)}" aria-hidden="true"></span>
+        <span class="character-list-copy"><strong>${this.escapeHtml(character.name)}</strong><span>${this.escapeHtml(characterClass.name)} · ${this.escapeHtml(characterRaceName(character.raceId))}</span></span>
         <span class="character-list-meta">LVL ${level}</span>
       </button>`;
     }).join('');
@@ -143,10 +144,10 @@ export class GameCharacterPresentationService {
     const picker = presentation.hands.find(hand => hand.pickerOpen);
 
     return `<article class="roster-detail-card" data-character-id="${character.id}">
-      ${this.renderCharacterHeader(character, characterClass.name, levelStat?.value ?? `${character.level ?? 1}`)}
+      ${this.renderCharacterHeader(character, `${characterClass.name} · ${characterRaceName(character.raceId)}`, levelStat?.value ?? `${character.level ?? 1}`)}
       ${this.renderEquipmentRuleNote(character)}
       <div class="roster-emblem-stage">
-        <span class="class-emblem class-emblem-large" data-class-id="${assetId}" role="img" aria-label="Klassenemblem ${this.escapeHtml(characterClass.name)}"></span>
+        <span class="class-emblem class-emblem-large" data-class-id="${assetId}" data-race-id="${resolveCharacterRaceId(character.raceId)}" role="img" aria-label="Emblem ${this.escapeHtml(characterClass.name)}, ${this.escapeHtml(characterRaceName(character.raceId))}"></span>
         <div class="roster-equipment-layer" aria-label="Ausrüstung">
           ${presentation.hands.map(hand => this.renderEquipmentSlot(character, hand)).join('')}
         </div>

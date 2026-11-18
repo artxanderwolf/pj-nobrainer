@@ -1,3 +1,4 @@
+import { migrateCharacterRaces } from '../game/character-race-core.ts';
 import { initializeReleaseProgress } from '../game/mission-core.ts';
 import { migrateTeams } from '../game/team-core.ts';
 import { migrateCityLayout } from '../game/city-layout-core.ts';
@@ -35,6 +36,13 @@ export class GameStateService {
   private initialized = false;
   private dungeonMigrationPending = false;
   private cityMigrationPending = false;
+  private raceMigrationPending = false;
+
+  consumeRaceMigration(): boolean {
+    const pending = this.raceMigrationPending;
+    this.raceMigrationPending = false;
+    return pending;
+  }
 
   consumeCityMigration(): boolean {
     const pending = this.cityMigrationPending;
@@ -95,8 +103,10 @@ export class GameStateService {
     // Fehlerhafte vorhandene Stadt-Saves vor dem Ersetzen prüfen. So kann ein
     // ungültiger Import den bereits geladenen Zustand nicht teilweise löschen.
     const cityMigrationChanged = migrateCityLayout(nextState);
+    const raceMigrationChanged = migrateCharacterRaces(nextState);
     for (const key of Object.keys(this.state)) delete this.state[key];
     this.cityMigrationPending = cityMigrationChanged;
+    this.raceMigrationPending = raceMigrationChanged;
     this.dungeonMigrationPending = !nextState['teams'];
     Object.assign(this.state, nextState);
     this.state['cityName'] = normalizeCityName(this.state['cityName']);

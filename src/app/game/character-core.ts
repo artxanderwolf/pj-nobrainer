@@ -1,4 +1,5 @@
 import { CHARACTER_CLASSES, type CharacterClassId } from './game-core';
+import { DEFAULT_CHARACTER_RACE_ID, resolveCharacterRaceId, type CharacterRaceId } from './character-race-core.ts';
 
 export interface CharacterEquipment {
   leftHand: number | null;
@@ -9,6 +10,7 @@ export interface CharacterState {
   id: number;
   name: string;
   classId: CharacterClassId;
+  raceId: CharacterRaceId;
   level: number;
   xp: number;
   maxHp: number;
@@ -27,13 +29,14 @@ function resolveCharacterClassId(classId: string): CharacterClassId {
   return Object.prototype.hasOwnProperty.call(CHARACTER_CLASSES, classId) ? classId as CharacterClassId : 'recruit';
 }
 
-export function createCharacter(id: number, name: string, classId = 'recruit', withStarter = false): CharacterState {
+export function createCharacter(id: number, name: string, classId = 'recruit', withStarter = false, raceId: CharacterRaceId = DEFAULT_CHARACTER_RACE_ID): CharacterState {
   const resolvedClassId = resolveCharacterClassId(classId);
   const characterClass = CHARACTER_CLASSES[resolvedClassId];
   return {
     id,
     name,
     classId: characterClass.id,
+    raceId: resolveCharacterRaceId(raceId),
     level: 1,
     xp: 0,
     maxHp: characterClass.maxHp,

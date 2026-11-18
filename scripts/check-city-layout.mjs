@@ -74,8 +74,8 @@ assert.equal(JSON.stringify(unchangedFields), untouchedSnapshot,
   'Charaktere, Heiler, Teams, Jobs, Waffen, Materialien und gekaufte Alt-Slots müssen identisch bleiben.');
 assert.equal(loaded.state.cityLayout.buildings.length, 6);
 const serialized = encodeSave(loaded.state, loaded.savedAt);
-assert.equal(SAVE_VERSION, 23, 'S10 ergänzt persistente Stadtökonomie zu Save18.');
-assert.equal(JSON.parse(serialized).saveVersion, 23);
+assert.equal(SAVE_VERSION, 24, 'S17 ergänzt persistente Charakterrassen zu Save24.');
+assert.equal(JSON.parse(serialized).saveVersion, 24);
 assert.equal(validateImportedSave(serialized).ok, true);
 const restored = decodeSave(serialized);
 const restoredCity = structuredClone(restored.state.cityLayout);
