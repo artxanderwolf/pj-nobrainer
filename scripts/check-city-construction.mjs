@@ -42,7 +42,7 @@ const collision=startCityConstruction(state,'market',8,0,now);
 assert.equal(collision.ok,false);
 assert.deepEqual(state,snapshot,'Fehlerfall darf kein Nickel abbuchen.');
 const serialized=encodeSave(state,now);
-assert.equal(SAVE_VERSION, 24);
+assert.equal(SAVE_VERSION, 25);
 assert.equal(validateImportedSave(serialized).ok,true);
 const reload=decodeSave(serialized).state;
 assert.equal(initializeCityConstruction(reload),false);
