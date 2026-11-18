@@ -33,7 +33,7 @@ assert.equal(s.gold,250,'Fertigstellung schreibt keinen Nickel gut.');
 assert.equal(hasMarketCapacity(s,2,5),false,'Ready blockiert nur das Gesamtkontingent.');
 assert.equal(s.marketReadyJobs[0].status,'ready');
 const serialized=encodeSave(s,now+10_000);
-assert.equal(SAVE_VERSION,25);
+assert.equal(SAVE_VERSION,26);
 assert.equal(validateImportedSave(serialized).ok,true,'Save23-Export kann wieder importiert werden.');
 const restored=decodeSave(serialized).state;
 assert.deepEqual(restored,s);
