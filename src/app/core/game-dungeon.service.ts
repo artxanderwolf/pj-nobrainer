@@ -2,7 +2,7 @@ import { teamIds, getTeamSession, migrateTeams, characterTeamReservation, type T
 import { isProductionWorkerReserved } from '../game/production-worker-core.ts';
 import { type CityLayoutWorldState } from '../game/city-layout-core.ts';
 import { getDungeonDefinition } from '../game/dungeon-definitions.ts';
-import { healParty } from '../game/healing-core.ts';
+import { applyHighElfHealing, highElfDodgeHealReady, highElfHealingAttackSource } from '../game/high-elf-healing-core.ts';
 import { dungeonUnlocked, initializeReleaseProgress, recordSuccessfulWave, startProgressSession, type MissionState } from '../game/mission-core.ts';
 import { Injectable } from '@angular/core';
 import { getCharacterWeaponDamageFactor } from '../game/equipment-rules-core.ts';
@@ -82,6 +82,7 @@ interface RuntimeDungeonWeapon {
 interface RuntimeDungeonCharacter extends DungeonCharacterLike, CombatTargetLike {
   name: string;
   classId?: string | null;
+  raceId?: string | null;
   level?: number | null;
   xp?: number | null;
   maxHp: number;
@@ -533,6 +534,16 @@ export class GameDungeonService {
   ): void {
     const character = typeof point.ownerId === 'number' ? this.getCharacterById(state, point.ownerId) : null;
     if (!character || !character.alive) return;
+    if (point.kind === 'race-heal') {
+      const party = run.participantIds.map(id => this.getCharacterById(state,id))
+        .filter((member): member is RuntimeDungeonCharacter => !!member);
+      const heal = applyHighElfHealing(character, party, 'periodic');
+      if (heal) {
+        this.addCombatEvent(outcome, `${character.name} heilt ${heal.target.name} um ${heal.healed.toFixed(2)} HP.`, 'good');
+        outcome.saveRequested = true;
+      }
+      return;
+    }
     const target = this.weightedTarget(run.enemies);
     if (!target) return;
 
@@ -560,12 +571,6 @@ export class GameDungeonService {
       label = weapon.name;
     }
 
-    if (character.classId === 'healer') {
-      const party = state.session.dungeonTeamSlots.map(id => this.getCharacterById(state,id)).filter((c): c is RuntimeDungeonCharacter => !!c && run.participantIds.includes(c.id));
-      const heal = healParty(party, damage, c => this.getCharacterStats(state,c).threat);
-      if (heal) this.addCombatEvent(outcome, `${character.name} heilt ${heal.target.name} um ${heal.healed.toFixed(2)} HP.`, 'good');
-      return;
-    }
     const result = resolveAttack(
       target,
       damage,
@@ -588,10 +593,6 @@ export class GameDungeonService {
       return;
     }
 
-    if (!target.alive && target.classId === 'healer') {
-      initializeReleaseProgress(state).healerDefeated += 1;
-      outcome.saveRequested = true;
-    }
     if (characterStats.lifeSteal > 0 && result.dealt > 0) {
       const maxHp = characterStats.maxHp;
       character.hp = Math.min(maxHp, character.hp + result.dealt * characterStats.lifeSteal);
@@ -611,11 +612,6 @@ export class GameDungeonService {
   ): void {
     const enemy = typeof point.ownerId === 'string' ? run.enemies.find(entry => entry.id === point.ownerId) : null;
     if (!enemy || !enemy.alive) return;
-    if (enemy.classId === 'healer') {
-      const heal = healParty(run.enemies, enemy.damage * enemy.strengthFactor, e => CHARACTER_CLASSES[e.classId].threat);
-      if (heal) this.addCombatEvent(outcome, `${enemy.name} heilt ${heal.target.name} um ${heal.healed.toFixed(2)} HP.`, 'bad');
-      return;
-    }
     const target = this.weightedTarget(
       run.participantIds
         .map(id => this.getCharacterById(state, id))
@@ -642,6 +638,18 @@ export class GameDungeonService {
     }
     if (result.outcome === 'dodge') {
       this.addCombatEvent(outcome, `${target.name} weicht dem Angriff von ${enemyName} aus.`, 'muted');
+      const at = point.nextAt;
+      if (highElfDodgeHealReady(run.raceHealingCooldowns, target.id, at)) {
+        const party = run.participantIds.map(id => this.getCharacterById(state,id))
+          .filter((member): member is RuntimeDungeonCharacter => !!member);
+        const heal = applyHighElfHealing(target, party, 'dodge');
+        if (heal) {
+          run.raceHealingCooldowns ??= {};
+          run.raceHealingCooldowns[target.id] = at;
+          this.addCombatEvent(outcome, `${target.name} heilt ${heal.target.name} nach Ausweichen um ${heal.healed.toFixed(2)} HP.`, 'good');
+          outcome.saveRequested = true;
+        }
+      }
       return;
     }
     this.addCombatEvent(
@@ -679,22 +687,20 @@ export class GameDungeonService {
       .map(entry => ({ ...entry, weapon: this.getWeaponById(state, entry.id) }))
       .filter((entry): entry is { id: number | null | undefined; label: string; weapon: RuntimeDungeonWeapon } => !!entry.weapon);
 
-    if (equipped.length) {
-      return equipped.map(entry => ({
-        kind: 'weapon',
-        weaponId: entry.weapon.id,
-        label: entry.label,
-        speed: Math.max(0.01, Number(entry.weapon.stats?.attackSpeed) || 0)
-      }));
-    }
-
-    return [{ kind: 'fist', weaponId: null, label: 'Faust', speed: 1 }];
+    const attacks: CharacterAttackPointSource[] = equipped.length ? equipped.map(entry => ({
+      kind: 'weapon',
+      weaponId: entry.weapon.id,
+      label: entry.label,
+      speed: Math.max(0.01, Number(entry.weapon.stats?.attackSpeed) || 0)
+    })) : [{ kind: 'fist', weaponId: null, label: 'Faust', speed: 1 }];
+    return [...attacks, ...highElfHealingAttackSource(character)];
   }
 
   private getAttackPointSpeed(state: RuntimeDungeonState, point: DungeonAttackPoint, run: DungeonRunLike): number {
     if (point.side === 'enemy') {
       return Math.max(0.01, run.enemies.find(enemy => enemy.id === point.ownerId)?.speed || 1);
     }
+    if (point.kind === 'race-heal') return 0.1;
     if (point.kind === 'fist') return 1;
     return Math.max(0.01, Number(this.getWeaponById(state, point.weaponId)?.stats?.attackSpeed) || 1);
   }
