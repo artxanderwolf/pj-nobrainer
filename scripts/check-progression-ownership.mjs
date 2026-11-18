@@ -9,7 +9,7 @@ const progressionAdapter = readFileSync('src/app/core/legacy-progression-adapter
 const progressionPresentationAdapter = readFileSync('src/app/core/legacy-progression-presentation-adapter.service.ts', 'utf8');
 
 assert.match(progressionService, /constructor\(private readonly gameState: GameStateService\)/);
-assert.match(progressionService, /spendRecruitCost\(state, classId\)/);
+assert.match(progressionService, /spendRecruitCost\(state, applicant\.classId\)/);
 assert.match(progressionService, /const id = state\.nextCharacterId\+\+;/);
 assert.match(progressionService, /createCharacter\([\s\S]*state\.characters\.push\(character\);/);
 assert.match(progressionService, /return buyUpgrade\(this\.state\(\), kind\);/);
