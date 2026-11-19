@@ -40,11 +40,19 @@ const LEGACY_MIGRATE_WEAPON_AFTER_RENAME = `function migrateWeaponToCurrentRules
 
 const CURRENT_MIGRATE_WEAPON = `function normalizeWeaponBlueprintSlots(slots,weaponForm){
   const normalized=normalizeWeaponSlots(slots),active=window.NoBrainerGameCore.getWeaponCraftingSlots(weaponForm);
-  return active.map(slot=>{
+  const migrated=active.map(slot=>{
     let material=normalized.find(entry=>entry.slot===slot)?.material||null;
     if(!material&&slot==="parry")material=normalized.find(entry=>entry.slot==="back")?.material||null;
     return {slot,material};
   });
+  // Existing crafted weapons and reserved jobs must retain their historical special
+  // material until the one-time S21 rune migration has read its effect.
+  const oldSpecial=normalized.find(entry=>entry.slot==="special");
+  if(oldSpecial){
+    const parryIndex=migrated.findIndex(entry=>entry.slot==="parry");
+    migrated.splice(parryIndex<0?migrated.length:parryIndex,0,{slot:"special",material:oldSpecial.material||null});
+  }
+  return migrated;
 }
 
 function migrateWeaponToCurrentRules(w){
