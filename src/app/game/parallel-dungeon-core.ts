@@ -1,3 +1,4 @@
+import type { RuneDefinitionId } from './rune-core.ts';
 import type { DungeonRunLike } from './dungeon-core.ts';
 import { addMaterialQuantityById, type MaterialStorageInventory } from './material-storage-core.ts';
 import type { MissionState } from './mission-core.ts';
@@ -13,7 +14,8 @@ export interface DungeonSessionState {
   dungeonStopRequested: boolean;
   dungeonRun: DungeonRunLike | null;
   dungeonSearch: { nextCheckAt: number } | null;
-  dungeonLootCollect: { readyAt: number; drops: Array<{ materialId?: number | null; name?: string; category?: string }>; enemyCount: number } | null;
+  dungeonLootCollect: { readyAt: number; drops: Array<{ materialId?: number | null; name?: string; category?: string; runeDefinitionId?: RuneDefinitionId }>; enemyCount: number } | null;
+  dungeonRuneLoot?: RuneDefinitionId[];
   dungeonLoot: MaterialStorageInventory;
   dungeonTeamSlots: Array<number | null>;
   dungeonCycleOriginalIds: number[];
@@ -26,7 +28,7 @@ export interface DungeonSessionState {
 }
 export interface DungeonWorldState { dungeons?: Record<number, DungeonSessionState>; selectedDungeonId?: number; }
 export function createDungeonSession(dungeonId: number): DungeonSessionState {
-  return { dungeonId, expeditionActive:false, dungeonAuto:false, dungeonStopRequested:false, dungeonRun:null, dungeonSearch:null, dungeonLootCollect:null, dungeonLoot:{}, dungeonTeamSlots:[null,null,null,null], dungeonCycleOriginalIds:[], dungeonCycleActiveIds:[], dungeonWavesDefeated:0, dungeonSessionStartWaves:0, dungeonSessionEndsAt:null, progress:null, log:[] };
+  return { dungeonId, expeditionActive:false, dungeonAuto:false, dungeonStopRequested:false, dungeonRun:null, dungeonSearch:null, dungeonLootCollect:null, dungeonLoot:{}, dungeonRuneLoot:[], dungeonTeamSlots:[null,null,null,null], dungeonCycleOriginalIds:[], dungeonCycleActiveIds:[], dungeonWavesDefeated:0, dungeonSessionStartWaves:0, dungeonSessionEndsAt:null, progress:null, log:[] };
 }
 export function getDungeonSession(state: DungeonWorldState, dungeonId: number): DungeonSessionState {
   if (!(DUNGEON_IDS as readonly number[]).includes(dungeonId)) throw new Error(`Unbekannte Dungeon-ID ${dungeonId}.`);
@@ -94,7 +96,10 @@ export function migrateParallelDungeons(state: Record<string, unknown> & Mission
     const ids=[...new Set([...session.dungeonTeamSlots,...session.dungeonCycleOriginalIds,...(session.dungeonRun?.participantIds??[])].filter((n):n is number=>typeof n==='number'))];
     const duplicate=ids.some(n=>reserved.has(n));
     if(duplicate){
-      for(const drop of session.dungeonLootCollect?.drops??[])if(drop.materialId)addMaterialQuantityById(session.dungeonLoot,drop.materialId,1);
+      for(const drop of session.dungeonLootCollect?.drops??[]){
+        if(drop.materialId)addMaterialQuantityById(session.dungeonLoot,drop.materialId,1);
+        if(drop.runeDefinitionId)(session.dungeonRuneLoot??=[]).push(drop.runeDefinitionId);
+      }
       session.expeditionActive=false;session.dungeonStopRequested=false;session.dungeonAuto=false;session.dungeonRun=null;session.dungeonSearch=null;session.dungeonLootCollect=null;session.dungeonSessionEndsAt=null;session.progress=null;session.dungeonCycleOriginalIds=[];session.dungeonCycleActiveIds=[];
       session.log.unshift({text:'Lauf beim Laden angehalten: Charakter war bereits einem anderen aktiven Dungeon zugeordnet. Gesammelte Beute bleibt erhalten.',className:'bad'});
     }
