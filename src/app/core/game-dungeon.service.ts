@@ -513,6 +513,7 @@ export class GameDungeonService {
       .map(id => this.getCharacterById(state, id)?.name)
       .filter((name): name is string => Boolean(name));
     const waves = this.getSessionWaveCount(state.session.teamId);
+    const runeLoot=(state.session.dungeonRuneLoot??[]).length;
     const loot = getMaterialStorageEntries(state.session.dungeonLoot)
       .filter(entry => entry.qty > 0)
       .sort((a, b) => a.displayName.localeCompare(b.displayName))
@@ -527,9 +528,9 @@ export class GameDungeonService {
       reasonText,
       `Team: ${teamNames.length ? teamNames.join(', ') : '–'}`,
       `Besiegte Wellen: ${waves}`,
-      `Beute: ${loot.length ? loot.join(', ') : 'keine'}`
+      `Beute: ${loot.length ? loot.join(', ') : 'keine'}${runeLoot?' · '+runeLoot+' Rune(n)':''}`
     ];
-    if (loot.length) lines.push('', 'Beute liegt zum Einsammeln bereit.');
+    if (loot.length||runeLoot) lines.push('', 'Beute liegt zum Einsammeln bereit.');
     return lines.join('\n');
   }
 
