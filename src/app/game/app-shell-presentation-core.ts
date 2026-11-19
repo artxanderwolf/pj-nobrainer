@@ -1,4 +1,4 @@
-export const APP_UI_VERSION = '0.23.0.0';
+export const APP_UI_VERSION = '0.24.0.0';
 
 export const APP_SHELL_PAGE_IDS = [
   'base',
@@ -42,6 +42,7 @@ const APP_SHELL_BEFORE_PAGES = `<div class="app modular-ui" data-ui-version="${A
           <img id="goldIcon" class="city-currency-icon" src="ui/coin_1nic_32.png" alt="" aria-hidden="true">
           <b id="gold">0 Nickel</b>
         </div>
+        <button id="cityBuildMenuButton" class="help-btn icon-action-btn city-build-header-btn" type="button" aria-label="Stadt bauen und erweitern" title="Bauen und Erweitern" aria-haspopup="dialog">⚒</button>
         <button id="questHeaderButton" class="help-btn icon-action-btn" type="button" aria-label="Missionen öffnen">
           <img class="header-action-icon" src="ui/quest_32.png" alt="" aria-hidden="true">
           <span id="questHeaderBadge" class="header-action-badge" hidden></span>

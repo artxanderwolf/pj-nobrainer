@@ -635,13 +635,36 @@
   }
 }
 
-/* S17: retain class artwork and class colors, add race as a secondary band. */
-.class-emblem[data-race-id] { position: relative; }
-.class-emblem[data-race-id]::after {
-  content: ''; position: absolute; left: 8%; right: 8%; bottom: 0;
-  height: 16%; border-radius: 999px; background: var(--race-color, #8954B5);
-  border: 1px solid rgba(0,0,0,.4); pointer-events: none;
+/* S24: racial tint lives inside each class emblem, without an extra badge/bar.
+   'color' blending preserves the underlying artwork luminance and dark contours. */
+.class-emblem[data-race-id] {
+  position: relative;
+  isolation: isolate;
 }
+.class-emblem[data-race-id]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--race-color, #8954B5);
+  mix-blend-mode: color;
+  -webkit-mask-image: var(--emblem-image);
+  mask-image: var(--emblem-image);
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+.class-emblem-small[data-class-id="archer"] { --emblem-image: url('./class-emblems/archer-small.png'); }
+.class-emblem-small[data-class-id="recruit"] { --emblem-image: url('./class-emblems/recruit-small.png'); }
+.class-emblem-small[data-class-id="scholar"] { --emblem-image: url('./class-emblems/scholar-small.png'); }
+.class-emblem-small[data-class-id="fighter"] { --emblem-image: url('./class-emblems/fighter-small.png'); }
+.class-emblem-large[data-class-id="archer"] { --emblem-image: url('./class-emblems/archer-large-v0.16.1.png'); }
+.class-emblem-large[data-class-id="recruit"] { --emblem-image: url('./class-emblems/recruit-large-v0.16.1.png'); }
+.class-emblem-large[data-class-id="scholar"] { --emblem-image: url('./class-emblems/scholar-large-v0.16.1.png'); }
+.class-emblem-large[data-class-id="fighter"] { --emblem-image: url('./class-emblems/fighter-large-v0.16.1.png'); }
 .class-emblem[data-race-id="human"] { --race-color: #8954B5; }
 .class-emblem[data-race-id="dwarf"] { --race-color: #B96F38; }
 .class-emblem[data-race-id="wood-elf"] { --race-color: #38834E; }

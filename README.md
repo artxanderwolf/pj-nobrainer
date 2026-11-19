@@ -1,42 +1,36 @@
-# pj-nobrainer
+# Smiths of Eldravar
 
-NoBrainer ist ein systemgetriebener Dungeon-, Crafting- und Management-Prototyp.
+Systemgetriebenes Dungeon-, Crafting- und Stadtmanagementspiel mit einer gemeinsamen **Angular-21-Codebasis** für Browser und Android (Capacitor 8).
 
-## Aktueller Stand
+## Aktueller Entwicklungsstand
 
-- Stabiler Referenzstand: `NoBrainer_GitHub_v0.12.2.html` auf `main`
-- Angular-Migration: Branch `migration/angular`
-- Angular 21, standalone
-- Der unveränderte HTML-Prototyp bleibt während der Migration die Referenz für Gameplay, Save-Daten und Regressionstests.
+- Entwicklungs- und Web-Testbranch: `migration/angular`
+- S20–S23 (Etappe E) integriert: Runen, Altwaffenmigration, Runenwerkstatt und Dungeon-1-Runendrops
+- App-Version: **v0.24.0.0**; Save-Version: **27**
+- Etappe F/S24: Gesamtprüfung und Releasevorbereitung – gesonderte Abschlussfreigabe erforderlich
+- Der ursprüngliche HTML-Prototyp `NoBrainer_GitHub_v0.12.2.html` bleibt ausschließlich als historische Kompatibilitäts-/Regressionstestquelle im Repository. Er ist **nicht** der produktive Spielstand.
+- Eine neue Webversion bedeutet **nicht** automatisch einen Android-Release. Eine Android-Veröffentlichung erfordert die gesonderte Freigabe und den bestehenden Release-Signierschlüssel.
 
-## Aktueller Migrationsschritt
-
-Die Angular-Hülle übernimmt jetzt zwei zentrale Infrastrukturaufgaben, ohne die Spielmechanik umzuschreiben:
-
-1. Der 250-ms-Game-Tick wird von Angular gestartet und beim Abbau der App wieder beendet.
-2. Die LocalStorage-Zugriffe des Legacy-Saves laufen über einen Angular-Service. Save-Key und Save-Format bleiben unverändert.
-
-Der Legacy-Code behält vorerst die eigentliche Zustandsstruktur, Save-Migrationen und Gameplay-Funktionen. Eine explizite Kompatibilitätsschicht adaptiert ausschließlich den bekannten v0.12.2-Quelltext und bricht mit einer klaren Fehlermeldung ab, falls die erwarteten Anker nicht mehr vorhanden sind. Dadurch werden Abweichungen nicht stillschweigend akzeptiert.
-
-## Lokal starten
+## Lokale Entwicklung
 
 ```bash
 npm install
 npm start
 ```
 
-## Produktions-Build
+## Prüfungen und Builds
 
 ```bash
+npm run check
 npm run build
+npm run build:pages
+npm run android:sync
 ```
 
-Der Produktions-Build verwendet `/pj-nobrainer/` als Base-Href für GitHub Pages.
+Die Checks umfassen u. a. Kämpfe, Teams, Stadt/Gebäude, Dungeon- und Offline-Fortschritt, Schmiede/Markt, Spielstandtransfers, Rassen, Runen, Migrationen und Android-Integrationsregeln. Browser-End-to-End-Prüfungen laufen zusätzlich in der GitHub-CI; reale Endgerätetests sind separat erforderlich.
 
-## Prüfungen
+## Release- und Rückfallverfahren
 
-`npm run build` führt vor dem Angular-Build automatisch einen Legacy-Check aus. Dabei werden JavaScript-Syntax, zentrale Hilfsfunktionen, Energie-Regenerationsschutz und die Kompatibilitätsanpassung geprüft.
+Die öffentliche Web-Testversion wird über GitHub Pages aus `migration/angular` gebaut. Android nutzt denselben Angular-Code mit Capacitor; signierte Android-Releases werden **nicht** durch einen normalen Web-Merge freigegeben.
 
-## Migrationsstrategie
-
-Logik und UI werden schrittweise aus der Kompatibilitätsschicht in Angular-Dienste und -Komponenten überführt. `main` bleibt bis zur erfolgreichen Prüfung der jeweiligen Migrationsstufe der stabile Rückfallstand.
+Die S24-Integrationsmatrix, offenen manuellen Abnahmetests, Nachweise, Balancefragen und Fallbacks sind unter [docs/S24_GESAMTABNAHME_RELEASEVORBEREITUNG.md](docs/S24_GESAMTABNAHME_RELEASEVORBEREITUNG.md) dokumentiert. Vor Save-Migrationen ist ein JSON-Export sinnvoll; ein moderner Save darf nicht ohne Prüfung in ältere Versionen zurückimportiert werden.

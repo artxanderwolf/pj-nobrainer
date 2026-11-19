@@ -355,3 +355,136 @@
   .city-placement-tools { padding: 8px; margin: 0 1px 8px; gap: 7px; }
   .city-expand-controls button { flex-basis: calc(50% - 8px); }
 }
+
+
+/* S24: a fixed city screen with horizontally/locally scrollable map only. */
+html:has(.modular-ui.city-overview-active),
+body:has(.modular-ui.city-overview-active) { height: 100%; overflow: hidden; }
+.modular-ui.city-overview-active { height: 100dvh; min-height: 0; overflow: hidden; }
+.modular-ui.city-overview-active .app-main {
+  height: 100dvh; min-height: 0;
+  display: flex; flex-direction: column;
+  padding-bottom: env(safe-area-inset-bottom);
+  overflow: hidden;
+}
+.modular-ui.city-overview-active .modular-topbar {
+  flex: 0 0 auto; position: relative;
+  margin-bottom: 0;
+}
+.modular-ui.city-overview-active .page-stack {
+  flex: 1 1 auto; min-height: 0; overflow: hidden;
+}
+.modular-ui.city-overview-active #base.active {
+  height: 100%; min-height: 0; margin-top: 0; overflow: hidden;
+}
+.modular-ui.city-overview-active .city-overview-stage.city-grid-overview {
+  width: 100%; height: 100%;
+  display: flex; flex-direction: column;
+  position: relative; min-height: 0;
+  padding: 0 0 5px;
+}
+.modular-ui.city-overview-active .city-grid-heading {
+  flex: 0 0 auto; padding: 6px 4px 5px; gap: 2px;
+}
+.modular-ui.city-overview-active .city-grid-viewport {
+  flex: 1 1 auto; min-height: 0;
+  overflow: auto; overscroll-behavior: contain;
+  touch-action: pan-x pan-y;
+}
+.modular-ui.city-overview-active .city-grid-map {
+  --city-cell-size: clamp(43px, calc((100dvh - 215px) / 8), 64px);
+}
+.modular-ui.city-overview-active .city-grid-links {
+  flex: 0 0 auto; margin: 5px 0 0;
+  padding: 6px; background: transparent;
+  border: none; border-radius: 0;
+}
+.modular-ui.city-overview-active .city-grid-link-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+}
+.modular-ui.city-overview-active .city-grid-quick-link {
+  min-height: 38px; padding: 6px 4px; font-size: 12px;
+}
+.modular-ui.city-overview-active .city-grid-legacy-teams {
+  flex: 0 0 auto; max-height: 18dvh; overflow: auto;
+  margin: 4px 0 0; padding: 5px;
+}
+.modular-ui.city-overview-active .city-grid-scroll-hint { display: none; }
+.city-build-header-btn { display: none; font-size: 25px; line-height: 1; }
+.modular-ui.city-overview-active .city-build-header-btn { display: inline-flex; }
+.city-action-shade {
+  position: fixed; inset: 0; z-index: 1200;
+  display: grid; place-items: center;
+  padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
+  background: rgba(7, 9, 11, .65);
+}
+.city-action-dialog {
+  display: flex; flex-direction: column; gap: 10px;
+  width: min(420px, 100%); max-height: 80dvh; overflow: auto;
+  padding: 16px; border: 1px solid #708975; border-radius: 14px;
+  background: #1e2924; color: #eef4ed;
+  box-shadow: 0 16px 60px rgba(0,0,0,.55);
+}
+.city-action-dialog h3, .city-action-dialog h4, .city-action-dialog p { margin: 0; }
+.city-action-dialog .btn { min-height: 43px; }
+.city-action-dialog-head { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
+.city-action-dialog-head .btn { min-width: 44px; }
+.city-action-dialog .city-expand-controls { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); }
+.city-action-dialog .city-construction-list { display: grid; gap: 8px; }
+.city-map-mode-hint, .modular-ui.city-overview-active .city-placement-notice {
+  position: absolute; z-index: 8; left: 8px; right: 8px; top: 52px;
+  margin: 0; padding: 6px 9px;
+  border: 1px solid #9b9369; border-radius: 9px;
+  background: rgba(26, 36, 29, .96);
+  color: #f6e2b2; font-size: 12px;
+}
+.city-map-mode-hint { display: flex; align-items: center; justify-content: space-between; gap: 5px; }
+.city-map-mode-hint .btn { min-height: 30px; padding: 3px 8px; font-size: 11px; }
+.modular-ui.city-overview-active .city-map-mode-hint + .city-placement-notice { top: 99px; }
+@media (max-width: 560px) {
+  .modular-ui.city-overview-active .modular-topbar {
+    grid-template-columns: minmax(68px,1fr) auto;
+    gap: 5px; padding-left: 8px; padding-right: 8px;
+  }
+  .modular-ui.city-overview-active .back-btn { display: none; }
+  .modular-ui.city-overview-active .top-actions { gap: 4px; }
+  .modular-ui.city-overview-active .top-actions .help-btn {
+    min-width: 35px; min-height: 39px; width: 39px; padding: 3px;
+  }
+  .modular-ui.city-overview-active .money-pill { padding: 5px 6px; font-size: 11px; }
+  .modular-ui.city-overview-active .city-grid-heading h2 { font-size: 16px; }
+  .modular-ui.city-overview-active .city-grid-heading p { font-size: 11px; }
+  .modular-ui.city-overview-active .city-grid-links { padding: 5px 2px; }
+  .modular-ui.city-overview-active .city-grid-quick-link { font-size: 11px; }
+}
+@media (max-height: 680px) {
+  .modular-ui.city-overview-active .city-grid-heading { padding: 3px 4px; }
+  .modular-ui.city-overview-active .city-grid-map { --city-cell-size: 43px; }
+  .modular-ui.city-overview-active .city-grid-links { margin-top: 2px; padding: 2px; }
+}
+
+/* S24: Schnellzugriffe liegen direkt im unteren freien Kartenbereich,
+   fest sichtbar auch während die Stadtkarte selbst verschoben wird. */
+.modular-ui.city-overview-active .city-grid-frame {
+  flex: 1 1 auto; position: relative; min-height: 0;
+  border: 1px solid #4c6157; border-radius: 12px;
+  overflow: hidden; background: #264532;
+}
+.modular-ui.city-overview-active .city-grid-frame .city-grid-viewport {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%; border: 0; border-radius: 0;
+}
+.modular-ui.city-overview-active .city-grid-frame .city-grid-map {
+  padding-bottom: 112px;
+  background-color: #264532;
+}
+.modular-ui.city-overview-active .city-grid-frame .city-grid-links {
+  position: absolute; z-index: 10;
+  left: 7px; right: 7px; bottom: 8px;
+  width: auto; margin: 0; padding: 6px;
+  border: 1px solid rgba(158, 187, 158, .55);
+  border-radius: 11px;
+  background: rgba(20, 39, 29, .91);
+  backdrop-filter: blur(3px);
+}
