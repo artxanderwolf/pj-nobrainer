@@ -45,7 +45,10 @@ function repairTeamReservations(state: TeamWorldState): boolean {
     if (!dungeonSessionActive(team)) continue;
     const ids = [...new Set([...team.dungeonTeamSlots,...team.dungeonCycleOriginalIds,...(team.dungeonRun?.participantIds??[])].filter((id):id is number=>typeof id==='number'))];
     if (ids.some(id=>reserved.has(id))) {
-      for (const drop of team.dungeonLootCollect?.drops??[]) if(drop.materialId) addMaterialQuantityById(team.dungeonLoot,drop.materialId,1);
+      for(const drop of team.dungeonLootCollect?.drops??[]){
+        if(drop.materialId)addMaterialQuantityById(team.dungeonLoot,drop.materialId,1);
+        if(drop.runeDefinitionId)(team.dungeonRuneLoot??=[]).push(drop.runeDefinitionId);
+      }
       Object.assign(team,{expeditionActive:false,dungeonAuto:false,dungeonStopRequested:false,dungeonRun:null,dungeonSearch:null,dungeonLootCollect:null,dungeonSessionEndsAt:null,progress:null,dungeonCycleOriginalIds:[],dungeonCycleActiveIds:[]});
       team.log.unshift({text:'Lauf beim Laden angehalten: Charakter bereits in einem anderen Team aktiv. Beute bleibt erhalten.',className:'bad'});
       changed = true;
@@ -70,7 +73,7 @@ export function assignTeamCharacter(state: TeamWorldState & {characters: Array<{
 }
 export function selectTeamDungeon(state: TeamWorldState & MissionState, teamId: number, dungeonId: number): boolean {
   const team = getTeamSession(state, teamId);
-  if (!(DUNGEON_IDS as readonly number[]).includes(dungeonId) || !dungeonUnlocked(state,dungeonId) || dungeonSessionActive(team) || Object.values(team.dungeonLoot).some(entry=>Number(entry?.qty)>0)) return false;
+  if (!(DUNGEON_IDS as readonly number[]).includes(dungeonId) || !dungeonUnlocked(state,dungeonId) || dungeonSessionActive(team) || Object.values(team.dungeonLoot).some(entry=>Number(entry?.qty)>0) || (team.dungeonRuneLoot?.length??0)>0) return false;
   team.dungeonId = dungeonId;
   return true;
 }
