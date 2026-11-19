@@ -463,3 +463,28 @@ body:has(.modular-ui.city-overview-active) { height: 100%; overflow: hidden; }
   .modular-ui.city-overview-active .city-grid-map { --city-cell-size: 43px; }
   .modular-ui.city-overview-active .city-grid-links { margin-top: 2px; padding: 2px; }
 }
+
+/* S24: Schnellzugriffe liegen direkt im unteren freien Kartenbereich,
+   fest sichtbar auch während die Stadtkarte selbst verschoben wird. */
+.modular-ui.city-overview-active .city-grid-frame {
+  flex: 1 1 auto; position: relative; min-height: 0;
+  border: 1px solid #4c6157; border-radius: 12px;
+  overflow: hidden; background: #264532;
+}
+.modular-ui.city-overview-active .city-grid-frame .city-grid-viewport {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%; border: 0; border-radius: 0;
+}
+.modular-ui.city-overview-active .city-grid-frame .city-grid-map {
+  padding-bottom: 112px;
+  background-color: #264532;
+}
+.modular-ui.city-overview-active .city-grid-frame .city-grid-links {
+  position: absolute; z-index: 10;
+  left: 7px; right: 7px; bottom: 8px;
+  width: auto; margin: 0; padding: 6px;
+  border: 1px solid rgba(158, 187, 158, .55);
+  border-radius: 11px;
+  background: rgba(20, 39, 29, .91);
+  backdrop-filter: blur(3px);
+}
