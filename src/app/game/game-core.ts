@@ -133,7 +133,7 @@ export function canonicalWeaponSlots(slots: readonly WeaponSlot[] | null | undef
 }
 
 /** Crafting presentation no longer exposes the obsolete special part. */
-export function getWeaponForm(weaponForm: string): WeaponFormDefinition {
+export function getWeaponForm(weaponForm: string | null | undefined): WeaponFormDefinition {
   const original=baseline.getWeaponForm(weaponForm);
   return {...original,parts:original.parts.filter(part=>part.id!=='special')};
 }
