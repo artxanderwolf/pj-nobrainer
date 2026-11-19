@@ -12,6 +12,7 @@ import { teamIds, type TeamWorldState } from '../game/team-core.ts';
 import { CITY_BUILDING_TYPES, type CityBuildingTypeId } from '../game/city-layout-core.ts';
 import { cityBuildingPrice, cityBuildingCount } from '../game/city-economy-core.ts';
 import { CONSTRUCTIBLE_CITY_BUILDINGS, CITY_CONSTRUCTION_DURATION_MS, startCityConstruction, cancelCityConstruction, availableCityBuilders, type ConstructibleCityBuildingType, type CityConstructionWorldState } from '../game/city-construction-core.ts';
+import { GameRuneWorkshopPresentationService } from './game-rune-workshop-presentation.service.ts';
 import { GameDungeonPresentationService } from './game-dungeon-presentation.service';
 import { GameStateService, type MutableGameState } from './game-state.service';
 import { GameRuntimeService } from './game-runtime.service';
@@ -72,6 +73,7 @@ export class GameCityOverviewPresentationService {
     this.root?.removeEventListener('click', this.handleClick);
     this.root?.removeEventListener('change', this.handleChange);
     document.removeEventListener('city-construction-updated', this.handleCityConstructionUpdate);
+    document.removeEventListener('rune-workshop-updated',this.handleCityConstructionUpdate);
     this.root = null;
     this.basePage = null;
     this.renderedSignature = '';
@@ -95,6 +97,7 @@ export class GameCityOverviewPresentationService {
     root.addEventListener('click', this.handleClick);
     root.addEventListener('change', this.handleChange);
     document.addEventListener('city-construction-updated', this.handleCityConstructionUpdate);
+    document.addEventListener('rune-workshop-updated',this.handleCityConstructionUpdate);
     this.root = root;
     this.basePage = basePage;
     this.renderedSignature = '';
@@ -402,7 +405,8 @@ export class GameCityOverviewPresentationService {
         .find(item => item.buildingInstanceId === buildingButton.dataset['cityBuildingId']);
       if (!building?.enabled || !building.navigation) return;
       if (building.navigation.kind === 'page') {
-        this.navigate(building.navigation.pageId);
+        if(building.navigation.pageId==='rune-workshop')this.injector.get(GameRuneWorkshopPresentationService).open();
+        else this.navigate(building.navigation.pageId);
       } else {
         this.openTeam(building.navigation.teamId);
       }
