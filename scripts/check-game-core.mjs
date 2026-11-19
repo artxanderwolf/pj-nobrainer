@@ -46,16 +46,16 @@ for (const [id, [name, hands, baseDamage, baseSpeed, baseHitChance, timeFactor]]
 }
 
 const quantities = form => Object.fromEntries(getWeaponCraftingSlots(form).map(slot => [slot, getWeaponSelectionQuantity(form, slot)]));
-assert.deepEqual(quantities('dagger'), { workingPart: 1, back: 1, gripCore: 1, gripWrap: 1, special: 1 });
-assert.deepEqual(quantities('sword'), { workingPart: 2, back: 2, gripCore: 1, gripWrap: 1, special: 1, parry: 1 });
-assert.deepEqual(quantities('axe1h'), { workingPart: 1, back: 1, gripCore: 3, gripWrap: 2, special: 1 });
-assert.deepEqual(quantities('sword2h'), { workingPart: 4, back: 4, gripCore: 2, gripWrap: 1, special: 1, parry: 2 });
-assert.deepEqual(quantities('axe2h'), { workingPart: 2, back: 2, gripCore: 6, gripWrap: 3, special: 1 });
-assert.deepEqual(quantities('bow'), { back: 1, gripCore: 5, gripWrap: 6, special: 1, bowstring: 3 });
-assert.deepEqual(quantities('staff'), { back: 1, gripCore: 5, gripWrap: 2, special: 1 });
+assert.deepEqual(quantities('dagger'), { workingPart: 1, back: 1, gripCore: 1, gripWrap: 1 });
+assert.deepEqual(quantities('sword'), { workingPart: 2, back: 2, gripCore: 1, gripWrap: 1, parry: 1 });
+assert.deepEqual(quantities('axe1h'), { workingPart: 1, back: 1, gripCore: 3, gripWrap: 2 });
+assert.deepEqual(quantities('sword2h'), { workingPart: 4, back: 4, gripCore: 2, gripWrap: 1, parry: 2 });
+assert.deepEqual(quantities('axe2h'), { workingPart: 2, back: 2, gripCore: 6, gripWrap: 3 });
+assert.deepEqual(quantities('bow'), { back: 1, gripCore: 5, gripWrap: 6, bowstring: 3 });
+assert.deepEqual(quantities('staff'), { back: 1, gripCore: 5, gripWrap: 2 });
 assert.deepEqual(
   Object.fromEntries(Object.keys(expectedForms).map(id => [id, Object.values(quantities(id)).reduce((a, b) => a + b, 0)])),
-  { dagger: 5, sword: 8, axe1h: 8, sword2h: 14, axe2h: 14, bow: 16, staff: 9 }
+  { dagger: 4, sword: 7, axe1h: 7, sword2h: 13, axe2h: 13, bow: 15, staff: 8 }
 );
 assert.equal(CONFIG.forge.weaponForms.dagger.parts.some(part => part.id === 'parry'), false);
 assert.equal(CONFIG.forge.weaponForms.sword.parts.find(part => part.id === 'parry')?.materialSlot, 'parry');
@@ -98,18 +98,18 @@ const daggerSlots = [
   { slot: 'special', material: 'Kupfer' }
 ];
 assert.equal(isWeaponSelectionComplete(daggerSlots, 'dagger'), true);
-assert.equal(isWeaponSelectionComplete(daggerSlots.slice(0, 4), 'dagger'), false);
+assert.equal(isWeaponSelectionComplete(daggerSlots.slice(0, 3), 'dagger'), false);
 
 const dagger = calculateWeaponStats(daggerSlots, 'dagger');
 closeTo(dagger.characterModifiers.strengthFactor, 0.05);
 closeTo(dagger.characterModifiers.precision, 0.10);
 closeTo(dagger.characterModifiers.dodge, 0.02);
 closeTo(dagger.characterModifiers.critChance, 0.05);
-closeTo(dagger.characterModifiers.penetration, 0.10);
+closeTo(dagger.characterModifiers.penetration, 0);
 closeTo(dagger.damagePerHit, 6.3);
 closeTo(dagger.attackSpeed, 1.4);
 closeTo(dagger.hitChance, 0.66);
-closeTo(dagger.penetration, 0.10);
+closeTo(dagger.penetration, 0);
 closeTo(dagger.expectedRaw, 5.8212);
 
 const swordSlots = [...daggerSlots, { slot: 'parry', material: 'Aluminium' }];
@@ -120,11 +120,11 @@ closeTo(sword.characterModifiers.strengthFactor, 0.10);
 closeTo(sword.characterModifiers.precision, 0.05);
 closeTo(sword.characterModifiers.critChance, 0.02);
 closeTo(sword.characterModifiers.critDamage, 0.10);
-closeTo(sword.characterModifiers.penetration, 0.10);
+closeTo(sword.characterModifiers.penetration, 0);
 closeTo(sword.damagePerHit, 11);
 closeTo(sword.attackSpeed, 1);
 closeTo(sword.hitChance, 0.5775);
-closeTo(sword.penetration, 0.10);
+closeTo(sword.penetration, 0);
 closeTo(sword.expectedRaw, 6.3525);
 
 const bowSlots = [
@@ -141,11 +141,11 @@ closeTo(bow.characterModifiers.dodge, 0.02);
 closeTo(bow.characterModifiers.strengthFactor, 0.05);
 closeTo(bow.characterModifiers.precision, 0.20);
 closeTo(bow.characterModifiers.critChance, 0.12);
-closeTo(bow.characterModifiers.penetration, 0.09);
+closeTo(bow.characterModifiers.penetration, 0.04);
 closeTo(bow.damagePerHit, 11.55);
 closeTo(bow.attackSpeed, 0.9);
 closeTo(bow.hitChance, 0.78);
-closeTo(bow.penetration, 0.09);
+closeTo(bow.penetration, 0.04);
 closeTo(bow.expectedRaw, 8.1081);
 
 const specialBaseSlots = [
@@ -159,15 +159,15 @@ closeTo(noSpecial.specialSpeedFactor, 1);
 closeTo(noSpecial.reinforcementHitChanceAdd, 0);
 closeTo(noSpecial.reinforcementPenetrationAdd, 0);
 const penetrationSpecial = calculateWeaponStats([...specialBaseSlots, { slot: 'special', material: 'Fichte' }], 'dagger');
-closeTo(penetrationSpecial.penetration, 0.05);
-closeTo(penetrationSpecial.reinforcementPenetrationAdd, 0.05);
+closeTo(penetrationSpecial.penetration, 0);
+closeTo(penetrationSpecial.reinforcementPenetrationAdd, 0);
 const precisionSpecial = calculateWeaponStats([...specialBaseSlots, { slot: 'special', material: 'Tanne' }], 'dagger');
-closeTo(precisionSpecial.characterModifiers.precision, 0.20);
-closeTo(precisionSpecial.reinforcementHitChanceAdd, 0.10);
-closeTo(precisionSpecial.hitChance, 0.72);
+closeTo(precisionSpecial.characterModifiers.precision, 0.10);
+closeTo(precisionSpecial.reinforcementHitChanceAdd, 0);
+closeTo(precisionSpecial.hitChance, 0.66);
 const speedSpecial = calculateWeaponStats([...specialBaseSlots, { slot: 'special', material: 'Hasen-Leder' }], 'dagger');
-closeTo(speedSpecial.specialSpeedFactor, 1.15);
-closeTo(speedSpecial.attackSpeed, 1.61);
+closeTo(speedSpecial.specialSpeedFactor, 1);
+closeTo(speedSpecial.attackSpeed, 1.4);
 
 const legacySlots = [
   { slot: 'Waffentyp', material: 'Aluminium' },
@@ -201,7 +201,7 @@ closeTo(recruit.dodge, 0.12);
 closeTo(recruit.threat, 50);
 closeTo(recruit.critChance, 0.07);
 closeTo(recruit.critDamage, 1.60);
-closeTo(recruit.penetration, 0.10);
+closeTo(recruit.penetration, 0);
 const sameTwoHandedWeaponTwice = calculateCharacterStats('recruit', [swordWeapon, swordWeapon]);
 assert.deepEqual(sameTwoHandedWeaponTwice, recruit, 'Eine 2H-Waffe in beiden Handplätzen darf ihre Charakterboni nur einmal beitragen.');
 const clonedSameId = calculateCharacterStats('recruit', [swordWeapon, { id: 77, stats: sword }]);
@@ -221,7 +221,7 @@ closeTo(levelTwoRecruit.hpRegenPerMinute, 0, 'Null-Grundwerte dürfen durch Leve
 closeTo(levelTwoRecruit.energyRegenPerMinute, 5.5);
 closeTo(levelTwoRecruit.experienceFactor, 1, 'ERF darf sich durch Levelaufstiege nicht mehr verändern.');
 closeTo(levelTwoRecruit.lifeSteal, 0);
-closeTo(levelTwoRecruit.penetration, 0.10, 'Ausrüstungsbonus wird erst nach der Grundwertskalierung addiert.');
+closeTo(levelTwoRecruit.penetration, 0, 'Ausrüstungsbonus wird erst nach der Grundwertskalierung addiert.');
 
 const levelThreeRecruit = calculateCharacterStats('recruit', [], 1.21);
 closeTo(levelThreeRecruit.maxHp, 36.3);
@@ -242,9 +242,9 @@ assert.equal(CHARACTER_CLASSES.scholar.threat, 25);
 
 const armored = weaponDamageAfterArmor({ stats: sword }, 100, recruit);
 assert.ok(armored.raw > 0);
-closeTo(armored.penetration, 0.10);
-closeTo(armored.effectiveArmor, 72);
-closeTo(armored.reduction, 0.72);
-closeTo(armored.afterArmor, armored.raw * 0.28);
+closeTo(armored.penetration, 0);
+closeTo(armored.effectiveArmor, 80);
+closeTo(armored.reduction, 0.80);
+closeTo(armored.afterArmor, armored.raw * 0.20);
 
 console.log('Game-Core: Material-SPE, Waffenbau, stat-spezifische Levelskalierung, 2H-Deduplizierung und Kampfübergabe sind konsistent.');
