@@ -1,7 +1,7 @@
 import { Injectable, Injector } from '@angular/core';
 import { RUNE_DEFINITIONS } from '../game/rune-core.ts';
 import {
-  availableRuneItems, equipRune, removeRune, recomputeRunedWeapon,
+  availableRuneItems, equipRune, removeRune,
   ensureFirstRuneWorkshop, type RuneWorldState
 } from '../game/rune-inventory-core.ts';
 import { GameStateService, type MutableGameState } from './game-state.service';
