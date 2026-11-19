@@ -182,6 +182,7 @@ export class GameDungeonSessionService {
       ? [...state.session.dungeonCycleOriginalIds]
       : this.selectedIds(state);
     this.preservePendingLoot(state);
+    const runeLoot=(state.session.dungeonRuneLoot??[]).length;
     const loot = getMaterialStorageEntries(state.session.dungeonLoot)
       .filter(entry => entry.qty > 0)
       .sort((left, right) => left.displayName.localeCompare(right.displayName))
@@ -214,8 +215,8 @@ export class GameDungeonSessionService {
         reasonText,
         `Team: ${teamNames.length ? teamNames.join(', ') : '–'}`,
         `Besiegte Wellen: ${waves}`,
-        `Beute: ${loot.length ? loot.join(', ') : 'keine'}`,
-        ...(loot.length ? ['', 'Beute liegt zum Einsammeln bereit.'] : [])
+        `Beute: ${loot.length ? loot.join(', ') : 'keine'}${runeLoot?' · '+runeLoot+' Rune(n)':''}`,
+        ...(loot.length||runeLoot ? ['', 'Beute liegt zum Einsammeln bereit.'] : [])
       ].join('\n')
     };
   }
