@@ -1,3 +1,4 @@
+import { migrateClaimedLegacyWeapon, recomputeRunedWeapon, type RuneWorldState, type RunedWeapon } from '../game/rune-inventory-core.ts';
 import { weaponUnlocked } from '../game/mission-core.ts';
 import { migrateProductionWorkers, advanceProductionToReady, type ProductionWorkerWorld } from '../game/production-worker-core.ts';
 import { initializeForgeClaims, identifyNewForgeJob, advanceForgeJobsToReady, takeReadyForgeJob, type ForgeClaimWorldState, type IdentifiedForgeJob } from '../game/forge-claim-core.ts';
@@ -83,7 +84,7 @@ interface RuntimeWeaponInventoryEntry {
   starter?: boolean;
 }
 
-type RuntimeForgeState = MutableGameState & CityLayoutWorldState & ForgeClaimWorldState & {
+type RuntimeForgeState = MutableGameState & CityLayoutWorldState & RuneWorldState & ForgeClaimWorldState & {
   inventory: ForgeInventory;
   upgrades: RuntimeForgeUpgrades;
   weaponInventory: RuntimeWeaponInventoryEntry[];
@@ -302,6 +303,10 @@ export class GameForgeService {
 
     for (const weapon of state.weaponInventory) {
       if (weapon.starter || weapon.id === 0 || !weapon.weaponForm || !Array.isArray(weapon.slots)) continue;
+      if ((weapon as RunedWeapon).runeMigrationVersion === 1) {
+        recomputeRunedWeapon(state,weapon as RunedWeapon);
+        continue;
+      }
       const snapshot = calculateWeaponBalanceSnapshot(weapon.weaponForm, weapon.slots);
       weapon.slots = snapshot.slots;
       weapon.stats = snapshot.stats;
@@ -326,7 +331,7 @@ export class GameForgeService {
     const form = getWeaponForm(job.weaponForm);
     const name = job.weaponName || form.name;
     const economy = calculateWeaponEconomy(job.stats);
-    state.weaponInventory.unshift({
+    const completedWeapon: RuntimeWeaponInventoryEntry = {
       id: state.nextWeaponId++,
       name,
       weaponForm: job.weaponForm,
@@ -334,7 +339,9 @@ export class GameForgeService {
       stats: job.stats,
       valueNickel: economy.valueNickel,
       craftedSeconds: job.totalSeconds
-    });
+    };
+    state.weaponInventory.unshift(completedWeapon);
+    migrateClaimedLegacyWeapon(state,completedWeapon,job);
     recordCompletedWeaponCraft(this.getCraftCounts(state), job.weaponForm);
     return name;
   }
