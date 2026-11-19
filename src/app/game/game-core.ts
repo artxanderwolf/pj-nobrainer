@@ -4,6 +4,7 @@ import type {
   CharacterStatModifiers,
   MaterialDefinition,
   WeaponPartRequirement,
+  WeaponFormDefinition,
   WeaponSlot as BaselineWeaponSlot,
   WeaponStats
 } from './game-core-v01310-baseline.ts';
