@@ -129,7 +129,7 @@ const probeScript = `<script>
           back: chooseViaMaterialDialog('back', '2'),
           gripCore: choose('slotGripCore', '2'),
           gripWrap: choose('slotGripWrap', '9'),
-          special: choose('slotSpecial', '2'),
+          special: document.getElementById('forgeSpecialRow')?.hidden === true,
           bowstring: choose('slotBowstring', '9'),
           form: formChosen
         };
@@ -257,7 +257,7 @@ try {
   assert.equal(result.status, 'tested', `Die Schmiedeauswahl wurde nicht testbereit: ${JSON.stringify(result)}`);
   assert.equal(result.browserErrors.length, 0, `Bei der Schmiedeauswahl oder beim Schmiedestart trat ein Browserfehler auf: ${JSON.stringify(result)}`);
   assert.equal(result.runtimeError, '', `Die Runtime meldet bei der Schmiedeauswahl einen Fehler: ${JSON.stringify(result)}`);
-  assert.deepEqual(result.selected, { back: true, gripCore: true, gripWrap: true, special: true, bowstring: true, form: true });
+  assert.deepEqual(result.selected, { back: true, gripCore: true, gripWrap: true, special: true, bowstring: true, form: true }, 'Das entfernte Spezialbauteil darf im Browser nicht mehr zur Auswahl stehen.');
   assert.ok(result.materialPickerProof, 'Der farbige Materialdialog muss im Schmiede-E2E geöffnet werden.');
   assert.equal(result.materialPickerProof.open, true);
   assert.equal(result.materialPickerProof.closedAfterSelection, true);
