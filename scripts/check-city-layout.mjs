@@ -75,7 +75,7 @@ assert.equal(JSON.stringify(unchangedFields), untouchedSnapshot,
 assert.equal(loaded.state.cityLayout.buildings.length, 6);
 const serialized = encodeSave(loaded.state, loaded.savedAt);
 assert.equal(SAVE_VERSION, 27, 'Etappe E ergänzt persistente Runeninventare zu Save27.');
-assert.equal(JSON.parse(serialized).saveVersion, 26);
+assert.equal(JSON.parse(serialized).saveVersion, 27);
 assert.equal(validateImportedSave(serialized).ok, true);
 const restored = decodeSave(serialized);
 const restoredCity = structuredClone(restored.state.cityLayout);
