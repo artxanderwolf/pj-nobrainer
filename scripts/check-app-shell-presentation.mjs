@@ -61,7 +61,7 @@ assert.match(missionService, /questHeaderBadge/, 'Der Missionszähler wird nicht
 assert.doesNotMatch(missionService, /📜/, 'Die alte Schriftrollen-Emoji-Darstellung darf nicht mehr aktiv sein.');
 assert.match(cityOverviewService, /data-city-overview-owner="angular"/, 'Die Stadtübersicht besitzt keinen Angular-Ownership-Marker.');
 assert.match(cityOverviewService, /data-city-building-id/, 'Die Stadt muss auf stabile Gebäude-Instanz-IDs klicken.');
-assert.match(cityOverviewService, /getCityOverviewPresentation\(state\.cityLayout, teamIds\(state\)\)/,
+assert.match(cityOverviewService, /getCityOverviewPresentation\(state\.cityLayout,\s*teamIds\(state\)\)/,
   'Gebäude-Navigation darf nicht mit dem gespeicherten Stadtraster konkurrieren.');
 assert.match(cityOverviewService, /data-city-asset-key/, 'Gebäude brauchen einen stabilen technischen Asset-Key.');
 assert.match(cityOverviewService, /getCityLegacyTeamAccess/, 'Bereits bezahlte weitere Teams dürfen während S08-S12 nicht verschwinden.');
