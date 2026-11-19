@@ -7,7 +7,7 @@ S24 umfasst Integration, Testnachweise, Spielerhilfe, Balancekontrolle und Rück
 
 ## Version, Migration und Rückfall
 
-- Ausgangs-App: **v0.23.0.0**. Aktuell keine erneute Gameplay- oder Save-Schemaänderung. Save-Version bleibt **27**.
+- Ausgangs-App: **v0.24.0.0**. Aktuell keine erneute Gameplay- oder Save-Schemaänderung. Save-Version bleibt **27**.
 - Bei einer abgeschlossenen S24-Änderung muss die App-Version gemäß Entwicklungsregeln synchron erhöht werden; bislang ist dieses PR ausdrücklich ein ungemergter Prüfstand.
 - Vor Etappe F: `migration/angular` @ `ab4ac1b1f5ad6cf01cff8b3d1150df8bcc6d9f75`; vor Etappe E: `backup/pre-etappe-e-s20-s23-2026-11-19`.
 - Spielstand vor erster Migration exportieren. Niemals einen v27-Save ungeprüft in ältere App-Versionen zurückimportieren.
