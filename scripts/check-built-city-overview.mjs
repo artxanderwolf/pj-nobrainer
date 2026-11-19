@@ -325,7 +325,7 @@ try {
   assert.deepEqual(result.buildingsAfterExpand,result.buildingIds,'Alle Gebäude-IDs müssen identisch bleiben.');
   assert.equal(result.moveStillSaved,true,'Die verschobene Position muss auch nach Erweiterungen persistiert bleiben.');
   assert.equal(result.noConstructionStarted,true,'S09 darf keine kostenlosen zusätzlichen Gebäude bauen.');
-  assert.equal(result.cellCount,result.gridAfterExpand.width*result.gridAfterExpand.height,'Zielfeld-Overlay wächst mit.');
+  assert.equal(result.cellCount,0,'Zielfeld-Overlay wird nach dem erfolgreichen Verschieben geschlossen.');
   if(purchases>0) assert.match(result.finalNotice,/erweitert/,'Kostenpflichtige Erweiterung muss bestätigt werden.');
   assert.equal(result.buildTogglePresent,true,'S11 benötigt einen Baumodus im Popup.');
   assert.equal(result.buildSelectPresent,true,'S11 benötigt eine Gebäudetyp-Auswahl.');
