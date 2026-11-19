@@ -428,7 +428,7 @@ export class GameCityOverviewPresentationService {
     if(!(event.target instanceof Element))return;
     const close=event.target.closest<HTMLElement>('[data-city-menu-close],[data-city-menu-backdrop]');
     if(close&&this.root?.contains(close)&&(close===event.target||close.hasAttribute('data-city-menu-close'))){
-      this.contextBuildingId=null;this.cityMenu='closed';this.render();return;
+      this.contextBuildingId=null;this.cityMenu='closed';this.suppressBuildingClick=false;this.render();return;
     }
     const back=event.target.closest<HTMLElement>('[data-city-menu-back]');
     if(back&&this.root?.contains(back)){this.cityMenu='main';this.render();return;}
@@ -441,7 +441,7 @@ export class GameCityOverviewPresentationService {
     const moveContext=event.target.closest<HTMLElement>('[data-city-move-context]');
     if(moveContext&&this.root?.contains(moveContext)){
       this.moveBuildingId=this.contextBuildingId;
-      this.contextBuildingId=null;this.moveMode=true;this.buildMode=false;
+      this.contextBuildingId=null;this.suppressBuildingClick=false;this.moveMode=true;this.buildMode=false;
       this.moveNotice='Tippe auf ein freies Zielfeld für dieses Gebäude.';
       this.render();return;
     }
