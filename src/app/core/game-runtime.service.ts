@@ -1,3 +1,4 @@
+import { ensureFirstRuneWorkshop, type RuneWorldState } from '../game/rune-inventory-core.ts';
 import { GameTavernPresentationService } from './game-tavern-presentation.service';
 import { synchronizeTavernOffers, type TavernOfferWorldState } from '../game/tavern-offers-core.ts';
 import { GameMissionService } from './game-mission.service';
@@ -276,6 +277,11 @@ export class GameRuntimeService {
 
     const productionReplay = this.replayCityProduction(Date.now());
     const tavernChanged = synchronizeTavernOffers(this.gameState.getState<MutableGameState & TavernOfferWorldState>());
+    const workshopChanged=ensureFirstRuneWorkshop(this.gameState.getState<MutableGameState & RuneWorldState>());
+    if(workshopChanged){
+      runtime.save(false);
+      document.dispatchEvent(new Event('rune-workshop-updated'));
+    }
     if (tavernChanged) {
       runtime.save(false);
       this.tavernPresentation.render();
