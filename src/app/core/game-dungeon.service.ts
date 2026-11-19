@@ -1,6 +1,8 @@
 import { teamIds, getTeamSession, migrateTeams, characterTeamReservation, type TeamSessionState } from '../game/team-core.ts';
 import { isProductionWorkerReserved } from '../game/production-worker-core.ts';
 import { type CityLayoutWorldState } from '../game/city-layout-core.ts';
+import { rollRuneDefinition, RUNE_DEFINITIONS, type RuneDefinitionId } from '../game/rune-core.ts';
+import { grantDroppedRune, type RuneWorldState } from '../game/rune-inventory-core.ts';
 import { getDungeonDefinition } from '../game/dungeon-definitions.ts';
 import { applyHighElfHealing, highElfDodgeHealReady, highElfHealingAttackSource } from '../game/high-elf-healing-core.ts';
 import { dungeonUnlocked, initializeReleaseProgress, recordSuccessfulWave, startProgressSession, type MissionState } from '../game/mission-core.ts';
@@ -99,6 +101,7 @@ interface RuntimeDungeonSearch {
 }
 
 interface RuntimeDungeonDrop {
+  runeDefinitionId?: RuneDefinitionId;
   /** Kanonische Referenz für neue Laufzeitlogik. */
   materialId?: number | null;
   /** Kompatibilitätsfelder für bestehende Saves und einen sicheren Rollback. */
@@ -114,7 +117,7 @@ interface RuntimeDungeonLootCollect {
 
 type DungeonSessionEndReason = 'manual' | 'energy';
 
-type RuntimeDungeonState = MutableGameState & MissionState & {
+type RuntimeDungeonState = MutableGameState & RuneWorldState & MissionState & {
   characters: RuntimeDungeonCharacter[];
   weaponInventory: RuntimeDungeonWeapon[];
   inventory: MaterialStorageInventory;
@@ -281,7 +284,8 @@ export class GameDungeonService {
     const outcome = this.createOutcome();
     normalizeMaterialInventory(state.session.dungeonLoot);
     const entries = getMaterialStorageEntries(state.session.dungeonLoot).filter(entry => entry.qty > 0);
-    if (!entries.length) return outcome;
+    const runes=state.session.dungeonRuneLoot??[];
+    if (!entries.length && !runes.length) return outcome;
 
     let total = 0;
     for (const entry of entries) {
@@ -290,7 +294,12 @@ export class GameDungeonService {
       delete state.session.dungeonLoot[String(entry.materialId)];
       total += entry.qty;
     }
-    this.addEvent(outcome, `${total} Material${total === 1 ? '' : 'ien'} aus der Dungeon-Beute ins Lager eingesammelt.`, 'good');
+    const runeCount=runes.length;
+    for(const rune of runes)grantDroppedRune(state,rune);
+    state.session.dungeonRuneLoot=[];
+    if(runeCount)document.dispatchEvent(new Event('rune-workshop-updated'));
+    this.addEvent(outcome,`${total} Materialien und ${runeCount} Runen aus der Dungeon-Beute eingesammelt.`,'good');
+    outcome.saveRequested=true;
     return outcome;
   }
 
@@ -435,6 +444,8 @@ export class GameDungeonService {
     const collect = state.session.dungeonLootCollect;
     if (!collect) return;
 
+    const runeDrops=collect.drops.filter(drop=>drop.runeDefinitionId && RUNE_DEFINITIONS[drop.runeDefinitionId]);
+    for(const drop of runeDrops)(state.session.dungeonRuneLoot??=[]).push(drop.runeDefinitionId!);
     const resolvedDrops = collect.drops
       .map(drop => this.resolveDungeonDrop(drop))
       .filter((drop): drop is { materialId: number; name: string; category: string } => Boolean(drop));
@@ -523,7 +534,7 @@ export class GameDungeonService {
   }
 
   private getLootTotal(state: RuntimeDungeonState): number {
-    return getMaterialStorageEntries(state.session.dungeonLoot).reduce((sum, entry) => sum + entry.qty, 0);
+    return getMaterialStorageEntries(state.session.dungeonLoot).reduce((sum, entry) => sum + entry.qty, 0)+(state.session.dungeonRuneLoot?.length??0);
   }
 
   private playerAttack(
@@ -728,6 +739,8 @@ export class GameDungeonService {
   private rollDrops(enemies: readonly DungeonEnemy[], dungeonId: number): RuntimeDungeonDrop[] {
     const result: RuntimeDungeonDrop[] = [];
     for (const enemy of enemies) {
+      const rune=rollRuneDefinition(Math.random(),Math.random(),Math.random(),dungeonId);
+      if(rune)result.push({runeDefinitionId:rune});
       // Kein Materialwurf verändert den Gegnerpool; der separate Runendrop (S23) bleibt unabhängig.
       if (!materialDropSucceeds(Math.random())) continue;
       if (enemy.boss) {
