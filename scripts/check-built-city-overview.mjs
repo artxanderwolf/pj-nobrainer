@@ -72,6 +72,12 @@ const probeScript = `
         result.legacyHotspotAbsent=!document.querySelector('.city-map-action');
         result.oldDashboardPresent=Boolean(document.querySelector('#base .dashboard-menu'));
         result.baseShellActive=shell.classList.contains('city-overview-active');
+        result.cityScreenLocked=getComputedStyle(shell).overflow==='hidden';
+        result.cityPageFits=document.documentElement.scrollHeight<=window.innerHeight+3;
+        const links=document.querySelector('.city-grid-links');
+        result.quickLinksBelowMap=!!links&&links.getBoundingClientRect().top>=viewport.getBoundingClientRect().top
+          &&links.getBoundingClientRect().bottom<=window.innerHeight+3;
+        result.buildIconVisible=getComputedStyle(document.getElementById('cityBuildMenuButton')).display!=='none';
         result.baseNavDisplay=getComputedStyle(nav).display;
         result.scrollArea=[viewport.scrollWidth,viewport.clientWidth];
         viewport.scrollLeft=viewport.scrollWidth;
@@ -297,6 +303,10 @@ try {
   assert.equal(result.legacyHotspotAbsent,true,'Alte Prozent-Hotspots dürfen nicht weiter benutzt werden.');
   assert.equal(result.oldDashboardPresent,false);
   assert.equal(result.baseShellActive,true);
+  assert.equal(result.cityScreenLocked,true,'Die Stadtansicht muss vertikal auf die feste Fensterhöhe begrenzt sein.');
+  assert.equal(result.cityPageFits,true,'Die Stadtansicht darf die Browserseite nicht vertikal verlängern.');
+  assert.equal(result.quickLinksBelowMap,true,'Die vier Stadtzugänge müssen unter der Karte sichtbar bleiben.');
+  assert.equal(result.buildIconVisible,true,'Das Bau-Icon muss nur in der Stadtansicht sichtbar sein.');
   assert.equal(result.baseNavDisplay,'none');
   assert.equal(result.canScroll,true,'Die 12-Spalten-Stadt muss auf schmalem Bildschirm horizontal bedienbar sein.');
   assert.equal(Object.keys(result.openedPages).length,7,'Alle sieben Stadt-/Lager-/Dungeon-Navigationen müssen funktionieren.');
