@@ -223,6 +223,7 @@ export class GameDungeonSessionService {
   private preservePendingLoot(state: DungeonSessionState): void {
     for (const drop of state.session.dungeonLootCollect?.drops ?? []) {
       if (drop.materialId) addMaterialQuantityById(state.session.dungeonLoot,drop.materialId,1);
+      if (drop.runeDefinitionId) (state.session.dungeonRuneLoot??=[]).push(drop.runeDefinitionId);
     }
     state.session.dungeonLootCollect = null;
   }
