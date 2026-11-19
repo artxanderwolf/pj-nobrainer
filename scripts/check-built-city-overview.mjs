@@ -65,7 +65,7 @@ const probeScript = `
         result.buildingTypes=buildings.map(b=>b.dataset.cityBuildingType);
         result.coords=buildings.map(b=>[getComputedStyle(b).gridColumnStart,getComputedStyle(b).gridRowStart]);
         result.assetKeys=buildings.map(b=>b.dataset.cityAssetKey);
-        result.builderDisabled=document.getElementById('cityBuilding-building-6')?.disabled;
+        result.builderDisabled=document.getElementById('cityBuilding-building-6')?.getAttribute('aria-disabled')==='true';
         result.builderExplanation=document.getElementById('cityBuilding-building-6')?.title;
         result.quickLabels=Array.from(document.querySelectorAll('button[data-city-quick-id]')).map(b=>b.textContent?.trim());
         result.backgroundAbsent=!document.getElementById('cityOverviewBackground');
@@ -133,14 +133,12 @@ const probeScript = `
 
       if(phase===5) {
         if(!active('base')) return;
-        const toggle=document.querySelector('[data-city-move-toggle]');
-        if(!toggle) throw new Error('S09 Verschiebemodus-Schaltfläche fehlt.');
-        toggle.click();
-        const select=document.getElementById('cityMoveBuildingSelect');
-        if(!(select instanceof HTMLSelectElement))throw new Error('S09 Gebäude-Auswahl fehlt.');
+        const button=document.getElementById('cityBuilding-building-3');
+        if(!button)throw new Error('Schmiede fehlt.');
+        button.dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,cancelable:true}));
+        result.contextMenuReady=Boolean(document.querySelector('[data-city-move-context]'));
+        document.querySelector('[data-city-move-context]')?.click();
         result.moveModeReady=!!document.querySelector('[data-city-target-x="4"][data-city-target-y="0"]');
-        select.value='building-3';
-        select.dispatchEvent(new Event('change',{bubbles:true}));
         phase=6;
         return;
       }
@@ -172,9 +170,12 @@ const probeScript = `
           forge?.unitSlots===result.initialBuildings?.[2]?.unitSlots &&
           forge?.activeJobId===result.initialBuildings?.[2]?.activeJobId;
         result.goldAfterMove=snapshot.state?.gold;
+        document.getElementById('cityBuildMenuButton')?.click();
+        result.headerBuildIcon=Boolean(document.querySelector('[data-city-menu-section="expand"]'));
+        document.querySelector('[data-city-menu-section="expand"]')?.click();
         for(const direction of ['left','right','up','down']){
           const button=document.querySelector('[data-city-expand="'+direction+'"]');
-          if(!button)throw new Error('S09 Erweiterungsrichtung fehlt: '+direction);
+          if(!button)throw new Error('S10 Erweiterungsrichtung fehlt: '+direction);
           button.click();
         }
         phase=9;
@@ -193,11 +194,13 @@ const probeScript = `
         result.noConstructionStarted=layout?.buildings?.length===6;
         result.cellCount=document.querySelectorAll('.city-placement-cell').length;
         result.finalNotice=document.querySelector('.city-placement-notice')?.textContent?.trim()||'';
+        document.querySelector('[data-city-menu-back]')?.click();
+        document.querySelector('[data-city-menu-section="build"]')?.click();
         const buildToggle=document.querySelector('[data-city-build-toggle]');
         result.buildTogglePresent=buildToggle instanceof HTMLButtonElement;
-        buildToggle?.click();
         result.buildSelectPresent=document.querySelector('[data-city-build-select]') instanceof HTMLSelectElement;
-        result.build30MinutesShown=Boolean(document.querySelector('.city-placement-tools')?.textContent?.includes('30 Minuten'));
+        result.build30MinutesShown=Boolean(document.querySelector('.city-action-dialog')?.textContent?.includes('30 Minuten'));
+        buildToggle?.click();
         const beforeBuild=JSON.parse(localStorage.getItem('nobrainer_save_v1')||'{}');
         const buildCell=document.querySelector('[data-city-target-x="2"][data-city-target-y="0"]');
         if(!buildCell)throw new Error('S11 Baumodus muss ein freies Zielfeld anbieten.');
@@ -303,6 +306,8 @@ try {
   assert.equal(result.missionsOpened,true,'Missionen müssen über die Stadt geöffnet werden.');
   assert.equal(result.teamOpened,true,'Team 1 muss die richtige Teamansicht öffnen.');
   assert.equal(result.saveUnchanged,true,'Reine Stadtanzeige darf keine Gebäudedaten verlieren.');
+  assert.equal(result.contextMenuReady,true,'Kontextmenü muss über die stabile Gebäude-ID bedienbar sein.');
+  assert.equal(result.headerBuildIcon,true,'Bau-Icon oben rechts muss das Bau-/Erweiterungsmenü öffnen.');
   assert.equal(result.moveModeReady,true,'Verschiebemodus muss für alle Zielfelder bedienbar sein.');
   assert.equal(result.invalidMoveUnchanged,true,'Kollision darf weder State noch Save verändern.');
   assert.match(result.invalidMoveMessage,/belegt/, 'Ungültiges Zielfeld benötigt verständliche Rückmeldung.');
@@ -322,7 +327,7 @@ try {
   assert.equal(result.noConstructionStarted,true,'S09 darf keine kostenlosen zusätzlichen Gebäude bauen.');
   assert.equal(result.cellCount,result.gridAfterExpand.width*result.gridAfterExpand.height,'Zielfeld-Overlay wächst mit.');
   if(purchases>0) assert.match(result.finalNotice,/erweitert/,'Kostenpflichtige Erweiterung muss bestätigt werden.');
-  assert.equal(result.buildTogglePresent,true,'S11 benötigt einen sichtbaren Baumodus.');
+  assert.equal(result.buildTogglePresent,true,'S11 benötigt einen Baumodus im Popup.');
   assert.equal(result.buildSelectPresent,true,'S11 benötigt eine Gebäudetyp-Auswahl.');
   assert.equal(result.build30MinutesShown,true,'S11 zeigt 30 Minuten Bauzeit an.');
   assert.equal(result.buildNoNickelRejected,true,'S11 darf ohne Nickel weder bauen noch abbuchen.');
