@@ -131,6 +131,12 @@ export function canonicalWeaponSlots(slots: readonly WeaponSlot[] | null | undef
   return normalizeWeaponSlots(slots).map(slot => ({ slot: slot.slot, materialId: slot.materialId ?? null }));
 }
 
+/** Crafting presentation no longer exposes the obsolete special part. */
+export function getWeaponForm(weaponForm: string): WeaponFormDefinition {
+  const original=baseline.getWeaponForm(weaponForm);
+  return {...original,parts:original.parts.filter(part=>part.id!=='special')};
+}
+
 /** The special material is retired for all newly created weapons. Historical slots persist in saves. */
 export function getWeaponCraftingSlots(weaponForm: string): baseline.WeaponCraftingSlotId[] {
   return baseline.getWeaponCraftingSlots(weaponForm).filter(slot => slot !== 'special');
@@ -195,7 +201,7 @@ export const GAME_CORE_BRIDGE = {
   ...baseline.GAME_CORE_BRIDGE,
   calculateCharacterStats,
   getMaterialById, normalizeWeaponSlots, canonicalWeaponSlots, isWeaponSelectionComplete, rarityFactor,
-  getWeaponCraftingSlots,
+  getWeaponCraftingSlots, getWeaponForm,
   reinforcementEffectText, reinforcementEffectTextById, calculateWeaponCharacterModifiers, calculateWeaponStats
 };
 
