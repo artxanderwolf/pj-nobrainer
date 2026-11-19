@@ -263,7 +263,8 @@ export class GameForgeService {
   }
 
   claimAll(): number {
-    const ids = (this.getState().forgeReadyJobs ?? []).map(job => job.jobId);
+    const ids = (this.getState().forgeReadyJobs ?? []).map(job => job.jobId)
+      .filter((id): id is string => typeof id === 'string');
     return ids.filter(id => this.claim(id)).length;
   }
 
