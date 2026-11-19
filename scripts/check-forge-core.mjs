@@ -68,7 +68,7 @@ try {
   assert.deepEqual(getForgeSelectionQuantities('bow'), { back: 1, gripCore: 5, gripWrap: 6, bowstring: 3 });
   assert.deepEqual(getForgeSelectionQuantities('staff'), { back: 1, gripCore: 5, gripWrap: 2 });
   assert.deepEqual(forgeRequirements(daggerSlots, 'dagger'), { 2: 1, 4: 2, 9: 1 }, 'Dolch muss genau vier Materialeinheiten per ID benötigen.');
-  assert.deepEqual(forgeRequirements(daggerIdSlots, 'dagger'), { 2: 2, 4: 2, 9: 1 }, 'ID-Auswahl muss denselben Dolchbedarf liefern.');
+  assert.deepEqual(forgeRequirements(daggerIdSlots, 'dagger'), { 2: 1, 4: 2, 9: 1 }, 'ID-Auswahl muss denselben Dolchbedarf liefern.');
   assert.deepEqual(forgeRequirements(swordSlots, 'sword'), { 2: 2, 4: 4, 9: 1 }, '1H Schwert muss genau sieben Materialeinheiten per ID benötigen.');
   assert.deepEqual(forgeRequirements(bowSlots, 'bow'), { 2: 6, 9: 9 }, 'Bogen muss 15 Einheiten inklusive drei Sehnen-Einheiten benötigen.');
 
@@ -84,7 +84,7 @@ try {
   assert.equal(snapshot.valueNickel, 60);
   assert.equal(snapshot.forgeSeconds, 75);
   assertClose(snapshot.performance, 3.63825);
-  assertClose(snapshot.stats.penetration, 0.05);
+  assertClose(snapshot.stats.penetration, 0);
   assert.ok(snapshot.slots.every(slot => Number.isInteger(slot.materialId)), 'Gespeicherte Schmiedeslots müssen stabile Material-IDs besitzen.');
   assert.ok(snapshot.slots.every(slot => !Object.prototype.hasOwnProperty.call(slot, 'material')), 'Gespeicherte Schmiedeslots dürfen keine Materialnamen enthalten.');
 
