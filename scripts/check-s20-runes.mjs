@@ -1,0 +1,26 @@
+import assert from 'node:assert/strict';
+import {calculateWeaponStats} from '../src/app/game/game-core.ts';
+import {RUNE_DEFINITIONS,RUNE_IDS,runeSocketCount,runeDefinitionFromLegacy,applyRuneBonuses,summarizeRuneBonuses,rollRuneDefinition} from '../src/app/game/rune-core.ts';
+assert.equal(RUNE_IDS.length,6);
+for(let n=1;n<=6;n++)assert.equal(runeSocketCount(n),n-1);
+assert.equal(runeSocketCount(100),5);
+assert.equal(runeSocketCount(0),0);
+for(const id of RUNE_IDS){const {kind,amount}=RUNE_DEFINITIONS[id];assert.equal(runeDefinitionFromLegacy({stat:kind,amount}),id);}
+assert.equal(runeDefinitionFromLegacy({stat:'P',amount:.15}),null);
+assert.deepEqual(summarizeRuneBonuses(['rune-p-1','rune-p-2','rune-ds-1','rune-ges-1','rune-ges-2']),{precision:.15000000000000002,penetration:.05,speed:.25});
+const slots=[{slot:'workingPart',materialId:4},{slot:'back',materialId:1},{slot:'gripCore',materialId:1},{slot:'gripWrap',materialId:9},{slot:'special',materialId:1},{slot:'parry',materialId:1}];
+const base=calculateWeaponStats(slots,'sword');
+const five=applyRuneBonuses(base,Array(5).fill('rune-ges-2'));
+assert.ok(Math.abs(five.attackSpeed-base.weaponBaseSpeed*1.75)<1e-10,'Five speed runes are additive');
+const fiveP=applyRuneBonuses(base,Array(5).fill('rune-p-2'));
+assert.ok(Math.abs(fiveP.characterModifiers.precision-base.characterModifiers.precision-.5)<1e-10);
+assert.ok(fiveP.hitChance<=1);
+const fiveDs=applyRuneBonuses(base,Array(5).fill('rune-ds-2'));
+assert.ok(Math.abs(fiveDs.characterModifiers.penetration-base.characterModifiers.penetration-.5)<1e-10);
+assert.ok(fiveDs.penetration<=1);
+assert.equal(rollRuneDefinition(.0005,.01,.01,1),'rune-p-1');
+assert.equal(rollRuneDefinition(.0005,.45,.99,1),'rune-ds-2');
+assert.equal(rollRuneDefinition(.0005,.9,.01,1),'rune-ges-1');
+assert.equal(rollRuneDefinition(.001,0,0,1),null);
+assert.equal(rollRuneDefinition(0,0,0,2),null);
+console.log('S20: six stable runes, rarity sockets S1-S6, additive stacks of five and existing caps passed.');
