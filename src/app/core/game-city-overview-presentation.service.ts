@@ -159,7 +159,8 @@ export class GameCityOverviewPresentationService {
         <h2>Stadtgebäude</h2>
         <p>${gridColumns} × ${gridRows} Felder · ${buildings.length} Gebäude · Berühre ein Gebäude zum Öffnen</p>
       </header>
-      <div class="city-grid-viewport" tabindex="0" role="region" aria-label="Stadtraster, horizontal scrollbar">
+      <div class="city-grid-frame">
+        <div class="city-grid-viewport" tabindex="0" role="region" aria-label="Stadtraster, horizontal und bei Bedarf vertikal verschiebbar">
         <div id="cityGrid" class="city-grid-map" role="group" aria-label="Gebäuderaster" data-grid-width="${gridColumns}" data-grid-height="${gridRows}" style="--city-grid-columns:${gridColumns};--city-grid-rows:${gridRows}">
           ${buildings.map(building => this.renderBuilding(building, layout)).join('')}
           ${moveCells}
@@ -168,6 +169,7 @@ export class GameCityOverviewPresentationService {
       <nav class="city-grid-links" aria-label="Weitere Stadtzugänge">
         <div class="city-grid-link-list">${quickLinks}</div>
       </nav>
+      </div>
       ${tools}
       ${legacyTeamLinks}`;
   }
