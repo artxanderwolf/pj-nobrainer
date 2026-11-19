@@ -1,3 +1,4 @@
+import { ensureFirstRuneWorkshop, type RuneWorldState } from '../game/rune-inventory-core.ts';
 import { GameTavernPresentationService } from './game-tavern-presentation.service';
 import { synchronizeTavernOffers, type TavernOfferWorldState } from '../game/tavern-offers-core.ts';
 import { GameMissionService } from './game-mission.service';
@@ -119,6 +120,7 @@ export class GameRuntimeService {
     const raceMigrationChanged = this.gameState.consumeRaceMigration();
     const healerMigrationChanged = this.gameState.consumeHealerMigration();
     const tavernMigrationChanged = this.gameState.consumeTavernMigration();
+    const runeMigrationChanged = this.gameState.consumeRuneMigration();
     const equipmentRepairs = this.gameEquipment.normalizeEquipment();
     const equipmentChanged = equipmentRepairs.length > 0;
     if (equipmentChanged) {
@@ -198,7 +200,7 @@ export class GameRuntimeService {
       runtime.save(false);
       const after = this.saveStorage.readSnapshot();
       if (after) this.offlineProgress.showSummary(before, after);
-    } else if (equipmentChanged || materialReferencesChanged || dungeonSessionPreparation.saveRequested || dungeonMigrationChanged || cityMigrationChanged || raceMigrationChanged || healerMigrationChanged || tavernMigrationChanged || constructionCompleted || forgeClaimMigrationChanged || marketClaimMigrationChanged || productionWorkerMigrationChanged) {
+    } else if (equipmentChanged || materialReferencesChanged || dungeonSessionPreparation.saveRequested || dungeonMigrationChanged || cityMigrationChanged || raceMigrationChanged || healerMigrationChanged || tavernMigrationChanged || runeMigrationChanged || constructionCompleted || forgeClaimMigrationChanged || marketClaimMigrationChanged || productionWorkerMigrationChanged) {
       runtime.save(false);
     }
 
@@ -275,6 +277,11 @@ export class GameRuntimeService {
 
     const productionReplay = this.replayCityProduction(Date.now());
     const tavernChanged = synchronizeTavernOffers(this.gameState.getState<MutableGameState & TavernOfferWorldState>());
+    const workshopChanged=ensureFirstRuneWorkshop(this.gameState.getState<MutableGameState & RuneWorldState>());
+    if(workshopChanged){
+      runtime.save(false);
+      document.dispatchEvent(new Event('rune-workshop-updated'));
+    }
     if (tavernChanged) {
       runtime.save(false);
       this.tavernPresentation.render();

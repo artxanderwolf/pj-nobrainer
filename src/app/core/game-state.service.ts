@@ -1,3 +1,4 @@
+import { migrateRuneWorld } from '../game/rune-inventory-core.ts';
 import { migrateLegacyHealers } from '../game/healer-migration-core.ts';
 import { synchronizeTavernOffers } from '../game/tavern-offers-core.ts';
 import { migrateCharacterRaces } from '../game/character-race-core.ts';
@@ -41,6 +42,13 @@ export class GameStateService {
   private raceMigrationPending = false;
   private healerMigrationPending = false;
   private tavernMigrationPending = false;
+  private runeMigrationPending = false;
+
+  consumeRuneMigration(): boolean {
+    const pending=this.runeMigrationPending;
+    this.runeMigrationPending=false;
+    return pending;
+  }
 
   consumeTavernMigration(): boolean {
     const pending = this.tavernMigrationPending;
@@ -133,5 +141,6 @@ export class GameStateService {
     this.cityMigrationPending = initializeCityConstruction(this.state) || this.cityMigrationPending;
     this.cityMigrationPending = reconcileCityTeamBuildings(this.state) || this.cityMigrationPending;
     this.tavernMigrationPending = synchronizeTavernOffers(this.state);
+    this.runeMigrationPending = migrateRuneWorld(this.state);
   }
 }

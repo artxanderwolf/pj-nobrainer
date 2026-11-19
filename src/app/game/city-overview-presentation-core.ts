@@ -53,7 +53,8 @@ const PAGE_BY_TYPE: Partial<Record<CityBuildingTypeId, string>> = {
   roster: 'roster',
   tavern: 'tavern',
   forge: 'forge',
-  market: 'market'
+  market: 'market',
+  runeWorkshop: 'rune-workshop'
 };
 
 /** Jeder Zugriff wird mit der aktuellen Team- und Gebäude-ID geprüft. */

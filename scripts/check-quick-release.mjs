@@ -102,13 +102,17 @@ try{
     const normal=createDungeonEnemy(1,'recruit',did),boss=createDungeonEnemy(1,'recruit',did,true);
     assert.equal(boss.maxHp,normal.maxHp*10);assert.equal(boss.damage,normal.damage*2);assert.equal(boss.speed,.8);
     const service=new GameDungeonService({getState:()=>({})});Math.random=()=>0;
-    const drops=service.rollDrops([boss],did);assert.equal(drops.length,5);assert.equal(new Set(drops.map(d=>d.materialId)).size,5);
+    const drops=service.rollDrops([boss],did);
+    const materials=drops.filter(drop=>Number.isInteger(drop.materialId));
+    assert.equal(materials.length,5);
+    assert.equal(new Set(materials.map(d=>d.materialId)).size,5);
+    assert.equal(drops.some(d=>d.runeDefinitionId),did===1,'Nur Dungeon 1 darf unabhängige Rune droppen');
   }
   assert.equal(createDungeonEnemies(1,()=>0,2,()=>.009999)[0].boss,true);assert.equal(createDungeonEnemies(1,()=>0,2,()=>.01)[0].boss,false);
   const service=new GameDungeonService({getState:()=>({})});
   for(const [roll,id] of [[0,10],[.49999,10],[.50001,11],[.79999,11],[.80001,12],[.94999,12],[.95001,13]]){
     let draw=0;
-    Math.random=()=>draw++===0?.5:roll; // erst 60-%-Erfolgswurf, dann der unveränderte Materialpool
+    Math.random=()=>draw++===4?roll:.5; // drei unabhängige Rune-Würfe, dann Materialchance und gewichteter Pool
     assert.equal(service.rollDrops([createDungeonEnemy(1,'recruit',2)],2)[0].materialId,id);
   }
   Math.random=()=>.6;

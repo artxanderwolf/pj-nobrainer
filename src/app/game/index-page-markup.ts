@@ -28,6 +28,14 @@ export const INDEX_PAGE_MARKUP = `<section class="page" id="index">
           <div class="formula">Dungeon 1: Neuling und Tank besitzen zwei Material-IDs; Jäger und Lehrling besitzen drei. Lederfetzen droppen nur bei Jäger und Lehrling. Jeder besiegte Gegner lässt mit 60 % Chance Material fallen, mit 40 % gar keines. Erst nach erfolgreichem Wurf wird wie bisher genau ein Material aus seinem Pool ausgewählt; Drop% bleibt das relative Gewicht innerhalb dieses Pools.</div>
         </div>
 
+        <div class="card span-12" data-rune-system-help>
+          <h2>Runen, Sockel und Runenwerkstatt (S20–S23)</h2>
+          <p class="index-note">Neue Waffen benötigen kein Spezialbauteil mehr. Die Waffenqualität richtet sich nach der niedrigsten Seltenheit der übrigen erforderlichen Bauteile. S1 besitzt 0, S2 1, S3 2, S4 3, S5 4 und das technisch vorbereitete S6 5 reguläre Runensockel. Mit den derzeitigen Materialien sind nur S1 bis S5 erreichbar.</p>
+          <p class="index-note">Runen sind einzelne Gegenstände mit stabilen IDs. Präzision P gibt +5% oder +10%, Durchschlag DS +5% oder +10%, Geschwindigkeit GES +10% oder +15%. Gleiche und unterschiedliche Runen addieren ihre Boni in den bisherigen Waffen- und Kampfwerten. Es gelten weiterhin die bekannten Treffer-/Durchschlag-Grenzen, keine zusätzliche Runenkappung.</p>
+          <p class="index-note">Nur im Trainingslager (Dungeon 1) besteht je besiegtem Gegner eine unabhängige Chance von 0,1% auf eine Rune. Jeder Runentyp hat 1/3 Anteil, Runenstufe I 80% und II 20%. Dieser Wurf ist vollständig unabhängig vom 60%-Materialwurf. Runen werden mit der Dungeonbeute bewusst eingesammelt.</p>
+          <p class="index-note">Nach dem ersten eingesammelten Runenfund wird die erste Runenwerkstatt kostenlos als eigenes 2×2-Stadtgebäude freigeschaltet und auf einem freien Feld platziert. Falls kein Platz frei ist, schaffe durch Verschieben oder Erweitern Platz; die Werkstatt wird danach kostenlos platziert. Berühre die Runenwerkstatt in der Stadt und wähle Waffe, Sockel und Rune. Das Einsetzen, Tauschen und Entfernen kostet nichts. Entfernte Runen sind erneut im Runenlager verfügbar.</p>
+          <p class="index-note">Bisherige Waffen mit Spezialmaterial werden einmalig automatisch auf entsprechende Runen umgestellt; Namen, Ausrüstung, Qualität und alte Auftragssnapshots bleiben erhalten. Falls eine alte S1-Waffe keinen regulären Sockel hat, trägt sie ihre vorhandene Rune in einem Bestandsschutzplatz. Dieser erlaubt keine neue Rune und verschwindet nach dem Entfernen dauerhaft.</p>
+        </div>
         <div class="card span-12">
           <h2>Bauteile & Materialwirkung</h2>
           <p class="index-note">Die Materialmenge bestimmt ausschließlich den Verbrauch. Der Stat eines gewählten Materials wird pro Bauteil genau einmal angewendet, unabhängig davon, ob der Bauplan für dieses Bauteil eine oder mehrere Materialeinheiten verlangt.</p>
@@ -38,7 +46,6 @@ export const INDEX_PAGE_MARKUP = `<section class="page" id="index">
               <tr><td>Kern</td><td>Ja</td><td>Ja</td><td>Nein</td><td>R</td><td>Übernimmt die Rüstungs-Prozentpunkte des Materials.</td></tr>
               <tr><td>Griff</td><td>Nein</td><td>Ja</td><td>Nein</td><td>P</td><td>Übernimmt die Präzision des Materials.</td></tr>
               <tr><td>Wicklung</td><td>Nein</td><td>Nein</td><td>Ja</td><td>K-C</td><td>Übernimmt die Krit-Chance des Materials.</td></tr>
-              <tr><td>Spezial</td><td>Ja</td><td>Ja</td><td>Ja</td><td>SPE</td><td>Aktiviert SPE und SPE% des Materials.</td></tr>
               <tr><td>Parierstange</td><td>Ja</td><td>Ja</td><td>Nein</td><td>R + AW</td><td>Übernimmt Rüstungs-Prozentpunkte und Ausweichen des Materials.</td></tr>
               <tr><td>Sehne</td><td>Nein</td><td>Nein</td><td>Ja</td><td>SF + DS</td><td>Übernimmt Schadensfaktor und Durchschlag des Leders.</td></tr>
             </tbody>
@@ -50,15 +57,15 @@ export const INDEX_PAGE_MARKUP = `<section class="page" id="index">
           <p class="index-note">Die Seite „Waffe herstellen“ zeigt Waffenwahl, benötigte Bauteile und „Weiter zur Vorschau“ gemeinsam in einer kompakten, nicht scrollenden Ansicht. Auch die Waffenwahl selbst besitzt keinen Scrollbereich. Solange eine Waffenform noch für die nächste Freischaltung gefertigt werden muss, steht der Fortschritt als x/10 am Namen; sobald 10/10 erreicht und die nächste Stufe freigeschaltet ist, wird dieser Fortschritt ausgeblendet.</p>
           <p class="index-note"><strong>Einhändig</strong> ist reine Ausrüstungsmetadaten und kein Bauslot: 1 = belegt eine Hand, 0 = belegt beide Hände.</p>
           <div class="table-wrap mobile-stack"><table>
-            <thead><tr><th>Waffe</th><th>Einhändig</th><th>Schneide</th><th>Kern</th><th>Griff</th><th>Wicklung</th><th>Spezial</th><th>Parierstange</th><th>Sehne</th><th>Gesamt</th></tr></thead>
+            <thead><tr><th>Waffe</th><th>Einhändig</th><th>Schneide</th><th>Kern</th><th>Griff</th><th>Wicklung</th><th>Parierstange</th><th>Sehne</th><th>Gesamt</th></tr></thead>
             <tbody>
-              <tr><td>Dolch</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>0</td><td>5</td></tr>
-              <tr><td>1H Schwert</td><td>1</td><td>2</td><td>2</td><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>8</td></tr>
-              <tr><td>1H Axt</td><td>1</td><td>1</td><td>1</td><td>3</td><td>2</td><td>1</td><td>0</td><td>0</td><td>8</td></tr>
-              <tr><td>2H Schwert</td><td>0</td><td>4</td><td>4</td><td>2</td><td>1</td><td>1</td><td>2</td><td>0</td><td>14</td></tr>
-              <tr><td>2H Axt</td><td>0</td><td>2</td><td>2</td><td>6</td><td>3</td><td>1</td><td>0</td><td>0</td><td>14</td></tr>
-              <tr><td>Bogen</td><td>0</td><td>0</td><td>1</td><td>5</td><td>6</td><td>1</td><td>0</td><td>3</td><td>16</td></tr>
-              <tr><td>Stab</td><td>0</td><td>0</td><td>1</td><td>5</td><td>2</td><td>1</td><td>0</td><td>0</td><td>9</td></tr>
+              <tr><td>Dolch</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>0</td><td>4</td></tr>
+              <tr><td>1H Schwert</td><td>1</td><td>2</td><td>2</td><td>1</td><td>1</td><td>1</td><td>0</td><td>7</td></tr>
+              <tr><td>1H Axt</td><td>1</td><td>1</td><td>1</td><td>3</td><td>2</td><td>0</td><td>0</td><td>7</td></tr>
+              <tr><td>2H Schwert</td><td>0</td><td>4</td><td>4</td><td>2</td><td>1</td><td>2</td><td>0</td><td>13</td></tr>
+              <tr><td>2H Axt</td><td>0</td><td>2</td><td>2</td><td>6</td><td>3</td><td>0</td><td>0</td><td>13</td></tr>
+              <tr><td>Bogen</td><td>0</td><td>0</td><td>1</td><td>5</td><td>6</td><td>0</td><td>3</td><td>15</td></tr>
+              <tr><td>Stab</td><td>0</td><td>0</td><td>1</td><td>5</td><td>2</td><td>0</td><td>0</td><td>8</td></tr>
             </tbody>
           </table></div>
         </div>
@@ -152,14 +159,14 @@ export const INDEX_PAGE_MARKUP = `<section class="page" id="index">
           <div class="formula">Finaler Charakterstat = skalierte Klassenbasis + Waffenform-Boni + wirksame Bauteilwerte aller ausgerüsteten Waffen</div>
           <div class="formula">Bedrohung = unveränderter Klassen-Grundwert; Level und Ausrüstung werden für B ignoriert</div>
           <div class="formula">Schaden pro Treffer = Waffen-Grund-SCH × finaler SF</div>
-          <div class="formula">Angriffsgeschwindigkeit = Waffen-Grund-GES × eigener SPE-GES-Faktor</div>
+          <div class="formula">Angriffsgeschwindigkeit = Waffen-Grund-GES × (1 + additive GES-Runenboni)</div>
           <div class="formula">Trefferchance = Waffen-Grund-TRF × finale P, begrenzt auf 0–100 %</div>
           <div class="formula">Durchschlag = finaler DS</div>
           <div class="formula">Kritischer Treffer: K-C bestimmt die Chance; Schaden wird mit finalem K-S multipliziert</div>
           <div class="formula">Rüstung = additive Prozentpunkte, begrenzt auf maximal 80 %</div>
           <div class="formula">Effektive Rüstung = min(80 %, Ziel-Rüstung) × (1 − DS)</div>
           <div class="formula">Trefferschaden nach Rüstung = Angriffsschaden × (1 − effektive Rüstung / 100)</div>
-          <p class="index-note">SPE wirkt nur im Spezial-Bauteil: GES verändert die Geschwindigkeit der betreffenden Waffe, P erhöht die Charakter-Präzision und DS erhöht den Charakter-Durchschlag.</p>
+          <p class="index-note">An neuen Waffen wirkt kein Material-Spezialbauteil mehr. P/DS/GES-Effekte werden ausschließlich über die eingesetzten Runen berechnet. Die SPE-Informationen der Materialtabelle bleiben zur Einordnung alter Materialien und des Rohmaterialverkaufs sichtbar.</p>
         </div>
 
         <div class="card span-5">
@@ -189,7 +196,7 @@ export const INDEX_PAGE_MARKUP = `<section class="page" id="index">
           <div class="formula">Herstellungszeit = auf nächste 5 s aufrunden(30 s + 0,7 s × Waffenwert)</div>
           <div class="formula">Waffen-Verkaufszeit = auf nächste 5 s aufrunden(15 s + 0,5 s × Waffenwert)</div>
           <p class="index-note">Die festen Prüfrüstungen 0/40/80 sind unabhängig vom Dungeon und decken das aktuelle Prozent-Rüstungssystem bis zum 80-%-Cap ab. Dadurch verändert ein neues Dungeon-Balancing nicht automatisch den Marktwert bestehender Waffen.</p>
-          <p class="index-note">Der positive SPE-Bonus von 10 % gilt nur beim direkten Verkauf eines Rohmaterials. Bei fertigen Waffen gibt es keinen zweiten pauschalen SPE-Bonus: GES-, P- und DS-Effekte fließen über die tatsächlichen Waffenwerte bereits in den Leistungswert ein.</p>
+          <p class="index-note">Der positive SPE-Bonus von 10 % gilt nur beim direkten Verkauf eines Rohmaterials. Bei neuen fertigen Waffen gibt es keinen pauschalen Spezialmaterial-Bonus mehr: Eingesetzte Runen wirken über die tatsächlichen Waffenwerte auf den Leistungswert.</p>
           <p class="index-note">Die Seltenheit einer Waffe bleibt eine sichtbare Materialeigenschaft, bestimmt aber nicht mehr direkt Waffenwert, Herstellungszeit oder Waffen-Verkaufszeit. Materialmenge verändert weiterhin nur den Verbrauch, nicht den Statbeitrag eines Bauteils.</p>
           <p class="index-note">Die klassenabhängigen Waffenfreigaben sind aktiv. Waffen können unabhängig davon hergestellt, gelagert und verkauft werden, ob eine bestimmte Klasse sie tragen darf. Die vorbereiteten Schildfreigaben führen noch keine Schilde ein; Rüstungsklassen bleiben eine spätere Erweiterung.</p>
           <div class="formula">Material-Verkaufserlös = Materialwert pro Stück × Verkaufsmenge</div>

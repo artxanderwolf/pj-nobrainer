@@ -1,3 +1,4 @@
+import { RUNE_DEFINITIONS } from '../game/rune-core.ts';
 import { DUNGEON_IDS, dungeonSessionActive } from '../game/parallel-dungeon-core.ts';
 import { teamIds, getTeamSession, assignTeamCharacter, characterTeamReservation, selectTeamDungeon, type TeamSessionState } from '../game/team-core.ts';
 import { dungeonUnlocked } from '../game/mission-core.ts';
@@ -321,10 +322,12 @@ export class GameDungeonPresentationService {
     const collect = document.getElementById('dungeonCollectLootBtn') as HTMLButtonElement | null;
     if (!box || !empty || !collect) return;
     const entries = getMaterialStorageEntries(state.session.dungeonLoot).filter(entry => entry.qty > 0);
-    box.innerHTML = entries.map(entry => `<span class="loot-chip">${entry.displayName}<b>×${entry.qty}</b></span>`).join('');
-    empty.style.display = entries.length ? 'none' : 'block';
-    collect.textContent = entries.length ? `Einsammeln (${entries.reduce((sum, entry) => sum + entry.qty, 0)})` : 'Einsammeln';
-    collect.disabled = !entries.length || this.dungeonSession.isRunActive();
+    const runes=state.session.dungeonRuneLoot??[];
+    box.innerHTML = entries.map(entry => `<span class="loot-chip">${entry.displayName}<b>×${entry.qty}</b></span>`).join('')+
+      runes.map(id=>`<span class="loot-chip">✧ ${RUNE_DEFINITIONS[id]?.label??id}<b>×1</b></span>`).join('');
+    empty.style.display = entries.length||(state.session.dungeonRuneLoot?.length??0) ? 'none' : 'block';
+    collect.textContent = entries.length||runes.length ? `Einsammeln (${entries.reduce((sum, entry) => sum + entry.qty, 0)+runes.length})` : 'Einsammeln';
+    collect.disabled = !(entries.length||runes.length) || this.dungeonSession.isRunActive();
   }
 
   private renderPrimaryAction(): void {
@@ -463,7 +466,7 @@ export class GameDungeonPresentationService {
   }
 
   private getLootTotal(state: DungeonPresentationState): number {
-    return getMaterialStorageEntries(state.session.dungeonLoot).reduce((sum, entry) => sum + entry.qty, 0);
+    return getMaterialStorageEntries(state.session.dungeonLoot).reduce((sum, entry) => sum + entry.qty, 0)+(state.session.dungeonRuneLoot?.length??0);
   }
 
   private getAliveEnemyCount(state: DungeonPresentationState): number {

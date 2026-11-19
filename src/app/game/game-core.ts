@@ -4,6 +4,7 @@ import type {
   CharacterStatModifiers,
   MaterialDefinition,
   WeaponPartRequirement,
+  WeaponFormDefinition,
   WeaponSlot as BaselineWeaponSlot,
   WeaponStats
 } from './game-core-v01310-baseline.ts';
@@ -131,15 +132,26 @@ export function canonicalWeaponSlots(slots: readonly WeaponSlot[] | null | undef
   return normalizeWeaponSlots(slots).map(slot => ({ slot: slot.slot, materialId: slot.materialId ?? null }));
 }
 
+/** Crafting presentation no longer exposes the obsolete special part. */
+export function getWeaponForm(weaponForm: string | null | undefined): WeaponFormDefinition {
+  const original=baseline.getWeaponForm(weaponForm);
+  return {...original,parts:original.parts.filter(part=>part.id!=='special')};
+}
+
+/** The special material is retired for all newly created weapons. Historical slots persist in saves. */
+export function getWeaponCraftingSlots(weaponForm: string): baseline.WeaponCraftingSlotId[] {
+  return baseline.getWeaponCraftingSlots(weaponForm).filter(slot => slot !== 'special');
+}
+
 export function isWeaponSelectionComplete(slots: readonly WeaponSlot[] | null | undefined, weaponForm: string): boolean {
   const selected = new Map(normalizeWeaponSlots(slots).map(entry => [entry.slot, entry.materialId]));
-  return baseline.getWeaponCraftingSlots(weaponForm).every(slot => {
+  return getWeaponCraftingSlots(weaponForm).every(slot => {
     const materialId = Number(selected.get(slot));
     return Number.isInteger(materialId) && materialId > 0 && getMaterialReferenceById(materialId) !== null;
   });
 }
 export function rarityFactor(slots: readonly WeaponSlot[] | null | undefined): number {
-  const rarities = normalizeWeaponSlots(slots).filter(entry => entry.slot !== 'baseMaterial').map(entry => getMaterialDefinitionById(entry.materialId)?.rarity).filter((value): value is number => Number.isFinite(value));
+  const rarities = normalizeWeaponSlots(slots).filter(entry => entry.slot !== 'baseMaterial' && entry.slot !== 'special').map(entry => getMaterialDefinitionById(entry.materialId)?.rarity).filter((value): value is number => Number.isFinite(value));
   return rarities.length ? Math.min(...rarities) : 1;
 }
 
@@ -149,27 +161,23 @@ function selectedMaterial(slots: readonly WeaponSlot[], slotId: string): Materia
 function partModifiers(part: WeaponPartRequirement, material: MaterialDefinition | null): CharacterStatModifiers {
   const modifiers = createModifiers(); if (!material) return modifiers;
   for (const key of part.statKeys) modifiers[key] += Number(material.stats[key]) || 0;
-  if (part.id === 'special' && material.specialEffect) {
-    if (material.specialEffect.stat === 'P') modifiers.precision += material.specialEffect.amount;
-    if (material.specialEffect.stat === 'DS') modifiers.penetration += material.specialEffect.amount;
-  }
   return modifiers;
 }
 
 /** Waffenmodifikatoren werden ausschließlich über materialId aufgelöst. */
 export function calculateWeaponCharacterModifiers(slots: readonly WeaponSlot[] | null | undefined, weaponForm: string): CharacterStatModifiers {
   const normalized = normalizeWeaponSlots(slots); const form = baseline.getWeaponForm(weaponForm); const modifiers = createModifiers(form.characterModifiers);
-  for (const part of form.parts) addModifiers(modifiers, partModifiers(part, selectedMaterial(normalized, part.materialSlot)));
+  for (const part of form.parts) if (part.id !== 'special') addModifiers(modifiers, partModifiers(part, selectedMaterial(normalized, part.materialSlot)));
   modifiers.threat = 0; return modifiers;
 }
 
 /** Waffenwerte sind ID-nativ; Materialnamen werden nicht in den Stat-Snapshot geschrieben. */
 export function calculateWeaponStats(slots: readonly WeaponSlot[] | null | undefined, weaponForm: string): WeaponStats {
   const normalized = normalizeWeaponSlots(slots); const form = baseline.getWeaponForm(weaponForm); const modifiers = calculateWeaponCharacterModifiers(normalized, weaponForm);
-  const workingPart = selectedMaterial(normalized, 'workingPart'); const specialEffect = selectedMaterial(normalized, 'special')?.specialEffect ?? null;
-  const specialSpeedFactor = specialEffect?.stat === 'GES' ? 1 + specialEffect.amount : 1;
-  const reinforcementHitChanceAdd = specialEffect?.stat === 'P' ? specialEffect.amount : 0;
-  const reinforcementPenetrationAdd = specialEffect?.stat === 'DS' ? specialEffect.amount : 0;
+  const workingPart = selectedMaterial(normalized, 'workingPart');
+  const specialSpeedFactor = 1;
+  const reinforcementHitChanceAdd = 0;
+  const reinforcementPenetrationAdd = 0;
   const damagePerHit = form.baseDamage * Math.max(0, 1 + modifiers.strengthFactor);
   const attackSpeed = form.baseSpeed * Math.max(0.01, specialSpeedFactor);
   const hitChance = Math.max(0, Math.min(1, form.baseHitChance * Math.max(0, 1 + modifiers.precision)));
@@ -185,7 +193,7 @@ export function calculateWeaponStats(slots: readonly WeaponSlot[] | null | undef
 }
 
 export function getStarterBlueprint() {
-  const slots: WeaponSlot[] = [{slot:'workingPart',materialId:4},{slot:'back',materialId:1},{slot:'gripCore',materialId:1},{slot:'gripWrap',materialId:9},{slot:'special',materialId:1},{slot:'parry',materialId:1}];
+  const slots: WeaponSlot[] = [{slot:'workingPart',materialId:4},{slot:'back',materialId:1},{slot:'gripCore',materialId:1},{slot:'gripWrap',materialId:9},{slot:'parry',materialId:1}];
   return {slots,stats:calculateWeaponStats(slots,'sword')};
 }
 
@@ -194,6 +202,7 @@ export const GAME_CORE_BRIDGE = {
   ...baseline.GAME_CORE_BRIDGE,
   calculateCharacterStats,
   getMaterialById, normalizeWeaponSlots, canonicalWeaponSlots, isWeaponSelectionComplete, rarityFactor,
+  getWeaponCraftingSlots, getWeaponForm,
   reinforcementEffectText, reinforcementEffectTextById, calculateWeaponCharacterModifiers, calculateWeaponStats
 };
 
