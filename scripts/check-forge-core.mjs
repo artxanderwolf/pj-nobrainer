@@ -77,7 +77,7 @@ try {
   assert.equal(hasForgeMaterials(inventory, swordRequirements), true);
   assert.equal(reserveForgeMaterials(inventory, swordRequirements), true);
   assert.equal(inventory.Zinn, undefined);
-  assert.equal(inventory.Fichte.qty, 1);
+  assert.equal(inventory['2']?.qty, 1, 'Restbestand muss nach ID-Migration erhalten bleiben.');
   assert.equal(inventory.Lederfetzen, undefined);
 
   const snapshot = calculateWeaponBalanceSnapshot('sword', swordSlots);
