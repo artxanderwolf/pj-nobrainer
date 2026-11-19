@@ -2,6 +2,7 @@ import {
   calculateWeaponStats, getMaterialDefinitionById, normalizeWeaponSlots, rarityFactor,
   type WeaponSlot, type WeaponStats
 } from './game-core.ts';
+import type { ForgeJob } from './forge-core.ts';
 import { placeCityBuilding } from './city-placement-core.ts';
 import type { CityLayoutWorldState } from './city-layout-core.ts';
 import {
@@ -16,6 +17,7 @@ export interface RuneItem {
 }
 export interface RunedWeapon {
   id: number;
+  name: string;
   weaponForm: string;
   slots: WeaponSlot[];
   stats?: WeaponStats;
@@ -28,13 +30,10 @@ export interface RunedWeapon {
   legacyRuneItemId?: string|null;
   runeMigrationVersion?: number;
 }
-export interface RunedForgeJob {
-  slots: WeaponSlot[];
-  weaponForm: string;
-  stats?: WeaponStats;
-  valueNickel?: number;
-  performance?: number;
-  totalSeconds?: number;
+export interface RunedForgeJob extends ForgeJob {
+  /** The S14 claim system supplies these when the job becomes identified. */
+  jobId?: string;
+  status?: 'queued' | 'active' | 'ready' | 'claimed';
   /** Existing jobs are finalized using their stored reservation/economy snapshot. */
   legacyForgeJob?: boolean;
   legacyRuneDefinitionId?: RuneDefinitionId|null;
