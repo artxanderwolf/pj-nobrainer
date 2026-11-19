@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {createInitialCityLayout} from '../src/app/game/city-layout-core.ts';
-import {calculateWeaponStats,normalizeWeaponSlots,getMaterialReferenceById,rarityFactor, type WeaponSlot} from '../src/app/game/game-core.ts';
+import {calculateWeaponStats,normalizeWeaponSlots,getMaterialReferenceById,rarityFactor} from '../src/app/game/game-core.ts';
 import {
   migrateRuneWorld,migrateClaimedLegacyWeapon,grantDroppedRune,ensureFirstRuneWorkshop,
   availableRuneItems,equipRune,removeRune,replaceRune,recomputeRunedWeapon,validateRuneReferences
