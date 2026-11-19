@@ -208,6 +208,7 @@ export function calculateWeaponBalanceSnapshot(
 }
 
 export function refreshForgeJobBalance(job: ForgeJob, preserveDuration: boolean): boolean {
+  if ((job as ForgeJob & {legacyForgeJob?:boolean}).legacyForgeJob) return false; // Preserve all reserved old special-part jobs.
   const snapshot = calculateWeaponBalanceSnapshot(job.weaponForm, job.slots);
   const changed = JSON.stringify(job.slots) !== JSON.stringify(snapshot.slots)
     || JSON.stringify(job.stats) !== JSON.stringify(snapshot.stats)
