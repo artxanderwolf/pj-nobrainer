@@ -6,7 +6,7 @@ Systemgetriebenes Dungeon-, Crafting- und Stadtmanagementspiel mit einer gemeins
 
 - Entwicklungs- und Web-Testbranch: `migration/angular`
 - S20–S23 (Etappe E) integriert: Runen, Altwaffenmigration, Runenwerkstatt und Dungeon-1-Runendrops
-- App-Version: **v0.23.0.0**; Save-Version: **27**
+- App-Version: **v0.24.0.0**; Save-Version: **27**
 - Etappe F/S24: Gesamtprüfung und Releasevorbereitung – gesonderte Abschlussfreigabe erforderlich
 - Der ursprüngliche HTML-Prototyp `NoBrainer_GitHub_v0.12.2.html` bleibt ausschließlich als historische Kompatibilitäts-/Regressionstestquelle im Repository. Er ist **nicht** der produktive Spielstand.
 - Eine neue Webversion bedeutet **nicht** automatisch einen Android-Release. Eine Android-Veröffentlichung erfordert die gesonderte Freigabe und den bestehenden Release-Signierschlüssel.
