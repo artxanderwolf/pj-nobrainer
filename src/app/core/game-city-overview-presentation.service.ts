@@ -332,6 +332,7 @@ export class GameCityOverviewPresentationService {
       state.cityLayout = existing;
       this.moveNotice = 'Speichern fehlgeschlagen. Das Gebäude steht weiterhin am ursprünglichen Platz.';
     }
+    this.moveMode = false;
     this.render();
   }
 
@@ -351,6 +352,7 @@ export class GameCityOverviewPresentationService {
           throw new Error('Der Spielstand konnte nicht geschrieben werden.');
         }
         this.moveNotice = `Stadtfläche für ${result.costNickel.toLocaleString('de-DE')} Nickel um vier Felder erweitert.`;
+        this.cityMenu = 'closed';
       }
     } catch {
       state.cityLayout = oldLayout;
@@ -422,85 +424,80 @@ export class GameCityOverviewPresentationService {
     </button>`;
   }
 
-  private readonly handleClick = (event: Event): void => {
-    if (!(event.target instanceof Element)) return;
-    const buildToggle = event.target.closest<HTMLButtonElement>('[data-city-build-toggle]');
-    if (buildToggle && this.root?.contains(buildToggle)) {
-      this.buildMode = !this.buildMode;
-      if (this.buildMode) this.moveMode = false;
-      this.moveNotice = this.buildMode ? 'Gebäudetyp wählen und ein freies 2×2-Feld antippen.' : 'Baumodus beendet.';
-      this.render();
+  private readonly handleClick = (event:Event):void=>{
+    if(!(event.target instanceof Element))return;
+    const close=event.target.closest<HTMLElement>('[data-city-menu-close],[data-city-menu-backdrop]');
+    if(close&&this.root?.contains(close)&&(close===event.target||close.hasAttribute('data-city-menu-close'))){
+      this.contextBuildingId=null;this.cityMenu='closed';this.render();return;
+    }
+    const back=event.target.closest<HTMLElement>('[data-city-menu-back]');
+    if(back&&this.root?.contains(back)){this.cityMenu='main';this.render();return;}
+    const section=event.target.closest<HTMLElement>('[data-city-menu-section]');
+    if(section&&this.root?.contains(section)){
+      const value=section.dataset['cityMenuSection'];
+      if(value==='build'||value==='expand'){this.cityMenu=value;this.render();}
       return;
     }
-    const cancel = event.target.closest<HTMLButtonElement>('[data-city-build-cancel]');
-    if (cancel && this.root?.contains(cancel)) {
-      this.applyCancel(cancel.dataset['cityBuildCancel'] ?? '');
+    const moveContext=event.target.closest<HTMLElement>('[data-city-move-context]');
+    if(moveContext&&this.root?.contains(moveContext)){
+      this.moveBuildingId=this.contextBuildingId;
+      this.contextBuildingId=null;this.moveMode=true;this.buildMode=false;
+      this.moveNotice='Tippe auf ein freies Zielfeld für dieses Gebäude.';
+      this.render();return;
+    }
+    const modeCancel=event.target.closest<HTMLElement>('[data-city-mode-cancel]');
+    if(modeCancel&&this.root?.contains(modeCancel)){
+      this.moveMode=false;this.buildMode=false;this.moveNotice='';this.render();return;
+    }
+    const buildToggle=event.target.closest<HTMLElement>('[data-city-build-toggle]');
+    if(buildToggle&&this.root?.contains(buildToggle)){
+      this.buildMode=true;this.moveMode=false;this.cityMenu='closed';
+      this.moveNotice='Freies 2×2-Feld auf der Karte antippen.';
+      this.render();return;
+    }
+    const cancel=event.target.closest<HTMLElement>('[data-city-build-cancel]');
+    if(cancel&&this.root?.contains(cancel)){
+      this.applyCancel(cancel.dataset['cityBuildCancel']??'');return;
+    }
+    const expand=event.target.closest<HTMLElement>('[data-city-expand]');
+    if(expand&&this.root?.contains(expand)){
+      const direction=expand.dataset['cityExpand'];
+      if(direction==='left'||direction==='right'||direction==='up'||direction==='down')this.applyExpansion(direction);
       return;
     }
-    const toggle = event.target.closest<HTMLButtonElement>('[data-city-move-toggle]');
-    if (toggle && this.root?.contains(toggle)) {
-      this.moveMode = !this.moveMode;
-      if (this.moveMode) this.buildMode = false;
-      if (this.moveMode && !this.moveBuildingId) {
-        const state = this.gameState.getState<MutableGameState & CityLayoutWorldState>();
-        this.moveBuildingId = state.cityLayout?.buildings[0]?.buildingInstanceId ?? null;
-      }
-      this.moveNotice = this.moveMode
-        ? 'Gebäude auswählen und ein Zielfeld auf dem Raster antippen.'
-        : 'Verschiebemodus beendet.';
-      this.render();
+    const cell=event.target.closest<HTMLElement>('[data-city-target-x][data-city-target-y]');
+    if(cell&&this.root?.contains(cell)){
+      const x=Number(cell.dataset['cityTargetX']),y=Number(cell.dataset['cityTargetY']);
+      if(this.buildMode)this.applyBuild(x,y);
+      else this.applyMove(x,y);
       return;
     }
-
-    const expand = event.target.closest<HTMLButtonElement>('[data-city-expand]');
-    if (expand && this.root?.contains(expand)) {
-      const direction = expand.dataset['cityExpand'];
-      if (direction === 'left' || direction === 'right' || direction === 'up' || direction === 'down') {
-        this.applyExpansion(direction);
-      }
-      return;
-    }
-
-    const cell = event.target.closest<HTMLButtonElement>('[data-city-target-x][data-city-target-y]');
-    if (cell && this.root?.contains(cell)) {
-      const x = Number(cell.dataset['cityTargetX']), y = Number(cell.dataset['cityTargetY']);
-      if (this.buildMode) this.applyBuild(x, y);
-      else this.applyMove(x, y);
-      return;
-    }
-
-    const buildingButton = event.target.closest<HTMLButtonElement>('button[data-city-building-id]');
-    if (buildingButton && this.root?.contains(buildingButton) && !buildingButton.disabled) {
-      const state = this.gameState.getState<MutableGameState & TeamWorldState & CityLayoutWorldState>();
-      if (!state.cityLayout) return;
-      const building = getCityOverviewPresentation(state.cityLayout, teamIds(state))
-        .find(item => item.buildingInstanceId === buildingButton.dataset['cityBuildingId']);
-      if (!building?.enabled || !building.navigation) return;
-      if (building.navigation.kind === 'page') {
+    const buildingButton=event.target.closest<HTMLButtonElement>('button[data-city-building-id]');
+    if(buildingButton&&this.root?.contains(buildingButton)){
+      if(this.suppressBuildingClick){this.suppressBuildingClick=false;return;}
+      const state=this.gameState.getState<MutableGameState&TeamWorldState&CityLayoutWorldState>();
+      if(!state.cityLayout)return;
+      const building=getCityOverviewPresentation(state.cityLayout,teamIds(state))
+        .find(item=>item.buildingInstanceId===buildingButton.dataset['cityBuildingId']);
+      if(!building?.enabled||!building.navigation)return;
+      if(building.navigation.kind==='page'){
         if(building.navigation.pageId==='rune-workshop')this.injector.get(GameRuneWorkshopPresentationService).open();
         else this.navigate(building.navigation.pageId);
-      } else {
-        this.openTeam(building.navigation.teamId);
-      }
+      }else this.openTeam(building.navigation.teamId);
       return;
     }
-
-    const quickButton = event.target.closest<HTMLButtonElement>('button[data-city-quick-id]');
-    if (quickButton && this.root?.contains(quickButton)) {
-      const quick = CITY_QUICK_ACCESS.find(link => link.id === quickButton.dataset['cityQuickId']);
-      if (quick?.kind === 'page' && quick.pageId) this.navigate(quick.pageId);
-      else if (quick?.kind === 'mission') document.getElementById('questHeaderButton')?.click();
+    const quickButton=event.target.closest<HTMLButtonElement>('button[data-city-quick-id]');
+    if(quickButton&&this.root?.contains(quickButton)){
+      const quick=CITY_QUICK_ACCESS.find(link=>link.id===quickButton.dataset['cityQuickId']);
+      if(quick?.kind==='page'&&quick.pageId)this.navigate(quick.pageId);
+      else if(quick?.kind==='mission')document.getElementById('questHeaderButton')?.click();
       return;
     }
-
-    const legacyTeamButton = event.target.closest<HTMLButtonElement>('button[data-city-team-id]');
-    if (legacyTeamButton && this.root?.contains(legacyTeamButton)) {
-      const id = Number(legacyTeamButton.dataset['cityTeamId']);
-      const state = this.gameState.getState<MutableGameState & TeamWorldState & CityLayoutWorldState>();
-      if (state.cityLayout &&
-          getCityLegacyTeamAccess(state.cityLayout, teamIds(state)).some(team => team.teamId === id)) {
-        this.openTeam(id);
-      }
+    const legacyTeamButton=event.target.closest<HTMLButtonElement>('button[data-city-team-id]');
+    if(legacyTeamButton&&this.root?.contains(legacyTeamButton)){
+      const id=Number(legacyTeamButton.dataset['cityTeamId']);
+      const state=this.gameState.getState<MutableGameState&TeamWorldState&CityLayoutWorldState>();
+      if(state.cityLayout&&getCityLegacyTeamAccess(state.cityLayout,teamIds(state)).some(team=>team.teamId===id))this.openTeam(id);
     }
   };
 
@@ -533,7 +530,7 @@ export class GameCityOverviewPresentationService {
     }
     card.innerHTML = `<h2>Stadtraster und Gebäude</h2>
       <p class="index-note">Die bisherige starre Stadtgrafik wurde durch die gespeicherten Gebäude aus dem 12×8-Raster ersetzt. Jedes Gebäude besitzt eine feste technische ID und öffnet die passende bestehende Spielseite. Auf Smartphones lässt sich das Raster seitlich verschieben. Dungeonweg, Materiallager, Waffenlager und Missionen sind über die Zugänge unter der Karte erreichbar.</p>
-      <p class="index-note">Jede fertige Bauhütte hat einen festen Baumeister und kann genau ein Bauprojekt für 30 Minuten durchführen. Über „Gebäude bauen“ einen Typ wählen und auf ein freies 2×2-Feld tippen. Der Nickelpreis wird beim Start einmalig abgezogen; bei Abbruch werden 100 % erstattet, ohne freien Bauplatz wird nichts abgebucht. Baustellen werden auch offline fertiggestellt. Über den Verschiebemodus kannst du ein bestehendes Gebäude auswählen und danach kostenlos auf ein freies Rasterfeld setzen; belegte oder zu kleine Flächen werden abgelehnt. Die Karte kannst du links, rechts, oben oder unten um jeweils vier Felder vergrößern. Alle Teams haben jeweils einen eigenen Stadteingang mit fester Team-ID. Weitere Teams werden ausschließlich über „Gebäude bauen“ gekauft und nach 30 Minuten freigeschaltet; Team 1 ist kostenlos. Ein älterer Teamkauf wird nicht erneut berechnet. Neue Flächenerweiterungen kosten Nickel: Grundpreis 3.000 × zentraler Kostenfaktor × 1,5 je bezahlter Erweiterung. Bereits bezahlte Schmiede-, Markt- und Teamplätze werden einmalig kostenlos als Gebäude übernommen. Bei Platzmangel wird kostenlos erweitert. Erstes Gebäude je Art kostenlos; weitere: Schmiede/Markt 5.000, Team 3.000, Bauhütte/Taverne/Runenwerkstatt 20.000 Nickel Grundpreis × zentraler Faktor × Wachstum 1,2. Maximal 10 Schmieden, Märkte, Tavernen und Teams sowie je 2 Bauhütten und Runenwerkstätten. S13: Jede fertige und aktive Schmiede bzw. jeder Markt besitzt genau einen aktiven Bearbeitungsplatz. Alle Betriebe einer Art verwenden eine gemeinsame Auftrags- und Warteschlangenliste; weitere Plätze entstehen durch den Bau neuer Gebäude, nicht mehr durch das alte Plätze-Upgrade. Bestehende, reservierte Aufträge behalten ihre Startzeiten und werden beim Offline-Bauabschluss dem neuen Betrieb zugeteilt. Warteschlangenplatz-Upgrades bleiben weiterhin nutzbar. S16: Jeder fertige Markt und jede fertige Schmiede arbeitet durch einen festen Grundarbeiter auch ohne Held mit 100 % Geschwindigkeit. In der jeweiligen Betriebsübersicht kann genau ein freier Kadercharakter als Helfer ausgewählt werden; das erhöht die Bearbeitungsgeschwindigkeit auf 120 % (60 Sekunden Arbeit dauern 50 Sekunden). Helfer sind weder in mehreren Betrieben noch im Dungeon gleichzeitig einsetzbar. Helferwechsel erhalten den bereits erarbeiteten Fortschritt; laufende Aufträge, Offlinezeiten und Gebäudeverschiebungen bleiben erhalten. Die sieben Mindest-Schmiedezeiten betragen Dolch 20 s, Einhandschwert/Einhandaxt 45 s, Zweihandschwert/Zweihandaxt 75 s, Bogen 90 s und Stab 50 s, sofern die wertabhängige Dauer nicht länger ist. S15: Material- und Waffenverkäufe reservieren die Ware bei Annahme; nach Verkaufsende bleibt der Nickelbetrag bis „Auszahlen“ oder „Alle auszahlen“ im Markt bereit. Fertige Verkäufe zählen zum Auftragslimit, blockieren keinen aktiven Verkaufsplatz und können nicht mehr abgebrochen werden. Laufende und wartende Verkäufe können weiterhin abgebrochen werden und geben die reservierte Ware zurück. Auch nach Neustart oder Offlinezeit ist die Auszahlung manuell auszulösen. S14: Fertige Schmiedeaufträge bleiben als „abholbereit“ gespeichert. Über „Abholen“ oder „Alle abholen“ in der Schmiede werden sie erst dann dem Waffenlager hinzugefügt. Sie belegen keinen aktiven Schmiedeplatz, zählen aber weiterhin zur gesamten Auftragsgrenze. Auch nach Offlinezeit oder Neustart musst du sie bewusst abholen. Die Stadt ist theoretisch unbegrenzt erweiterbar. Runenwerkstätten werden erst mit der vorgesehenen Freischaltung baubar.</p>`;
+      <p class="index-note">Jede fertige Bauhütte hat einen festen Baumeister und kann genau ein Bauprojekt für 30 Minuten durchführen. Über das Bau-Icon oben rechts im Kopfbereich einen Gebäudetyp wählen und auf ein freies 2×2-Feld tippen. Der Nickelpreis wird beim Start einmalig abgezogen; bei Abbruch werden 100 % erstattet, ohne freien Bauplatz wird nichts abgebucht. Baustellen werden auch offline fertiggestellt. Halte ein Gebäude etwa eine halbe Sekunde gedrückt (am PC auch Rechtsklick oder Umschalt+F10), wähle „Gebäude verschieben“ und setze es kostenlos auf ein freies Rasterfeld; belegte oder zu kleine Flächen werden abgelehnt. Über das Bau-Icon und „Stadtfläche erweitern“ kannst du die Karte links, rechts, oben oder unten um jeweils vier Felder vergrößern. Alle Teams haben jeweils einen eigenen Stadteingang mit fester Team-ID. Weitere Teams werden ausschließlich über „Gebäude bauen“ gekauft und nach 30 Minuten freigeschaltet; Team 1 ist kostenlos. Ein älterer Teamkauf wird nicht erneut berechnet. Neue Flächenerweiterungen kosten Nickel: Grundpreis 3.000 × zentraler Kostenfaktor × 1,5 je bezahlter Erweiterung. Bereits bezahlte Schmiede-, Markt- und Teamplätze werden einmalig kostenlos als Gebäude übernommen. Bei Platzmangel wird kostenlos erweitert. Erstes Gebäude je Art kostenlos; weitere: Schmiede/Markt 5.000, Team 3.000, Bauhütte/Taverne/Runenwerkstatt 20.000 Nickel Grundpreis × zentraler Faktor × Wachstum 1,2. Maximal 10 Schmieden, Märkte, Tavernen und Teams sowie je 2 Bauhütten und Runenwerkstätten. S13: Jede fertige und aktive Schmiede bzw. jeder Markt besitzt genau einen aktiven Bearbeitungsplatz. Alle Betriebe einer Art verwenden eine gemeinsame Auftrags- und Warteschlangenliste; weitere Plätze entstehen durch den Bau neuer Gebäude, nicht mehr durch das alte Plätze-Upgrade. Bestehende, reservierte Aufträge behalten ihre Startzeiten und werden beim Offline-Bauabschluss dem neuen Betrieb zugeteilt. Warteschlangenplatz-Upgrades bleiben weiterhin nutzbar. S16: Jeder fertige Markt und jede fertige Schmiede arbeitet durch einen festen Grundarbeiter auch ohne Held mit 100 % Geschwindigkeit. In der jeweiligen Betriebsübersicht kann genau ein freier Kadercharakter als Helfer ausgewählt werden; das erhöht die Bearbeitungsgeschwindigkeit auf 120 % (60 Sekunden Arbeit dauern 50 Sekunden). Helfer sind weder in mehreren Betrieben noch im Dungeon gleichzeitig einsetzbar. Helferwechsel erhalten den bereits erarbeiteten Fortschritt; laufende Aufträge, Offlinezeiten und Gebäudeverschiebungen bleiben erhalten. Die sieben Mindest-Schmiedezeiten betragen Dolch 20 s, Einhandschwert/Einhandaxt 45 s, Zweihandschwert/Zweihandaxt 75 s, Bogen 90 s und Stab 50 s, sofern die wertabhängige Dauer nicht länger ist. S15: Material- und Waffenverkäufe reservieren die Ware bei Annahme; nach Verkaufsende bleibt der Nickelbetrag bis „Auszahlen“ oder „Alle auszahlen“ im Markt bereit. Fertige Verkäufe zählen zum Auftragslimit, blockieren keinen aktiven Verkaufsplatz und können nicht mehr abgebrochen werden. Laufende und wartende Verkäufe können weiterhin abgebrochen werden und geben die reservierte Ware zurück. Auch nach Neustart oder Offlinezeit ist die Auszahlung manuell auszulösen. S14: Fertige Schmiedeaufträge bleiben als „abholbereit“ gespeichert. Über „Abholen“ oder „Alle abholen“ in der Schmiede werden sie erst dann dem Waffenlager hinzugefügt. Sie belegen keinen aktiven Schmiedeplatz, zählen aber weiterhin zur gesamten Auftragsgrenze. Auch nach Offlinezeit oder Neustart musst du sie bewusst abholen. Die Stadt ist theoretisch unbegrenzt erweiterbar. Runenwerkstätten werden erst mit der vorgesehenen Freischaltung baubar.</p>`;
   }
 
   private escapeHtml(value: string): string {
