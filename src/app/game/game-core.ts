@@ -167,10 +167,10 @@ export function calculateWeaponCharacterModifiers(slots: readonly WeaponSlot[] |
 /** Waffenwerte sind ID-nativ; Materialnamen werden nicht in den Stat-Snapshot geschrieben. */
 export function calculateWeaponStats(slots: readonly WeaponSlot[] | null | undefined, weaponForm: string): WeaponStats {
   const normalized = normalizeWeaponSlots(slots); const form = baseline.getWeaponForm(weaponForm); const modifiers = calculateWeaponCharacterModifiers(normalized, weaponForm);
-  const workingPart = selectedMaterial(normalized, 'workingPart'); const specialEffect = null;
-  const specialSpeedFactor = specialEffect?.stat === 'GES' ? 1 + specialEffect.amount : 1;
-  const reinforcementHitChanceAdd = specialEffect?.stat === 'P' ? specialEffect.amount : 0;
-  const reinforcementPenetrationAdd = specialEffect?.stat === 'DS' ? specialEffect.amount : 0;
+  const workingPart = selectedMaterial(normalized, 'workingPart');
+  const specialSpeedFactor = 1;
+  const reinforcementHitChanceAdd = 0;
+  const reinforcementPenetrationAdd = 0;
   const damagePerHit = form.baseDamage * Math.max(0, 1 + modifiers.strengthFactor);
   const attackSpeed = form.baseSpeed * Math.max(0.01, specialSpeedFactor);
   const hitChance = Math.max(0, Math.min(1, form.baseHitChance * Math.max(0, 1 + modifiers.precision)));
