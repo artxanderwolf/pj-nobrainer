@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-const ANDROID_VERSION_NAME = '0.24.0.0';
+const ANDROID_VERSION_NAME = '0.25.0.0';
 const APP_ID = 'com.smithsofeldravar.game';
 const APP_NAME = 'Smiths of Eldravar';
 const CAPACITOR_VERSION = '8.5.3';
@@ -16,8 +16,8 @@ const appComponent = read('src/app/app.component.ts');
 const saveCodec = read('src/app/game/save-codec.ts');
 const gitignore = read('.gitignore');
 const bootstrap = read('scripts/bootstrap-android.mjs');
-assert.match(bootstrap, /const ANDROID_VERSION_NAME = '0\.24\.0\.0';/, 'Android-Vorbereitung muss die aktuelle native Version 0.24.0.0 erhalten.');
-assert.match(bootstrap, /const ANDROID_VERSION_CODE = 10;/, 'Android-Vorbereitung muss den Installationscode 10 erhalten.');
+assert.match(bootstrap, /const ANDROID_VERSION_NAME = '0\.24\.0\.0';/, 'Android-Vorbereitung muss die aktuelle native Version 0.25.0.0 erhalten.');
+assert.match(bootstrap, /const ANDROID_VERSION_CODE = 11;/, 'Android-Vorbereitung muss den Installationscode 11 erhalten.');
 
 assert.match(packageJson.version, /^\d+\.\d+\.\d+\.\d+$/, 'Die gemeinsame Web-App-Version muss dem vierteiligen Projektschema entsprechen.');
 assert.equal(packageJson.dependencies?.['@capacitor/core'], CAPACITOR_VERSION, 'Capacitor Core muss exakt gepinnt sein.');
@@ -68,4 +68,4 @@ if (existsSync('android/app/build.gradle')) {
   assert.ok(existsSync('android/gradlew'), 'Gradle Wrapper fehlt im versionierten Android-Projekt.');
 }
 
-console.log(`Android Gate C: native Android-Version ${ANDROID_VERSION_NAME}/10 bleibt fest; gemeinsame Angular-Web-Version ${packageJson.version}, Save-Version 27 und schlüsselfreie Release-Signing-Konfiguration sind konsistent.`);
+console.log(`Android Gate C: native Android-Version ${ANDROID_VERSION_NAME}/11 ist vorbereitet; gemeinsame Angular-Web-Version ${packageJson.version}, Save-Version 27 und schlüsselfreie Release-Signing-Konfiguration sind konsistent.`);
