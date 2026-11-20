@@ -70,3 +70,15 @@
   object-fit: contain;
   flex: 0 0 auto;
 }
+
+
+/* Großupdate v2 S03: Lange Überschriften bleiben lesbare Wörter. */
+.modular-ui .page-heading h1,
+.modular-ui .screen-page h2,
+.modular-ui .menu-card-title {
+  overflow-wrap: normal; word-break: normal; hyphens: none;
+}
+.modular-ui .screen-page h2 { max-width: 100%; }
+@media (max-width: 560px) {
+  .modular-ui .screen-page h2 { font-size: clamp(15px, 4vw, 20px); }
+}
