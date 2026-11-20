@@ -1,5 +1,6 @@
 import {migrateTeams,createTeam} from '../src/app/game/team-core.ts';
 import {decodeSave,encodeSave} from '../src/app/game/save-codec.ts';
+import { initializeReleaseProgress } from '../src/app/game/mission-core.ts';
 import assert from 'node:assert/strict';
 import { readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 
@@ -95,6 +96,37 @@ const originalRandom = Math.random;
 
 try {
   const { GameDungeonService } = await import(`${dungeonServiceUrl.href}?check=${Date.now()}`);
+
+  // v2/S05: Exercise the real service and persisted team session in every dungeon.
+  // Encounter rate must not be confused with the independent 5% access roll.
+  for (const dungeonId of [1, 2, 3, 4, 5]) {
+    const state = makeState(1);
+    initializeReleaseProgress(state).claimed[`dungeon_${dungeonId}`] = true;
+    state.teams[1].dungeonId = dungeonId;
+    const service = new GameDungeonService({ getState: () => state });
+    service.toggleAuto(1000);
+    state.characters[0].hp = 10;
+    Math.random = () => .08;
+    service.update(2000);
+    assert.equal(state.teams[1].dungeonRun, null, '8% boundary is a search miss');
+    assert.equal(state.characters[0].hp, 11, 'A miss retains the existing +1 HP heal');
+    assert.equal(state.teams[1].dungeonSearch.nextCheckAt, 3000);
+
+    const restored = decodeSave(encodeSave(state)).state;
+    const restoredService = new GameDungeonService({ getState: () => restored });
+    const draws = [.079999, 0, .5, 0]; // search, count, non-boss, recruit
+    Math.random = () => draws.shift() ?? .5;
+    restoredService.update(3000);
+    const run = restored.teams[1].dungeonRun;
+    assert.ok(run, `Dungeon ${dungeonId}: roll below 8% encounters after reload`);
+    assert.equal(run.dungeonId, dungeonId);
+    assert.equal(run.enemies[0].maxHp, 30 * [4, 8, 16, 32, 64][dungeonId - 1]);
+    assert.equal(run.enemies[0].damage, 6 * [1, 2, 4, 8, 16][dungeonId - 1]);
+    assert.equal(run.enemies[0].xpDrop, 10 * [1, 2, 4, 8, 16][dungeonId - 1]);
+    assert.equal(restored.characters[0].hp, 11, 'An encounter never grants search healing');
+    const resumed = decodeSave(encodeSave(restored)).state;
+    assert.deepEqual(resumed.teams[1].dungeonRun, run, 'Existing combat snapshot survives save/load unchanged');
+  }
 
   const successState = makeState(1);
   successState.characters[0].xp = 95;
