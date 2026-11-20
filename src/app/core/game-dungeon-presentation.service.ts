@@ -327,7 +327,7 @@ export class GameDungeonPresentationService {
       runes.map(id=>`<span class="loot-chip">✧ ${RUNE_DEFINITIONS[id]?.label??id}<b>×1</b></span>`).join('');
     empty.style.display = entries.length||(state.session.dungeonRuneLoot?.length??0) ? 'none' : 'block';
     collect.textContent = entries.length||runes.length ? `Einsammeln (${entries.reduce((sum, entry) => sum + entry.qty, 0)+runes.length})` : 'Einsammeln';
-    collect.disabled = !(entries.length||runes.length) || this.dungeonSession.isRunActive();
+    collect.disabled = !(entries.length||runes.length) || (this.dungeonSession.isRunActive() && !runes.length);
   }
 
   private renderPrimaryAction(): void {
@@ -363,7 +363,7 @@ export class GameDungeonPresentationService {
   }
 
   private handleCollectLoot(): void {
-    if (this.dungeonSession.isRunActive()) return;
+    if (this.dungeonSession.isRunActive() && !(this.getState().session.dungeonRuneLoot?.length)) return;
     const result = this.dungeonSession.collectLoot();
     this.handleResult(result, result.events.length > 0);
   }
