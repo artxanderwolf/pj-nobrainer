@@ -62,3 +62,11 @@ der öffentliche Android-Stable-Kanal bleibt bis zur Releasefreigabe auf der bis
 
 ## Teams v0.5.0.0
 Save 17 speichert unabhängige Teams mit stabiler teamId und getrenntem dungeonId-Ziel. Aktive Läufe, Beute, Protokolle und Gruppen bleiben beim Neustart erhalten. Die ältere Beschreibung transienter Trainingslager-Sitzungen oben ist überholt. Vorhandene belegte Gruppen/Läufe/Beute werden einmalig in Bestandsteams übernommen; neue Spielstände starten mit einem Team. Maximal 10 Teams, Kauf ab 5.000 Nickel, Wachstum 2. Die teamSlots-Konfiguration verwendet denselben Wirtschaftsfaktor 10 wie Gebäude. Kader-, Herstellungs- und Verkaufsplätze kosten gegenüber v0.4.0.2 doppelt so viel; Warteschlangenpreise bleiben unverändert.
+
+## Großupdate v2 / Etappe B / S05 (v0.25.0.2)
+
+Alle fünf Dungeons verwenden jetzt `encounter_chance=0.08` bei `search_step_ms=1000`: im Mittel 12,5 Sekunden reine Suchzeit. Die oben dokumentierten 5 % sind der historische Stand. Gegnerwerte, XP pro Gegner, +1-HP-Heilung bei Fehlsuche, Material-/Runenwürfe und Zugangsregeln bleiben unverändert. Kürzere Suchpausen können die Heilung und damit den Laufverlauf verändern. Messverfahren, Ergebnisse und offene Abnahme vor S06/S07: [Etappe-B-Berechnungen](../docs/grossupdate-v2-etappe-b-berechnungen.md).
+
+## Großupdate v2 / Etappe B / S06–S07 (v0.26.0.0)
+
+`dungeons.csv` führt Gegner-HP, Schaden, Tempo und Defensive getrennt, dazu `enemy_xp_multiplier` (1/2/4/8/16) sowie eigene Gegnercaps (Rüstung 12 %, Ausweichen 30 %, effektive Trefferchance 80 %). D1 bleibt unverändert. `game_settings.csv` enthält die zentralen Fortschrittsregeln: 5 qualifizierte Läufe à 50 Siege; Zugangssuche im nächsten neu gestarteten Lauf ab Welle 50 mit 5 %. Bestehende Zähler und Zugänge bleiben erhalten; laufende unqualifizierte Save-27-Teams ab 50 Siegen werden einmalig angerechnet. Save-Schema 27 bleibt gleich; gespeicherte laufende Gegner bleiben unverändert. Details und Nachweise: [S06/S07](../docs/grossupdate-v2-etappe-b-s06-s07.md).

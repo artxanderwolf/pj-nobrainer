@@ -1,0 +1,157 @@
+[
+  {
+    "id": "entry-1",
+    "dungeonId": 1,
+    "level": [
+      4,
+      4,
+      4,
+      4
+    ],
+    "classes": [
+      "recruit",
+      "fighter",
+      "archer",
+      "scholar"
+    ],
+    "forms": [
+      "sword",
+      "sword2h",
+      "bow",
+      "staff"
+    ],
+    "materials": [
+      5,
+      2,
+      7
+    ],
+    "target": [
+      0.9,
+      0.98
+    ]
+  },
+  {
+    "id": "entry-2",
+    "dungeonId": 2,
+    "level": [
+      8,
+      8,
+      8,
+      8
+    ],
+    "classes": [
+      "recruit",
+      "fighter",
+      "archer",
+      "scholar"
+    ],
+    "forms": [
+      "sword",
+      "sword2h",
+      "bow",
+      "staff"
+    ],
+    "materials": [
+      5,
+      2,
+      7
+    ],
+    "target": [
+      0.8,
+      0.9
+    ]
+  },
+  {
+    "id": "entry-3",
+    "dungeonId": 3,
+    "level": [
+      10,
+      11,
+      10,
+      11
+    ],
+    "classes": [
+      "recruit",
+      "fighter",
+      "archer",
+      "scholar"
+    ],
+    "forms": [
+      "sword",
+      "sword2h",
+      "bow",
+      "staff"
+    ],
+    "materials": [
+      16,
+      10,
+      19
+    ],
+    "target": [
+      0.75,
+      0.85
+    ]
+  },
+  {
+    "id": "entry-4",
+    "dungeonId": 4,
+    "level": [
+      13,
+      14,
+      13,
+      14
+    ],
+    "classes": [
+      "recruit",
+      "fighter",
+      "archer",
+      "scholar"
+    ],
+    "forms": [
+      "sword",
+      "sword2h",
+      "bow",
+      "staff"
+    ],
+    "materials": [
+      32,
+      26,
+      35
+    ],
+    "target": [
+      0.7,
+      0.8
+    ]
+  },
+  {
+    "id": "entry-5",
+    "dungeonId": 5,
+    "level": [
+      16,
+      16,
+      16,
+      17
+    ],
+    "classes": [
+      "recruit",
+      "fighter",
+      "archer",
+      "scholar"
+    ],
+    "forms": [
+      "sword",
+      "sword2h",
+      "bow",
+      "staff"
+    ],
+    "materials": [
+      48,
+      42,
+      51
+    ],
+    "target": [
+      0.65,
+      0.75
+    ]
+  }
+]

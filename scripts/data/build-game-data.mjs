@@ -96,6 +96,8 @@ function buildGameData(tables) {
         damage: n(dungeon.enemy_mult_damage), speed: n(dungeon.enemy_mult_speed),
         hitChance: n(dungeon.enemy_mult_hit_chance), penetration: n(dungeon.enemy_mult_penetration)
       },
+      xpMultiplier: n(dungeon.enemy_xp_multiplier),
+      enemyCaps: { armor: n(dungeon.enemy_max_armor), dodge: n(dungeon.enemy_max_dodge), hitChance: n(dungeon.enemy_max_hit_chance) },
       encounterChance: n(dungeon.encounter_chance),
       searchStepMs: n(dungeon.search_step_ms),
       lootCollectMs: n(dungeon.loot_collect_ms),
@@ -240,6 +242,7 @@ const gameSource = header
   + ts('DATA_META', game.meta)
   + ts('GENERATED_CONFIG', game.config)
   + ts('GENERATED_DUNGEONS', game.dungeonConfigs)
+  + ts('GENERATED_DUNGEON_PROGRESS_RULES', Object.fromEntries(tables.game_settings.rows.filter(row => String(row.key).startsWith('dungeon.')).map(row => [String(row.key).slice(8), n(row.value)])))
   + ts('GENERATED_CHARACTER_CLASSES', game.classes)
   + ts('GENERATED_MATERIAL_SALE_RARITY_BONUS', game.rarityBonus)
   + ts('GENERATED_MATERIALS', game.materials)

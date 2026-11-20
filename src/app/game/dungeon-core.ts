@@ -129,20 +129,22 @@ export function createDungeonEnemy(index: number, classId: CharacterClassId, dun
     boss,
     maxHp: cls.maxHp * multipliers.hp * (boss ? 10 : 1),
     hp: cls.maxHp * multipliers.hp * (boss ? 10 : 1),
-    armor: cls.armor * multipliers.armor,
-    dodge: Math.min(0.95, cls.dodge * multipliers.dodge),
+    armor: Math.min(config.enemyCaps.armor, cls.armor * multipliers.armor),
+    dodge: Math.min(config.enemyCaps.dodge, cls.dodge * multipliers.dodge),
     strengthFactor: cls.strengthFactor,
     precision: cls.precision,
     distance: cls.distance ?? 1,
     alive: true,
     damage: base.damage * multipliers.damage * (boss ? 2 : 1),
     speed: boss ? 0.8 : base.speed * multipliers.speed,
-    hitChance: Math.min(1, base.hitChance * multipliers.hitChance),
+    // Cap the effective hit chance including class precision at creation time.
+    // Persisted enemies retain their existing combat snapshot.
+    hitChance: Math.min(base.hitChance * multipliers.hitChance, config.enemyCaps.hitChance / Math.max(0.01, cls.precision)),
     penetration: Math.max(0, Math.min(1, base.penetration * multipliers.penetration)),
     lootMaterialIds: [...(definition?.lootMaterialIds ?? [])],
-    // xpDrop der Balancingtabelle ist der Klassen-Grundwert; der aktuelle Dungeon-Schadensmultiplikator
-    // skaliert die XP (1/2/4/8/16). Bosse beginnen bei 40 XP, ohne alten x100-Sonderfaktor.
-    xpDrop: Math.max(0, Math.round((boss ? 40 : Number(definition?.xpDrop) || 0) * multipliers.damage))
+    // XP use an independent canonical factor; changing enemy damage must not lower rewards.
+    // Boss base XP remain 40.
+    xpDrop: Math.max(0, Math.round((boss ? 40 : Number(definition?.xpDrop) || 0) * config.xpMultiplier))
   };
 }
 

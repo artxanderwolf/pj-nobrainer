@@ -1,9 +1,11 @@
 [
+  "Etappe B / S06-S07: Sanftere Gegnersteigerung in D2-D5, getrennte XP-Faktoren und Dungeonzugang nach 5 qualifizierten Laeufen mit je 50 Siegen; danach Zugangssuche ab Welle 50 im neuen Lauf. Vorhandener Fortschritt und Save 27 bleiben erhalten.",
+  "Etappe B / S05: Alle Dungeons finden pro Suchsekunde mit 8 % Chance eine Welle (im Mittel 12,5 Sekunden reine Suche). Gegnerstaerke und XP pro Gegner bleiben erhalten; kuerzere Suchpausen bieten weniger Heilung.",
   "Runen koennen waehrend eines aktiven Trainingslagers eingesammelt werden und werden dauerhaft mit stabiler Runen-ID gespeichert.",
-  "Stadt: Schnellzugriffe jetzt aufklappbar außerhalb des Gebäuderasters.",
-  "Schmiede: kompaktere Materialauswahl ohne unnötigen inneren Scrollbereich.",
+  "Stadt: Schnellzugriffe jetzt aufklappbar auÃŸerhalb des GebÃ¤uderasters.",
+  "Schmiede: kompaktere Materialauswahl ohne unnÃ¶tigen inneren Scrollbereich.",
   "Kopfzeilen und Unterkunft: verbesserte Darstellung.",
-  "Unterkunft: maximal 48 Charakterplätze; bei 6/6 kostet der nächste Platz 2 Bronze.",
+  "Unterkunft: maximal 48 CharakterplÃ¤tze; bei 6/6 kostet der nÃ¤chste Platz 2 Bronze.",
   "Save-Version 27 bleibt erhalten. Vor dem Update optional JSON-Spielstand exportieren.",
   "Bestehende Android-App aktualisieren und nicht deinstallieren."
 ]

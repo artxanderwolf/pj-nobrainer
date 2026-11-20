@@ -1,5 +1,6 @@
 import { createDungeonSession, dungeonSessionActive, migrateParallelDungeons, DUNGEON_IDS, type DungeonSessionState, type DungeonWorldState } from './parallel-dungeon-core.ts';
 import { CONFIG } from './game-core.ts';
+import { creditQualifiedRun } from './dungeon-progress-rules.ts';
 import { calculateUpgradeCost } from './economy-core.ts';
 import { dungeonUnlocked, type MissionState } from './mission-core.ts';
 import { addMaterialQuantityById } from './material-storage-core.ts';
@@ -19,7 +20,14 @@ export function createTeam(teamId: number, dungeonId = 1): TeamSessionState {
 }
 /** One-way migration of released saves. Retain every selected group and all earned progress. */
 export function migrateTeams(state: Record<string, unknown> & MissionState & TeamWorldState): boolean {
-  if (state.teams) return repairTeamReservations(state);
+  if (state.teams) {
+    let changed = repairTeamReservations(state);
+    if (state.releaseProgress) for (const id of teamIds(state)) {
+      const team = getTeamSession(state, id);
+      changed = creditQualifiedRun(state.releaseProgress.qualifiedRuns, team.progress, team.dungeonId) || changed;
+    }
+    return changed;
+  }
   migrateParallelDungeons(state);
   state.teams = {};
   for (const dungeonId of DUNGEON_IDS) {

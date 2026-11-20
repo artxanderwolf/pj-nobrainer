@@ -5,3 +5,8 @@ market.materialBaseNickel,10
 tavern.recruitBaseNickel,200
 tavern.recruitGrowth,1.75
 forge.baseSeconds,30
+
+dungeon.qualifiedRunWaves,50
+dungeon.requiredQualifiedRuns,5
+dungeon.accessSearchStartWave,50
+dungeon.accessChance,0.05
