@@ -297,7 +297,7 @@ export class GameDungeonService {
     const runeCount=runes.length;
     // Runenbesitz, ID-Zaehler und Werkstattfreischaltung gehoeren zum echten Root-Save,
     // nicht zum temporaeren Dungeon-Team-Adapter.
-    const runeWorld=this.gameState.getState<RuneWorldState>();
+    const runeWorld=this.gameState.getState<MutableGameState & RuneWorldState>();
     for(const rune of runes)grantDroppedRune(runeWorld,rune);
     state.session.dungeonRuneLoot=[];
     if(runeCount)document.dispatchEvent(new Event('rune-workshop-updated'));
