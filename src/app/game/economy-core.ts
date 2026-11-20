@@ -44,8 +44,22 @@ export function materialSellData(name: string): baseline.MaterialSellData | null
   return legacy;
 }
 
+/** Etappe A S04: Ein zusätzlicher Unterkunftsplatz; Preis in Nickel, ohne allgemeinen Gebäudefaktor. */
+export function calculateUpgradeCost(kind: keyof typeof CONFIG.upgrades, current: number): number {
+  if (kind === 'inn') {
+    if (!Number.isSafeInteger(current) || current < 2 || current >= 48) {
+      throw new Error('Unterkunftskapazität außerhalb des Ausbauintervalls 2–47.');
+    }
+    return current <= 11
+      ? 1000 + 250 * (current - 2)
+      : 3500 + 350 * (current - 12);
+  }
+  return baseline.calculateUpgradeCost(kind, current);
+}
+
 export const ECONOMY_CORE_BRIDGE = {
   ...baseline.ECONOMY_CORE_BRIDGE,
+  calculateUpgradeCost,
   materialSellData
 };
 
