@@ -22,9 +22,9 @@ assert.equal(APP_SHELL_PAGE_IDS[0], 'base');
 for (const required of ['character', 'storage', 'forge-preview', 'market-jobs', 'dungeon-select', 'index']) {
   assert.ok(APP_SHELL_PAGE_IDS.includes(required), `Modulare Seite ${required} fehlt in der Shell-Seitenliste.`);
 }
-assert.match(shell, /^<div class="app modular-ui" data-ui-version="0\.24\.0\.0">/, 'Die modulare UI-v0.25.0.0-Shell fehlt.');
+assert.match(shell, /^<div class="app modular-ui" data-ui-version="0\.25\.0\.0">/, 'Die modulare UI-v0.25.0.0-Shell fehlt.');
 assert.match(shell, /id="backBtn"[\s\S]*onclick="goBack\(\)"/, 'Der globale Zurück-Button fehlt.');
-assert.match(shell, /<div class="ui-version">SMITHS OF ELDRAVAR · v0\.24\.0\.0<\/div>/, 'Die sichtbare Versionsanzeige ist nicht v0.25.0.0.');
+assert.match(shell, /<div class="ui-version">SMITHS OF ELDRAVAR · v0\.25\.0\.0<\/div>/, 'Die sichtbare Versionsanzeige ist nicht v0.25.0.0.');
 assert.match(shell, /<h1 id="pageTitle" class="city-name-editable" contenteditable="true"[^>]*>Stadt Name<\/h1>/, 'Die editierbare Stadt-Headline fehlt.');
 assert.match(shell, /class="pill money-pill" aria-label="Stadtgeld"[\s\S]*id="goldIcon"[\s\S]*src="ui\/coin_1nic_32\.png"[\s\S]*id="gold">0 Nickel<\/b>/, 'Der Stadtgeld-Pill besitzt nicht den Nickel-Fallback mit Münzicon.');
 assert.doesNotMatch(shell, /class="pill money-pill">Geld/, 'Der alte sichtbare Geld-Text darf nicht vor dem dynamischen Münzicon stehen.');
