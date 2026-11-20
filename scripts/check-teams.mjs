@@ -26,9 +26,11 @@ try {
  assert.deepEqual(prices,[5000,10000,20000,40000,80000,160000,320000,640000,1280000]);
  const beforeMax=JSON.stringify(world);assert.equal(buyTeam(world).reason,'max');assert.equal(JSON.stringify(world),beforeMax);
  const poor={gold:4999,teams:{1:createTeam(1)}};assert.equal(buyTeam(poor).ok,false);assert.equal(poor.gold,4999);assert.deepEqual(teamIds(poor),[1]);
- for(const kind of ['inn','forgeSlots','marketSlots']){
-  const start=kind==='inn'?2:1,growth=kind==='inn'?2:3,base=kind==='inn'?5000:10000;
-  for(let step=0;step<4;step++)assert.equal(calculateUpgradeCost(kind,start+step),base*growth**step);
+ for(const kind of ['forgeSlots','marketSlots']){
+  for(let step=0;step<4;step++)assert.equal(calculateUpgradeCost(kind,1+step),10000*3**step);
+ }
+ for(const [capacity,price] of [[2,1000],[3,1250],[6,2000],[11,3250],[12,3500],[20,6300],[47,15750],[48,0]]) {
+  assert.equal(calculateUpgradeCost('inn',capacity),price);
  }
  assert.equal(calculateUpgradeCost('forgeQueue',1),1000);assert.equal(calculateUpgradeCost('marketQueue',1),1000);assert.equal(calculateRecruitCost(1),2000);
  assert.equal(selectTeamDungeon(world,1,2),false,'Locked dungeon rejected by domain action');

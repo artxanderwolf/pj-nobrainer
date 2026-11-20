@@ -347,3 +347,19 @@
   .forge-material-dialog[open] { padding: 12px; gap: 9px; max-height: 88dvh; }
   .forge-material-choice { padding: 8px; }
 }
+
+
+/* Großupdate v2 S02: Material-Zeilen ohne verschachtelte Scrollzone. */
+.modular-ui #forge-form { overflow-y: auto; min-height: 0; }
+.modular-ui #forge-form .forge-build-card { height: auto; min-height: 0; overflow: visible; }
+.modular-ui #forge-form .forge-build-card .forge-slot-wrap {
+  flex: 0 0 auto; max-height: none; overflow: visible;
+}
+.modular-ui #forge-form .forge-build-card .forge-slot-wrap table { height: auto; }
+.modular-ui #forge-form .forge-build-card .forge-slot-wrap td,
+.modular-ui #forge-form .forge-build-card .forge-slot-wrap th { padding-block: 4px; }
+@media (max-width: 560px) {
+  .modular-ui #forge-form .forge-build-card .forge-slot-wrap td,
+  .modular-ui #forge-form .forge-build-card .forge-slot-wrap th { padding: 3px 4px; }
+  .modular-ui #forge-form .forge-material-trigger { min-height: 33px; }
+}

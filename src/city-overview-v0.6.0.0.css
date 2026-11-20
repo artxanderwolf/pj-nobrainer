@@ -488,3 +488,38 @@ body:has(.modular-ui.city-overview-active) { height: 100%; overflow: hidden; }
   background: rgba(20, 39, 29, .91);
   backdrop-filter: blur(3px);
 }
+
+
+/* Großupdate v2 S01: Schnellzugriffe getrennt von der nutzbaren Karte. */
+.modular-ui.city-overview-active .city-grid-frame .city-grid-map { padding-bottom: 0; }
+.modular-ui.city-overview-active details.city-grid-links {
+  flex: 0 0 auto; position: relative; z-index: 2; margin: 4px 0 0;
+  padding: 0; border: 1px solid #607465; border-radius: 9px;
+  background: #1c2c23; overflow: hidden;
+}
+.modular-ui.city-overview-active .city-grid-links-toggle {
+  display: flex; justify-content: space-between; align-items: center;
+  min-height: 38px; padding: 6px 12px; cursor: pointer;
+  font-size: 13px; font-weight: 700; list-style: none;
+}
+.modular-ui.city-overview-active .city-grid-links-toggle::-webkit-details-marker { display: none; }
+.modular-ui.city-overview-active .city-grid-links-toggle:focus-visible { outline: 2px solid #ffe0a4; outline-offset: -2px; }
+.modular-ui.city-overview-active details.city-grid-links[open] .city-grid-links-toggle span { transform: rotate(180deg); }
+.modular-ui.city-overview-active details.city-grid-links .city-grid-link-list {
+  padding: 6px; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 5px;
+}
+@media (max-width: 560px) {
+  .modular-ui.city-overview-active details.city-grid-links .city-grid-link-list { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .modular-ui.city-overview-active .city-grid-quick-link { min-height: 36px; }
+}
+.modular-ui.city-overview-active .city-placement-notice {
+  position: static; flex: 0 0 auto; max-height: 4.5em; overflow: auto;
+}
+
+/* Großupdate v2 S01: Missions-Erfolgsmeldungen im Kopfbereich statt auf Gebäuden. */
+.modular-ui.city-overview-active #missionToast,
+body:has(.modular-ui.city-overview-active) #missionToast {
+  top: max(3px, env(safe-area-inset-top));
+  padding: 5px 8px; font-size: 11px; max-width: 50vw;
+  text-align: center; overflow-wrap: anywhere;
+}

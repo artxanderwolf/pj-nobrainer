@@ -59,8 +59,7 @@ export function getTavernPresentation(
 
   const capacityStats: TavernStatPresentation[] = [
     { label: 'Belegt', value: String(characterCount) },
-    { label: 'Kapazität', value: String(innCapacity) },
-    { label: 'Nächste Kosten', value: formattedRecruitCost }
+    { label: 'Kapazität', value: String(innCapacity) }
   ];
 
   const offers = characterClasses.map((characterClass): TavernOfferPresentation => ({

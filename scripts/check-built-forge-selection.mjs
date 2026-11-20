@@ -148,6 +148,7 @@ const probeScript = `<script>
             oldHeadingsVisible: /1\\. Waffenform wählen|2\\. Materialien wählen|Waffenform bestimmt Bauteile|Materialbedarf:|belegt eine Hand|belegt beide Hände/.test(forgePage?.textContent || ''),
             materialSummaryPresent: Boolean(document.getElementById('forgeMaterialTotalPreview')),
             constructionInfoPresent: Boolean(document.getElementById('forgeParryInfo')),
+            pageOverflowY: forgePage ? getComputedStyle(forgePage).overflowY : '',
             cardOverflowY: forgeCard ? getComputedStyle(forgeCard).overflowY : '',
             cardFits: forgeCard ? forgeCard.scrollHeight <= forgeCard.clientHeight + 1 : false,
             slotOverflowY: slotWrap ? getComputedStyle(slotWrap).overflowY : '',
@@ -305,8 +306,9 @@ try {
   assert.equal(result.compactUi.oldHeadingsVisible, false, 'Entfernte Schmiede-Erklärungstexte sind noch sichtbar.');
   assert.equal(result.compactUi.materialSummaryPresent, false, 'Der entfernte Materialbedarf-Block existiert noch.');
   assert.equal(result.compactUi.constructionInfoPresent, false, 'Der entfernte 1H/2H-Hinweis existiert noch.');
-  assert.equal(result.compactUi.cardOverflowY, 'hidden', 'Die Waffenherstellungs-Karte darf nicht scrollen.');
-  assert.equal(result.compactUi.cardFits, true, 'Die Waffenherstellung passt auf dem mobilen Testviewport nicht vollständig in ihre feste Karte.');
+  assert.equal(result.compactUi.pageOverflowY, 'auto', 'Die Schmiedeseite muss bei langen Materiallisten scrollen dürfen.');
+  assert.equal(result.compactUi.cardOverflowY, 'visible', 'Die Waffenherstellungs-Karte darf keinen eigenen inneren Scrollbereich besitzen.');
+  assert.equal(result.compactUi.cardFits, true, 'Die Karte muss ihre gesamte Materialliste ohne Clipping enthalten.');
   assert.notEqual(result.compactUi.slotOverflowY, 'auto', 'Die Materialauswahl darf nicht scrollbar sein.');
   assert.notEqual(result.compactUi.slotOverflowY, 'scroll', 'Die Materialauswahl darf nicht scrollbar sein.');
   assert.notEqual(result.compactUi.pickerOverflowY, 'auto', 'Die Waffenwahl darf nicht scrollbar sein.');

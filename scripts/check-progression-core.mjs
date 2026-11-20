@@ -67,11 +67,22 @@ try {
     const s = state();
     const offer = getUpgradeOffer(s, 'inn');
     assert.equal(offer.ok, true);
-    assert.equal(offer.costNickel, 5000);
+    assert.equal(offer.costNickel, 1000);
     const result = buyUpgrade(s, 'inn');
     assert.equal(result.ok, true);
     assert.equal(s.upgrades.innCapacity, 3);
-    assert.equal(s.gold, 95000);
+    assert.equal(s.gold, 99000);
+  }
+
+  {
+    const s = state();
+    s.upgrades.innCapacity = 47;
+    const result = buyUpgrade(s, 'inn');
+    assert.equal(result.ok, true);
+    assert.equal(result.costNickel, 15750);
+    assert.equal(s.upgrades.innCapacity, 48);
+    assert.equal(s.gold, 84250);
+    assert.equal(getUpgradeOffer(s, 'inn').reason, 'max');
   }
 
   {
