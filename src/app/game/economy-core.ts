@@ -47,9 +47,10 @@ export function materialSellData(name: string): baseline.MaterialSellData | null
 /** Etappe A S04: Ein zusätzlicher Unterkunftsplatz; Preis in Nickel, ohne allgemeinen Gebäudefaktor. */
 export function calculateUpgradeCost(kind: keyof typeof CONFIG.upgrades, current: number): number {
   if (kind === 'inn') {
-    if (!Number.isSafeInteger(current) || current < 2 || current >= 48) {
+    if (!Number.isSafeInteger(current) || current < 2 || current > 48) {
       throw new Error('Unterkunftskapazität außerhalb des Ausbauintervalls 2–47.');
     }
+    if (current === 48) return 0; // Bei erreichtem Maximum nur noch die Schaltfläche deaktivieren.
     return current <= 11
       ? 1000 + 250 * (current - 2)
       : 3500 + 350 * (current - 12);
