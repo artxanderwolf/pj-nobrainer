@@ -16,7 +16,7 @@ const appComponent = read('src/app/app.component.ts');
 const saveCodec = read('src/app/game/save-codec.ts');
 const gitignore = read('.gitignore');
 const bootstrap = read('scripts/bootstrap-android.mjs');
-assert.match(bootstrap, /const ANDROID_VERSION_NAME = '0\.24\.0\.0';/, 'Android-Vorbereitung muss die aktuelle native Version 0.25.0.0 erhalten.');
+assert.match(bootstrap, /const ANDROID_VERSION_NAME = '0\.25\.0\.0';/, 'Android-Vorbereitung muss die aktuelle native Version 0.25.0.0 erhalten.');
 assert.match(bootstrap, /const ANDROID_VERSION_CODE = 11;/, 'Android-Vorbereitung muss den Installationscode 11 erhalten.');
 
 assert.match(packageJson.version, /^\d+\.\d+\.\d+\.\d+$/, 'Die gemeinsame Web-App-Version muss dem vierteiligen Projektschema entsprechen.');
@@ -60,7 +60,7 @@ assert.deepEqual(forbiddenKeyFiles, [], `Signierschlüssel dürfen nicht im Repo
 if (existsSync('android/app/build.gradle')) {
   const gradle = read('android/app/build.gradle');
   assert.match(gradle, new RegExp(`applicationId\\s+['\"]${APP_ID.replaceAll('.', '\\.') }['\"]`), 'Native applicationId stimmt nicht.');
-  assert.match(gradle, /versionCode\s+10\b/, 'Android versionCode muss für die freigegebene Gerätetestversion 10 bleiben.');
+  assert.match(gradle, /versionCode\s+11\b/, 'Android versionCode muss für das nächste Update 11 sein.');
   assert.match(gradle, new RegExp(`versionName\\s+"${ANDROID_VERSION_NAME.replaceAll('.', '\\.')}"`), `Android versionName muss ${ANDROID_VERSION_NAME} bleiben.`);
   for (const env of ['SOE_RELEASE_STORE_FILE', 'SOE_RELEASE_STORE_PASSWORD', 'SOE_RELEASE_KEY_ALIAS', 'SOE_RELEASE_KEY_PASSWORD']) {
     assert.ok(gradle.includes(env), `Release-Signing muss ${env} ausschließlich aus der Umgebung lesen.`);
