@@ -295,7 +295,10 @@ export class GameDungeonService {
       total += entry.qty;
     }
     const runeCount=runes.length;
-    for(const rune of runes)grantDroppedRune(state,rune);
+    // Runenbesitz, ID-Zaehler und Werkstattfreischaltung gehoeren zum echten Root-Save,
+    // nicht zum temporaeren Dungeon-Team-Adapter.
+    const runeWorld=this.gameState.getState<MutableGameState & RuneWorldState>();
+    for(const rune of runes)grantDroppedRune(runeWorld,rune);
     state.session.dungeonRuneLoot=[];
     if(runeCount)document.dispatchEvent(new Event('rune-workshop-updated'));
     this.addEvent(outcome,`${total} Materialien und ${runeCount} Runen aus der Dungeon-Beute eingesammelt.`,'good');

@@ -189,7 +189,7 @@ export class GameDungeonPresentationService {
       <div class="formula">Maximale Laufzeit: 5 Stunden · Ende: Zeitablauf oder manueller Abbruch</div>
       <p class="index-note">Schließen des Popups beendet einen laufenden Run nicht. Suche, Kämpfe, Countdown, Erfahrung, Beute und Live-Protokoll laufen innerhalb der geöffneten Spielanwendung im Hintergrund weiter. Erst ein manueller Abbruch oder das Ende der fünf Stunden beendet den Run.</p>
       <p class="index-note">Energie wird im Trainingslager derzeit weder angezeigt noch verbraucht. Charaktere und aktive Gegner werden im Dungeon-Kontext ohne HP-Zahlen dargestellt; ihr aktueller Lebensstand ist ausschließlich über Lebensbalken sichtbar.</p>
-      <p class="index-note">Das Live-Protokoll zeigt die tatsächlich berechneten Kampfereignisse und bleibt beim Schließen und erneuten Öffnen desselben Runs erhalten. Beim Start eines neuen Runs beginnt das Protokoll neu.</p>`;
+      <p class="index-note">Gefundene Runen kannst du bereits während eines laufenden Trainingslagerlaufs über „Einsammeln“ abholen. Sie werden mit eigener Runen-ID gespeichert und schalten beim ersten Fund die Runenwerkstatt frei. Materialbeute ohne Runen bleibt bis zum Laufende liegen.</p>\n      <p class="index-note">Das Live-Protokoll zeigt die tatsächlich berechneten Kampfereignisse und bleibt beim Schließen und erneuten Öffnen desselben Runs erhalten. Beim Start eines neuen Runs beginnt das Protokoll neu.</p>`;
     grid.prepend(card);
   }
 
@@ -327,7 +327,7 @@ export class GameDungeonPresentationService {
       runes.map(id=>`<span class="loot-chip">✧ ${RUNE_DEFINITIONS[id]?.label??id}<b>×1</b></span>`).join('');
     empty.style.display = entries.length||(state.session.dungeonRuneLoot?.length??0) ? 'none' : 'block';
     collect.textContent = entries.length||runes.length ? `Einsammeln (${entries.reduce((sum, entry) => sum + entry.qty, 0)+runes.length})` : 'Einsammeln';
-    collect.disabled = !(entries.length||runes.length) || this.dungeonSession.isRunActive();
+    collect.disabled = !(entries.length||runes.length) || (this.dungeonSession.isRunActive() && !runes.length);
   }
 
   private renderPrimaryAction(): void {
@@ -363,7 +363,7 @@ export class GameDungeonPresentationService {
   }
 
   private handleCollectLoot(): void {
-    if (this.dungeonSession.isRunActive()) return;
+    if (this.dungeonSession.isRunActive() && !(this.getState().session.dungeonRuneLoot?.length)) return;
     const result = this.dungeonSession.collectLoot();
     this.handleResult(result, result.events.length > 0);
   }
