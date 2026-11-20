@@ -26,6 +26,7 @@ export class GameCityOverviewPresentationService {
   private basePage: HTMLElement | null = null;
   private activeObserver: MutationObserver | null = null;
   private renderedSignature = '';
+  private quickLinksOpen = false;
   private moveMode = false;
   private buildMode = false;
   private buildType: ConstructibleCityBuildingType = 'forge';
@@ -59,6 +60,7 @@ export class GameCityOverviewPresentationService {
       moveBuildingId: this.moveBuildingId, moveNotice: this.moveNotice, cityMenu: this.cityMenu, contextBuildingId: this.contextBuildingId
     });
     if (signature !== this.renderedSignature) {
+      this.quickLinksOpen = root.querySelector<HTMLDetailsElement>('details.city-grid-links')?.open ?? this.quickLinksOpen;
       const viewport = root.querySelector<HTMLElement>('.city-grid-viewport');
       const scrollLeft = viewport?.scrollLeft ?? 0;
       const scrollTop = viewport?.scrollTop ?? 0;
@@ -166,10 +168,11 @@ export class GameCityOverviewPresentationService {
           ${moveCells}
         </div>
       </div>
-      <nav class="city-grid-links" aria-label="Weitere Stadtzugänge">
-        <div class="city-grid-link-list">${quickLinks}</div>
-      </nav>
       </div>
+      <details class="city-grid-links" ${this.quickLinksOpen ? 'open' : ''}>
+        <summary class="city-grid-links-toggle">Schnellzugriffe <span aria-hidden="true">▾</span></summary>
+        <nav class="city-grid-link-list" aria-label="Weitere Stadtzugänge">${quickLinks}</nav>
+      </details>
       ${tools}
       ${legacyTeamLinks}`;
   }
