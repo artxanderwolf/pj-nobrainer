@@ -189,7 +189,7 @@ export class GameDungeonPresentationService {
       <div class="formula">Maximale Laufzeit: 5 Stunden · Ende: Zeitablauf oder manueller Abbruch</div>
       <p class="index-note">Schließen des Popups beendet einen laufenden Run nicht. Suche, Kämpfe, Countdown, Erfahrung, Beute und Live-Protokoll laufen innerhalb der geöffneten Spielanwendung im Hintergrund weiter. Erst ein manueller Abbruch oder das Ende der fünf Stunden beendet den Run.</p>
       <p class="index-note">Energie wird im Trainingslager derzeit weder angezeigt noch verbraucht. Charaktere und aktive Gegner werden im Dungeon-Kontext ohne HP-Zahlen dargestellt; ihr aktueller Lebensstand ist ausschließlich über Lebensbalken sichtbar.</p>
-      <p class="index-note">Das Live-Protokoll zeigt die tatsächlich berechneten Kampfereignisse und bleibt beim Schließen und erneuten Öffnen desselben Runs erhalten. Beim Start eines neuen Runs beginnt das Protokoll neu.</p>`;
+      <p class="index-note">Gefundene Runen kannst du bereits während eines laufenden Trainingslagerlaufs über „Einsammeln“ abholen. Sie werden mit eigener Runen-ID gespeichert und schalten beim ersten Fund die Runenwerkstatt frei. Materialbeute ohne Runen bleibt bis zum Laufende liegen.</p>\n      <p class="index-note">Das Live-Protokoll zeigt die tatsächlich berechneten Kampfereignisse und bleibt beim Schließen und erneuten Öffnen desselben Runs erhalten. Beim Start eines neuen Runs beginnt das Protokoll neu.</p>`;
     grid.prepend(card);
   }
 
