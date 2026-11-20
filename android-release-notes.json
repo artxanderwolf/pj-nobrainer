@@ -1,9 +1,8 @@
 [
-  "Neue Rassenfarben direkt in den Klassenemblemen; der separate Farbbalken wurde entfernt.",
-  "Stadtgebäude durch langes Drücken auswählen und über das Kontextmenü verschieben.",
-  "Neues Bau-Menü oben rechts für Gebäude und Stadterweiterungen.",
-  "Die vier Stadtzugänge befinden sich im unteren Kartenbereich; die Stadtseite scrollt nicht mehr vertikal.",
-  "Runenwerkstatt, Runensockel und Runendrops im Trainingslager aus dem Großupdate sind enthalten.",
-  "Bestehende Spielstände werden weiterhin als Save-Version 27 unterstützt. Vor der Aktualisierung optional JSON exportieren.",
-  "Die vorhandene Android-App aktualisieren, nicht deinstallieren."
+  "Stadt: Schnellzugriffe jetzt aufklappbar außerhalb des Gebäuderasters.",
+  "Schmiede: kompaktere Materialauswahl ohne unnötigen inneren Scrollbereich.",
+  "Kopfzeilen und Unterkunft: verbesserte Darstellung.",
+  "Unterkunft: maximal 48 Charakterplätze; bei 6/6 kostet der nächste Platz 2 Bronze.",
+  "Save-Version 27 bleibt erhalten. Vor dem Update optional JSON-Spielstand exportieren.",
+  "Bestehende Android-App aktualisieren und nicht deinstallieren."
 ]
