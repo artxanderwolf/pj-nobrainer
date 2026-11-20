@@ -136,7 +136,9 @@ export class GameDungeonSessionService {
   }
 
   collectLoot(teamId=this.openedTeamId): DungeonActionResult {
-    if (this.isRunActive(teamId)) return {events:[],saveRequested:false};
+    // Materialbeute bleibt waehrend des Laufs gesperrt; gefundene Runen koennen
+    // bereits waehrend einer laufenden Expedition abgeholt werden.
+    if (this.isRunActive(teamId) && !(this.getState(teamId).session.dungeonRuneLoot?.length)) return {events:[],saveRequested:false};
     return this.sanitizeResult(this.gameDungeon.collectLoot(teamId),teamId);
   }
 
