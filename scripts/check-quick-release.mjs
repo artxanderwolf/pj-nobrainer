@@ -15,14 +15,14 @@ import { encodeSave, decodeSave } from '../src/app/game/save-codec.ts';
 const state={weaponCraftCounts:{dagger:0}},p=initializeReleaseProgress(state);
 let draws=0;const random=()=>{draws++;return 0;};
 migrateTeams(state);startProgressSession(state,1);
-for(let i=0;i<149;i++)recordSuccessfulWave(state,1,random);
+for(let i=0;i<49;i++)recordSuccessfulWave(state,1,random);
 assert.equal(p.qualifiedRuns[1],undefined);assert.equal(draws,0);
 recordSuccessfulWave(state,1,random);assert.equal(p.qualifiedRuns[1],1);
 for(let i=0;i<400;i++)recordSuccessfulWave(state,1,random);
 assert.equal(p.qualifiedRuns[1],1,'A session counts at most once');
-for(let run=1;run<20;run++){migrateTeams(state);startProgressSession(state,1);for(let wave=0;wave<150;wave++)recordSuccessfulWave(state,1,random);}
-assert.equal(p.qualifiedRuns[1],20);assert.equal(draws,0,'20th qualifying run cannot search before a new run');
-migrateTeams(state);startProgressSession(state,1);for(let wave=0;wave<99;wave++)recordSuccessfulWave(state,1,random);
+for(let run=1;run<5;run++){migrateTeams(state);startProgressSession(state,1);for(let wave=0;wave<50;wave++)recordSuccessfulWave(state,1,random);}
+assert.equal(p.qualifiedRuns[1],5);assert.equal(draws,0,'5th qualifying run cannot search before a new run');
+migrateTeams(state);startProgressSession(state,1);for(let wave=0;wave<49;wave++)recordSuccessfulWave(state,1,random);
 assert.equal(draws,0);recordSuccessfulWave(state,1,()=>{draws++;return .05;});assert.equal(p.accessFound[2],undefined);
 recordSuccessfulWave(state,1,()=>{draws++;return .049999;});assert.equal(p.accessFound[2],true);assert.equal(dungeonUnlocked(state,2),false);
 const saved=decodeSave(encodeSave(state)).state;

@@ -120,8 +120,8 @@ try {
     const run = restored.teams[1].dungeonRun;
     assert.ok(run, `Dungeon ${dungeonId}: roll below 8% encounters after reload`);
     assert.equal(run.dungeonId, dungeonId);
-    assert.equal(run.enemies[0].maxHp, 30 * [4, 8, 16, 32, 64][dungeonId - 1]);
-    assert.equal(run.enemies[0].damage, 6 * [1, 2, 4, 8, 16][dungeonId - 1]);
+    assert.equal(run.enemies[0].maxHp, 30 * [4, 5.5, 7, 9, 12][dungeonId - 1]);
+    assert.equal(run.enemies[0].damage, 6 * [1, 1.25, 1.55, 1.9, 2.4][dungeonId - 1]);
     assert.equal(run.enemies[0].xpDrop, 10 * [1, 2, 4, 8, 16][dungeonId - 1]);
     assert.equal(restored.characters[0].hp, 11, 'An encounter never grants search healing');
     const resumed = decodeSave(encodeSave(restored)).state;

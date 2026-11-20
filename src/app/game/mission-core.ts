@@ -1,5 +1,5 @@
 import { getTeamSession, type TeamWorldState } from './team-core.ts';
-import { QUALIFIED_RUN_WAVES } from './dungeon-progress-rules.ts';
+import { REQUIRED_QUALIFIED_RUNS, ACCESS_SEARCH_START_WAVE, ACCESS_CHANCE, creditQualifiedRun } from './dungeon-progress-rules.ts';
 import { getWeaponUnlockState, WEAPON_CRAFT_UNLOCK_TARGET, type WeaponCraftCounts } from './forge-core.ts';
 export interface ReleaseProgress {
     version: 1;
@@ -48,7 +48,7 @@ export function weaponUnlocked(state: MissionState, form: string): boolean {
 }
 export function missions(state: MissionState): Mission[] {
     const p = initializeReleaseProgress(state);
-    const list: Mission[] = [2, 3, 4, 5].map(id => ({ id: `dungeon_${id}`, title: `Zugang: ${DUNGEON_NAMES[id - 1]}`, visible: dungeonUnlocked(state, id - 1), complete: !!p.accessFound[id], claimed: !!p.claimed[`dungeon_${id}`], progress: count(p.qualifiedRuns[id - 1]) >= 20 ? (p.accessFound[id] ? 'Zugang gefunden' : 'Zugang suchen · ab Welle 100 eines neuen Laufs') : `Qualifizierte Läufe: ${Math.min(20, count(p.qualifiedRuns[id - 1]))}/20` }));
+    const list: Mission[] = [2, 3, 4, 5].map(id => ({ id: `dungeon_${id}`, title: `Zugang: ${DUNGEON_NAMES[id - 1]}`, visible: dungeonUnlocked(state, id - 1), complete: !!p.accessFound[id], claimed: !!p.claimed[`dungeon_${id}`], progress: count(p.qualifiedRuns[id - 1]) >= REQUIRED_QUALIFIED_RUNS ? (p.accessFound[id] ? 'Zugang gefunden' : `Zugang suchen · ab Welle ${ACCESS_SEARCH_START_WAVE} eines neuen Laufs`) : `Qualifizierte Läufe: ${Math.min(REQUIRED_QUALIFIED_RUNS, count(p.qualifiedRuns[id - 1]))}/${REQUIRED_QUALIFIED_RUNS}` }));
     for (const form of FORMS) {
         const old = getWeaponUnlockState(form, state.weaponCraftCounts);
         const prerequisites = old.prerequisites;
@@ -76,7 +76,7 @@ export function claimMission(state: MissionState, id: string): boolean {
 export function startProgressSession(state: MissionState, teamId: number): void {
     const p = initializeReleaseProgress(state);
     const dungeonId = getTeamSession(state,teamId).dungeonId;
-    getTeamSession(state,teamId).progress = { dungeonId, waves: 0, qualified: false, searchEligible: count(p.qualifiedRuns[dungeonId]) >= 20 };
+    getTeamSession(state,teamId).progress = { dungeonId, waves: 0, qualified: false, searchEligible: count(p.qualifiedRuns[dungeonId]) >= REQUIRED_QUALIFIED_RUNS };
 }
 /** Called only after successful waves; roll provider is never invoked before eligibility or after a find. */
 export function recordSuccessfulWave(state: MissionState, teamId: number, random: () => number): void {
@@ -85,12 +85,9 @@ export function recordSuccessfulWave(state: MissionState, teamId: number, random
     if (!session || session.dungeonId !== dungeonId)
         return;
     session.waves++;
-    if (!session.qualified && session.waves >= QUALIFIED_RUN_WAVES) {
-        session.qualified = true;
-        p.qualifiedRuns[dungeonId] = count(p.qualifiedRuns[dungeonId]) + 1;
-    }
+    creditQualifiedRun(p.qualifiedRuns, session, dungeonId);
     const next = dungeonId + 1;
-    if (next <= 5 && session.searchEligible && session.waves >= 100 && !p.accessFound[next] && !p.claimed[`dungeon_${next}`] && random() < .05)
+    if (next <= 5 && session.searchEligible && session.waves >= ACCESS_SEARCH_START_WAVE && !p.accessFound[next] && !p.claimed[`dungeon_${next}`] && random() < ACCESS_CHANCE)
         p.accessFound[next] = true;
     refreshMissionNotifications(state);
 }

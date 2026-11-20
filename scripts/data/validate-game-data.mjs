@@ -150,6 +150,14 @@ export function validateGameData(tables) {
     assertRange(row.enemy_base_hit_chance, 0, 1, `dungeons ${row.dungeon_id}.enemy_base_hit_chance`);
     assertRange(row.enemy_base_penetration, 0, 1, `dungeons ${row.dungeon_id}.enemy_base_penetration`);
     assertRange(row.encounter_chance, 0, 1, `dungeons ${row.dungeon_id}.encounter_chance`);
+    assertRange(row.enemy_xp_multiplier, 0.01, 100, 'dungeons.enemy_xp_multiplier');
+    assertRange(row.enemy_max_armor, 0, 80, 'dungeons.enemy_max_armor');
+    assertRange(row.enemy_max_dodge, 0, 0.95, 'dungeons.enemy_max_dodge');
+    assertRange(row.enemy_max_hit_chance, 0, 1, 'dungeons.enemy_max_hit_chance');
+    for (const stat of ['hp','armor','dodge','damage','speed','hit_chance','penetration']) {
+      assertRange(row['enemy_mult_' + stat], 0, 100, 'dungeons.enemy_mult_' + stat);
+      if (['hp','speed'].includes(stat) && Number(row['enemy_mult_' + stat]) <= 0) fail('Dungeon HP/Tempo muss positiv sein.');
+    }
   }
 
   const classWeights = tables.dungeon_enemy_weights.rows;
@@ -225,7 +233,13 @@ export function validateGameData(tables) {
   const settings = tables.game_settings.rows;
   assertUnique(settings, 'key', 'game_settings');
   const requiredSettings = new Set(['energyRegenPerMinute','market.baseSeconds','market.materialBaseNickel','tavern.recruitBaseNickel','tavern.recruitGrowth','forge.baseSeconds']);
+  for (const key of ['qualifiedRunWaves','requiredQualifiedRuns','accessSearchStartWave','accessChance']) requiredSettings.add('dungeon.' + key);
   for (const key of requiredSettings) if (!settings.some(row => row.key === key)) fail(`game_settings fehlt ${key}.`);
+  for (const key of ['qualifiedRunWaves','requiredQualifiedRuns','accessSearchStartWave']) {
+    const value = settings.find(row => row.key === 'dungeon.' + key)?.value;
+    if (asInteger(value, 'dungeon.' + key) < 1) fail('Dungeon-Fortschrittsgrenzen müssen positiv sein.');
+  }
+  assertRange(settings.find(row => row.key === 'dungeon.accessChance')?.value, 0.000001, 1, 'dungeon.accessChance');
 
   const upgrades = tables.upgrades.rows;
   assertUnique(upgrades, 'id', 'upgrades');

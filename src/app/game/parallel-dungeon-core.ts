@@ -2,7 +2,7 @@ import type { RuneDefinitionId } from './rune-core.ts';
 import type { DungeonRunLike } from './dungeon-core.ts';
 import { addMaterialQuantityById, type MaterialStorageInventory } from './material-storage-core.ts';
 import type { MissionState } from './mission-core.ts';
-import { QUALIFIED_RUN_WAVES } from './dungeon-progress-rules.ts';
+import { QUALIFIED_RUN_WAVES, creditQualifiedRun } from './dungeon-progress-rules.ts';
 
 export const DUNGEON_IDS = [1, 2, 3, 4, 5] as const;
 export interface DungeonProgressSession { dungeonId: number; waves: number; qualified: boolean; searchEligible: boolean; }
@@ -80,11 +80,7 @@ export function migrateParallelDungeons(state: Record<string, unknown> & Mission
     session.log ??= [];
     session.progress ??= null;
     // Re-evaluate saved in-progress runs after the balance change, without counting twice.
-    if (session.progress && !session.progress.qualified && session.progress.waves >= QUALIFIED_RUN_WAVES && state.releaseProgress) {
-      session.progress.qualified = true;
-      state.releaseProgress.qualifiedRuns[id] = Math.max(0, Math.floor(Number(state.releaseProgress.qualifiedRuns[id]) || 0)) + 1;
-      changed = true;
-    }
+    if (state.releaseProgress) changed = creditQualifiedRun(state.releaseProgress.qualifiedRuns, session.progress, id) || changed;
   }
   for(const field of LEGACY_FIELDS)delete state[field];
   if(state.releaseProgress)delete (state.releaseProgress as unknown as {session?:unknown}).session;
