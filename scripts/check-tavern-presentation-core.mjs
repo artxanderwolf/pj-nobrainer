@@ -40,8 +40,7 @@ assert.deepEqual(available.summaryStats, [
 ]);
 assert.deepEqual(available.capacityStats, [
   { label: 'Belegt', value: '2' },
-  { label: 'Kapazität', value: '4' },
-  { label: 'Nächste Kosten', value: formattedCost }
+  { label: 'Kapazität', value: '4' }
 ]);
 assert.deepEqual(available.offers[0], {
   classId: 'fighter',
