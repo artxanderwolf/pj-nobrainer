@@ -1,3 +1,4 @@
+import { MATERIAL_QUALITY_MIGRATION_BRIDGE } from '../src/app/game/material-quality-migration-core.ts';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { Script, createContext } from 'node:vm';
@@ -37,7 +38,7 @@ postCoreAdapter = replaceRangeOnce(postCoreAdapter, 'function calculateWeaponSta
 const adaptedScript = adaptLegacyWeaponScript(postCoreAdapter);
 new Script(adaptedScript, { filename: 'NoBrainer.weapon-naming.adapted.js' });
 assert.ok(adaptedScript.includes('CONFIG.forge.weaponForms'), 'Aktiver Runtime-Code muss weaponForms verwenden.');
-assert.ok(adaptedScript.includes('cleanWeapon["weaponType"]'), 'Alte Waffen müssen den expliziten Legacy-Key weiterhin migrieren.');
+assert.ok(adaptedScript.includes('NoBrainerMaterialQualityMigration.weapon'), 'Alte Waffen müssen den expliziten Legacy-Key weiterhin migrieren.');
 assert.ok(adaptedScript.includes('migrateMarketJobToCurrentRules'), 'Reservierte Waffen in Marktaufträgen müssen weiterhin migriert werden.');
 assert.equal(adaptedScript.includes('.weaponType'), false, 'Aktiver Runtime-Code darf .weaponType nicht mehr verwenden.');
 assert.equal(adaptedScript.includes('weaponTypes'), false, 'Aktiver Runtime-Code darf weaponTypes nicht mehr verwenden.');
@@ -53,7 +54,7 @@ const migrationSource = extractRange(adaptedScript, 'function normalizeWeaponBlu
 const noBrainerGameCore = { getWeaponCraftingSlots, isWeaponSelectionComplete };
 const migrationContext = createContext({
   console,
-  window: { NoBrainerGameCore: noBrainerGameCore },
+  window: { NoBrainerGameCore: noBrainerGameCore, NoBrainerMaterialQualityMigration: MATERIAL_QUALITY_MIGRATION_BRIDGE },
   CONFIG,
   calculateWeaponStats,
   normalizeWeaponSlots,
@@ -84,8 +85,8 @@ const oldForgeJob = { weaponType: 'sword', weaponName: 'Legacy Job', slots: lega
 const migratedForgeJob = migrate.migrateForgeJobToCurrentRules(oldForgeJob);
 assert.equal(migratedForgeJob.weaponForm, 'sword');
 assert.equal(migratedForgeJob.stats.baseDamage, 10);
-assert.deepEqual(Array.from(migratedForgeJob.slots, entry => entry.slot), ['workingPart', 'back', 'gripCore', 'gripWrap', 'special', 'parry']);
-assert.equal(migratedForgeJob.slots.find(entry => entry.slot === 'parry')?.material, 'Kupfer', 'Alte 1H-Schwerter übernehmen das bisherige Kernmaterial als Parierstangen-Fallback.');
+assert.deepEqual(Array.from(migratedForgeJob.slots, entry => entry.slot), ['workingPart', 'back', 'gripCore', 'gripWrap', 'parry', 'special']);
+assert.equal(migratedForgeJob.slots.find(entry => entry.slot === 'parry')?.materialId, 5, 'Alte 1H-Schwerter übernehmen das bisherige Kernmaterial als Parierstangen-Fallback.');
 
 const migratedMarketJob = migrate.migrateMarketJobToCurrentRules({ type: 'weapon', weaponSnapshot: oldWeapon });
 assert.equal(migratedMarketJob.weaponSnapshot.weaponForm, 'dagger');

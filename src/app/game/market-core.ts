@@ -1,3 +1,4 @@
+import { resolveMaterialQuality, type MaterialQuality } from './material-quality-core.ts';
 import { getMaterialIdByName, getMaterialReferenceById } from './game-core.ts';
 
 export interface MarketJob {
@@ -6,6 +7,7 @@ export interface MarketJob {
   name?: string;
   /** Kanonische Referenz für Materialverkäufe; bei Waffen nicht gesetzt. */
   materialId?: number;
+  quality?: MaterialQuality;
   valueNickel: number;
   seconds: number;
   buildingInstanceId?: string;
@@ -44,6 +46,8 @@ export function normalizeMarketMaterialJob(job: MarketJob): boolean {
   if (!reference) return false;
 
   let changed = false;
+  const quality = resolveMaterialQuality(job.quality, reference.definition.rarity as MaterialQuality);
+  if (job.quality !== quality) { job.quality = quality; changed = true; }
   if (job.materialId !== reference.materialId) {
     job.materialId = reference.materialId;
     changed = true;
@@ -57,7 +61,7 @@ export function normalizeMarketMaterialJob(job: MarketJob): boolean {
 
 export function normalizeMarketMaterialJobs(state: MarketStateLike): number {
   let changed = 0;
-  for (const job of [...state.marketJobs, ...state.marketQueue]) {
+  for (const job of [...state.marketJobs, ...state.marketQueue, ...(state.marketReadyJobs ?? [])]) {
     if (normalizeMarketMaterialJob(job)) changed += 1;
   }
   return changed;

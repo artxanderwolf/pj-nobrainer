@@ -65,7 +65,7 @@ export type MaterialCurrencyFormatter = (valueNickel: number) => string;
 
 export function formatMaterialValue(value: number | null | undefined, kind: MaterialValueKind = 'number'): string {
   if (value === null || value === undefined) return '–';
-  if (kind === 'percent') return `${Math.round(Number(value) * 100)} %`;
+  if (kind === 'percent') return `${(Number(value) * 100).toLocaleString('de-DE', {maximumFractionDigits: 2})} %`;
   if (kind === 'factor') return Number(value).toLocaleString('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
   return Number(value).toLocaleString('de-DE', { maximumFractionDigits: 2 });
 }

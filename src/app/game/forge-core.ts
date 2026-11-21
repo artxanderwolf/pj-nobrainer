@@ -16,6 +16,8 @@ import {
 } from './game-core.ts';
 import {
   getMaterialQuantityById,
+  getMaterialStorageKey,
+  parseMaterialStorageKey,
   reserveMaterialQuantitiesById,
   type MaterialQuantityRequirements,
   type MaterialStorageInventory
@@ -32,6 +34,7 @@ export interface ForgeJob {
   valueNickel: number;
   performance: number;
   totalSeconds: number;
+  preservedMaterialSnapshot?: boolean;
   buildingInstanceId?: string;
   remainingWorkSeconds?: number;
   workRate?: number;
@@ -158,16 +161,18 @@ export function isWeaponProgressionSource(weaponForm: string): boolean {
   return PROGRESSION_SOURCE_FORMS.has(weaponForm);
 }
 
-export function forgeRequirements(slots: readonly WeaponSlot[], weaponForm = 'sword'): Record<number, number> {
+export function forgeRequirements(slots: readonly WeaponSlot[], weaponForm = 'sword'): Record<string, number> {
   const normalized = normalizeWeaponSlots(slots);
-  const selected = new Map(normalized.map(slot => [slot.slot, slot.materialId]));
-  const requirements: Record<number, number> = {};
+  const selected = new Map(normalized.map(slot => [slot.slot, slot]));
+  const requirements: Record<string, number> = {};
 
   for (const slot of getWeaponCraftingSlots(weaponForm)) {
-    const materialId = Number(selected.get(slot));
+    const selectedSlot = selected.get(slot);
+    const materialId = Number(selectedSlot?.materialId);
+    const key = getMaterialStorageKey(materialId, selectedSlot?.quality);
     const quantity = getWeaponSelectionQuantity(weaponForm, slot);
     if (Number.isInteger(materialId) && materialId > 0 && quantity > 0) {
-      requirements[materialId] = (requirements[materialId] ?? 0) + quantity;
+      if (key) requirements[key] = (requirements[key] ?? 0) + quantity;
     }
   }
   return requirements;
@@ -181,7 +186,7 @@ export function getForgeSelectionQuantities(weaponForm: string): Record<WeaponCr
 
 export function hasForgeMaterials(inventory: ForgeInventory, requirements: ForgeMaterialRequirements): boolean {
   return Object.entries(requirements).every(
-    ([materialId, qty]) => getMaterialQuantityById(inventory, Number(materialId)) >= Number(qty)
+    ([key, qty]) => { const pair = parseMaterialStorageKey(key); return !!pair && getMaterialQuantityById(inventory, pair.materialId, pair.quality) >= Number(qty); }
   );
 }
 
@@ -209,6 +214,7 @@ export function calculateWeaponBalanceSnapshot(
 
 export function refreshForgeJobBalance(job: ForgeJob, preserveDuration: boolean): boolean {
   if ((job as ForgeJob & {legacyForgeJob?:boolean}).legacyForgeJob) return false; // Preserve all reserved old special-part jobs.
+  if (job.preservedMaterialSnapshot) return false;
   const snapshot = calculateWeaponBalanceSnapshot(job.weaponForm, job.slots);
   const changed = JSON.stringify(job.slots) !== JSON.stringify(snapshot.slots)
     || JSON.stringify(job.stats) !== JSON.stringify(snapshot.stats)

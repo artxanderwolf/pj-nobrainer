@@ -258,3 +258,5 @@ await writeFile(resolve(OUTPUT_DIR, 'game-data.generated.ts'), gameSource, 'utf8
 await writeFile(resolve(OUTPUT_DIR, 'economy-balance.generated.ts'), economySource, 'utf8');
 await writeFile(resolve(OUTPUT_DIR, 'character-progression.generated.ts'), progressionSource, 'utf8');
 console.log('NoBrainer-Datentabellen: TypeScript-Daten erfolgreich erzeugt.');
+
+await writeFile(resolve(OUTPUT_DIR, 'material-quality.generated.ts'), header + ts('GENERATED_MATERIAL_QUALITY', tables.material_quality.rows.map(row => ({quality:n(row.quality),weightPerMillion:n(row.weight_per_million),statFactor:n(row.stat_factor)}))), 'utf8');

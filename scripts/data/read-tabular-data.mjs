@@ -9,6 +9,7 @@ export const REQUIRED_TABLES = [
   'class_equipment_rules',
   'character_progression',
   'materials',
+  'material_quality',
   'weapon_parts',
   'weapon_forms',
   'weapon_form_parts',

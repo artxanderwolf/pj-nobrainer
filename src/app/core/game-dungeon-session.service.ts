@@ -1,3 +1,4 @@
+import type { MaterialQuality } from '../game/material-quality-core.ts';
 import { teamIds, getTeamSession, characterTeamReservation, migrateTeams, type TeamSessionState as SessionData } from '../game/team-core.ts';
 import { Injectable } from '@angular/core';
 import { getDungeonDefinition } from '../game/dungeon-definitions.ts';
@@ -188,7 +189,7 @@ export class GameDungeonSessionService {
     const loot = getMaterialStorageEntries(state.session.dungeonLoot)
       .filter(entry => entry.qty > 0)
       .sort((left, right) => left.displayName.localeCompare(right.displayName))
-      .map(entry => `${entry.displayName} ×${entry.qty}`);
+      .map(entry => `${entry.displayName} S${entry.quality} ×${entry.qty}`);
 
     this.resetRuntimeState(state);
 
@@ -225,7 +226,7 @@ export class GameDungeonSessionService {
 
   private preservePendingLoot(state: DungeonSessionState): void {
     for (const drop of state.session.dungeonLootCollect?.drops ?? []) {
-      if (drop.materialId) addMaterialQuantityById(state.session.dungeonLoot,drop.materialId,1);
+      if (drop.materialId) addMaterialQuantityById(state.session.dungeonLoot,drop.materialId,1,drop.quality);
       if (drop.runeDefinitionId) (state.session.dungeonRuneLoot??=[]).push(drop.runeDefinitionId);
     }
     state.session.dungeonLootCollect = null;

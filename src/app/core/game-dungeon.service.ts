@@ -1,3 +1,4 @@
+import { rollMaterialQuality, resolveMaterialQuality, type MaterialQuality } from '../game/material-quality-core.ts';
 import { teamIds, getTeamSession, migrateTeams, characterTeamReservation, type TeamSessionState } from '../game/team-core.ts';
 import { isProductionWorkerReserved } from '../game/production-worker-core.ts';
 import { type CityLayoutWorldState } from '../game/city-layout-core.ts';
@@ -104,6 +105,7 @@ interface RuntimeDungeonDrop {
   runeDefinitionId?: RuneDefinitionId;
   /** Kanonische Referenz für neue Laufzeitlogik. */
   materialId?: number | null;
+  quality?: MaterialQuality;
   /** Kompatibilitätsfelder für bestehende Saves und einen sicheren Rollback. */
   name?: string;
   category?: string;
@@ -289,9 +291,9 @@ export class GameDungeonService {
 
     let total = 0;
     for (const entry of entries) {
-      const added = addMaterialQuantityById(state.inventory, entry.materialId, entry.qty);
+      const added = addMaterialQuantityById(state.inventory, entry.materialId, entry.qty, entry.quality);
       if (!added) throw new Error(`Dungeon-Beute konnte nicht ins Lager übertragen werden: Material-ID ${entry.materialId}.`);
-      delete state.session.dungeonLoot[String(entry.materialId)];
+      delete state.session.dungeonLoot[entry.storageKey];
       total += entry.qty;
     }
     const runeCount=runes.length;
@@ -320,8 +322,9 @@ export class GameDungeonService {
     for (const drop of collect.drops) {
       const resolved = this.resolveDungeonDrop(drop);
       if (!resolved) continue;
-      if (drop.materialId !== resolved.materialId || drop.name !== undefined || drop.category !== undefined) {
+      if (drop.quality !== resolved.quality || drop.materialId !== resolved.materialId || drop.name !== undefined || drop.category !== undefined) {
         drop.materialId = resolved.materialId;
+        drop.quality = resolved.quality;
         delete drop.name;
         delete drop.category;
         changed += 1;
@@ -451,14 +454,14 @@ export class GameDungeonService {
     for(const drop of runeDrops)(state.session.dungeonRuneLoot??=[]).push(drop.runeDefinitionId!);
     const resolvedDrops = collect.drops
       .map(drop => this.resolveDungeonDrop(drop))
-      .filter((drop): drop is { materialId: number; name: string; category: string } => Boolean(drop));
+      .filter((drop): drop is { materialId: number; quality: MaterialQuality; name: string; category: string } => Boolean(drop));
 
     resolvedDrops.forEach(drop => {
-      const added = addMaterialQuantityById(state.session.dungeonLoot, drop.materialId, 1);
+      const added = addMaterialQuantityById(state.session.dungeonLoot, drop.materialId, 1, drop.quality);
       if (!added) throw new Error(`Dungeon-Drop konnte nicht gespeichert werden: Material-ID ${drop.materialId}.`);
     });
     if (!this.catchupMode) {
-      this.addEvent(outcome, `BEUTE EINGESAMMELT – ${resolvedDrops.map(drop => drop.name).join(', ')}.`, 'good');
+      this.addEvent(outcome, `BEUTE EINGESAMMELT – ${resolvedDrops.map(drop => `${drop.name} S${drop.quality}`).join(', ')}.`, 'good');
     }
     state.session.dungeonLootCollect = null;
     outcome.saveRequested = true;
@@ -520,7 +523,7 @@ export class GameDungeonService {
     const loot = getMaterialStorageEntries(state.session.dungeonLoot)
       .filter(entry => entry.qty > 0)
       .sort((a, b) => a.displayName.localeCompare(b.displayName))
-      .map(entry => `${entry.displayName} ×${entry.qty}`);
+      .map(entry => `${entry.displayName} S${entry.quality} ×${entry.qty}`);
     const title = reason === 'manual' ? 'Dungeon 1 – Lauf abgebrochen' : 'Dungeon 1 – Lauf beendet';
     const reasonText = reason === 'manual'
       ? 'Grund: Abbruch nach Abschluss der aktuellen Welle.'
@@ -749,7 +752,7 @@ export class GameDungeonService {
       if (!materialDropSucceeds(Math.random())) continue;
       if (enemy.boss) {
         const ids = [...new Set(Object.values(CHARACTER_CLASSES).flatMap(cls => getDungeonEnemyDefinition(dungeonId, cls.id)?.lootMaterialIds ?? []))];
-        for (let draw=0; draw<5 && ids.length; draw++) result.push({materialId: ids.splice(Math.floor(Math.random()*ids.length),1)[0]});
+        for (let draw=0; draw<5 && ids.length; draw++) result.push({materialId: ids.splice(Math.floor(Math.random()*ids.length),1)[0], quality: rollMaterialQuality(Math.random())});
         continue;
       }
       const candidates = enemy.lootMaterialIds
@@ -760,12 +763,12 @@ export class GameDungeonService {
         candidates.map(candidate => candidate.definition.dungeonDropWeight),
         Math.random()
       )];
-      if (selected) result.push({ materialId: selected.materialId });
+      if (selected) result.push({ materialId: selected.materialId, quality: rollMaterialQuality(Math.random()) });
     }
     return result;
   }
 
-  private resolveDungeonDrop(drop: RuntimeDungeonDrop): { materialId: number; name: string; category: string } | null {
+  private resolveDungeonDrop(drop: RuntimeDungeonDrop): { materialId: number; quality: MaterialQuality; name: string; category: string } | null {
     const referenceById = getMaterialReferenceById(drop.materialId);
     const legacyName = typeof drop.name === 'string' && drop.name ? drop.name : null;
     const materialIdByName = getMaterialIdByName(legacyName);
@@ -780,6 +783,7 @@ export class GameDungeonService {
     if (!reference) return null;
     return {
       materialId: reference.materialId,
+      quality: resolveMaterialQuality(drop.quality, reference.definition.rarity as MaterialQuality),
       name: reference.displayName,
       category: reference.definition.category
     };

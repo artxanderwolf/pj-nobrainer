@@ -42,7 +42,7 @@ import {
   type WeaponCraftCounts,
   type WeaponUnlockState
 } from '../game/forge-core';
-import { getMaterialQuantityById } from '../game/material-storage-core';
+import { getMaterialQuantityById, parseMaterialStorageKey } from '../game/material-storage-core';
 import { GameStateService, type MutableGameState } from './game-state.service';
 
 export interface ForgePreviewResult {
@@ -184,14 +184,14 @@ export class GameForgeService {
     const normalizedSlots = normalizeWeaponSlots(slots);
     const requirements = forgeRequirements(normalizedSlots, weaponForm);
     const missing = Object.entries(requirements).find(
-      ([materialId, required]) => getMaterialQuantityById(state.inventory, Number(materialId)) < required
+      ([key, required]) => { const pair = parseMaterialStorageKey(key)!; return getMaterialQuantityById(state.inventory, pair.materialId, pair.quality) < required; }
     );
     if (missing) return this.missingMaterialResult(state, missing);
 
     const job = createForgeJob(weaponForm, weaponName, normalizedSlots);
     if (!reserveForgeMaterials(state.inventory, requirements)) {
       const fallbackMissing = Object.entries(requirements).find(
-        ([materialId, required]) => getMaterialQuantityById(state.inventory, Number(materialId)) < required
+        ([key, required]) => { const pair = parseMaterialStorageKey(key)!; return getMaterialQuantityById(state.inventory, pair.materialId, pair.quality) < required; }
       );
       if (fallbackMissing) return this.missingMaterialResult(state, fallbackMissing);
       return { status: 'incomplete' };
@@ -287,14 +287,15 @@ export class GameForgeService {
     missing: [string, number]
   ): Extract<ForgeStartResult, { status: 'missing-material' }> {
     const [rawMaterialId, required] = missing;
-    const materialId = Number(rawMaterialId);
+    const pair = parseMaterialStorageKey(rawMaterialId)!;
+    const materialId = pair.materialId;
     const reference = getMaterialReferenceById(materialId);
     return {
       status: 'missing-material',
-      material: reference?.displayName ?? `Material #${materialId}`,
+      material: `${reference?.displayName ?? `Material #${materialId}`} S${pair.quality}`,
       materialId,
       required,
-      available: getMaterialQuantityById(state.inventory, materialId)
+      available: getMaterialQuantityById(state.inventory, materialId, pair.quality)
     };
   }
 
@@ -338,11 +339,13 @@ export class GameForgeService {
       weaponForm: job.weaponForm,
       slots: canonicalWeaponSlots(job.slots),
       stats: job.stats,
-      valueNickel: economy.valueNickel,
+      valueNickel: job.preservedMaterialSnapshot ? job.valueNickel : economy.valueNickel,
       craftedSeconds: job.totalSeconds
     };
     state.weaponInventory.unshift(completedWeapon);
+    if(job.preservedMaterialSnapshot)(completedWeapon as RunedWeapon).preservedMaterialBaseStats=structuredClone(job.stats);
     migrateClaimedLegacyWeapon(state,completedWeapon,job);
+    if(job.preservedMaterialSnapshot)recomputeRunedWeapon(state,completedWeapon);
     recordCompletedWeaponCraft(this.getCraftCounts(state), job.weaponForm);
     return name;
   }

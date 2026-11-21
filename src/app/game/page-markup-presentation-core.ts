@@ -212,6 +212,7 @@ const FORGE_PREVIEW_PAGE_MARKUP = `<section class="page screen-page" id="forge-p
         <div class="stat"><span>Trefferchance</span><b id="forgeHitPreview">–</b></div>
         <div class="stat"><span>Rohschaden</span><b id="forgeRawPreview">–</b></div>
         <div class="stat"><span>Durchschlag</span><b id="forgePenPreview">–</b></div>
+        <div class="stat"><span>Qualität / Runensockel</span><b id="forgeQualityPreview">–</b></div>
         <div class="stat"><span>Leistungswert</span><b id="forgeRarityPreview">–</b></div>
       </div>
       <p id="forgeReinforcementPreview" class="status-line">Spezialeffekt: –</p>

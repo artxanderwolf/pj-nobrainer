@@ -50,8 +50,8 @@ const probeScript = `<script>
     const result = {
       status,
       saveVersion: Number(saved?.saveVersion || 0),
-      inventoryQty: Number(saved?.state?.inventory?.[${JSON.stringify(String(materialId))}]?.qty || 0),
-      canonicalMaterialId: Number(saved?.state?.inventory?.[${JSON.stringify(String(materialId))}]?.materialId || 0),
+      inventoryQty: Number(saved?.state?.inventory?.[${JSON.stringify(`${materialId}:1`)}]?.qty || 0),
+      canonicalMaterialId: Number(saved?.state?.inventory?.[${JSON.stringify(`${materialId}:1`)}]?.materialId || 0),
       legacyInventoryKeyPresent: Boolean(saved?.state?.inventory?.[${JSON.stringify(materialName)}]),
       legacyDungeonLootKeyPresent: Boolean(saved?.state?.teams?.[1]?.dungeonLoot?.[${JSON.stringify(materialName)}]),
       materialCount: document.getElementById('matCount')?.textContent?.trim() || '',
@@ -177,7 +177,7 @@ try {
   const result = JSON.parse(decoded);
 
   assert.equal(result.status, 'clicked', `Der unsichtbare Dungeon-Loot-Kompatibilitätsanker wurde zum Einsammeln nicht verwendbar: ${JSON.stringify(result)}`);
-  assert.equal(result.saveVersion, 27, `Der migrierte Altstand wurde nicht als Save v27 persistiert: ${JSON.stringify(result)}`);
+  assert.equal(result.saveVersion, 28, `Der migrierte Altstand wurde nicht als Save v27 persistiert: ${JSON.stringify(result)}`);
   assert.equal(result.inventoryQty, 2, `Dungeon-Loot wurde nicht in das ID-keyed gespeicherte Inventar übertragen: ${JSON.stringify(result)}`);
   assert.equal(result.canonicalMaterialId, materialId, `Der kanonische Lagereintrag trägt nicht die erwartete Material-ID: ${JSON.stringify(result)}`);
   assert.equal(result.legacyInventoryKeyPresent, false, `Der Materialname blieb fälschlich als Inventarschlüssel erhalten: ${JSON.stringify(result)}`);

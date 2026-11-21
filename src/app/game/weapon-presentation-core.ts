@@ -1,3 +1,4 @@
+import type { MaterialQuality } from './material-quality-core.ts';
 export type WeaponComparisonTone = 'good' | 'bad' | 'same';
 
 export interface WeaponComparisonPresentation {
@@ -18,12 +19,14 @@ export interface WeaponCardStatsLike {
 export interface WeaponCardSlotLike {
   slot?: string | null;
   materialId?: number | null;
+  quality?: MaterialQuality | null;
 }
 
 export interface WeaponCardLike {
   id?: number | string | null;
   name?: string | null;
   starter?: boolean | null;
+  raritySnapshot?: number;
   weaponForm?: string | null;
   slots?: readonly WeaponCardSlotLike[] | null;
   stats?: WeaponCardStatsLike | null;
@@ -109,7 +112,7 @@ export function createWeaponPresentationCore(dependencies: WeaponPresentationDep
     if (weapon.starter) {
       return 'START';
     }
-    return `S${dependencies.rarityFactor(weapon.slots)}`;
+    return `S${weapon.raritySnapshot ?? dependencies.rarityFactor(weapon.slots)}`;
   }
 
   function getWeaponCardPresentation(

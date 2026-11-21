@@ -9,7 +9,7 @@ import { INDEX_PAGE_MARKUP } from '../src/app/game/index-page-markup.ts';
 import { readAllTables } from './data/read-tabular-data.mjs';
 import { validateGameData } from './data/validate-game-data.mjs';
 
-assert.equal(SAVE_VERSION, 27);
+assert.equal(SAVE_VERSION, 28);
 const xp = { recruit: 10, fighter: 14, archer: 14, scholar: 16 };
 for (let id = 1; id <= 5; id++) {
   for (const classId of Object.keys(xp)) {

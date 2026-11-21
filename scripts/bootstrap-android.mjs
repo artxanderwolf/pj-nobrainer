@@ -1,8 +1,8 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 
 const APP_VERSION = JSON.parse(readFileSync('package.json', 'utf8')).version;
-const ANDROID_VERSION_NAME = '0.26.0.0';
-const ANDROID_VERSION_CODE = 14;
+const ANDROID_VERSION_NAME = '0.27.0.0';
+const ANDROID_VERSION_CODE = 15;
 const APP_ID = 'com.smithsofeldravar.game';
 const APP_NAME = 'Smiths of Eldravar';
 const CAPACITOR_VERSION = '8.5.3';

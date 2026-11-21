@@ -1,3 +1,4 @@
+import type { MaterialQuality } from '../game/material-quality-core.ts';
 import type { RuneDefinitionId } from './rune-core.ts';
 import type { DungeonRunLike } from './dungeon-core.ts';
 import { addMaterialQuantityById, type MaterialStorageInventory } from './material-storage-core.ts';
@@ -14,7 +15,7 @@ export interface DungeonSessionState {
   dungeonStopRequested: boolean;
   dungeonRun: DungeonRunLike | null;
   dungeonSearch: { nextCheckAt: number } | null;
-  dungeonLootCollect: { readyAt: number; drops: Array<{ materialId?: number | null; name?: string; category?: string; runeDefinitionId?: RuneDefinitionId }>; enemyCount: number } | null;
+  dungeonLootCollect: { readyAt: number; drops: Array<{ materialId?: number | null; quality?: MaterialQuality; name?: string; category?: string; runeDefinitionId?: RuneDefinitionId }>; enemyCount: number } | null;
   dungeonRuneLoot?: RuneDefinitionId[];
   dungeonLoot: MaterialStorageInventory;
   dungeonTeamSlots: Array<number | null>;
@@ -93,7 +94,7 @@ export function migrateParallelDungeons(state: Record<string, unknown> & Mission
     const duplicate=ids.some(n=>reserved.has(n));
     if(duplicate){
       for(const drop of session.dungeonLootCollect?.drops??[]){
-        if(drop.materialId)addMaterialQuantityById(session.dungeonLoot,drop.materialId,1);
+        if(drop.materialId)addMaterialQuantityById(session.dungeonLoot,drop.materialId,1,drop.quality);
         if(drop.runeDefinitionId)(session.dungeonRuneLoot??=[]).push(drop.runeDefinitionId);
       }
       session.expeditionActive=false;session.dungeonStopRequested=false;session.dungeonAuto=false;session.dungeonRun=null;session.dungeonSearch=null;session.dungeonLootCollect=null;session.dungeonSessionEndsAt=null;session.progress=null;session.dungeonCycleOriginalIds=[];session.dungeonCycleActiveIds=[];

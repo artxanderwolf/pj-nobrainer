@@ -1,3 +1,4 @@
+import type { MaterialQuality } from '../game/material-quality-core.ts';
 import { Injectable } from '@angular/core';
 import { renderProductionWorkerControls } from '../game/production-worker-presentation-core.ts';
 import { GameProductionWorkerService } from './game-production-worker.service';
@@ -125,7 +126,8 @@ export class GameMarketPresentationService {
     box.innerHTML = '';
     empty.style.display = entries.length ? 'none' : 'block';
     entries.forEach((entry, index) => {
-      const { materialId, displayName: name, qty: stock } = entry;
+      const { materialId, quality, qty: stock } = entry;
+      const name = `${entry.displayName} S${quality}`;
       const sale = materialSellDataById(materialId);
       if (!sale) return;
       const inputId = `marketQty_${index}`;
@@ -133,7 +135,7 @@ export class GameMarketPresentationService {
       row.className = 'sell-row';
       const presentation = getMarketMaterialPresentation(name, stock, 1, sale.valueNickel, sale.seconds, hasCapacity, formatCurrencyNickel, formatDuration);
       row.title = presentation.title;
-      row.innerHTML = `<div><strong>${name}</strong><div class="sell-meta">${presentation.stockText}</div><div class="sell-meta" data-market-preview>${presentation.previewText}</div></div><div class="market-qty"><button class="btn smallbtn" type="button">−</button><input id="${inputId}" class="number-input" type="number" min="1" max="${stock}" step="1" value="1" data-material="${name}" data-material-id="${materialId}"><button class="btn smallbtn" type="button">+</button><button class="btn smallbtn primary" type="button" ${presentation.sellDisabled ? 'disabled' : ''}>Verkaufen</button></div>`;
+      row.innerHTML = `<div><strong>${name}</strong><div class="sell-meta">${presentation.stockText}</div><div class="sell-meta" data-market-preview>${presentation.previewText}</div></div><div class="market-qty"><button class="btn smallbtn" type="button">−</button><input id="${inputId}" class="number-input" type="number" min="1" max="${stock}" step="1" value="1" data-material="${name}" data-material-id="${materialId}" data-quality="${quality}"><button class="btn smallbtn" type="button">+</button><button class="btn smallbtn primary" type="button" ${presentation.sellDisabled ? 'disabled' : ''}>Verkaufen</button></div>`;
       const buttons = row.querySelectorAll<HTMLButtonElement>('button');
       const input = row.querySelector<HTMLInputElement>('input');
       const preview = row.querySelector<HTMLElement>('[data-market-preview]');
@@ -162,7 +164,7 @@ export class GameMarketPresentationService {
 
       buttons[0]?.addEventListener('click', () => commitQuantity(clampQuantity(Number(input.value)) - 1));
       buttons[1]?.addEventListener('click', () => commitQuantity(clampQuantity(Number(input.value)) + 1));
-      buttons[2]?.addEventListener('click', () => this.startMaterial(materialId, commitQuantity(Number(input.value))));
+      buttons[2]?.addEventListener('click', () => this.startMaterial(materialId, commitQuantity(Number(input.value)), quality));
       input.addEventListener('input', () => {
         if (input.value === '') return;
         const value = Number(input.value);
@@ -258,8 +260,8 @@ export class GameMarketPresentationService {
     return text.replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch] ?? ch));
   }
 
-  private startMaterial(materialId: number, quantity: number): void {
-    const result = this.gameMarket.startMaterialById(materialId, quantity, Date.now());
+  private startMaterial(materialId: number, quantity: number, quality: MaterialQuality): void {
+    const result = this.gameMarket.startMaterialById(materialId, quantity, Date.now(), quality);
     if (result.status === 'full') { alert('Alle Verkaufs- und Warteschlangenplätze sind belegt.'); return; }
     if (result.status === 'no-stock' || result.status === 'unknown-material') return;
     this.combatLog.add(`Verkauf eingestellt: ${result.quantity}× ${result.name} für ${formatCurrencyNickel(result.valueNickel)}.`, 'good');
@@ -288,7 +290,7 @@ export class GameMarketPresentationService {
 
   private presentationJob(job: MarketJob): MarketPresentationJobLike {
     const name = job.type === 'material'
-      ? getMaterialDisplayNameById(job.materialId) ?? `Material #${Number(job.materialId) || '?'}`
+      ? `${getMaterialDisplayNameById(job.materialId) ?? `Material #${Number(job.materialId) || '?'}`} S${job.quality}`
       : job.name || 'Waffe';
     return { ...job, name } as MarketPresentationJobLike;
   }

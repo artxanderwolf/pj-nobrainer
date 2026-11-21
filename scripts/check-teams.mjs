@@ -65,12 +65,12 @@ try {
  restored.teams[2].dungeonLoot={'5':{materialId:5,category:'Metall',qty:7}};
  restored.teams[10].dungeonLoot={'10':{materialId:10,category:'Holz',qty:9}};
  assert.equal(selectTeamDungeon(restored,2,1),false,'Cannot change target with uncollected loot');
- resumed.collectLoot(2);resumed.collectLoot(2);assert.equal(restored.inventory['5'].qty,7);assert.equal(restored.teams[10].dungeonLoot['10'].qty,9);
+ resumed.collectLoot(2);resumed.collectLoot(2);assert.equal(restored.inventory['5:1'].qty,7);assert.equal(restored.teams[10].dungeonLoot['10'].qty,9);
  assert.equal(selectTeamDungeon(restored,2,1),true);
  // Distinct logs/events and manual abort with pending earned drops.
  restored.teams[10].dungeonLootCollect={readyAt:5000,drops:[{materialId:5}],enemyCount:1};
  resumed.open(2400,10);const aborted=resumed.toggleRun(2400);
- assert.ok(aborted.events.every(e=>e.teamId===10));assert.equal(restored.teams[10].dungeonLoot['5'].qty,1);assert.equal(restored.teams[9].dungeonAuto,true);
+ assert.ok(aborted.events.every(e=>e.teamId===10));assert.equal(restored.teams[10].dungeonLoot['5:1'].qty,1);assert.equal(restored.teams[9].dungeonAuto,true);
  restored.teams[2].dungeonTeamSlots=[1,null,null,null];resumed.open(2500,2);assert.match(resumed.toggleRun(2500).alertMessage,/anderen Dungeon/);
  assert.equal(restored.characters[0].hp,0,'Rejected start cannot heal a character in another team');
  for(const id of [3,9]){restored.characters[id-1].hp=10;restored.characters[id-1].alive=true;restored.teams[id].dungeonRun={participantIds:[id],enemies:[],attackPoints:[],dungeonId:2,startedAt:0,energyShare:0,totalEnergyCost:0};}
@@ -90,6 +90,6 @@ try {
  const duplicate={characters:[character(1)],teams:{1:createTeam(1),2:createTeam(2)}};initializeReleaseProgress(duplicate);
  for(const t of Object.values(duplicate.teams)){t.dungeonAuto=true;t.dungeonTeamSlots=[1,null,null,null];t.dungeonCycleOriginalIds=[1];}
  duplicate.teams[2].dungeonLootCollect={readyAt:10,drops:[{materialId:10}],enemyCount:1};duplicate.characters[0].hp=7;
- assert.equal(migrateTeams(duplicate),true);assert.equal(duplicate.teams[1].dungeonAuto,true);assert.equal(duplicate.teams[2].dungeonAuto,false);assert.equal(duplicate.teams[2].dungeonLoot['10'].qty,1);assert.equal(duplicate.characters[0].hp,7);
+ assert.equal(migrateTeams(duplicate),true);assert.equal(duplicate.teams[1].dungeonAuto,true);assert.equal(duplicate.teams[2].dungeonAuto,false);assert.equal(duplicate.teams[2].dungeonLoot['10:2'].qty,1);assert.equal(duplicate.characters[0].hp,7);
  console.log('Teams: 10 parallele Läufe im selben Dungeon, Kaufpreise/Limit, Zielprüfung, Charakterreservierung, Tod, Timeout, Abbruch, Loot-Isolation, Reload, Save-15/16-Migration, Fortschritt und Ausrüstungs-Timer erfolgreich.');
 } finally {for(const file of files)unlinkSync(file);}

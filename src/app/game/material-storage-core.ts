@@ -4,10 +4,12 @@ import {
   type MaterialCategory,
   type MaterialReference
 } from './game-core.ts';
+import { resolveMaterialQuality, type MaterialQuality } from './material-quality-core.ts';
 
 export interface MaterialStorageInventoryEntry {
-  /** Redundante Selbstbeschreibung für Save-Diagnose; der kanonische Schlüssel ist die Material-ID. */
+  /** Redundante Selbstbeschreibung für Save-Diagnose; der kanonische Schluessel ist Material-ID:Qualitaet. */
   materialId?: number | null;
+  quality?: MaterialQuality | null;
   category?: string;
   qty?: number | null;
   [key: string]: unknown;
@@ -15,39 +17,49 @@ export interface MaterialStorageInventoryEntry {
 
 /**
  * JSON-Objektschlüssel sind Strings. Für bekannte Materialien ist ausschließlich
- * String(materialId) kanonisch; Namensschlüssel werden nur beim Laden alter Saves akzeptiert.
+ * materialId:quality kanonisch; Namensschlüssel werden nur beim Laden alter Saves akzeptiert.
  */
 export type MaterialStorageInventory = Record<string, MaterialStorageInventoryEntry | undefined>;
-export type MaterialQuantityRequirements = Readonly<Record<number, number>>;
+export type MaterialQuantityRequirements = Readonly<Record<string, number>>;
 
 export interface ResolvedMaterialStorageEntry {
   storageKey: string;
   materialId: number;
+  quality: MaterialQuality;
   displayName: string;
   category: MaterialCategory;
   qty: number;
   entry: MaterialStorageInventoryEntry;
 }
 
-export function getMaterialStorageKey(materialId: number | null | undefined): string | null {
+export function getMaterialStorageKey(materialId: number | null | undefined, quality?: MaterialQuality | null): string | null {
   const reference = getMaterialReferenceById(materialId);
-  return reference ? String(reference.materialId) : null;
+  return reference ? `${reference.materialId}:${resolveMaterialQuality(quality, reference.definition.rarity as MaterialQuality)}` : null;
 }
 
-function getMaterialReferenceByStorageKey(storageKey: string): MaterialReference | null {
-  const numericKey = Number(storageKey);
-  if (Number.isInteger(numericKey) && numericKey > 0) {
-    const byId = getMaterialReferenceById(numericKey);
-    if (byId) return byId;
-  }
-
-  return getMaterialReferenceById(getMaterialIdByName(storageKey));
+export function parseMaterialStorageKey(key: string): {materialId: number; quality: MaterialQuality} | null {
+  const pair = /^(\d+):([1-6])$/.exec(key);
+  const reference = getMaterialReferenceById(pair ? Number(pair[1]) : Number(key))
+    ?? (!key.includes(':') ? getMaterialReferenceById(getMaterialIdByName(key)) : null);
+  if (!reference) return null;
+  return { materialId: reference.materialId, quality: pair ? Number(pair[2]) as MaterialQuality : reference.definition.rarity as MaterialQuality };
+}
+function getMaterialReferenceByStorageKey(key: string): MaterialReference | null {
+  return getMaterialReferenceById(parseMaterialStorageKey(key)?.materialId);
+}
+function entryQuality(key: string, entry: MaterialStorageInventoryEntry, reference: MaterialReference): MaterialQuality {
+  const pair = parseMaterialStorageKey(key);
+  const quality = resolveMaterialQuality(entry.quality, pair?.quality ?? reference.definition.rarity as MaterialQuality);
+  if (key.includes(':') && (!pair || pair.quality !== quality)) throw new Error(`Widerspruechliche Materialqualitaet: ${key}.`);
+  return quality;
 }
 
 function resolveMaterialReference(
   storageKey: string,
   entry: MaterialStorageInventoryEntry
 ): MaterialReference | null {
+  if (entry.materialId != null && !getMaterialReferenceById(entry.materialId)) throw new Error(`Ungueltige Material-ID: ${storageKey}.`);
+  if (storageKey.includes(':') && !parseMaterialStorageKey(storageKey)) throw new Error(`Ungueltiger Materialschluessel: ${storageKey}.`);
   const referenceByEntry = getMaterialReferenceById(entry.materialId);
   const referenceByKey = getMaterialReferenceByStorageKey(storageKey);
 
@@ -66,9 +78,11 @@ function resolvedEntry(
   entry: MaterialStorageInventoryEntry,
   reference: MaterialReference
 ): ResolvedMaterialStorageEntry {
+  if (!Number.isSafeInteger(entry.qty ?? 0) || Number(entry.qty ?? 0) < 0) throw new Error(`Ungueltige Materialmenge: ${storageKey}.`);
   return {
     storageKey,
     materialId: reference.materialId,
+    quality: entryQuality(storageKey, entry, reference),
     displayName: reference.displayName,
     category: reference.definition.category,
     qty: Math.max(0, Number(entry.qty) || 0),
@@ -80,7 +94,7 @@ function ensureCanonicalEntry(
   inventory: MaterialStorageInventory,
   resolved: ResolvedMaterialStorageEntry
 ): ResolvedMaterialStorageEntry {
-  const canonicalKey = String(resolved.materialId);
+  const canonicalKey = getMaterialStorageKey(resolved.materialId, resolved.quality)!;
   if (resolved.storageKey === canonicalKey) return resolved;
 
   const existing = inventory[canonicalKey];
@@ -106,26 +120,30 @@ export function normalizeMaterialInventory(inventory: MaterialStorageInventory):
     entry: MaterialStorageInventoryEntry;
     reference: MaterialReference;
   }> = [];
-  const seenMaterialIds = new Map<number, string>();
+  const seenMaterialIds = new Map<string, string>();
 
   for (const [storageKey, entry] of Object.entries(inventory)) {
     if (!entry || typeof entry !== 'object') continue;
     const reference = resolveMaterialReference(storageKey, entry);
     if (!reference) continue;
 
-    const previousKey = seenMaterialIds.get(reference.materialId);
+    const key = getMaterialStorageKey(reference.materialId, entryQuality(storageKey, entry, reference))!;
+    resolvedEntry(storageKey, entry, reference);
+    const previousKey = seenMaterialIds.get(key);
     if (previousKey && previousKey !== storageKey) {
       throw new Error(
         `Doppelter Materialbestand für ID ${reference.materialId}: ${previousKey} und ${storageKey}.`
       );
     }
-    seenMaterialIds.set(reference.materialId, storageKey);
+    seenMaterialIds.set(key, storageKey);
     resolvedEntries.push({ storageKey, entry, reference });
   }
 
   let changedEntries = 0;
   for (const { storageKey, entry, reference } of resolvedEntries) {
     let changed = false;
+    const quality = entryQuality(storageKey, entry, reference);
+    if (entry.quality !== quality) { entry.quality = quality; changed = true; }
     if (entry.materialId !== reference.materialId) {
       entry.materialId = reference.materialId;
       changed = true;
@@ -135,7 +153,7 @@ export function normalizeMaterialInventory(inventory: MaterialStorageInventory):
       changed = true;
     }
 
-    const canonicalKey = String(reference.materialId);
+    const canonicalKey = getMaterialStorageKey(reference.materialId, entry.quality)!;
     if (storageKey !== canonicalKey) {
       const existing = inventory[canonicalKey];
       if (existing && existing !== entry) {
@@ -167,12 +185,13 @@ export function getMaterialStorageEntries(inventory: MaterialStorageInventory): 
 
 export function getMaterialStorageEntryById(
   inventory: MaterialStorageInventory,
-  materialId: number | null | undefined
+  materialId: number | null | undefined,
+  quality?: MaterialQuality | null
 ): ResolvedMaterialStorageEntry | null {
   const reference = getMaterialReferenceById(materialId);
   if (!reference) return null;
 
-  const canonicalKey = String(reference.materialId);
+  const canonicalKey = getMaterialStorageKey(reference.materialId, quality)!;
   const canonicalEntry = inventory[canonicalKey];
   if (canonicalEntry) {
     const canonicalReference = resolveMaterialReference(canonicalKey, canonicalEntry);
@@ -185,7 +204,7 @@ export function getMaterialStorageEntryById(
   for (const [storageKey, entry] of Object.entries(inventory)) {
     if (!entry || typeof entry !== 'object') continue;
     const candidate = resolveMaterialReference(storageKey, entry);
-    if (candidate?.materialId === reference.materialId) return resolvedEntry(storageKey, entry, candidate);
+    if (candidate?.materialId === reference.materialId && getMaterialStorageKey(candidate.materialId, entryQuality(storageKey, entry, candidate)) === canonicalKey) return resolvedEntry(storageKey, entry, candidate);
   }
 
   return null;
@@ -193,47 +212,54 @@ export function getMaterialStorageEntryById(
 
 export function getMaterialQuantityById(
   inventory: MaterialStorageInventory,
-  materialId: number | null | undefined
+  materialId: number | null | undefined,
+  quality?: MaterialQuality | null
 ): number {
-  return getMaterialStorageEntryById(inventory, materialId)?.qty ?? 0;
+  return getMaterialStorageEntryById(inventory, materialId, quality)?.qty ?? 0;
 }
 
 export function addMaterialQuantityById(
   inventory: MaterialStorageInventory,
   materialId: number | null | undefined,
-  quantity: number
+  quantity: number,
+  quality?: MaterialQuality | null
 ): ResolvedMaterialStorageEntry | null {
   const reference = getMaterialReferenceById(materialId);
   const amount = Number(quantity);
-  if (!reference || !Number.isFinite(amount) || amount <= 0) return null;
+  if (!reference || !Number.isSafeInteger(amount) || amount <= 0) return null;
 
-  let existing = getMaterialStorageEntryById(inventory, reference.materialId);
+  let existing = getMaterialStorageEntryById(inventory, reference.materialId, quality);
   if (existing) existing = ensureCanonicalEntry(inventory, existing);
   if (!existing) {
     const entry: MaterialStorageInventoryEntry = {
       materialId: reference.materialId,
+      quality: resolveMaterialQuality(quality, reference.definition.rarity as MaterialQuality),
       category: reference.definition.category,
       qty: 0
     };
-    const storageKey = String(reference.materialId);
+    const storageKey = getMaterialStorageKey(reference.materialId, quality)!;
     inventory[storageKey] = entry;
     existing = resolvedEntry(storageKey, entry, reference);
   }
 
   existing.entry.materialId = reference.materialId;
+  existing.entry.quality = existing.quality;
   existing.entry.category = reference.definition.category;
-  existing.entry.qty = (Number(existing.entry.qty) || 0) + amount;
-  return resolvedEntry(String(reference.materialId), existing.entry, reference);
+  const total = (Number(existing.entry.qty) || 0) + amount;
+  if (!Number.isSafeInteger(total)) throw new Error('Materialmenge zu gross.');
+  existing.entry.qty = total;
+  return resolvedEntry(getMaterialStorageKey(reference.materialId, existing.quality)!, existing.entry, reference);
 }
 
 export function takeMaterialQuantityById(
   inventory: MaterialStorageInventory,
   materialId: number | null | undefined,
-  quantity: number
+  quantity: number,
+  quality?: MaterialQuality | null
 ): boolean {
   const amount = Number(quantity);
-  if (!Number.isFinite(amount) || amount <= 0) return false;
-  let existing = getMaterialStorageEntryById(inventory, materialId);
+  if (!Number.isSafeInteger(amount) || amount <= 0) return false;
+  let existing = getMaterialStorageEntryById(inventory, materialId, quality);
   if (!existing || existing.qty < amount) return false;
   existing = ensureCanonicalEntry(inventory, existing);
 
@@ -243,7 +269,7 @@ export function takeMaterialQuantityById(
     existing.entry.materialId = existing.materialId;
     existing.entry.category = existing.category;
   } else {
-    delete inventory[String(existing.materialId)];
+    delete inventory[getMaterialStorageKey(existing.materialId, existing.quality)!];
   }
   return true;
 }
@@ -254,16 +280,17 @@ export function reserveMaterialQuantitiesById(
   requirements: MaterialQuantityRequirements
 ): boolean {
   const normalized = Object.entries(requirements)
-    .map(([rawId, rawQuantity]) => ({ materialId: Number(rawId), quantity: Number(rawQuantity) }))
-    .filter(requirement => Number.isFinite(requirement.quantity) && requirement.quantity > 0);
+    .map(([key, quantity]) => ({ ...parseMaterialStorageKey(key), quantity }));
 
-  if (normalized.some(requirement => !getMaterialReferenceById(requirement.materialId))) return false;
-  if (normalized.some(requirement => getMaterialQuantityById(inventory, requirement.materialId) < requirement.quantity)) {
+  const keys = normalized.map(item => getMaterialStorageKey(item.materialId, item.quality));
+  if (new Set(keys).size !== keys.length) return false;
+  if (normalized.some(requirement => !requirement.materialId || !Number.isSafeInteger(requirement.quantity) || requirement.quantity <= 0)) return false;
+  if (normalized.some(requirement => getMaterialQuantityById(inventory, requirement.materialId, requirement.quality) < requirement.quantity)) {
     return false;
   }
 
   for (const requirement of normalized) {
-    if (!takeMaterialQuantityById(inventory, requirement.materialId, requirement.quantity)) {
+    if (!takeMaterialQuantityById(inventory, requirement.materialId, requirement.quantity, requirement.quality)) {
       throw new Error(`Materialbestand änderte sich während einer synchronen Reservierung: ID ${requirement.materialId}.`);
     }
   }

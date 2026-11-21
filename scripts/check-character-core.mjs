@@ -11,6 +11,8 @@ const generatedDir = path.join(tempDir, 'data', 'generated');
 const source = fs.readFileSync(path.resolve('src/app/game/character-core.ts'), 'utf8')
   .replace("from './game-core';", "from './game-core.ts';");
 fs.mkdirSync(generatedDir, { recursive: true });
+fs.copyFileSync(path.resolve('src/app/game/material-quality-core.ts'), path.join(tempDir, 'material-quality-core.ts'));
+fs.copyFileSync(path.resolve('src/app/game/data/generated/material-quality.generated.ts'), path.join(generatedDir, 'material-quality.generated.ts'));
 fs.copyFileSync(path.resolve('src/app/game/armor-core.ts'), path.join(tempDir, 'armor-core.ts'));
 fs.copyFileSync(path.resolve('src/app/game/character-race-core.ts'), path.join(tempDir, 'character-race-core.ts'));
 fs.copyFileSync(path.resolve('src/app/game/game-core.ts'), path.join(tempDir, 'game-core.ts'));

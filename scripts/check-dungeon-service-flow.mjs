@@ -156,7 +156,7 @@ try {
   assert.ok(successState.teams[1].dungeonLootCollect, 'Nach Sieg muss zunächst die Loot-Zwischenphase aktiv sein.');
   assert.deepEqual(
     successState.teams[1].dungeonLootCollect.drops,
-    [{ materialId: 5 }],
+    [{ materialId: 5, quality: 1 }],
     'Neue Dungeon-Drops dürfen technisch nur noch die stabile Material-ID persistieren.'
   );
   assert.deepEqual(successState.teams[1].dungeonCycleActiveIds, [1], 'Überlebende müssen für den nächsten Durchlauf aktiv bleiben.');
@@ -169,7 +169,7 @@ try {
   result = successService.update(4000);
   assert.equal(successState.teams[1].dungeonLootCollect, null, 'Die Loot-Zwischenphase muss nach Ablauf abgeschlossen werden.');
   assert.equal(Object.values(successState.teams[1].dungeonLoot).reduce((sum, entry) => sum + (entry.qty || 0), 0), 1);
-  assert.equal(successState.teams[1].dungeonLoot['5']?.qty, 1, 'Neuling speichert Kupfer unter Material-ID 5.');
+  assert.equal(successState.teams[1].dungeonLoot['5:1']?.qty, 1, 'Neuling speichert Kupfer unter Material-ID 5.');
   assert.equal(successState.teams[1].dungeonLoot.Lederfetzen, undefined, 'Neue Dungeon-Beute darf keinen Materialnamen als Schlüssel verwenden.');
   assert.equal(successState.teams[1].dungeonSearch.nextCheckAt, 5000, 'Bei aktivem Lauf muss nach dem Loot wieder gesucht werden.');
   assert.equal(successService.getSessionWaveCount(), 1);
@@ -177,7 +177,7 @@ try {
   const collected = successService.collectLoot();
   assert.equal(Object.keys(successState.teams[1].dungeonLoot).length, 0, 'Manuelles Einsammeln muss die Dungeon-Beute leeren.');
   assert.equal(Object.values(successState.inventory).reduce((sum, entry) => sum + (entry.qty || 0), 0), 1);
-  assert.equal(successState.inventory['5']?.qty, 1, 'Eingesammelte Beute muss unter der Material-ID im Lager liegen.');
+  assert.equal(successState.inventory['5:1']?.qty, 1, 'Eingesammelte Beute muss unter der Material-ID im Lager liegen.');
   assert.equal(successState.inventory.Lederfetzen, undefined);
   assert.equal(collected.events.length, 1);
 
@@ -191,10 +191,10 @@ try {
   const legacyLootService = new GameDungeonService({ getState: () => legacyLootState });
   assert.equal(legacyLootService.normalizeMaterialReferences(), 2, 'Legacy-Dungeon-Loot und ausstehender Drop müssen gemeinsam auf IDs migriert werden.');
   assert.equal(legacyLootState.teams[1].dungeonLoot.Kupfer, undefined);
-  assert.deepEqual(legacyLootState.teams[1].dungeonLoot['5'], { materialId: 5, category: 'Metall', qty: 2 });
-  assert.deepEqual(legacyLootState.teams[1].dungeonLootCollect.drops, [{ materialId: 5 }]);
+  assert.deepEqual(legacyLootState.teams[1].dungeonLoot['5:1'], { materialId: 5, quality: 1, category: 'Metall', qty: 2 });
+  assert.deepEqual(legacyLootState.teams[1].dungeonLootCollect.drops, [{ materialId: 5, quality: 1 }]);
   const legacyLootResult = legacyLootService.update(1000);
-  assert.equal(legacyLootState.teams[1].dungeonLoot['5']?.qty, 3, 'Der migrierte laufende Drop muss denselben ID-keyed Kupferbestand erhöhen.');
+  assert.equal(legacyLootState.teams[1].dungeonLoot['5:1']?.qty, 3, 'Der migrierte laufende Drop muss denselben ID-keyed Kupferbestand erhöhen.');
   assert.ok(legacyLootResult.events.some(event => event.text.includes('Kupfer')), 'Anzeigenamen müssen weiterhin in Benutzerereignissen erscheinen.');
 
   const splitState = makeState(2);
@@ -395,6 +395,26 @@ try {
   assert.deepEqual(noEnergyState.teams[1].dungeonTeamSlots, [1, null, null, null]);
   assert.equal(noEnergyState.characters[0].energy, 0, 'Dungeon 1 darf Energie weder auffüllen noch abbuchen.');
   assert.equal(noEnergyResult.events.some(event => event.text.includes('Nicht genügend Energie')), false);
+
+  const qualityService = new GameDungeonService({getState:()=>makeState()});
+  const normalEnemy = {lootMaterialIds:[5,3],boss:false};
+  for (const [roll,quality] of [[0,1],[.7,2],[.92,3],[.98,4],[.998,5],[.999999,6]]) {
+    const draws=[.5,.5,.5,0,0,roll]; Math.random=()=>{assert.ok(draws.length,'Unexpected extra RNG draw');return draws.shift();};
+    assert.deepEqual(qualityService.rollDrops([normalEnemy],1),[{materialId:5,quality}]);assert.equal(draws.length,0);
+  }
+  {
+    const draws=[0,0,0,.6];Math.random=()=>{assert.ok(draws.length);return draws.shift();};
+    assert.deepEqual(qualityService.rollDrops([normalEnemy],1),[{runeDefinitionId:'rune-p-1'}],'Rune still drops independently when material roll fails');
+  }
+  {
+    const draws=[.5,.5,.5,0,0,0,0,.7,0,.92,0,.98,0,.999999];Math.random=()=>{assert.ok(draws.length);return draws.shift();};
+    const drops=qualityService.rollDrops([{...normalEnemy,boss:true}],1);
+    assert.equal(new Set(drops.map(d=>d.materialId)).size,5);assert.deepEqual(drops.map(d=>d.quality),[1,2,3,4,6]);assert.equal(draws.length,0);
+  }
+  // Pending S6 survives save/reload and delayed collection; collecting twice cannot duplicate.
+  const pendingState=makeState();pendingState.teams[1].dungeonLootCollect={readyAt:1000,drops:[{materialId:3,quality:6}],enemyCount:1};
+  const pendingLoaded=decodeSave(encodeSave(pendingState)).state;const pendingService=new GameDungeonService({getState:()=>pendingLoaded});
+  pendingService.update(1500);assert.equal(pendingLoaded.teams[1].dungeonLoot['3:6'].qty,1);pendingService.collectLoot();pendingService.collectLoot();assert.equal(pendingLoaded.inventory['3:6'].qty,1);
 
   console.log('Dungeon-Service-Ablauf: S02-Startgruppe und S03-XP/Material 60/40, Boss-Beute, Alt-Saves, Team-Trennung und ID-Loot geprüft.');
 } finally {

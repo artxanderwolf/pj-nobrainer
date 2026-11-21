@@ -1,3 +1,4 @@
+import { resolveMaterialQuality, scaleMaterialStat, type MaterialQuality } from './material-quality-core.ts';
 import * as baseline from './game-core-v01310-baseline.ts';
 import type {
   CharacterModifierKey,
@@ -56,6 +57,7 @@ export interface MaterialReference {
 export interface WeaponSlot extends BaselineWeaponSlot {
   /** Kanonische Materialreferenz. material ist nur eine temporäre Legacy-Projektion. */
   materialId?: number | null;
+  quality?: MaterialQuality | null;
 }
 
 const generatedMaterialDefinitionsById = new Map<number, MaterialDefinition>();
@@ -84,6 +86,23 @@ export function getMaterialReferenceById(materialId: number | null | undefined):
   return MATERIAL_REFERENCES_BY_ID[resolved] ?? null;
 }
 export function getMaterialDefinitionById(materialId: number | null | undefined): MaterialDefinition | null { return getMaterialReferenceById(materialId)?.definition ?? null; }
+
+const qualityDefinitions = new Map<string, MaterialDefinition>();
+/** Material type and found quality are separate axes; legacy fixed rarity is only a migration default. */
+export function getMaterialQualityDefinitionById(materialId: number, quality: MaterialQuality): MaterialDefinition | null {
+  const reference = getMaterialReferenceById(materialId);
+  if (!reference) return null;
+  const q = resolveMaterialQuality(quality, reference.definition.rarity);
+  const key = `${materialId}:${q}`;
+  let definition = qualityDefinitions.get(key);
+  if (!definition) {
+    const stats = Object.fromEntries(Object.entries(reference.definition.stats).map(([stat,value]) => [stat, scaleMaterialStat(Number(value), q)])) as unknown as MaterialDefinition['stats'];
+    definition = { ...reference.definition, rarity: q, stats };
+    qualityDefinitions.set(key, definition);
+  }
+  return definition;
+}
+
 export function getMaterialById(materialId: number | null | undefined): [string, MaterialDefinition] | null {
   const reference = getMaterialReferenceById(materialId); return reference ? [reference.displayName, reference.definition] : null;
 }
@@ -123,13 +142,13 @@ export function normalizeWeaponSlots(slots: readonly WeaponSlot[] | null | undef
   return baseline.normalizeWeaponSlots(slots as readonly BaselineWeaponSlot[] | null | undefined).map(slot => {
     const materialId = resolveSlotMaterialId(slot);
     const reference = getMaterialReferenceById(materialId);
-    return { ...slot, materialId, material: reference?.displayName ?? null };
+    return { ...slot, materialId, quality: reference ? resolveMaterialQuality(slot['quality'], reference.definition.rarity) : null, material: reference?.displayName ?? null };
   });
 }
 
 /** Persistenzform für Waffen und Schmiedeaufträge: ausschließlich Slot-ID + Material-ID. */
 export function canonicalWeaponSlots(slots: readonly WeaponSlot[] | null | undefined): WeaponSlot[] {
-  return normalizeWeaponSlots(slots).map(slot => ({ slot: slot.slot, materialId: slot.materialId ?? null }));
+  return normalizeWeaponSlots(slots).map(slot => ({ slot: slot.slot, materialId: slot.materialId ?? null, quality: slot.quality ?? null }));
 }
 
 /** Crafting presentation no longer exposes the obsolete special part. */
@@ -151,13 +170,13 @@ export function isWeaponSelectionComplete(slots: readonly WeaponSlot[] | null | 
   });
 }
 export function rarityFactor(slots: readonly WeaponSlot[] | null | undefined): number {
-  const rarities = normalizeWeaponSlots(slots).filter(entry => entry.slot !== 'baseMaterial' && entry.slot !== 'special').map(entry => getMaterialDefinitionById(entry.materialId)?.rarity).filter((value): value is number => Number.isFinite(value));
+  const rarities = normalizeWeaponSlots(slots).filter(entry => entry.slot !== 'baseMaterial' && entry.slot !== 'special').map(entry => entry.quality).filter((value): value is MaterialQuality => Number.isFinite(value));
   return rarities.length ? Math.min(...rarities) : 1;
 }
 
 function createModifiers(overrides: Partial<CharacterStatModifiers> = {}): CharacterStatModifiers { return baseline.createStatModifiers(overrides); }
 function addModifiers(target: CharacterStatModifiers, source: Partial<CharacterStatModifiers>): void { (Object.keys(target) as CharacterModifierKey[]).forEach(key => { target[key] += Number(source[key]) || 0; }); }
-function selectedMaterial(slots: readonly WeaponSlot[], slotId: string): MaterialDefinition | null { return getMaterialDefinitionById(slots.find(entry => entry.slot === slotId)?.materialId); }
+function selectedMaterial(slots: readonly WeaponSlot[], slotId: string): MaterialDefinition | null { const slot = slots.find(entry => entry.slot === slotId); return slot?.materialId && slot.quality ? getMaterialQualityDefinitionById(slot.materialId, slot.quality) : null; }
 function partModifiers(part: WeaponPartRequirement, material: MaterialDefinition | null): CharacterStatModifiers {
   const modifiers = createModifiers(); if (!material) return modifiers;
   for (const key of part.statKeys) modifiers[key] += Number(material.stats[key]) || 0;
@@ -194,7 +213,7 @@ export function calculateWeaponStats(slots: readonly WeaponSlot[] | null | undef
 
 export function getStarterBlueprint() {
   const slots: WeaponSlot[] = [{slot:'workingPart',materialId:4},{slot:'back',materialId:1},{slot:'gripCore',materialId:1},{slot:'gripWrap',materialId:9},{slot:'parry',materialId:1}];
-  return {slots,stats:calculateWeaponStats(slots,'sword')};
+  return {slots: canonicalWeaponSlots(slots),stats:calculateWeaponStats(slots,'sword')};
 }
 
 export const GAME_CORE_BRIDGE = {

@@ -3,6 +3,7 @@ import { calculateWeaponValueNickel, formatCurrencyNickel } from '../game/econom
 import {
   CONFIG,
   rarityFactor,
+  getMaterialReferenceById,
   reinforcementEffectTextById,
   type WeaponStats
 } from '../game/game-core';
@@ -62,13 +63,14 @@ export class GameWeaponPresentationService {
       return `<div class="weapon-stat"><span>${stat.label}</span><b>${value}${diff}</b></div>`;
     }).join('');
     const reinforcement = presentation.reinforcementText ? ` · ${presentation.reinforcementText}` : '';
+    const parts = (weapon.slots ?? []).filter(slot => slot.materialId && slot.slot !== 'special').map(slot => `${getMaterialReferenceById(slot.materialId)?.displayName ?? ''} S${slot.quality}`).join(' · ');
     const statusHtml = status ? `<span class="tag fixed">${status}</span>` : '';
 
-    return `<div class="weapon-card"><div class="weapon-card-head"><div class="weapon-card-head-main">${imageHtml}<div class="weapon-card-copy"><div class="weapon-card-title">${presentation.title}</div><div class="weapon-card-sub">${presentation.formName} · ${presentation.rarityLabel}${reinforcement}</div></div></div>${statusHtml}</div><div class="weapon-stats">${statHtml}</div>${actions}</div>`;
+    return `<div class="weapon-card"><div class="weapon-card-head"><div class="weapon-card-head-main">${imageHtml}<div class="weapon-card-copy"><div class="weapon-card-title">${presentation.title}</div><div class="weapon-card-sub">${presentation.formName} · ${presentation.rarityLabel}${reinforcement}</div></div></div>${statusHtml}</div><div class="weapon-card-materials">${parts}</div><div class="weapon-stats">${statHtml}</div>${actions}</div>`;
   }
 
   private withCurrentEconomyValue(weapon: RuntimeWeaponPresentation): RuntimeWeaponPresentation {
-    if (weapon.starter || !weapon.stats) return weapon;
+    if (weapon.starter || !weapon.stats || 'preservedMaterialBaseStats' in weapon) return weapon;
     return { ...weapon, valueNickel: calculateWeaponValueNickel(weapon.stats) };
   }
 }

@@ -1,3 +1,5 @@
+import { MATERIAL_QUALITY_MIGRATION_BRIDGE } from '../game/material-quality-migration-core.ts';
+declare global { interface Window { NoBrainerMaterialQualityMigration: typeof MATERIAL_QUALITY_MIGRATION_BRIDGE; } }
 import { Injectable } from '@angular/core';
 
 const LEGACY_STATE_DECLARATION = 'let state=createDefaultState();';
@@ -20,6 +22,7 @@ const RESET_STATE_ASSIGNMENT = 'state=createDefaultState();';
 @Injectable({ providedIn: 'root' })
 export class LegacyStateAdapterService {
   adapt(source: string): string {
+    window.NoBrainerMaterialQualityMigration = MATERIAL_QUALITY_MIGRATION_BRIDGE;
     let adapted = this.replaceOnce(
       source,
       LEGACY_STATE_DECLARATION,
