@@ -1,19 +1,20 @@
 {
   "schemaVersion": 1,
   "available": true,
-  "versionName": "0.20.0",
-  "versionCode": 7,
-  "apkUrl": "https://github.com/artxanderwolf/pj-nobrainer/releases/download/android-v0.20.0-code7/Smiths-of-Eldravar-v0.20.0-code7-release.apk",
-  "apkSize": 3618248,
-  "sha256": "8f2c04b3e56b47b758a7f692dc5f8c91f090738389c818ae309d527d7378e711",
-  "publishedAt": "2026-10-27T10:59:54.284Z",
+  "versionName": "0.27.0.0",
+  "versionCode": 15,
+  "apkUrl": "https://github.com/artxanderwolf/pj-nobrainer/releases/download/android-v0.27.0.0-code15/Smiths-of-Eldravar-v0.27.0.0-code15-release.apk",
+  "apkSize": 3718112,
+  "sha256": "33c0149b7d67636a156de52bf32355512cc787f91f223e39a1c0cc87a1c4ad9d",
+  "publishedAt": "2026-11-21T02:04:42.837Z",
   "mandatory": false,
   "releaseNotes": [
-    "Klassen dürfen nur ihre freigegebenen Waffen ausrüsten. Bereits unerlaubt ausgerüstete Waffen werden ins Lager abgelegt.",
-    "Nur Rekruten dürfen zwei Einhandwaffen führen: 75 % Schaden je Waffe, mit Schwert und Dolch 82,5 %.",
-    "Bevorzugte Waffen erhalten 10 % Schadensbonus: Kämpfer mit 2H-Schwert oder 2H-Axt, Bogner mit Bogen, Gelehrter mit Stab.",
-    "Wellen werden im Trainingslager seltener gefunden: 5 % Chance je Suchsekunde. Gegner und Belohnungen pro Gegner bleiben gleich.",
-    "Das neue Eldravar-Emblem wird als Android-App-Icon und Web-Icon verwendet.",
-    "Aktualisiere die vorhandene App ohne Deinstallation. Das Spielstandformat bleibt unverändert bei Version 14."
+    "Großupdate v2 / Etappe C: Alle 77 Materialarten können unabhängig in Qualität S1 bis S6 gefunden werden. Keine Materialaufwertung oder garantierte S6-Erzeugung.",
+    "Lager, Dungeonbeute, Schmiede und Markt unterscheiden die Qualität. Materialauswahl, Reservierung und Verkaufsabbruch betreffen genau den ausgewählten Bestand.",
+    "Waffen behalten die Qualitäten ihrer Bauteile. Vorschau und Index zeigen die neuen Werte sowie Waffenqualität und Runensockel.",
+    "Dungeonfortschritt nach Etappe B: fünf qualifizierte Läufe mit je 50 Siegen; anschließend Zugangssuche ab Welle 50 im neuen Lauf. Gegnerstärke und XP wurden abgestimmt.",
+    "Der aktuelle gemeinsame Spielstand umfasst Stadt, Teams, Klassen-/Waffenregeln, Runen und die zugehörige Spielerhilfe der Webversion.",
+    "Save 28 übernimmt ältere Spielstände automatisch. Materialmengen, bestehende Waffen und Runen sowie reservierte Aufträge bleiben erhalten. Ein JSON-Export vor dem Update ist möglich.",
+    "Die vorhandene App aktualisieren, ohne sie zu deinstallieren. APK speichern und anschließend über Downloads oder Eigene Dateien öffnen. Installation und echter Gerätetest bleiben beim Besitzer."
   ]
 }
