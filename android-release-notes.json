@@ -1,5 +1,9 @@
 [
-  "Etappe C / S08-S11: Unabhaengige Materialqualitaet S1-S6, getrennte Lagerbestaende, qualitaetsgenaue Schmiede und Markt sowie unabhaengige Beutequalitaet.",
-  "Save 28: Alte Bestaende erhalten ihre bisherige Seltenheit als Qualitaet; vorhandene Waffen, Runen und reservierte Auftraege behalten ihre Werte. Vor dem Update JSON-Spielstand exportieren.",
-  "Gemeinsame Web-/Android-Codebasis. Diese Vorbereitung veroeffentlicht kein Android-Paket."
+  "Großupdate v2 / Etappe C: Alle 77 Materialarten können unabhängig in Qualität S1 bis S6 gefunden werden. Keine Materialaufwertung oder garantierte S6-Erzeugung.",
+  "Lager, Dungeonbeute, Schmiede und Markt unterscheiden die Qualität. Materialauswahl, Reservierung und Verkaufsabbruch betreffen genau den ausgewählten Bestand.",
+  "Waffen behalten die Qualitäten ihrer Bauteile. Vorschau und Index zeigen die neuen Werte sowie Waffenqualität und Runensockel.",
+  "Dungeonfortschritt nach Etappe B: fünf qualifizierte Läufe mit je 50 Siegen; anschließend Zugangssuche ab Welle 50 im neuen Lauf. Gegnerstärke und XP wurden abgestimmt.",
+  "Der aktuelle gemeinsame Spielstand umfasst Stadt, Teams, Klassen-/Waffenregeln, Runen und die zugehörige Spielerhilfe der Webversion.",
+  "Save 28 übernimmt ältere Spielstände automatisch. Materialmengen, bestehende Waffen und Runen sowie reservierte Aufträge bleiben erhalten. Ein JSON-Export vor dem Update ist möglich.",
+  "Die vorhandene App aktualisieren, ohne sie zu deinstallieren. APK speichern und anschließend über Downloads oder Eigene Dateien öffnen. Installation und echter Gerätetest bleiben beim Besitzer."
 ]
