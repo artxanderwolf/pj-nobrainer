@@ -250,6 +250,19 @@ export function validateGameData(tables) {
     if (asNumber(row.max_value, `upgrades ${row.id}.max_value`) < asNumber(row.start_value, `upgrades ${row.id}.start_value`)) fail(`upgrades ${row.id}: max_value muss >= start_value sein.`);
   }
 
+  const qualities = tables.material_quality.rows;
+  if (qualities.length !== 6) fail('Materialqualität benötigt genau sechs Stufen.');
+  assertUnique(qualities, 'quality', 'material_quality');
+  let totalQualityWeight = 0;
+  qualities.forEach((row, index) => {
+    if (asInteger(row.quality, 'material_quality.quality') !== index + 1) fail('Qualitäten müssen sortiert S1–S6 sein.');
+    const weight = asInteger(row.weight_per_million, 'material_quality.weight_per_million');
+    if (weight < 1) fail('Jede Qualität benötigt ein positives Gewicht.');
+    totalQualityWeight += weight;
+    assertRange(row.stat_factor, 1, 10, 'material_quality.stat_factor');
+  });
+  if (totalQualityWeight !== 1_000_000 || Number(qualities[5].weight_per_million) !== 1) fail('Qualitätsgewichte müssen 1.000.000 ergeben, S6 genau 1.');
+
   const rarity = tables.rarity_balance.rows;
   assertUnique(rarity, 'rarity', 'rarity_balance');
   for (const row of rarity) {

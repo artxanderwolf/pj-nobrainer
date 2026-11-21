@@ -91,11 +91,11 @@ assert.deepEqual(getDungeonEnemyDefinition(1, 'archer'), { name: 'Jäger', lootM
 assert.deepEqual(getDungeonEnemyDefinition(1, 'scholar'), { name: 'Lehrling', lootMaterialIds: [9, 2, 1], xpDrop: 16 });
 
 const daggerSlots = [
-  { slot: 'workingPart', material: 'Kupfer' },
-  { slot: 'back', material: 'Zinn' },
-  { slot: 'gripCore', material: 'Fichte' },
-  { slot: 'gripWrap', material: 'Hasen-Leder' },
-  { slot: 'special', material: 'Kupfer' }
+  { slot: 'workingPart', material: 'Kupfer', quality: 1 },
+  { slot: 'back', material: 'Zinn', quality: 1 },
+  { slot: 'gripCore', material: 'Fichte', quality: 1 },
+  { slot: 'gripWrap', material: 'Hasen-Leder', quality: 1 },
+  { slot: 'special', material: 'Kupfer', quality: 1 }
 ];
 assert.equal(isWeaponSelectionComplete(daggerSlots, 'dagger'), true);
 assert.equal(isWeaponSelectionComplete(daggerSlots.slice(0, 3), 'dagger'), false);
@@ -112,7 +112,7 @@ closeTo(dagger.hitChance, 0.66);
 closeTo(dagger.penetration, 0);
 closeTo(dagger.expectedRaw, 5.8212);
 
-const swordSlots = [...daggerSlots, { slot: 'parry', material: 'Aluminium' }];
+const swordSlots = [...daggerSlots, { slot: 'parry', material: 'Aluminium', quality: 1 }];
 const sword = calculateWeaponStats(swordSlots, 'sword');
 closeTo(sword.characterModifiers.armor, 4);
 closeTo(sword.characterModifiers.dodge, 0.02);
@@ -128,11 +128,11 @@ closeTo(sword.penetration, 0);
 closeTo(sword.expectedRaw, 6.3525);
 
 const bowSlots = [
-  { slot: 'back', material: 'Fichte' },
-  { slot: 'gripCore', material: 'Tanne' },
-  { slot: 'gripWrap', material: 'Fuchs-Leder' },
-  { slot: 'special', material: 'Fichte' },
-  { slot: 'bowstring', material: 'Fuchs-Leder' }
+  { slot: 'back', material: 'Fichte', quality: 1 },
+  { slot: 'gripCore', material: 'Tanne', quality: 1 },
+  { slot: 'gripWrap', material: 'Fuchs-Leder', quality: 1 },
+  { slot: 'special', material: 'Fichte', quality: 1 },
+  { slot: 'bowstring', material: 'Fuchs-Leder', quality: 1 }
 ];
 assert.equal(isWeaponSelectionComplete(bowSlots, 'bow'), true);
 const bow = calculateWeaponStats(bowSlots, 'bow');
@@ -149,35 +149,35 @@ closeTo(bow.penetration, 0.04);
 closeTo(bow.expectedRaw, 8.1081);
 
 const specialBaseSlots = [
-  { slot: 'workingPart', material: 'Zinn' },
-  { slot: 'back', material: 'Zinn' },
-  { slot: 'gripCore', material: 'Fichte' },
-  { slot: 'gripWrap', material: 'Lederfetzen' }
+  { slot: 'workingPart', material: 'Zinn', quality: 1 },
+  { slot: 'back', material: 'Zinn', quality: 1 },
+  { slot: 'gripCore', material: 'Fichte', quality: 1 },
+  { slot: 'gripWrap', material: 'Lederfetzen', quality: 1 }
 ];
-const noSpecial = calculateWeaponStats([...specialBaseSlots, { slot: 'special', material: 'Morsche Fichte' }], 'dagger');
+const noSpecial = calculateWeaponStats([...specialBaseSlots, { slot: 'special', material: 'Morsche Fichte', quality: 1 }], 'dagger');
 closeTo(noSpecial.specialSpeedFactor, 1);
 closeTo(noSpecial.reinforcementHitChanceAdd, 0);
 closeTo(noSpecial.reinforcementPenetrationAdd, 0);
-const penetrationSpecial = calculateWeaponStats([...specialBaseSlots, { slot: 'special', material: 'Fichte' }], 'dagger');
+const penetrationSpecial = calculateWeaponStats([...specialBaseSlots, { slot: 'special', material: 'Fichte', quality: 1 }], 'dagger');
 closeTo(penetrationSpecial.penetration, 0);
 closeTo(penetrationSpecial.reinforcementPenetrationAdd, 0);
-const precisionSpecial = calculateWeaponStats([...specialBaseSlots, { slot: 'special', material: 'Tanne' }], 'dagger');
+const precisionSpecial = calculateWeaponStats([...specialBaseSlots, { slot: 'special', material: 'Tanne', quality: 1 }], 'dagger');
 closeTo(precisionSpecial.characterModifiers.precision, 0.10);
 closeTo(precisionSpecial.reinforcementHitChanceAdd, 0);
 closeTo(precisionSpecial.hitChance, 0.66);
-const speedSpecial = calculateWeaponStats([...specialBaseSlots, { slot: 'special', material: 'Hasen-Leder' }], 'dagger');
+const speedSpecial = calculateWeaponStats([...specialBaseSlots, { slot: 'special', material: 'Hasen-Leder', quality: 1 }], 'dagger');
 closeTo(speedSpecial.specialSpeedFactor, 1);
 closeTo(speedSpecial.attackSpeed, 1.4);
 
 const legacySlots = [
-  { slot: 'Waffentyp', material: 'Aluminium' },
-  { slot: 'Schneide', material: 'Kupfer' },
-  { slot: 'Rückseite', material: 'Zinn' },
-  { slot: 'Griffform', material: 'Fichte' },
-  { slot: 'Griffmaterial', material: 'Hasen-Leder' },
-  { slot: 'Verstärkungsmaterial', material: 'Kupfer' },
-  { slot: 'Parierstange', material: 'Aluminium' },
-  { slot: 'Sehne', material: 'Fuchs-Leder' }
+  { slot: 'Waffentyp', material: 'Aluminium', quality: 1 },
+  { slot: 'Schneide', material: 'Kupfer', quality: 1 },
+  { slot: 'Rückseite', material: 'Zinn', quality: 1 },
+  { slot: 'Griffform', material: 'Fichte', quality: 1 },
+  { slot: 'Griffmaterial', material: 'Hasen-Leder', quality: 1 },
+  { slot: 'Verstärkungsmaterial', material: 'Kupfer', quality: 1 },
+  { slot: 'Parierstange', material: 'Aluminium', quality: 1 },
+  { slot: 'Sehne', material: 'Fuchs-Leder', quality: 1 }
 ];
 assert.deepEqual(
   normalizeWeaponSlots(legacySlots).map(entry => entry.slot),

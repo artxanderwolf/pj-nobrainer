@@ -38,42 +38,8 @@ const LEGACY_MIGRATE_WEAPON_AFTER_RENAME = `function migrateWeaponToCurrentRules
   };
 }`;
 
-const CURRENT_MIGRATE_WEAPON = `function normalizeWeaponBlueprintSlots(slots,weaponForm){
-  const normalized=normalizeWeaponSlots(slots),active=window.NoBrainerGameCore.getWeaponCraftingSlots(weaponForm);
-  const migrated=active.map(slot=>{
-    let material=normalized.find(entry=>entry.slot===slot)?.material||null;
-    if(!material&&slot==="parry")material=normalized.find(entry=>entry.slot==="back")?.material||null;
-    return {slot,material};
-  });
-  // Existing crafted weapons and reserved jobs must retain their historical special
-  // material until the one-time S21 rune migration has read its effect.
-  const oldSpecial=normalized.find(entry=>entry.slot==="special");
-  if(oldSpecial){
-    const parryIndex=migrated.findIndex(entry=>entry.slot==="parry");
-    migrated.splice(parryIndex<0?migrated.length:parryIndex,0,{slot:"special",material:oldSpecial.material||null});
-  }
-  return migrated;
-}
-
-function migrateWeaponToCurrentRules(w){
-  if(!w || w.starter || w.id===0)return cloneStarterWeapon();
-  const cleanWeapon={...w};
-  const weaponForm=cleanWeapon.weaponForm||cleanWeapon["${LEGACY_WEAPON_FORM_KEY}"]||"sword";
-  delete cleanWeapon["${LEGACY_WEAPON_FORM_KEY}"];
-  const slots=normalizeWeaponBlueprintSlots(cleanWeapon.slots,weaponForm);
-  if(!window.NoBrainerGameCore.isWeaponSelectionComplete(slots,weaponForm))return {...cleanWeapon,weaponForm,slots};
-  const stats=calculateWeaponStats(slots,weaponForm);
-  const factor=rarityFactor(slots);
-  const form=CONFIG.forge.weaponForms[weaponForm]||CONFIG.forge.weaponForms.sword;
-  return {
-    ...cleanWeapon,
-    weaponForm,
-    slots,
-    stats,
-    valueNickel:Math.round(100*factor),
-    craftedSeconds:Math.round(CONFIG.forge.baseSeconds*(form.timeFactor??1)*factor)
-  };
-}`;
+const CURRENT_MIGRATE_WEAPON = `function normalizeWeaponBlueprintSlots(slots,weaponForm){return window.NoBrainerMaterialQualityMigration.blueprint(slots,weaponForm);}
+function migrateWeaponToCurrentRules(w){return window.NoBrainerMaterialQualityMigration.weapon(w);}`;
 
 const LEGACY_MIGRATE_FORGE_JOB_AFTER_RENAME = `function migrateForgeJobToCurrentRules(j){
   if(!j)return j;
@@ -88,26 +54,8 @@ const LEGACY_MIGRATE_FORGE_JOB_AFTER_RENAME = `function migrateForgeJobToCurrent
   return migrated;
 }`;
 
-const CURRENT_MIGRATE_FORGE_JOB = `function migrateForgeJobToCurrentRules(j){
-  if(!j)return j;
-  const cleanJob={...j};
-  const weaponForm=cleanJob.weaponForm||cleanJob["${LEGACY_WEAPON_FORM_KEY}"]||"sword";
-  delete cleanJob["${LEGACY_WEAPON_FORM_KEY}"];
-  const slots=normalizeWeaponBlueprintSlots(cleanJob.slots,weaponForm);
-  if(!window.NoBrainerGameCore.isWeaponSelectionComplete(slots,weaponForm))return {...cleanJob,weaponForm,slots};
-  const stats=calculateWeaponStats(slots,weaponForm);
-  const factor=rarityFactor(slots);
-  const form=CONFIG.forge.weaponForms[weaponForm]||CONFIG.forge.weaponForms.sword;
-  const totalSeconds=Math.round(CONFIG.forge.baseSeconds*(form.timeFactor??1)*factor);
-  const migrated={...cleanJob,weaponForm,slots,stats,valueNickel:Math.round(100*factor),totalSeconds};
-  if(Number.isFinite(Number(cleanJob.startedAt)))migrated.finishesAt=Number(cleanJob.startedAt)+totalSeconds*1000;
-  return migrated;
-}
-
-function migrateMarketJobToCurrentRules(job){
-  if(!job || job.type!=="weapon" || !job.weaponSnapshot)return job;
-  return {...job,weaponSnapshot:migrateWeaponToCurrentRules(job.weaponSnapshot)};
-}`;
+const CURRENT_MIGRATE_FORGE_JOB = `function migrateForgeJobToCurrentRules(j){return window.NoBrainerMaterialQualityMigration.forgeJob(j);}
+function migrateMarketJobToCurrentRules(j){return window.NoBrainerMaterialQualityMigration.marketJob(j);}`;
 
 const CURRENT_FIND_WEAKEST_STARTER = `function findWeakestStarterSlots(){
   return window.NoBrainerGameCore.getStarterBlueprint();

@@ -50,7 +50,7 @@ const probeScript = `<script>
 
   const started = Date.now();
   const timer = setInterval(() => {
-    const input = document.querySelector('#marketMaterials input[data-material=${JSON.stringify(materialName)}]');
+    const input = document.querySelector('#marketMaterials input[data-material=${JSON.stringify(materialName + ' S1')}]');
     const row = input?.closest('.sell-row');
     const buttons = row?.querySelectorAll('button');
     if (input && buttons && buttons.length >= 3) {

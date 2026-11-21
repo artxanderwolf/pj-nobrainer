@@ -1,3 +1,4 @@
+import { migrateMaterialQualityWorld } from '../game/material-quality-migration-core.ts';
 import { Injectable } from '@angular/core';
 import { decodeSave } from '../game/save-codec';
 import { SaveSnapshot } from './offline-progress.service';
@@ -24,6 +25,7 @@ export class SaveStorageService {
 
     try {
       const decoded = decodeSave<any>(raw);
+      if (decoded.state && typeof decoded.state === 'object') migrateMaterialQualityWorld(decoded.state);
       return {
         state: decoded.state,
         savedAt: decoded.savedAt

@@ -323,7 +323,7 @@ export class GameDungeonPresentationService {
     if (!box || !empty || !collect) return;
     const entries = getMaterialStorageEntries(state.session.dungeonLoot).filter(entry => entry.qty > 0);
     const runes=state.session.dungeonRuneLoot??[];
-    box.innerHTML = entries.map(entry => `<span class="loot-chip">${entry.displayName}<b>×${entry.qty}</b></span>`).join('')+
+    box.innerHTML = entries.map(entry => `<span class="loot-chip">${entry.displayName} S${entry.quality}<b>×${entry.qty}</b></span>`).join('')+
       runes.map(id=>`<span class="loot-chip">✧ ${RUNE_DEFINITIONS[id]?.label??id}<b>×1</b></span>`).join('');
     empty.style.display = entries.length||(state.session.dungeonRuneLoot?.length??0) ? 'none' : 'block';
     collect.textContent = entries.length||runes.length ? `Einsammeln (${entries.reduce((sum, entry) => sum + entry.qty, 0)+runes.length})` : 'Einsammeln';

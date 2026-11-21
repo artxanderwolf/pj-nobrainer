@@ -1,26 +1,7 @@
 import { Injectable } from '@angular/core';
 
 const FORGE_SELECTION = `function getForgeSelection(){
-  const materialId=selectId=>{
-    const value=document.getElementById(selectId)?.value||"";
-    const numeric=Number(value);
-    if(Number.isInteger(numeric)&&numeric>0)return numeric;
-    const legacyMaterial=MATERIALS[value];
-    const legacyId=Number(legacyMaterial?.materialId);
-    return Number.isInteger(legacyId)&&legacyId>0?legacyId:null;
-  };
-  return {
-    weaponForm:document.getElementById("weaponForm")?.value||"dagger",
-    slots:[
-      {slot:"workingPart",materialId:materialId("slotWorkingPart")},
-      {slot:"back",materialId:materialId("slotBack")},
-      {slot:"gripCore",materialId:materialId("slotGripCore")},
-      {slot:"gripWrap",materialId:materialId("slotGripWrap")},
-      {slot:"special",materialId:materialId("slotSpecial")},
-      {slot:"parry",materialId:materialId("slotParry")},
-      {slot:"bowstring",materialId:materialId("slotBowstring")}
-    ]
-  };
+  return window.NoBrainerForgePreviewPresentationCompatibility.selection();
 }`;
 
 const FORGE_REQUIREMENTS = `function requirements(weaponForm,slots){

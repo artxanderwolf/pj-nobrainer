@@ -34,7 +34,7 @@ export class GameMaterialStoragePresentationService {
 
     const entries = getMaterialStorageEntries(this.state().inventory)
       .filter(entry => entry.qty > 0)
-      .sort((a, b) => a.displayName.localeCompare(b.displayName));
+      .sort((a, b) => a.displayName.localeCompare(b.displayName) || a.quality-b.quality);
     body.innerHTML = '';
     body.dataset['materialStoragePresentationOwner'] = 'angular';
     empty.style.display = entries.length ? 'none' : 'block';
@@ -43,7 +43,7 @@ export class GameMaterialStoragePresentationService {
       const sell = materialSellDataById(materialEntry.materialId);
       if (!sell) throw new Error(`Material-Verkaufsdaten fehlen: ID ${materialEntry.materialId}.`);
       const presentation = getMaterialStorageRowPresentation(
-        materialEntry.displayName,
+        `${materialEntry.displayName} S${materialEntry.quality}`,
         {
           materialId: materialEntry.materialId,
           category: materialEntry.category,
@@ -53,6 +53,8 @@ export class GameMaterialStoragePresentationService {
         formatCurrencyNickel
       );
       const row = document.createElement('tr');
+      row.dataset['materialId'] = String(materialEntry.materialId);
+      row.dataset['quality'] = String(materialEntry.quality);
       row.innerHTML = `<td title="${presentation.tooltip}">${presentation.name}</td><td>${presentation.category}</td><td>${presentation.quantityText}</td><td>${presentation.valueText}</td>`;
       this.applyMobileLabels(body, row);
       body.appendChild(row);

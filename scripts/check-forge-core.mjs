@@ -67,17 +67,17 @@ try {
   assert.deepEqual(getForgeSelectionQuantities('axe2h'), { workingPart: 2, back: 2, gripCore: 6, gripWrap: 3 });
   assert.deepEqual(getForgeSelectionQuantities('bow'), { back: 1, gripCore: 5, gripWrap: 6, bowstring: 3 });
   assert.deepEqual(getForgeSelectionQuantities('staff'), { back: 1, gripCore: 5, gripWrap: 2 });
-  assert.deepEqual(forgeRequirements(daggerSlots, 'dagger'), { 2: 1, 4: 2, 9: 1 }, 'Dolch muss genau vier Materialeinheiten per ID benötigen.');
-  assert.deepEqual(forgeRequirements(daggerIdSlots, 'dagger'), { 2: 1, 4: 2, 9: 1 }, 'ID-Auswahl muss denselben Dolchbedarf liefern.');
-  assert.deepEqual(forgeRequirements(swordSlots, 'sword'), { 2: 2, 4: 4, 9: 1 }, '1H Schwert muss genau sieben Materialeinheiten per ID benötigen.');
-  assert.deepEqual(forgeRequirements(bowSlots, 'bow'), { 2: 6, 9: 9 }, 'Bogen muss 15 Einheiten inklusive drei Sehnen-Einheiten benötigen.');
+  assert.deepEqual(forgeRequirements(daggerSlots, 'dagger'), { '2:1': 1, '4:1': 2, '9:1': 1 }, 'Dolch muss genau vier Materialeinheiten per ID benötigen.');
+  assert.deepEqual(forgeRequirements(daggerIdSlots, 'dagger'), { '2:1': 1, '4:1': 2, '9:1': 1 }, 'ID-Auswahl muss denselben Dolchbedarf liefern.');
+  assert.deepEqual(forgeRequirements(swordSlots, 'sword'), { '2:1': 2, '4:1': 4, '9:1': 1 }, '1H Schwert muss genau sieben Materialeinheiten per ID benötigen.');
+  assert.deepEqual(forgeRequirements(bowSlots, 'bow'), { '2:1': 6, '9:1': 9 }, 'Bogen muss 15 Einheiten inklusive drei Sehnen-Einheiten benötigen.');
 
   const inventory = { Zinn: { category: 'Metall', qty: 4 }, Fichte: { category: 'Holz', qty: 3 }, Lederfetzen: { category: 'Leder', qty: 1 } };
   const swordRequirements = forgeRequirements(swordSlots, 'sword');
   assert.equal(hasForgeMaterials(inventory, swordRequirements), true);
   assert.equal(reserveForgeMaterials(inventory, swordRequirements), true);
   assert.equal(inventory.Zinn, undefined);
-  assert.equal(inventory['2']?.qty, 1, 'Restbestand muss nach ID-Migration erhalten bleiben.');
+  assert.equal(inventory['2:1']?.qty, 1, 'Restbestand muss nach ID-Migration erhalten bleiben.');
   assert.equal(inventory.Lederfetzen, undefined);
 
   const snapshot = calculateWeaponBalanceSnapshot('sword', swordSlots);

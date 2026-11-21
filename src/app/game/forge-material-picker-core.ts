@@ -1,3 +1,4 @@
+import type { MaterialQuality } from './material-quality-core.ts';
 import {
   calculateWeaponStats,
   type WeaponCraftingSlotId,
@@ -64,10 +65,11 @@ export function getForgeMaterialEffects(
   weaponForm: string,
   slot: WeaponCraftingSlotId,
   materialId: number,
-  currentSlots: readonly WeaponSlot[]
+  currentSlots: readonly WeaponSlot[],
+  quality?: MaterialQuality
 ): { weapon: string[]; character: string[] } {
   const baselineSlots = currentSlots.filter(candidate => candidate.slot !== slot);
-  const withCandidate = [...baselineSlots, { slot, materialId }];
+  const withCandidate = [...baselineSlots, { slot, materialId, quality }];
   const baseline = calculateWeaponStats(baselineSlots, weaponForm);
   const candidate = calculateWeaponStats(withCandidate, weaponForm);
   const output = { weapon: [] as string[], character: [] as string[] };

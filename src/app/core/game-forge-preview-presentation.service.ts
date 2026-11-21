@@ -1,9 +1,11 @@
+import type { MaterialQuality } from '../game/material-quality-core.ts';
 import { Injectable } from '@angular/core';
 import { productionActiveSlots } from '../game/city-production-capacity-core.ts';
 import { type CityLayoutWorldState } from '../game/city-layout-core.ts';
 import { formatCurrencyNickel } from '../game/economy-core';
 import {
   MATERIAL_REFERENCES_BY_ID,
+  rarityFactor,
   getWeaponForm,
   reinforcementEffectTextById,
   type MaterialCategory,
@@ -16,7 +18,7 @@ import {
 } from '../game/forge-core';
 import { getForgePreviewPresentation } from '../game/forge-presentation-core';
 import { getForgeMaterialEffects, getForgeMaterialIcon } from '../game/forge-material-picker-core';
-import { getMaterialQuantityById, type MaterialStorageInventory } from '../game/material-storage-core';
+import { getMaterialQuantityById, getMaterialStorageEntries, getMaterialStorageKey, parseMaterialStorageKey, type MaterialStorageInventory } from '../game/material-storage-core';
 import { GameForgeService } from './game-forge.service';
 import { GameStateService, type MutableGameState } from './game-state.service';
 import { GameWeaponPresentationService } from './game-weapon-presentation.service';
@@ -34,6 +36,7 @@ type RuntimeForgePreviewState = MutableGameState & CityLayoutWorldState & {
 
 interface ForgePreviewPresentationCompatibilityBridge {
   render(): void;
+  selection(): {weaponForm: string; slots: WeaponSlot[]};
 }
 
 declare global {
@@ -101,6 +104,8 @@ export class GameForgePreviewPresentationService {
     this.setText('forgeRawPreview', presentation.rawText);
     this.setText('forgePenPreview', presentation.penetrationText);
     this.setText('forgeRarityPreview', presentation.rarityText);
+    const quality = rarityFactor(preview.slots);
+    this.setText('forgeQualityPreview', complete ? `S${quality} · ${quality - 1} Sockel` : '–');
     this.setText('forgeReinforcementPreview', presentation.reinforcementText);
     // Die Vorschau ist nicht destruktiv und darf immer geöffnet werden.
     // Ob tatsächlich hergestellt werden kann, bleibt ausschließlich am Start-Button validiert.
@@ -113,7 +118,7 @@ export class GameForgePreviewPresentationService {
     if (window.NoBrainerForgePreviewPresentationCompatibility) {
       throw new Error('NoBrainer-Schmiedevorschau-Präsentationsbrücke ist bereits geöffnet.');
     }
-    window.NoBrainerForgePreviewPresentationCompatibility = { render: () => this.render() };
+    window.NoBrainerForgePreviewPresentationCompatibility = { render: () => this.render(), selection: () => ({weaponForm: (document.getElementById('weaponForm') as HTMLSelectElement | null)?.value || 'dagger', slots: this.getForgeSelection()}) };
   }
 
   closeLegacyCompatibilityBridge(): void {
@@ -258,7 +263,7 @@ export class GameForgePreviewPresentationService {
     const selections = new Map(
       FORGE_SLOT_BINDINGS.map(binding => [
         binding.id,
-        this.readSelectedMaterialId(binding.id)
+        this.readSelectedStockKey(binding.id)
       ])
     );
 
@@ -278,7 +283,7 @@ export class GameForgePreviewPresentationService {
 
       const categories = categoriesBySlot.get(binding.slot) ?? [];
       const previousMaterialId = selections.get(binding.id) ?? null;
-      const reservedByOthers = new Map<number, number>();
+      const reservedByOthers = new Map<string, number>();
 
       for (const other of activeBindings) {
         if (other.id === binding.id) continue;
@@ -297,28 +302,15 @@ export class GameForgePreviewPresentationService {
       placeholder.selected = previousMaterialId === null;
       select.appendChild(placeholder);
 
-      const available = Object.values(MATERIAL_REFERENCES_BY_ID)
-        .filter(reference => categories.includes(reference.definition.category))
-        .sort((a, b) =>
-          a.definition.rarity - b.definition.rarity
-          || a.definition.category.localeCompare(b.definition.category)
-          || a.displayName.localeCompare(b.displayName)
-        )
-        .filter(reference => {
-          const stock = getMaterialQuantityById(state.inventory, reference.materialId);
-          const reserved = reservedByOthers.get(reference.materialId) || 0;
-          return stock - reserved >= needed;
-        });
-
-      for (const reference of available) {
-        const stock = getMaterialQuantityById(state.inventory, reference.materialId);
-        const reserved = reservedByOthers.get(reference.materialId) || 0;
-        const remainingAfterSelection = stock - reserved - needed;
+      const available = getMaterialStorageEntries(state.inventory)
+        .filter(entry => categories.includes(entry.category))
+        .sort((a,b) => a.quality-b.quality || a.displayName.localeCompare(b.displayName))
+        .filter(entry => entry.qty - (reservedByOthers.get(entry.storageKey) || 0) >= needed);
+      for (const entry of available) {
+        const remaining = entry.qty - (reservedByOthers.get(entry.storageKey) || 0) - needed;
         const option = document.createElement('option');
-        option.value = String(reference.materialId);
-        option.textContent = `${reference.displayName} · S${reference.definition.rarity} · Bestand ${stock} · benötigt ${needed} · danach ${remainingAfterSelection}${
-          binding.slot === 'special' ? ` · ${reinforcementEffectTextById(reference.materialId)}` : ''
-        }`;
+        option.value = entry.storageKey;
+        option.textContent = `${entry.displayName} · S${entry.quality} · Bestand ${entry.qty} · benötigt ${needed} · danach ${remaining}`;
         select.appendChild(option);
       }
 
@@ -329,7 +321,7 @@ export class GameForgePreviewPresentationService {
 
       const invalidSelection = previousMaterialId !== null && select.value === '';
       const missingName = invalidSelection
-        ? MATERIAL_REFERENCES_BY_ID[previousMaterialId]?.displayName ?? `Material #${previousMaterialId}`
+        ? MATERIAL_REFERENCES_BY_ID[parseMaterialStorageKey(previousMaterialId)?.materialId ?? 0]?.displayName ?? `Material #${previousMaterialId}`
         : '';
       // Ein bereits gewaehltes Material wird nicht unbemerkt auf ein anderes umgestellt.
       // Der Nutzer erhaelt eine sichtbare Begruendung, falls der Bestand nicht reicht.
@@ -339,7 +331,7 @@ export class GameForgePreviewPresentationService {
         needed,
         invalidSelection ? `${missingName} ist für dieses Bauteil nicht mehr ausreichend verfügbar oder ungeeignet. Bitte neu auswählen.` : ''
       );
-      selections.set(binding.id, this.readSelectedMaterialId(binding.id));
+      selections.set(binding.id, this.readSelectedStockKey(binding.id));
     }
   }
 
@@ -377,9 +369,10 @@ export class GameForgePreviewPresentationService {
     const details = document.createElement('span');
     details.className = 'forge-material-trigger-detail';
     const currentOption = Array.from(select.options).find(option => option.value === select.value);
-    const stock = selectedId ? getMaterialQuantityById(this.state().inventory, selectedId) : 0;
+    const selectedQuality = parseMaterialStorageKey(select.value)?.quality;
+    const stock = selectedId ? getMaterialQuantityById(this.state().inventory, selectedId, selectedQuality) : 0;
     details.textContent = selectedReference
-      ? `S${selectedReference.definition.rarity} · Lager ${stock} · benötigt ${needed}`
+      ? `S${selectedQuality} · Lager ${stock} · benötigt ${needed}`
       : `Benötigt ${needed} · ${Math.max(0, select.options.length - 1)} verfügbare Materialien`;
     content.append(name, details);
     const arrow = document.createElement('span');
@@ -436,16 +429,13 @@ export class GameForgePreviewPresentationService {
     const choices = document.createElement('div');
     choices.className = 'forge-material-choices';
 
-    const availableIds = Array.from(select.options)
-      .map(option => Number(option.value))
-      .filter(materialId => Number.isInteger(materialId) && materialId > 0);
-
-    for (const materialId of availableIds) {
+    const availableKeys = Array.from(select.options).map(option => option.value).filter(value => !!parseMaterialStorageKey(value));
+    for (const storageKey of availableKeys) {
+      const { materialId, quality } = parseMaterialStorageKey(storageKey)!;
       const material = MATERIAL_REFERENCES_BY_ID[materialId];
-      if (!material) continue;
-      const stock = getMaterialQuantityById(inventory, materialId);
+      const stock = getMaterialQuantityById(inventory, materialId, quality);
       const reservedOtherSlots = currentSlots
-        .filter(slot => slot.slot !== binding.slot && slot.materialId === materialId)
+        .filter(slot => slot.slot !== binding.slot && slot.materialId === materialId && slot.quality === quality)
         .reduce((sum, slot) => sum + (this.gameForge.selectionQuantities(weaponForm)[slot.slot as WeaponCraftingSlotId] ?? 0), 0);
       const remaining = stock - reservedOtherSlots - needed;
       if (remaining < 0) continue;
@@ -454,16 +444,17 @@ export class GameForgePreviewPresentationService {
       item.type = 'button';
       item.className = 'forge-material-choice';
       item.dataset['forgeMaterialId'] = String(materialId);
-      item.setAttribute('aria-pressed', String(select.value === String(materialId)));
+      item.dataset['quality'] = String(quality);
+      item.setAttribute('aria-pressed', String(select.value === storageKey));
       const icon = this.createMaterialIcon(materialId, material.definition.category);
       const body = document.createElement('span');
       body.className = 'forge-material-choice-body';
       const title = document.createElement('strong');
-      title.textContent = `${material.displayName} · S${material.definition.rarity}`;
+      title.textContent = `${material.displayName} · S${quality}`;
       const available = document.createElement('span');
       available.className = 'forge-material-choice-inventory';
       available.textContent = `Benötigt ${needed} · Lager ${stock} · danach ${remaining}`;
-      const effect = getForgeMaterialEffects(weaponForm, binding.slot, materialId, currentSlots);
+      const effect = getForgeMaterialEffects(weaponForm, binding.slot, materialId, currentSlots, quality);
       const stats = document.createElement('span');
       stats.className = 'forge-material-choice-stats';
       stats.textContent = effect.weapon.length
@@ -478,7 +469,7 @@ export class GameForgePreviewPresentationService {
       item.append(icon, body);
       item.addEventListener('click', () => {
         dialog.close();
-        select.value = String(materialId);
+        select.value = storageKey;
         select.dispatchEvent(new Event('change', { bubbles: true }));
       });
       choices.append(item);
@@ -517,14 +508,17 @@ export class GameForgePreviewPresentationService {
   private getForgeSelection(): WeaponSlot[] {
     return FORGE_SLOT_BINDINGS.map(binding => ({
       slot: binding.slot,
-      materialId: this.readSelectedMaterialId(binding.id)
+      materialId: this.readSelectedMaterialId(binding.id),
+      quality: parseMaterialStorageKey(this.readSelectedStockKey(binding.id) ?? '')?.quality ?? null
     }));
   }
 
+  private readSelectedStockKey(selectId: string): string | null {
+    const key = (document.getElementById(selectId) as HTMLSelectElement | null)?.value || '';
+    return key && parseMaterialStorageKey(key) ? key : null;
+  }
   private readSelectedMaterialId(selectId: string): number | null {
-    const value = (document.getElementById(selectId) as HTMLSelectElement | null)?.value || '';
-    const numeric = Number(value);
-    return Number.isInteger(numeric) && numeric > 0 ? numeric : null;
+    return parseMaterialStorageKey(this.readSelectedStockKey(selectId) ?? '')?.materialId ?? null;
   }
 
   private setText(id: string, value: string): void {

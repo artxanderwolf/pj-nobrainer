@@ -1,3 +1,4 @@
+import { migrateMaterialQualityWorld } from './material-quality-migration-core.ts';
 import { decodeSave, SAVE_VERSION } from './save-codec.ts';
 import { validateCityLayout } from './city-layout-core.ts';
 import { validateCityEconomy } from './city-economy-core.ts';
@@ -35,7 +36,7 @@ export function validateImportedSave(raw: string): SaveImportValidation {
   try {
     decoded = decodeSave<Record<string, unknown>>(raw);
   } catch {
-    return { ok: false, reason: 'invalid-json', message: 'Die Datei enthält kein gültiges JSON.' };
+    return { ok: false, reason: 'invalid-state', message: 'Der Spielstand enthält beschädigte Material- oder Qualitätsdaten.' };
   }
 
   const saveVersion = Number(decoded.saveVersion);
@@ -82,6 +83,8 @@ export function validateImportedSave(raw: string): SaveImportValidation {
     try { validateCityConstruction(state); }
     catch { return { ok: false, reason: 'invalid-state', message: 'Der Spielstand enthält beschädigte Bauaufträge.' }; }
   }
+  try { migrateMaterialQualityWorld(structuredClone(state)); }
+  catch { return {ok: false, reason: 'invalid-state', message: 'Der Spielstand enthält beschädigte Material- oder Qualitätsdaten.'}; }
   return { ok: true, saveVersion, savedAt, state };
 }
 

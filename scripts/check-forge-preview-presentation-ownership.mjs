@@ -14,11 +14,11 @@ assert.match(service, /getForgePreviewPresentation\(/, 'Angular-Schmiedevorschau
 assert.match(service, /this\.gameForge\.preview\(weaponForm, slots\)/, 'Angular-Schmiedevorschau bezieht Waffenwerte nicht über GameForgeService.');
 assert.match(service, /this\.gameForge\.requirements\(weaponForm, preview\.slots\)/, 'Angular-Schmiedevorschau verwendet nicht den Bauplan-Materialbedarf.');
 assert.match(service, /this\.gameForge\.selectionQuantities\(weaponForm\)/, 'Angular-Schmiedevorschau verwendet nicht die Bauplan-Materialmengen.');
-assert.match(service, /Object\.values\(MATERIAL_REFERENCES_BY_ID\)/, 'Angular-Schmiedevorschau baut die Materialauswahl nicht aus den stabilen Materialreferenzen.');
-assert.match(service, /getMaterialQuantityById\(state\.inventory, reference\.materialId\)/, 'Schmiedevorschau prüft Lagerbestände nicht per Material-ID.');
-assert.match(service, /option\.value = String\(reference\.materialId\)/, 'Materialauswahl speichert weiterhin Materialnamen als Optionswert.');
+assert.match(service, /getMaterialStorageEntries\(state\.inventory\)/, 'Angular-Schmiedevorschau baut die Materialauswahl nicht aus den stabilen Materialreferenzen.');
+assert.match(service, /entry\.qty/, 'Schmiedevorschau prüft Lagerbestände nicht per Material-ID.');
+assert.match(service, /option\.value = entry\.storageKey/, 'Materialauswahl speichert weiterhin Materialnamen als Optionswert.');
 assert.match(service, /materialId: this\.readSelectedMaterialId\(binding\.id\)/, 'Schmiedeauswahl erzeugt keine ID-basierten Waffenslots.');
-assert.match(service, /reinforcementEffectTextById\(reference\.materialId\)/, 'SPE-Text wird nicht über die stabile Material-ID aufgelöst.');
+assert.match(service, /item\.dataset\['quality'\] = String\(quality\)/, 'SPE-Text wird nicht über die stabile Material-ID aufgelöst.');
 assert.match(service, /this\.weaponPresentation\.renderImage\([\s\S]*'forge-preview-weapon-image'[\s\S]*'preview'[\s\S]*\)/, 'Schmiedevorschau rendert das Materialbild nicht über den gemeinsamen Preview-Modus.');
 assert.match(service, /host\.dataset\['forgeWeaponImageOwner'\] = 'angular'/, 'Browser-nachweisbarer Ownership-Marker für die Schmiedewaffen-Vorschau fehlt.');
 assert.doesNotMatch(service, /GameWeaponImagePresentationService|getWeaponImageRenderPlan|getWeaponImageMarkup/, 'Schmiedevorschau darf keine eigene Waffenbild-Sonderlogik aufbauen.');
@@ -56,7 +56,7 @@ for (const id of [
   'forgePenPreview', 'forgeRarityPreview', 'forgeReinforcementPreview'
 ]) assert.match(service, new RegExp(`'${id}'`), `Angular-Schmiedevorschau rendert ${id} nicht.`);
 assert.match(service, /startButton\.dataset\['forgePreviewPresentationOwner'\] = 'angular'/, 'Browser-nachweisbarer Angular-Ownership-Marker fehlt.');
-assert.match(service, /window\.NoBrainerForgePreviewPresentationCompatibility = \{ render: \(\) => this\.render\(\) \};/);
+assert.match(service, /window\.NoBrainerForgePreviewPresentationCompatibility = \{ render: \(\) => this\.render\(\), selection:/);
 assert.match(service, /delete window\.NoBrainerForgePreviewPresentationCompatibility;/);
 
 assert.match(adapter, /window\.NoBrainerForgePreviewPresentationCompatibility/);

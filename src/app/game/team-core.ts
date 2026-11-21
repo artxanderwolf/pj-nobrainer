@@ -1,3 +1,4 @@
+import type { MaterialQuality } from '../game/material-quality-core.ts';
 import { createDungeonSession, dungeonSessionActive, migrateParallelDungeons, DUNGEON_IDS, type DungeonSessionState, type DungeonWorldState } from './parallel-dungeon-core.ts';
 import { CONFIG } from './game-core.ts';
 import { creditQualifiedRun } from './dungeon-progress-rules.ts';
@@ -54,7 +55,7 @@ function repairTeamReservations(state: TeamWorldState): boolean {
     const ids = [...new Set([...team.dungeonTeamSlots,...team.dungeonCycleOriginalIds,...(team.dungeonRun?.participantIds??[])].filter((id):id is number=>typeof id==='number'))];
     if (ids.some(id=>reserved.has(id))) {
       for(const drop of team.dungeonLootCollect?.drops??[]){
-        if(drop.materialId)addMaterialQuantityById(team.dungeonLoot,drop.materialId,1);
+        if(drop.materialId)addMaterialQuantityById(team.dungeonLoot,drop.materialId,1,drop.quality);
         if(drop.runeDefinitionId)(team.dungeonRuneLoot??=[]).push(drop.runeDefinitionId);
       }
       Object.assign(team,{expeditionActive:false,dungeonAuto:false,dungeonStopRequested:false,dungeonRun:null,dungeonSearch:null,dungeonLootCollect:null,dungeonSessionEndsAt:null,progress:null,dungeonCycleOriginalIds:[],dungeonCycleActiveIds:[]});

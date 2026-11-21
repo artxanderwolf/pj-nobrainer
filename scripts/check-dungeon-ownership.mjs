@@ -19,7 +19,7 @@ for (const pattern of [/getDungeonPhase\(state\.session\)/, /resolveSearchStep\(
   assert.match(dungeonService, pattern, `Dungeon-Service verliert erwartete Fachlogik: ${pattern}`);
 }
 assert.doesNotMatch(dungeonService, /DUNGEON_LOOT_TABLES|MATERIALS\[/, 'Aktive Dungeon-Drops hängen weiterhin an einer namenbasierten oder alten globalen Loot-Tabelle.');
-assert.match(dungeonService, /if \(selected\) result\.push\(\{ materialId: selected\.materialId \}\);/, 'Neue Dungeon-Drops persistieren weiterhin Namen statt ausschließlich Material-IDs.');
+assert.match(dungeonService, /if \(selected\) result\.push\(\{ materialId: selected\.materialId, quality: rollMaterialQuality\(Math\.random\(\)\) \}\);/, 'Neue Dungeon-Drops persistieren weiterhin Namen statt ausschließlich Material-IDs.');
 assert.match(dungeonService, /normalizeMaterialReferences\(\): number/, 'Dungeon besitzt keine Altstand-Migration für Loot-Referenzen.');
 assert.doesNotMatch(dungeonService, /NoBrainerDungeonCompatibility|openLegacyCompatibilityBridge|closeLegacyCompatibilityBridge/, 'GameDungeonService enthält weiterhin die alte Dungeon-Kompatibilitätsbrücke.');
 

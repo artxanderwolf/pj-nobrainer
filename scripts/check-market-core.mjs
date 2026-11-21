@@ -38,8 +38,8 @@ function weaponJob(name, seconds = 10, valueNickel = 100) {
     marketQueue: [{ type: 'material', name: 'Lederfetzen', seconds: 10, valueNickel: 100 }]
   };
   assert.equal(normalizeMarketMaterialJobs(migrationState), 2);
-  assert.deepEqual(migrationState.marketJobs, [{ type: 'material', seconds: 10, valueNickel: 100, materialId: 5 }]);
-  assert.deepEqual(migrationState.marketQueue, [{ type: 'material', seconds: 10, valueNickel: 100, materialId: 9 }]);
+  assert.deepEqual(migrationState.marketJobs, [{ type: 'material', seconds: 10, valueNickel: 100, materialId: 5, quality: 1 }]);
+  assert.deepEqual(migrationState.marketQueue, [{ type: 'material', seconds: 10, valueNickel: 100, materialId: 9, quality: 1 }]);
 }
 
 {

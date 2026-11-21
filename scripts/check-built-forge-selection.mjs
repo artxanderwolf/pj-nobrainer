@@ -102,7 +102,7 @@ const probeScript = `<script>
     };
     option.click();
     materialPickerProof.closedAfterSelection = !document.querySelector('.forge-material-dialog[open]');
-    return select.value === materialId;
+    return select.value === materialId + ':1';
   };
 
   const chooseWeapon = value => {
@@ -127,10 +127,10 @@ const probeScript = `<script>
         const previewOwner = document.getElementById('forgeWeaponImagePreview')?.dataset.forgeWeaponImageOwner || '';
         const selected = {
           back: chooseViaMaterialDialog('back', '2'),
-          gripCore: choose('slotGripCore', '2'),
-          gripWrap: choose('slotGripWrap', '9'),
+          gripCore: choose('slotGripCore', '2:1'),
+          gripWrap: choose('slotGripWrap', '9:1'),
           special: document.getElementById('forgeSpecialRow')?.hidden === true,
-          bowstring: choose('slotBowstring', '9'),
+          bowstring: choose('slotBowstring', '9:1'),
           form: formChosen
         };
         setTimeout(() => {

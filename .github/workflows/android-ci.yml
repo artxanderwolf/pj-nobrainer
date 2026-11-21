@@ -106,6 +106,9 @@ jobs:
       - name: Test forge selection in browser
         run: node scripts/check-built-forge-selection.mjs
 
+      - name: Test material qualities and Save27 migration in browser
+        run: node scripts/check-built-material-quality.mjs
+
       - name: Test market quantity input in browser
         run: node scripts/check-built-market-quantity-input.mjs
 

@@ -1,3 +1,5 @@
+import { resolveMaterialQuality, type MaterialQuality } from '../game/material-quality-core.ts';
+import { getMaterialReferenceById } from '../game/game-core.ts';
 import { Injectable } from '@angular/core';
 import { migrateProductionWorkers, advanceProductionToReady, type ProductionWorkerWorld } from '../game/production-worker-core.ts';
 import { initializeMarketClaims, identifyNewMarketJob, takeReadyMarketJob, type MarketClaimWorldState, type IdentifiedMarketJob } from '../game/market-claim-core.ts';
@@ -78,12 +80,13 @@ export class GameMarketService {
   }
 
   /** Aktiver Angular-Pfad: Materialverkäufe werden ausschließlich über die stabile ID gestartet. */
-  startMaterialById(materialId: number, quantity = 1, at = Date.now()): MarketMaterialStartResult {
+  startMaterialById(materialId: number, quantity = 1, at = Date.now(), requestedQuality?: MaterialQuality): MarketMaterialStartResult {
     const state = this.getState();
     const unit = materialSellDataById(materialId);
     if (!unit) return { status: 'unknown-material' };
 
-    const stock = getMaterialQuantityById(state.inventory, unit.materialId);
+    const quality = resolveMaterialQuality(requestedQuality, getMaterialReferenceById(materialId)!.definition.rarity as MaterialQuality);
+    const stock = getMaterialQuantityById(state.inventory, unit.materialId, quality);
     if (stock <= 0) return { status: 'no-stock' };
 
     if (!this.hasCapacity()) return { status: 'full' };
@@ -91,6 +94,7 @@ export class GameMarketService {
     const job: MarketJob = {
       type: 'material',
       materialId: unit.materialId,
+      quality,
       quantity: qty,
       valueNickel: unit.valueNickel * qty,
       seconds: unit.seconds * qty,
@@ -109,7 +113,7 @@ export class GameMarketService {
     if (stored && 'status' in stored) (stored as { status: string }).status = status === 'started' ? 'active' : 'queued';
     migrateProductionWorkers(state as unknown as ProductionWorkerWorld);
 
-    if (!takeMaterialQuantityById(state.inventory, unit.materialId, qty)) {
+    if (!takeMaterialQuantityById(state.inventory, unit.materialId, qty, quality)) {
       throw new Error(`Materialbestand änderte sich während einer synchronen Marktauftragserstellung: ID ${unit.materialId}.`);
     }
     return { status, materialId: unit.materialId, name: unit.name, quantity: qty, valueNickel: job.valueNickel };
@@ -136,7 +140,7 @@ export class GameMarketService {
   displayName(job: MarketJob): string {
     if (job.type === 'material') {
       const displayName = getMaterialDisplayNameById(job.materialId);
-      return displayName ?? `Material #${Number(job.materialId) || '?'}`;
+      return `${displayName ?? `Material #${Number(job.materialId) || '?'}`} S${job.quality}`;
     }
     return job.name || 'Waffe';
   }
@@ -236,7 +240,7 @@ export class GameMarketService {
     if (job.type === 'material') {
       const materialId = job.materialId;
       if (materialId === null || materialId === undefined) throw new Error('Unbekannte Material-ID im Marktauftrag.');
-      const returned = addMaterialQuantityById(state.inventory, materialId, job.quantity || 1);
+      const returned = addMaterialQuantityById(state.inventory, materialId, job.quantity || 1, job.quality);
       if (!returned) throw new Error(`Material-ID ${materialId} konnte nicht ins Inventar zurückgegeben werden.`);
       return;
     }

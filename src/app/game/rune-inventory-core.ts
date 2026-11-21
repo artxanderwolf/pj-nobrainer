@@ -21,6 +21,8 @@ export interface RunedWeapon {
   weaponForm: string;
   slots: WeaponSlot[];
   stats?: WeaponStats;
+  preservedMaterialBaseStats?: WeaponStats;
+  preservedRuneSignature?: string;
   valueNickel?: number;
   starter?: boolean;
   /** Original minimum material rarity for pre-S21 weapons; not recalculated from removed special material. */
@@ -77,9 +79,12 @@ export function connectedRunes(state:RuneWorldState,weapon:RunedWeapon):RuneDefi
     .map(id=>{const definition=byId.get(id);if(!definition)throw new Error('Waffenrune ohne Inventar-ID: '+id);return definition;});
 }
 export function recomputeRunedWeapon(state:RuneWorldState,weapon:RunedWeapon):WeaponStats {
-  const base=calculateWeaponStats(weapon.slots,weapon.weaponForm);
+  const signature=JSON.stringify([...(weapon.runeSockets??[]),weapon.legacyRuneItemId].filter(id=>typeof id==='string'));
+  if(weapon.preservedMaterialBaseStats && weapon.preservedRuneSignature===signature && weapon.stats)return weapon.stats;
+  const base=weapon.preservedMaterialBaseStats ?? calculateWeaponStats(weapon.slots,weapon.weaponForm);
   const stats=applyRuneBonuses(base,connectedRunes(state,weapon));
   weapon.stats=stats;
+  if(weapon.preservedMaterialBaseStats)weapon.preservedRuneSignature=signature;
   return stats;
 }
 export function migrateRuneWorld(state:RuneWorldState):boolean {
