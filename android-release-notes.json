@@ -1,9 +1,5 @@
 [
-  "Großupdate v2 / Etappe C: Alle 77 Materialarten können unabhängig in Qualität S1 bis S6 gefunden werden. Keine Materialaufwertung oder garantierte S6-Erzeugung.",
-  "Lager, Dungeonbeute, Schmiede und Markt unterscheiden die Qualität. Materialauswahl, Reservierung und Verkaufsabbruch betreffen genau den ausgewählten Bestand.",
-  "Waffen behalten die Qualitäten ihrer Bauteile. Vorschau und Index zeigen die neuen Werte sowie Waffenqualität und Runensockel.",
-  "Dungeonfortschritt nach Etappe B: fünf qualifizierte Läufe mit je 50 Siegen; anschließend Zugangssuche ab Welle 50 im neuen Lauf. Gegnerstärke und XP wurden abgestimmt.",
-  "Der aktuelle gemeinsame Spielstand umfasst Stadt, Teams, Klassen-/Waffenregeln, Runen und die zugehörige Spielerhilfe der Webversion.",
-  "Save 28 übernimmt ältere Spielstände automatisch. Materialmengen, bestehende Waffen und Runen sowie reservierte Aufträge bleiben erhalten. Ein JSON-Export vor dem Update ist möglich.",
-  "Die vorhandene App aktualisieren, ohne sie zu deinstallieren. APK speichern und anschließend über Downloads oder Eigene Dateien öffnen. Installation und echter Gerätetest bleiben beim Besitzer."
+  "Großupdate v2, Schritt S12: Der Materialverkauf berücksichtigt die feste Materialstufe und die Qualität S1 bis S6. Markt und Lager zeigen dieselben Stückpreise. Bereits angelegte Verkaufsaufträge behalten Preis und Dauer.",
+  "Hochelfen heilen im Kampf bis zu 10 HP pro Auslösung. Das Protokoll zeigt die tatsächlich wiederhergestellten HP. Auslöser und Cooldowns gelten weiter.",
+  "Die vorhandene App aktualisieren. APK speichern und anschließend über Downloads oder Eigene Dateien öffnen. Spielstände verwenden weiterhin Save 28."
 ]
