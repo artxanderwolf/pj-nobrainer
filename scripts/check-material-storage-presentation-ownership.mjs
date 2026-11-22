@@ -8,7 +8,7 @@ const adapter = readFileSync('src/app/core/legacy-material-presentation-adapter.
 assert.match(service, /constructor\(private readonly gameState: GameStateService\)/, 'Materiallager-Präsentation liest nicht aus dem Angular-State.');
 assert.match(service, /getMaterialStorageEntries\(this\.state\(\)\.inventory\)/, 'Materiallager-Präsentation löst Lagerdaten nicht über die kanonische Material-ID-Schicht auf.');
 assert.match(service, /\.sort\(\(a, b\) => a\.displayName\.localeCompare\(b\.displayName\) \|\| a\.quality-b\.quality\)/, 'Materiallager-Präsentation sortiert die kanonischen Anzeigenamen nicht stabil.');
-assert.match(service, /materialSellDataById\(materialEntry\.materialId\)/, 'Materiallager-Präsentation muss Verkaufswerte per stabiler Material-ID auflösen.');
+assert.match(service, /materialSellDataById\(materialEntry\.materialId, materialEntry\.quality\)/, 'Materiallager-Präsentation muss Verkaufswerte per stabiler Material-ID auflösen.');
 assert.doesNotMatch(service, /materialSellData\(materialEntry\.displayName\)/, 'Materiallager-Präsentation darf Anzeigenamen nicht mehr als technische Wirtschaftsreferenz verwenden.');
 assert.match(service, /getMaterialStorageRowPresentation\(/, 'Materiallager-Präsentation verwendet den bestehenden Presentation-Core nicht.');
 assert.match(service, /materialId: materialEntry\.materialId/, 'Die kanonische Material-ID wird nicht bis an die Darstellungsgrenze geführt.');

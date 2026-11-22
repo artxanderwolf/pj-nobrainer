@@ -40,7 +40,7 @@ export class GameMaterialStoragePresentationService {
     empty.style.display = entries.length ? 'none' : 'block';
 
     for (const materialEntry of entries) {
-      const sell = materialSellDataById(materialEntry.materialId);
+      const sell = materialSellDataById(materialEntry.materialId, materialEntry.quality);
       if (!sell) throw new Error(`Material-Verkaufsdaten fehlen: ID ${materialEntry.materialId}.`);
       const presentation = getMaterialStorageRowPresentation(
         `${materialEntry.displayName} S${materialEntry.quality}`,

@@ -557,7 +557,7 @@ export class GameDungeonService {
         .filter((member): member is RuntimeDungeonCharacter => !!member);
       const heal = applyHighElfHealing(character, party, 'periodic');
       if (heal) {
-        this.addCombatEvent(outcome, `${character.name} heilt ${heal.target.name} um ${heal.healed.toFixed(2)} HP.`, 'good');
+        this.addCombatEvent(outcome, `${character.name} heilt ${heal.target.name} um ${heal.healed.toLocaleString('de-DE', { maximumFractionDigits: 2 })} HP.`, 'good');
         outcome.saveRequested = true;
       }
       return;
@@ -664,7 +664,7 @@ export class GameDungeonService {
         if (heal) {
           run.raceHealingCooldowns ??= {};
           run.raceHealingCooldowns[target.id] = at;
-          this.addCombatEvent(outcome, `${target.name} heilt ${heal.target.name} nach Ausweichen um ${heal.healed.toFixed(2)} HP.`, 'good');
+          this.addCombatEvent(outcome, `${target.name} heilt ${heal.target.name} nach Ausweichen um ${heal.healed.toLocaleString('de-DE', { maximumFractionDigits: 2 })} HP.`, 'good');
           outcome.saveRequested = true;
         }
       }

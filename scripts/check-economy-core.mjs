@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import { readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 
+import { MATERIAL_REFERENCES } from '../src/app/game/game-core.ts';
+import { MATERIAL_QUALITIES } from '../src/app/game/material-quality-core.ts';
+
 const sourceUrl = new URL('../src/app/game/economy-core.ts', import.meta.url);
 const temporaryUrl = new URL('../src/app/game/economy-core.node-check.ts', import.meta.url);
 const source = readFileSync(sourceUrl, 'utf8')
@@ -21,6 +24,7 @@ try {
     formatDuration,
     formatHighestCurrency,
     materialSellData,
+    materialSellDataById,
     rarityFactorFromRarity,
     weaponSellData
   } = await import(`${temporaryUrl.href}?check=${Date.now()}`);
@@ -59,46 +63,28 @@ try {
 
   assert.equal(rarityFactorFromRarity(1), 1, 'Legacy-Verkaufsfaktor bleibt für Kompatibilität erhalten.');
   assert.equal(rarityFactorFromRarity(2), 1.1, 'Legacy-Verkaufsfaktor bleibt für Kompatibilität erhalten.');
-  assert.deepEqual(materialSellData('Morsche Fichte'), {
-    type: 'material',
-    name: 'Morsche Fichte',
-    rarity: 1,
-    factor: 1,
-    valueNickel: 10,
-    seconds: 30
-  }, 'Morsche Fichte verliert mit dem SPE auch den 10-%-Verkaufsbonus.');
-  assert.deepEqual(materialSellData('Fichte'), {
-    type: 'material',
-    name: 'Fichte',
-    rarity: 1,
-    factor: 1.1,
-    valueNickel: 11,
-    seconds: 35
-  }, 'Fichte erhält mit positivem DS-SPE den 10-%-Verkaufsbonus.');
-  assert.deepEqual(materialSellData('Zinn'), {
-    type: 'material',
-    name: 'Zinn',
-    rarity: 1,
-    factor: 1,
-    valueNickel: 10,
-    seconds: 30
-  });
-  assert.deepEqual(materialSellData('Kupfer'), {
-    type: 'material',
-    name: 'Kupfer',
-    rarity: 1,
-    factor: 1.1,
-    valueNickel: 11,
-    seconds: 35
-  }, 'Positiver SPE muss den Rohmaterialwert um 10 % erhöhen und die Verkaufszeit mitziehen.');
-  assert.deepEqual(materialSellData('Aluminium'), {
-    type: 'material',
-    name: 'Aluminium',
-    rarity: 2,
-    factor: 2.2,
-    valueNickel: 22,
-    seconds: 50
-  });
+  const expectedPrices = [
+    [10, 16, 25, 40, 70, 150],
+    [15, 24, 38, 60, 105, 225],
+    [22, 35, 55, 88, 154, 330],
+    [32, 51, 80, 128, 224, 480],
+    [46, 74, 115, 184, 322, 690]
+  ];
+  assert.equal(MATERIAL_REFERENCES.length, 77);
+  const priceMatrix = ['materialId,materialTier,S1,S2,S3,S4,S5,S6'];
+  for (const { materialId, definition } of MATERIAL_REFERENCES) {
+    const tier = definition.rarity;
+    const prices = MATERIAL_QUALITIES.map(quality => {
+      const sale = materialSellDataById(materialId, quality);
+      assert.equal(sale.quality, quality);
+      assert.equal(sale.valueNickel, expectedPrices[tier - 1][quality - 1]);
+      assert.equal(sale.seconds, 5 * Math.ceil((15 + 1.5 * sale.valueNickel) / 5));
+      return sale.valueNickel;
+    });
+    priceMatrix.push([materialId, tier, ...prices].join(','));
+  }
+  assert.equal(readFileSync(new URL('../docs/grossupdate-v2-etappe-d-materialpreise-462.csv', import.meta.url), 'utf8').trim().replace(/\r\n/g, '\n'), priceMatrix.join('\n'));
+  assert.equal(materialSellData('Aluminium').valueNickel, 24, 'Ohne explizite Qualität gilt die bisherige Materialstufe als Qualität.');
   assert.equal(materialSellData('Unbekannt'), null);
 
   const qualityStats = { expectedRaw: 10, penetration: 0.25 };

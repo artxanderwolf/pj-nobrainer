@@ -7,15 +7,15 @@ import { migrateLegacyHealers } from '../src/app/game/healer-migration-core.ts';
 
 const actor = (id, classId, hp=5, maxHp=10, raceId='high-elf') =>
   ({id,classId,raceId,hp,maxHp,alive:hp>0});
-const recruit=actor(1,'recruit',5);
-assert.deepEqual(applyHighElfHealing(recruit,[recruit],'dodge'),{target:recruit,healed:1});
-assert.equal(recruit.hp,6);
+const recruit=actor(1,'recruit',5,30);
+assert.deepEqual(applyHighElfHealing(recruit,[recruit],'dodge'),{target:recruit,healed:10});
+assert.equal(recruit.hp,15);
 assert.equal(applyHighElfHealing(recruit,[recruit],'periodic'),null);
 const fighter=actor(2,'fighter',10);
 const worst=actor(3,'archer',2,10);
 const other=actor(4,'scholar',4,20);
 assert.equal(chooseHighElfHealingAlly(fighter,[other,worst,fighter])?.id,3,'Same % missing: choose smaller ID.');
-assert.deepEqual(applyHighElfHealing(fighter,[fighter,other,worst],'dodge'),{target:worst,healed:1});
+assert.deepEqual(applyHighElfHealing(fighter,[fighter,other,worst],'dodge'),{target:worst,healed:8});
 assert.equal(fighter.hp,10);
 assert.equal(highElfDodgeHealReady({2:1500},2,6499),false);
 assert.equal(highElfDodgeHealReady({2:1500},2,6500),true);
@@ -25,8 +25,8 @@ assert.deepEqual(applyHighElfHealing(archer,[archer],'periodic'),{target:archer,
 assert.equal(applyHighElfHealing(archer,[archer],'periodic'),null);
 const scholar=actor(6,'scholar',10);
 const dead=actor(7,'fighter',0);
-const injured=actor(8,'fighter',3);
-assert.equal(applyHighElfHealing(scholar,[scholar,dead,injured],'periodic')?.target.id,8);
+const injured=actor(8,'fighter',3,30);
+assert.deepEqual(applyHighElfHealing(scholar,[scholar,dead,injured],'periodic'),{target:injured,healed:10});
 assert.equal(dead.hp,0,'Must never revive fallen targets');
 assert.equal(applyHighElfHealing(scholar,[scholar,dead],'periodic'),null,'No valid injured ally');
 assert.equal(applyHighElfHealing({...recruit,raceId:'human'},[recruit],'dodge'),null,'Only High Elves can heal');

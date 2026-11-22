@@ -128,7 +128,7 @@ export class GameMarketPresentationService {
     entries.forEach((entry, index) => {
       const { materialId, quality, qty: stock } = entry;
       const name = `${entry.displayName} S${quality}`;
-      const sale = materialSellDataById(materialId);
+      const sale = materialSellDataById(materialId, quality);
       if (!sale) return;
       const inputId = `marketQty_${index}`;
       const row = document.createElement('div');

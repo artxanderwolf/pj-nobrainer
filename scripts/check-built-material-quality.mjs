@@ -54,8 +54,15 @@ const probe = String.raw`<script>
     select('slotBack','4:1');select('slotGripCore','2:4');select('slotGripWrap','9:5');click('#forgePreviewNextBtn');check(!document.getElementById('forgeStartBtn').disabled,'Cannot craft');click('#forgeStartBtn');
     let data=save(),s=data.state,job=s.forgeJobs[0];check(job&&JSON.stringify(job.slots.map(x=>x.quality))==='[6,1,4,5]','Craft quality lost');check(s.inventory['4:1'].qty===4&&s.inventory['4:6'].qty===2,'Craft mixed stock');
     proof.newStats=job.stats;proof.newSlots=job.slots;
-    window.go('market-materials');const input=document.querySelector('input[data-material-id="4"][data-quality="6"]');check(input,'No S6 sale');input.closest('.sell-row').querySelector('button.primary').click();
-    data=save();check(data.state.marketJobs[0].quality===6&&data.state.inventory['4:6'].qty===1,'Sale wrong quality');click('[data-market-cancel="active"]');data=save();check(data.state.inventory['4:6'].qty===2&&data.state.inventory['4:1'].qty===4,'Cancel returned wrong quality');proof.marketCancel=true;
+    window.go('market-materials');const input=document.querySelector('input[data-material-id="4"][data-quality="6"]');check(input,'No S6 sale');
+    const row=input.closest('.sell-row');
+    const otherQuality=document.querySelector('input[data-material-id="4"][data-quality="1"]');
+    const otherTier=document.querySelector('input[data-material-id="3"][data-quality="2"]');
+    check(row.title.includes('150 Nickel')&&otherQuality?.closest('.sell-row').title.includes('10 Nickel')&&otherTier?.closest('.sell-row').title.includes('24 Nickel'),'Market tier/quality prices');
+    input.value='2';input.dispatchEvent(new Event('input',{bubbles:true}));
+    check(row.querySelector('[data-market-preview]').textContent.includes('300 Nickel'),'Quantity preview disagrees');
+    row.querySelector('button.primary').click();
+    data=save();const sale=data.state.marketJobs[0];check(sale.quality===6&&!data.state.inventory['4:6'],'Sale wrong quality');check(sale.quantity===2&&sale.valueNickel===300&&sale.unitValueNickel===150&&sale.unitSeconds===240&&sale.seconds===480,'Order disagrees with preview');click('[data-market-cancel="active"]');data=save();check(data.state.inventory['4:6'].qty===2&&data.state.inventory['4:1'].qty===4,'Cancel returned wrong quality');proof.marketCancel=true;
     const quality=document.getElementById('materialIndexQuality');quality.value='6';quality.dispatchEvent(new Event('change'));check(document.querySelectorAll('#materialIndexRows tr[data-quality="6"]').length===77,'S6 index incomplete');
     job=data.state.forgeJobs.shift();job.status='ready';job.remainingWorkSeconds=0;data.state.forgeReadyJobs.push(job);localStorage.setItem(proofKey,JSON.stringify(proof));seed(data,'claim');return;
    }

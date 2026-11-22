@@ -1,5 +1,4 @@
-import { resolveMaterialQuality, type MaterialQuality } from '../game/material-quality-core.ts';
-import { getMaterialReferenceById } from '../game/game-core.ts';
+import type { MaterialQuality } from '../game/material-quality-core.ts';
 import { Injectable } from '@angular/core';
 import { migrateProductionWorkers, advanceProductionToReady, type ProductionWorkerWorld } from '../game/production-worker-core.ts';
 import { initializeMarketClaims, identifyNewMarketJob, takeReadyMarketJob, type MarketClaimWorldState, type IdentifiedMarketJob } from '../game/market-claim-core.ts';
@@ -82,10 +81,10 @@ export class GameMarketService {
   /** Aktiver Angular-Pfad: Materialverkäufe werden ausschließlich über die stabile ID gestartet. */
   startMaterialById(materialId: number, quantity = 1, at = Date.now(), requestedQuality?: MaterialQuality): MarketMaterialStartResult {
     const state = this.getState();
-    const unit = materialSellDataById(materialId);
+    const unit = materialSellDataById(materialId, requestedQuality);
     if (!unit) return { status: 'unknown-material' };
 
-    const quality = resolveMaterialQuality(requestedQuality, getMaterialReferenceById(materialId)!.definition.rarity as MaterialQuality);
+    const { quality } = unit;
     const stock = getMaterialQuantityById(state.inventory, unit.materialId, quality);
     if (stock <= 0) return { status: 'no-stock' };
 

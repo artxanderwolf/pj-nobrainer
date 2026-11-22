@@ -8,6 +8,7 @@ export interface HighElfHealingCharacter {
   alive: boolean;
 }
 export type HighElfHealTrigger = 'dodge' | 'periodic';
+const HIGH_ELF_HEAL_HP = 10;
 export const HIGH_ELF_MELEE_COOLDOWN_MS = 5000;
 export const HIGH_ELF_PERIODIC_INTERVAL_MS = 10000;
 
@@ -42,7 +43,7 @@ export function applyHighElfHealing<T extends HighElfHealingCharacter>(
     ? source : chooseHighElfHealingAlly(source, party);
   if (!target || !target.alive || target.hp <= 0 || target.maxHp <= 0 || target.hp >= target.maxHp) return null;
   const before = target.hp;
-  target.hp = Math.min(target.maxHp, before + 1);
+  target.hp = Math.min(target.maxHp, before + HIGH_ELF_HEAL_HP);
   return { target, healed: target.hp - before };
 }
 
