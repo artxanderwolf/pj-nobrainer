@@ -1,10 +1,11 @@
 import { Injectable } from '@angular/core';
-import { calculateWeaponValueNickel, formatCurrencyNickel } from '../game/economy-core';
+import { formatCurrencyNickel, weaponSellData } from '../game/economy-core';
 import {
   CONFIG,
   rarityFactor,
   getMaterialReferenceById,
   reinforcementEffectTextById,
+  type WeaponSlot,
   type WeaponStats
 } from '../game/game-core';
 import {
@@ -21,6 +22,7 @@ export type RuntimeWeaponPresentation = WeaponCardLike & {
   id: number;
   name: string;
   stats?: Partial<WeaponStats> | null;
+  slots?: readonly WeaponSlot[] | null;
 };
 
 const WEAPON_PRESENTATION = createWeaponPresentationCore({
@@ -70,7 +72,8 @@ export class GameWeaponPresentationService {
   }
 
   private withCurrentEconomyValue(weapon: RuntimeWeaponPresentation): RuntimeWeaponPresentation {
-    if (weapon.starter || !weapon.stats || 'preservedMaterialBaseStats' in weapon) return weapon;
-    return { ...weapon, valueNickel: calculateWeaponValueNickel(weapon.stats) };
+    if (weapon.starter) return weapon;
+    const sale = weaponSellData({ ...weapon, valueNickel: weapon.valueNickel ?? 0 });
+    return sale ? { ...weapon, valueNickel: sale.valueNickel } : weapon;
   }
 }

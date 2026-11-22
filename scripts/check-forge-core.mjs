@@ -81,7 +81,7 @@ try {
   assert.equal(inventory.Lederfetzen, undefined);
 
   const snapshot = calculateWeaponBalanceSnapshot('sword', swordSlots);
-  assert.equal(snapshot.valueNickel, 60);
+  assert.equal(snapshot.valueNickel, 150);
   assert.equal(snapshot.forgeSeconds, 75);
   assertClose(snapshot.performance, 3.63825);
   assertClose(snapshot.stats.penetration, 0);
@@ -90,13 +90,26 @@ try {
 
   const job = createForgeJob('sword', '', swordSlots);
   assert.equal(job.weaponName, '1H Schwert');
-  assert.equal(job.totalSeconds, 75, 'Schmiedezeit muss aus dem aktuellen Waffenwert berechnet werden.');
-  assert.equal(job.valueNickel, 60, 'Neue Waffen enthalten keinen Spezialmaterialbonus.');
+  assert.equal(job.totalSeconds, 75, 'Schmiedezeit folgt der S1-Leistungsreferenz.');
+  assert.equal(job.valueNickel, 150, '70 Nickel Material, 55 Verarbeitung und 25 S1-Leistungsanteil.');
   assertClose(job.performance, 3.63825);
   assert.deepEqual(job.slots.map(slot => slot.slot), ['workingPart', 'back', 'gripCore', 'gripWrap', 'parry']);
   assert.equal(job.slots.some(slot => slot.slot === 'baseMaterial'), false);
   assert.ok(job.slots.every(slot => Number.isInteger(slot.materialId)), 'Schmiedeauftrag persistiert Material-IDs.');
   assert.ok(job.slots.every(slot => !Object.prototype.hasOwnProperty.call(slot, 'material')), 'Schmiedeauftrag persistiert keine Materialnamen.');
+
+  const { calculateCraftedWeaponEconomy, weaponSellData } = await import('../src/app/game/economy-core.ts');
+  const axe = createForgeJob('axe1h', '', daggerIdSlots);
+  const axeQuote = calculateCraftedWeaponEconomy('axe1h', axe.slots);
+  assert.equal(axeQuote.materialValueNickel, 70, 'Seven S1 units cost 70 Nickel.');
+  const mixed = createForgeJob('axe1h', '', axe.slots.map(slot => slot.slot === 'gripCore' ? { ...slot, quality: 4 } : slot));
+  const mixedQuote = calculateCraftedWeaponEconomy('axe1h', mixed.slots);
+  assert.equal(mixedQuote.materialValueNickel, 160, 'All three grip units use the S4 price.');
+  assert.equal(mixed.valueNickel - axe.valueNickel, 135, 'Only the material component changes with quality.');
+  assert.equal(mixed.totalSeconds, axe.totalSeconds, 'S4 does not increase forge time a second time.');
+  assert.equal(weaponSellData({ ...mixed, id: 1, name: 'Axt', stats: { expectedRaw: 99, penetration: 1 } }).valueNickel, mixed.valueNickel, 'Market and forge agree independently of rune-modified stats.');
+  assert.equal(weaponSellData({ ...mixed, id: 2, name: 'Altwaffe', valueNickel: 123, preservedMaterialBaseStats: mixed.stats }).valueNickel, 123);
+  assert.equal(calculateCraftedWeaponEconomy('axe1h', mixed.slots.slice(0, -1)), null);
 
   const idJob = createForgeJob('dagger', '', daggerIdSlots);
   assert.deepEqual(idJob.slots.map(slot => slot.materialId), [4, 4, 2, 9]);
@@ -116,19 +129,19 @@ try {
     totalSeconds: 75
   });
   const activeStale = { ...staleJob('Aktiv'), startedAt: 1000, finishesAt: 76000 };
-  assert.equal(refreshForgeJobBalance(activeStale, true), true);
-  assert.equal(activeStale.valueNickel, 60);
+  assert.equal(refreshForgeJobBalance(activeStale), true);
+  assert.equal(activeStale.valueNickel, 99);
   assertClose(activeStale.performance, 3.63825);
   assertClose(activeStale.stats.penetration, 0);
   assert.equal(activeStale.totalSeconds, 75, 'Laufende Aufträge behalten ihre bereits gestartete Dauer.');
   assert.equal(activeStale.finishesAt, 76000, 'Laufende Aufträge dürfen durch den Balance-Patch nicht zeitlich verschoben werden.');
 
   const queuedStale = staleJob('Wartend');
-  assert.equal(refreshForgeJobBalance(queuedStale, false), true);
-  assert.equal(queuedStale.valueNickel, 60);
+  assert.equal(refreshForgeJobBalance(queuedStale), true);
+  assert.equal(queuedStale.valueNickel, 99);
   assertClose(queuedStale.performance, 3.63825);
   assertClose(queuedStale.stats.penetration, 0);
-  assert.equal(queuedStale.totalSeconds, 75, 'Noch nicht gestartete Aufträge übernehmen die neue Schmiedezeit.');
+  assert.equal(queuedStale.totalSeconds, 75, 'Bereits reservierte Aufträge behalten ihre zugesagte Dauer.');
 
   const bowJob = createForgeJob('bow', '', bowSlots);
   assert.equal(bowJob.weaponName, 'Bogen');

@@ -197,12 +197,12 @@ export const INDEX_PAGE_MARKUP = `<section class="page" id="index">
           <div class="formula">Material-Verkaufszeit = auf nächste 5 s aufrunden(15 s + 1,5 s × Materialwert)</div>
           <div class="formula">Waffen-Leistungswert = Mittelwert des erwarteten Waffenschadens nach Rüstung bei R = 0 %, 40 % und 80 %</div>
           <div class="formula">Prüfschaden = ROH × (1 − [min(80 %, R) × (1 − DS)] / 100)</div>
-          <div class="formula">Waffenwert = auf nächste 5 Nickel runden(40 Nickel + 6 × Leistungswert)</div>
-          <div class="formula">Herstellungszeit = auf nächste 5 s aufrunden(30 s + 0,7 s × Waffenwert)</div>
+          <div class="formula">Waffenwert = auf 5 Nickel aufrunden(1,5 × Materialsumme + 20 Nickel) + auf 5 Nickel aufrunden(6 × S1-Leistungswert)</div>
+          <div class="formula">Herstellungszeit = auf nächste 5 s aufrunden(30 s + 0,7 s × S1-Referenzwert); dabei gelten die Mindestzeiten der Waffenformen</div>
           <div class="formula">Waffen-Verkaufszeit = auf nächste 5 s aufrunden(15 s + 0,5 s × Waffenwert)</div>
           <p class="index-note">Die festen Prüfrüstungen 0/40/80 sind unabhängig vom Dungeon und decken das aktuelle Prozent-Rüstungssystem bis zum 80-%-Cap ab. Dadurch verändert ein neues Dungeon-Balancing nicht automatisch den Marktwert bestehender Waffen.</p>
-          <p class="index-note">Die Materialstufe ist an die Materialart gebunden. Fundort und Spezialeffekte verändern den Rohmaterialpreis nicht. Bei neuen fertigen Waffen gibt es keinen pauschalen Spezialmaterial-Bonus mehr: Eingesetzte Runen wirken über die tatsächlichen Waffenwerte auf den Leistungswert.</p>
-          <p class="index-note">Die Seltenheit einer Waffe bleibt eine sichtbare Materialeigenschaft, bestimmt aber nicht mehr direkt Waffenwert, Herstellungszeit oder Waffen-Verkaufszeit. Materialmenge verändert weiterhin nur den Verbrauch, nicht den Statbeitrag eines Bauteils.</p>
+          <p class="index-note">Die Materialsumme zählt jede verbrauchte Einheit zum aktuellen Stufen- und Qualitätspreis. Der S1-Leistungswert verwendet dieselben Materialarten in S1. Der S1-Referenzwert für die Herstellungszeit ist 40 Nickel plus 6 × S1-Leistungswert, auf 5 Nickel gerundet. Eingesetzte Runen wirken im Kampf. Im Preis für den Waffenverkauf sind sie nicht enthalten.</p>
+          <p class="index-note">Die Waffenqualität bestimmt die Sockelzahl. Materialmengen beeinflussen den Verbrauch und die Materialsumme. Der Statbeitrag eines Bauteils richtet sich nach seiner Materialart und Qualität. Bereits angelegte Aufträge behalten ihre zugesagten Werte und Zeiten.</p>
           <p class="index-note">Die klassenabhängigen Waffenfreigaben sind aktiv. Waffen können unabhängig davon hergestellt, gelagert und verkauft werden, ob eine bestimmte Klasse sie tragen darf. Die vorbereiteten Schildfreigaben führen noch keine Schilde ein; Rüstungsklassen bleiben eine spätere Erweiterung.</p>
           <div class="formula">Material-Verkaufserlös = Materialwert pro Stück × Verkaufsmenge</div>
           <div class="formula">Währung: 100 Nickel = 1 Bronze · 100 Bronze = 1 Silber · 100 Silber = 1 Gold</div>

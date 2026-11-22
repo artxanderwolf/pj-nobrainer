@@ -1,5 +1,5 @@
 import {
-  calculateWeaponEconomy
+  calculateCraftedWeaponEconomy, calculateWeaponEconomy
 } from './economy-core.ts';
 import {
   CONFIG,
@@ -203,30 +203,28 @@ export function calculateWeaponBalanceSnapshot(
     .filter(slot => craftingSlots.has(slot.slot as WeaponCraftingSlotId));
   const stats = calculateWeaponStats(storedSlots, weaponForm);
   const economy = calculateWeaponEconomy(stats);
+  const quote = calculateCraftedWeaponEconomy(weaponForm, storedSlots);
   return {
     slots: storedSlots,
     stats,
-    valueNickel: economy.valueNickel,
+    valueNickel: quote?.valueNickel ?? economy.valueNickel,
     performance: economy.performance,
-    forgeSeconds: economy.forgeSeconds
+    forgeSeconds: quote?.forgeSeconds ?? economy.forgeSeconds
   };
 }
 
-export function refreshForgeJobBalance(job: ForgeJob, preserveDuration: boolean): boolean {
+export function refreshForgeJobBalance(job: ForgeJob): boolean {
   if ((job as ForgeJob & {legacyForgeJob?:boolean}).legacyForgeJob) return false; // Preserve all reserved old special-part jobs.
   if (job.preservedMaterialSnapshot) return false;
   const snapshot = calculateWeaponBalanceSnapshot(job.weaponForm, job.slots);
   const changed = JSON.stringify(job.slots) !== JSON.stringify(snapshot.slots)
     || JSON.stringify(job.stats) !== JSON.stringify(snapshot.stats)
-    || job.valueNickel !== snapshot.valueNickel
-    || job.performance !== snapshot.performance
-    || (!preserveDuration && job.totalSeconds !== minimumForgeSeconds(job.weaponForm, snapshot.forgeSeconds));
+    || job.performance !== snapshot.performance;
 
   job.slots = snapshot.slots;
   job.stats = snapshot.stats;
-  job.valueNickel = snapshot.valueNickel;
   job.performance = snapshot.performance;
-  if (!preserveDuration) job.totalSeconds = minimumForgeSeconds(job.weaponForm, snapshot.forgeSeconds);
+  // Commercial terms are snapshots fixed when the order is placed.
   return changed;
 }
 

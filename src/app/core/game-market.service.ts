@@ -46,6 +46,7 @@ interface RuntimeMarketWeapon {
   id: number;
   name: string;
   valueNickel: number;
+  weaponForm?: string | null;
   slots?: readonly WeaponSlot[] | null;
   starter?: boolean;
 }
