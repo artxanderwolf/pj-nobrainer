@@ -96,7 +96,7 @@ assert.match(indexMarkup, /Ein Browser-Neustart startet keine neue 5-Stunden-Fri
 assert.match(indexMarkup, /Tavernenangebote \(S19\)/);
 assert.match(indexMarkup, /Anwerbeaktion/);
 assert.match(indexMarkup, /Rüstung = additive Prozentpunkte, begrenzt auf maximal 80 %/);
-assert.match(indexMarkup, /Materialwert = 10 Nickel × bisherige Materialstufe/);
+assert.match(indexMarkup, /Materialwert = auf volle Nickel runden\(10 Nickel × Stufenfaktor × Qualitätsfaktor\)/);
 assert.match(indexMarkup, /40 Nickel \+ 6 × Leistungswert/);
 
 const composed = composePageMarkup(APP_SHELL_PAGE_IDS);

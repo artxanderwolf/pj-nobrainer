@@ -127,7 +127,29 @@ try{
   const out={events:[],saveRequested:false};const run={participantIds:[1],enemies:[enemy]};
   svc.playerAttack(svc.getState(1),{ownerId:1,kind:'race-heal',nextAt:10000},run,out);
   assert.equal(enemy.hp,hp,'A healing action must not damage opponents');
-  assert.equal(highElf.hp,2,'High Elf archer heals exactly one HP');
+  assert.equal(highElf.hp,11,'High Elf archer heals ten HP');
+  assert.deepEqual(out.events, [{text:'Bogner heilt Bogner um 10 HP.',className:'good'}]);
+  highElf.hp = 24.5;
+  out.events.length = 0;
+  svc.playerAttack(svc.getState(1),{ownerId:1,kind:'race-heal',nextAt:20000},run,out);
+  assert.equal(highElf.hp,26);
+  assert.deepEqual(out.events, [{text:'Bogner heilt Bogner um 1,5 HP.',className:'good'}]);
+
+  highElf.classId = 'recruit';
+  highElf.name = 'Rekrut';
+  highElf.hp = 11;
+  Math.random = () => 0;
+  out.events.length = 0;
+  svc.enemyAttack(svc.getState(1),{ownerId:enemy.id,nextAt:25000},run,out);
+  assert.equal(highElf.hp,21);
+  assert.ok(out.events.some(event => event.text === 'Rekrut heilt Rekrut nach Ausweichen um 10 HP.'));
+  out.events.length = 0;
+  svc.enemyAttack(svc.getState(1),{ownerId:enemy.id,nextAt:29999},run,out);
+  assert.equal(highElf.hp,21,'Dodge cooldown remains five seconds');
+  assert.ok(!out.events.some(event => event.text.includes('heilt')));
+  svc.enemyAttack(svc.getState(1),{ownerId:enemy.id,nextAt:30000},run,out);
+  assert.equal(highElf.hp,26);
+  assert.ok(out.events.some(event => event.text === 'Rekrut heilt Rekrut nach Ausweichen um 5 HP.'));
   assert.equal(out.saveRequested,true,'Healing is persisted');
 }finally{Math.random=rng;unlinkSync(temporary);}
 console.log('Schnellrelease: Qualifikation, Suchgrenzen, Claims, Migration, verborgene Missionen, Heilung, 68 Materialien, Dropgrenzen, Bossloot und echte Kampfpfade erfolgreich.');
