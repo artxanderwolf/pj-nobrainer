@@ -1,5 +1,6 @@
 [
-  "Großupdate v2, Schritt S13: Waffenpreise berücksichtigen die verbrauchten Materialien, die Verarbeitung und einen Leistungsanteil auf S1-Basis. Schmiede, Waffenkarte und Markt nutzen dieselbe Bewertung.",
-  "Bereits angelegte Aufträge behalten Preis und Laufzeit. Der Spielstand bleibt bei Save 28.",
-  "Zum Aktualisieren die APK speichern und über Downloads oder Eigene Dateien öffnen."
+  "Die Einsame Stadt und die Heiligen Ebenen sind anspruchsvoller. Neu erzeugte Gegner und Bosse verursachen mehr Schaden. Bereits laufende Kämpfe behalten ihre gespeicherten Gegnerwerte.",
+  "Materialpreise berücksichtigen Materialstufe und Qualität. Waffenpreise berücksichtigen Verbrauch, Verarbeitung und S1-Leistung. Offene Aufträge behalten ihre zugesagten Werte und Laufzeiten.",
+  "Hochelfen heilen im Kampf bis zu 10 HP. Das Kampfprotokoll zeigt die tatsächliche Heilung.",
+  "Save 28 bleibt bestehen. Zum Aktualisieren die APK speichern und über Downloads oder Eigene Dateien öffnen."
 ]
