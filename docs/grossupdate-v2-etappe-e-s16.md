@@ -48,3 +48,7 @@ Alle 48 simulierten Übergänge von D1 bis D5 gelangten innerhalb der 24-Stunden
 - Alle 91 Web-Prüfungen bestanden. Da die Änderung Analyse und Dokumentation betrifft, bleibt die ausgelieferte Version 0.27.0.2 / Save 28. Etappe F folgt gemäß Schrittplan nach der Abnahme von S16.
 
 Reproduktion aus dem Projektverzeichnis mit `node --no-warnings --experimental-strip-types scripts/analyze-grossupdate-v2-s16.mjs <Ausgabe.json>`. Die JSON-Datei enthält alle Einzelläufe und verwendeten Zufallsfolgen.
+
+## Abnahme S14
+
+Der Nutzer hat die aktuelle Herstellungs- und Verkaufsökonomie in S14 ausdrücklich abgenommen. Die oben genannten Rohwerte bleiben Modell- und Messwerte. Die Abnahme begründet keine Änderung von Preisen oder Laufzeiten.
