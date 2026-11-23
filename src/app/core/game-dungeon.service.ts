@@ -2,7 +2,7 @@ import { rollMaterialQuality, resolveMaterialQuality, type MaterialQuality } fro
 import { teamIds, getTeamSession, migrateTeams, characterTeamReservation, type TeamSessionState } from '../game/team-core.ts';
 import { isProductionWorkerReserved } from '../game/production-worker-core.ts';
 import { type CityLayoutWorldState } from '../game/city-layout-core.ts';
-import { rollRuneDefinition, RUNE_DEFINITIONS, type RuneDefinitionId } from '../game/rune-core.ts';
+import { rollRuneDefinition, RUNE_DEFINITIONS, RUNE_DROP_DUNGEON_ID, type RuneDefinitionId } from '../game/rune-core.ts';
 import { grantDroppedRune, type RuneWorldState } from '../game/rune-inventory-core.ts';
 import { getDungeonDefinition } from '../game/dungeon-definitions.ts';
 import { applyHighElfHealing, highElfDodgeHealReady, highElfHealingAttackSource } from '../game/high-elf-healing-core.ts';
@@ -749,9 +749,11 @@ export class GameDungeonService {
   private rollDrops(enemies: readonly DungeonEnemy[], dungeonId: number): RuntimeDungeonDrop[] {
     const result: RuntimeDungeonDrop[] = [];
     for (const enemy of enemies) {
-      const rune=rollRuneDefinition(Math.random(),Math.random(),Math.random(),dungeonId);
-      if(rune)result.push({runeDefinitionId:rune});
-      // Kein Materialwurf verändert den Gegnerpool; der separate Runendrop (S23) bleibt unabhängig.
+      if (dungeonId === RUNE_DROP_DUNGEON_ID && enemy.boss) {
+        const rune = rollRuneDefinition(Math.random(), Math.random(), Math.random(), dungeonId, enemy.boss);
+        if (rune) result.push({ runeDefinitionId: rune });
+      }
+      // Materialwürfe bleiben unabhängig vom Runenwurf.
       if (!materialDropSucceeds(Math.random())) continue;
       if (enemy.boss) {
         const ids = [...new Set(Object.values(CHARACTER_CLASSES).flatMap(cls => getDungeonEnemyDefinition(dungeonId, cls.id)?.lootMaterialIds ?? []))];
