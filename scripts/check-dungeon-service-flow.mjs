@@ -399,15 +399,16 @@ try {
   const qualityService = new GameDungeonService({getState:()=>makeState()});
   const normalEnemy = {lootMaterialIds:[5,3],boss:false};
   for (const [roll,quality] of [[0,1],[.7,2],[.92,3],[.98,4],[.998,5],[.999999,6]]) {
-    const draws=[.5,.5,.5,0,0,roll]; Math.random=()=>{assert.ok(draws.length,'Unexpected extra RNG draw');return draws.shift();};
+    const draws=[0,0,roll]; Math.random=()=>{assert.ok(draws.length,'Unexpected extra RNG draw');return draws.shift();};
     assert.deepEqual(qualityService.rollDrops([normalEnemy],1),[{materialId:5,quality}]);assert.equal(draws.length,0);
   }
   {
     const draws=[0,0,0,.6];Math.random=()=>{assert.ok(draws.length);return draws.shift();};
-    assert.deepEqual(qualityService.rollDrops([normalEnemy],1),[{runeDefinitionId:'rune-p-1'}],'Rune still drops independently when material roll fails');
+    assert.deepEqual(qualityService.rollDrops([{...normalEnemy,boss:true}],2),[{runeDefinitionId:'rune-p-1'}],'A Dungeon 2 boss rune can drop even when the independent material roll fails');
+    assert.equal(draws.length,0);
   }
   {
-    const draws=[.5,.5,.5,0,0,0,0,.7,0,.92,0,.98,0,.999999];Math.random=()=>{assert.ok(draws.length);return draws.shift();};
+    const draws=[0,0,0,0,.7,0,.92,0,.98,0,.999999];Math.random=()=>{assert.ok(draws.length);return draws.shift();};
     const drops=qualityService.rollDrops([{...normalEnemy,boss:true}],1);
     assert.equal(new Set(drops.map(d=>d.materialId)).size,5);assert.deepEqual(drops.map(d=>d.quality),[1,2,3,4,6]);assert.equal(draws.length,0);
   }

@@ -47,6 +47,21 @@ export function buildWeightedTargets<TTarget extends CombatTargetLike>(
     }));
 }
 
+/** Shift one percentage point from each Wood Elf to other living targets. */
+export function applyWoodElfTargetReduction<TTarget extends CombatTargetLike & { raceId?: string | null }>(
+  entries: readonly WeightedTargetEntry<TTarget>[]
+): number[] {
+  const otherWeight = entries.reduce((sum, entry) =>
+    sum + (entry.target.raceId === 'wood-elf' ? 0 : entry.weight), 0);
+  if (!otherWeight) return entries.map(entry => entry.weight);
+  const total = entries.reduce((sum, entry) => sum + entry.weight, 0);
+  const transferred = entries.reduce((sum, entry) =>
+    sum + (entry.target.raceId === 'wood-elf' ? Math.min(entry.weight, total * 0.01) : 0), 0);
+  return entries.map(entry => entry.target.raceId === 'wood-elf'
+    ? Math.max(0, entry.weight - total * 0.01)
+    : entry.weight + transferred * entry.weight / otherWeight);
+}
+
 export function applyAttackDamage<TTarget extends CombatTargetLike>(
   target: TTarget,
   damage: number,

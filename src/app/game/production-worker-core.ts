@@ -14,7 +14,7 @@ export interface ProductionJob {
   workRate?: number;
 }
 export interface ProductionWorkerWorld extends CityLayoutWorldState, TeamWorldState {
-  characters: Array<{ id: number; name?: string }>;
+  characters: Array<{ id: number; name?: string; raceId?: string }>;
   forgeJobs: ProductionJob[];
   forgeQueue: ProductionJob[];
   marketJobs: ProductionJob[];
@@ -35,8 +35,12 @@ export function operatingBuildings(state: CityLayoutWorldState, kind: Production
   return (state.cityLayout?.buildings ?? []).filter(building => building.buildingTypeId === kind && building.status === 'placed')
     .sort((a,b)=>a.buildingInstanceId.localeCompare(b.buildingInstanceId,undefined,{numeric:true}));
 }
-export function productionRate(building: CityBuildingInstance): number {
-  return building.workerCharacterId === null ? 1 : PRODUCTION_HELPER_SPEED;
+export function productionRate(state: ProductionWorkerWorld, building: CityBuildingInstance): number {
+  if (building.workerCharacterId === null) return 1;
+  const raceId = state.characters.find(character => character.id === building.workerCharacterId)?.raceId;
+  const specialized = (building.buildingTypeId === 'forge' && raceId === 'dwarf') ||
+    (building.buildingTypeId === 'market' && raceId === 'halfling');
+  return specialized ? PRODUCTION_HELPER_SPEED / 0.9 : PRODUCTION_HELPER_SPEED;
 }
 export function isProductionWorkerReserved(state: CityLayoutWorldState, characterId: number, exceptBuilding?: string): boolean {
   return (state.cityLayout?.buildings ?? []).some(b =>
@@ -88,7 +92,7 @@ export function migrateProductionWorkers(state: ProductionWorkerWorld): boolean 
         // active jobs retain their original deadline at rate 1.
         const work=Math.max(0,(Number(job.finishesAt)-Number(job.startedAt))/1000);
         const oldJob=job.buildingInstanceId!==undefined && job.remainingWorkSeconds!==undefined;
-        job.workRate=oldJob?1:productionRate(building);
+        job.workRate=oldJob?1:productionRate(state, building);
         if (!oldJob) job.finishesAt=Number(job.startedAt)+Math.ceil(work*1000/job.workRate);
         changed=true;
       }
@@ -119,7 +123,7 @@ export function rebaseActiveWork(state: ProductionWorkerWorld, building: CityBui
   const oldRate=job.workRate??1;
   const remaining=Math.max(0,(job.finishesAt-at)/1000)*oldRate;
   job.remainingWorkSeconds=remaining;
-  job.workRate=productionRate(building);
+  job.workRate=productionRate(state, building);
   job.startedAt=at;
   job.finishesAt=at+Math.ceil(remaining*1000/job.workRate);
 }
@@ -140,7 +144,7 @@ export function assignProductionHelper(state: ProductionWorkerWorld, buildingId:
   building.workerCharacterId=characterId;
   if (job&&remaining!==null) {
     job.remainingWorkSeconds=remaining;
-    job.workRate=productionRate(building);
+    job.workRate=productionRate(state, building);
     job.startedAt=at;
     job.finishesAt=at+Math.ceil(remaining*1000/job.workRate);
   }
@@ -164,7 +168,7 @@ export function dispatchProductionQueue<T extends ProductionJob>(
     const work=(kind==='forge' ? (job as T&{totalSeconds:number}).totalSeconds : (job as T&{seconds:number}).seconds);
     if (!Number.isFinite(work)||work<0) throw new Error('S16: Ungültige Auftragsdauer.');
     job.remainingWorkSeconds=work;
-    job.workRate=productionRate(building);
+    job.workRate=productionRate(state, building);
     job.startedAt=at;
     job.finishesAt=at+Math.ceil(work*1000/job.workRate);
     building.activeJobId=job.jobId;

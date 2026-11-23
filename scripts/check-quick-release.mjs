@@ -11,6 +11,8 @@ import { resolveDungeonSearch } from '../src/app/game/dungeon-search-core.ts';
 import { getClassEquipmentRule } from '../src/app/game/equipment-rules-core.ts';
 import { getRecruitOffer } from '../src/app/game/progression-core.ts';
 import { encodeSave, decodeSave } from '../src/app/game/save-codec.ts';
+import { createInitialCityLayout } from '../src/app/game/city-layout-core.ts';
+import { grantDroppedRune, migrateRuneWorld } from '../src/app/game/rune-inventory-core.ts';
 
 const state={weaponCraftCounts:{dagger:0}},p=initializeReleaseProgress(state);
 let draws=0;const random=()=>{draws++;return 0;};
@@ -20,8 +22,8 @@ assert.equal(p.qualifiedRuns[1],undefined);assert.equal(draws,0);
 recordSuccessfulWave(state,1,random);assert.equal(p.qualifiedRuns[1],1);
 for(let i=0;i<400;i++)recordSuccessfulWave(state,1,random);
 assert.equal(p.qualifiedRuns[1],1,'A session counts at most once');
-for(let run=1;run<5;run++){migrateTeams(state);startProgressSession(state,1);for(let wave=0;wave<50;wave++)recordSuccessfulWave(state,1,random);}
-assert.equal(p.qualifiedRuns[1],5);assert.equal(draws,0,'5th qualifying run cannot search before a new run');
+for(let run=1;run<10;run++){migrateTeams(state);startProgressSession(state,1);for(let wave=0;wave<50;wave++)recordSuccessfulWave(state,1,random);}
+assert.equal(p.qualifiedRuns[1],10);assert.equal(draws,0,'10th qualifying run cannot search before a new run');
 migrateTeams(state);startProgressSession(state,1);for(let wave=0;wave<49;wave++)recordSuccessfulWave(state,1,random);
 assert.equal(draws,0);recordSuccessfulWave(state,1,()=>{draws++;return .05;});assert.equal(p.accessFound[2],undefined);
 recordSuccessfulWave(state,1,()=>{draws++;return .049999;});assert.equal(p.accessFound[2],true);assert.equal(dungeonUnlocked(state,2),false);
@@ -106,18 +108,62 @@ try{
     const materials=drops.filter(drop=>Number.isInteger(drop.materialId));
     assert.equal(materials.length,5);
     assert.equal(new Set(materials.map(d=>d.materialId)).size,5);
-    assert.equal(drops.some(d=>d.runeDefinitionId),did===1,'Nur Dungeon 1 darf unabhängige Rune droppen');
+    assert.equal(drops.some(d=>d.runeDefinitionId),did===2,'Nur ein Boss in Dungeon 2 kann eine Rune droppen');
   }
   assert.equal(createDungeonEnemies(1,()=>0,2,()=>.009999)[0].boss,true);assert.equal(createDungeonEnemies(1,()=>0,2,()=>.01)[0].boss,false);
   const service=new GameDungeonService({getState:()=>({})});
   for(const [roll,id] of [[0,10],[.49999,10],[.50001,11],[.79999,11],[.80001,12],[.94999,12],[.95001,13]]){
     let draw=0;
-    Math.random=()=>draw++===4?roll:.5; // drei unabhängige Rune-Würfe, dann Materialchance und gewichteter Pool
+    Math.random=()=>draw++===1?roll:.5; // Ohne Runenwurf: Materialchance, dann gewichteter Pool
     assert.equal(service.rollDrops([createDungeonEnemy(1,'recruit',2)],2)[0].materialId,id);
   }
   Math.random=()=>.6;
   assert.deepEqual(service.rollDrops([createDungeonEnemy(1,'recruit',2)],2),[],
     'Bei 40 % der Ergebnisse darf kein Material gewählt werden.');
+  const boss = createDungeonEnemy(1, 'recruit', 2, true);
+  const rollBoss = (chance, material) => {
+    const rolls = [chance, 0.5, 0.9, material];
+    Math.random = () => rolls.shift() ?? 0;
+    return service.rollDrops([boss], 2);
+  };
+  assert.deepEqual(rollBoss(0.000999, 0.6), [{runeDefinitionId:'rune-ds-2'}]);
+  assert.equal(rollBoss(0.001, 0).filter(drop => drop.materialId).length, 5);
+  assert.deepEqual(rollBoss(0.001, 0.6), []);
+  let normalDraws = 0;
+  Math.random = () => { normalDraws++; return 0.6; };
+  assert.deepEqual(service.rollDrops([createDungeonEnemy(1, 'recruit', 2)], 2), []);
+  assert.equal(normalDraws, 1, 'Normal enemies only draw material chance');
+
+  // A previously rolled Dungeon 1 rune remains claimable exactly once on Save 28.
+  const oldRuneWorld = {characters:[], weaponInventory:[], inventory:{}, cityLayout:createInitialCityLayout(),
+    forgeJobs:[], forgeQueue:[], forgeReadyJobs:[]};
+  migrateTeams(oldRuneWorld);
+  const existingRune = grantDroppedRune(oldRuneWorld, 'rune-p-2');
+  oldRuneWorld.teams[1].dungeonLootCollect = {
+    readyAt:2000, enemyCount:1, drops:[{runeDefinitionId:'rune-ges-1'}]
+  };
+  const runeSave = decodeSave(encodeSave(oldRuneWorld)).state;
+  migrateTeams(runeSave);
+  migrateRuneWorld(runeSave);
+  const runeService = new GameDungeonService({getState:()=>runeSave});
+  const runeState = runeService.getState(1);
+  Math.random = () => { throw Error('Saved loot must not be rolled again'); };
+  runeService.completeLootCollect(runeState, 2000, {events:[],saveRequested:false});
+  runeService.completeLootCollect(runeState, 2000, {events:[],saveRequested:false});
+  assert.deepEqual(runeState.session.dungeonRuneLoot, ['rune-ges-1']);
+  const previousDocument = globalThis.document;
+  globalThis.document = new EventTarget();
+  try {
+    assert.equal(runeService.collectLoot(1).saveRequested, true);
+    assert.equal(runeService.collectLoot(1).saveRequested, false);
+  } finally {
+    if (previousDocument === undefined) delete globalThis.document;
+    else globalThis.document = previousDocument;
+  }
+  assert.deepEqual(runeSave.runeInventory[0], existingRune);
+  assert.equal(runeSave.runeInventory.length, 2);
+  assert.equal(new Set(runeSave.runeInventory.map(rune => rune.runeItemId)).size, 2);
+  assert.equal(runeSave.runeWorkshopUnlocked, true);
   // S18: the real service resolves periodic healing without consuming the attack damage path.
   const highElf={id:1,classId:'archer',raceId:'high-elf',hp:1,maxHp:26,alive:true,
     equipment:{leftHand:null,rightHand:null},name:'Bogner',level:1};

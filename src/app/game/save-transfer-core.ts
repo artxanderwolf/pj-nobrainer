@@ -63,6 +63,11 @@ export function validateImportedSave(raw: string): SaveImportValidation {
   if (!Array.isArray(state['characters']) || !isRecord(state['inventory'])) {
     return { ok: false, reason: 'invalid-state', message: 'Der Spielstand enthält keinen gültigen NoBrainer-Spielzustand.' };
   }
+  const tavernOffers = state['tavernOffers'];
+  if (tavernOffers !== undefined && (!isRecord(tavernOffers) || !isRecord(tavernOffers['byBuildingId']) ||
+    Object.values(tavernOffers['byBuildingId']).some(offers => !Array.isArray(offers) || offers.some(offer => !isRecord(offer))))) {
+    return { ok: false, reason: 'invalid-state', message: 'Der Spielstand enthält beschädigte Tavernenangebote.' };
+  }
 
   if (Object.prototype.hasOwnProperty.call(state, 'cityLayout')) {
     try {

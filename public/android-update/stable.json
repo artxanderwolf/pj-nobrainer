@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
   "available": true,
-  "versionName": "0.27.0.3",
-  "versionCode": 18,
-  "apkUrl": "https://github.com/artxanderwolf/pj-nobrainer/releases/download/android-v0.27.0.3-code18/Smiths-of-Eldravar-v0.27.0.3-code18-release.apk",
+  "versionName": "0.28.1",
+  "versionCode": 20,
+  "apkUrl": "https://github.com/artxanderwolf/pj-nobrainer/releases/download/android-v0.28.1-code20/Smiths-of-Eldravar-v0.28.1-code20-release.apk",
   "apkSize": 3722208,
-  "sha256": "cd343160606e31fb4d2df50d923525a96274d07a4dd54140344e8a67fe0668a2",
-  "publishedAt": "2026-11-23T19:41:32.112Z",
+  "sha256": "3630437ebf56f4351968abfd05d763a824c1a1cf2923f54a6813570533e9fb77",
+  "publishedAt": "2026-11-23T23:36:18.913Z",
   "mandatory": false,
   "releaseNotes": [
-    "Die Einsame Stadt und die Heiligen Ebenen sind anspruchsvoller. Neu erzeugte Gegner und Bosse verursachen mehr Schaden. Bereits laufende Kämpfe behalten ihre gespeicherten Gegnerwerte.",
-    "Materialpreise berücksichtigen Materialstufe und Qualität. Waffenpreise berücksichtigen Verbrauch, Verarbeitung und S1-Leistung. Offene Aufträge behalten ihre zugesagten Werte und Laufzeiten.",
-    "Hochelfen heilen im Kampf bis zu 10 HP. Das Kampfprotokoll zeigt die tatsächliche Heilung.",
-    "Save 28 bleibt bestehen. Zum Aktualisieren die APK speichern und über Downloads oder Eigene Dateien öffnen."
+    "Du kannst Charaktere freistellen. Der letzte Charakter bleibt im Kader. Getragene Waffen bleiben im Lager, und der nächste Anwerbepreis richtet sich nach der aktuellen Kadergröße.",
+    "Zwerge verkürzen als Schmiedehelfer die Auftragsdauer um 10 %, Halblinge als Markthelfer ebenfalls. Waldelfen werden in gemischten Gruppen seltener angegriffen. Hochelf-Magier können sich selbst oder ein verletztes Gruppenmitglied heilen.",
+    "Neue Zugangssuchen erfordern zehn qualifizierte Läufe. Neue Runen können mit 0,1 % Chance je besiegtem Boss in der Waffenkammer fallen.",
+    "Save 28 bleibt gültig. Freischaltungen und bereits erzeugte Runenbeute bleiben erhalten. Zum Aktualisieren die APK speichern und über Downloads oder Eigene Dateien öffnen."
   ]
 }

@@ -48,7 +48,19 @@ export function weaponUnlocked(state: MissionState, form: string): boolean {
 }
 export function missions(state: MissionState): Mission[] {
     const p = initializeReleaseProgress(state);
-    const list: Mission[] = [2, 3, 4, 5].map(id => ({ id: `dungeon_${id}`, title: `Zugang: ${DUNGEON_NAMES[id - 1]}`, visible: dungeonUnlocked(state, id - 1), complete: !!p.accessFound[id], claimed: !!p.claimed[`dungeon_${id}`], progress: count(p.qualifiedRuns[id - 1]) >= REQUIRED_QUALIFIED_RUNS ? (p.accessFound[id] ? 'Zugang gefunden' : `Zugang suchen · ab Welle ${ACCESS_SEARCH_START_WAVE} eines neuen Laufs`) : `Qualifizierte Läufe: ${Math.min(REQUIRED_QUALIFIED_RUNS, count(p.qualifiedRuns[id - 1]))}/${REQUIRED_QUALIFIED_RUNS}` }));
+    const list: Mission[] = [2, 3, 4, 5].map(id => {
+        const missionId = `dungeon_${id}`;
+        const claimed = !!p.claimed[missionId];
+        const complete = claimed || !!p.accessFound[id];
+        const qualified = Math.min(REQUIRED_QUALIFIED_RUNS, count(p.qualifiedRuns[id - 1]));
+        const countText = `Qualifizierte Läufe: ${qualified}/${REQUIRED_QUALIFIED_RUNS}`;
+        const searchText = qualified === REQUIRED_QUALIFIED_RUNS
+            ? ` · Zugang suchen ab Welle ${ACCESS_SEARCH_START_WAVE} eines neuen Laufs` : '';
+        return {
+            id: missionId, title: `Zugang: ${DUNGEON_NAMES[id - 1]}`, visible: dungeonUnlocked(state, id - 1),
+            complete, claimed, progress: complete ? 'Zugang gefunden' : countText + searchText
+        };
+    });
     for (const form of FORMS) {
         const old = getWeaponUnlockState(form, state.weaponCraftCounts);
         const prerequisites = old.prerequisites;

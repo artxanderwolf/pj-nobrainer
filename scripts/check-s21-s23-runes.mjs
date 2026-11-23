@@ -6,6 +6,7 @@ import {
   availableRuneItems,equipRune,removeRune,replaceRune,recomputeRunedWeapon,validateRuneReferences
 } from '../src/app/game/rune-inventory-core.ts';
 import {runeDefinitionFromLegacy, RUNE_DEFINITIONS, rollRuneDefinition} from '../src/app/game/rune-core.ts';
+import { decodeSave, encodeSave } from '../src/app/game/save-codec.ts';
 
 const slots=(specialId,rareId=4)=>[
   {slot:'workingPart',materialId:rareId},{slot:'back',materialId:rareId},
@@ -70,6 +71,11 @@ const w=mixed.weaponInventory[0];
 if(w.runeSockets.length){
   const first=w.runeSockets[0];
   assert.equal(equipRune(mixed,55,0,extra.runeItemId),true,'Swap is atomic and returns the old rune');
+  const restored = decodeSave(encodeSave(mixed)).state;
+  assert.equal(migrateRuneWorld(restored), false);
+  assert.deepEqual(restored.weaponInventory[0].runeSockets, w.runeSockets);
+  assert.deepEqual(restored.runeInventory, mixed.runeInventory);
+  assert.equal(restored.runeWorkshopUnlocked, true);
   assert.equal(availableRuneItems(mixed).some(x=>x.runeItemId===first),true);
   assert.equal(replaceRune(mixed,55,0,extra.runeItemId),false,'No duplicated assignment');
   assert.equal(removeRune(mixed,55,0),true);
@@ -79,11 +85,11 @@ validateRuneReferences(mixed);
 let drops=0,tiers=[0,0],kinds=[0,0,0];let seed=123456;
 const random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296);
 for(let i=0;i<1000000;i++){
- const r=rollRuneDefinition(random(),random(),random(),1);
+ const r=rollRuneDefinition(random(),random(),random(),2,true);
  if(r){drops++;tiers[RUNE_DEFINITIONS[r].tier-1]++;kinds[['P','DS','GES'].indexOf(RUNE_DEFINITIONS[r].kind)]++;}
 }
 assert.ok(drops>850&&drops<1150,`Expected ~1000 runes, got ${drops}`);
 assert.ok(tiers[0]/drops>.75&&tiers[0]/drops<.85);
 assert.ok(kinds.every(n=>n/drops>.28&&n/drops<.38));
-assert.equal(rollRuneDefinition(0,0,0,2),null,'Only dungeon 1 produces these runes');
+assert.equal(rollRuneDefinition(0,0,0,1,true),null,'Dungeon 1 cannot produce new runes');
 console.log('S21-S23: six legacy effects retained, Save migration idempotent, S1 legacy socket, legacy queued job, rune swaps, first-find workshop and one million independent drop trials passed.');

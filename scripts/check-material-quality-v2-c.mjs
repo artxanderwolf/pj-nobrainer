@@ -41,9 +41,9 @@ for(const seed of [7919,104729,524287]){
   totalS6+=counts[5];
 }
 assert.ok(totalS6<12,'Do not demand exactly one S6 per million');
-assert.equal(rollRuneDefinition(.000999,0,0,1),'rune-p-1');
-assert.equal(rollRuneDefinition(.001,0,0,1),null);
-assert.equal(rollRuneDefinition(0,0,0,2),null);
+assert.equal(rollRuneDefinition(.000999,0,0,2,true),'rune-p-1');
+assert.equal(rollRuneDefinition(.001,0,0,2,true),null);
+assert.equal(rollRuneDefinition(0,0,0,2,false),null);
 assert.deepEqual(MATERIAL_QUALITIES.map(runeSocketCount),[0,1,2,3,4,5]);
 
 const stocks={};

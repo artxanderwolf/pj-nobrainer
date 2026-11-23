@@ -25,7 +25,11 @@ const fixture = JSON.stringify({
   }
 });
 
-const seedScript = `<script>localStorage.setItem(${JSON.stringify(saveKey)},${JSON.stringify(fixture)});</script>`;
+const seedScript = `<script>
+if (!sessionStorage.getItem('tavernDismissReload')) {
+  localStorage.setItem(${JSON.stringify(saveKey)},${JSON.stringify(fixture)});
+}
+</script>`;
 
 const probeScript = `<script>
 window.__tavernModalErrors=[];
@@ -44,12 +48,26 @@ window.addEventListener('unhandledrejection',event=>window.__tavernModalErrors.p
     document.body.appendChild(node);
   };
 
+  const pendingReload = sessionStorage.getItem('tavernDismissReload');
+  if (pendingReload) {
+    const previous = JSON.parse(pendingReload);
+    const reloadStarted = Date.now();
+    const reloadPoll = setInterval(() => {
+      const rows = Array.from(document.querySelectorAll('#rosterCard .roster-list-item'));
+      if (!rows.length && Date.now() - reloadStarted < 5000) return;
+      clearInterval(reloadPoll);
+      finish({ ...previous, reloadPreservedRoster: rows.map(row => Number(row.dataset.characterId)).join() === previous.savedRosterIds.join() });
+    }, 50);
+    return;
+  }
+
   const started = Date.now();
   const timer = setInterval(() => {
     const firstOffer = document.querySelector('#tavernOffer .recruitment-list-item');
     const characterNav = document.querySelector('#nav button[data-page="character"]');
     const recruitMenu = document.querySelector('#character .menu-card[onclick*="tavern"]');
-    if (!firstOffer || !characterNav || !recruitMenu) {
+    const rosterMenu = document.querySelector('#character .menu-card[onclick*="roster"]');
+    if (!firstOffer || !characterNav || !recruitMenu || !rosterMenu) {
       if (Date.now() - started > 5000) { clearInterval(timer); finish({ status: 'tavern-not-ready' }); }
       return;
     }
@@ -89,13 +107,41 @@ window.addEventListener('unhandledrejection',event=>window.__tavernModalErrors.p
         const modalAfterRecruit = Boolean(document.querySelector('[data-character-modal="recruitment"]'));
         const rosterCountAfter = document.querySelectorAll('#rosterCard .roster-list-item').length;
         const goldAfter = document.querySelector('#gold')?.textContent?.trim() || '';
-        finish({
+        const readSave = () => JSON.parse(localStorage.getItem(${JSON.stringify(saveKey)}))?.state;
+        const beforeDismiss = readSave();
+        rosterMenu.click();
+        document.querySelector('#rosterCard .roster-list-item')?.click();
+        const dismiss = document.querySelector('[data-roster-action="dismiss-character"]');
+        window.confirm = () => false;
+        dismiss?.click();
+        const cancelledDismiss = document.querySelectorAll('#rosterCard .roster-list-item').length === rosterCountAfter;
+        window.confirm = () => true;
+        dismiss?.click();
+        const afterDismiss = readSave();
+        document.querySelector('#rosterCard .roster-list-item')?.click();
+        const lastProtected = document.querySelector('[data-roster-action="dismiss-character"]')?.disabled;
+        const dismissCount = document.querySelectorAll('#rosterCard .roster-list-item').length;
+        document.querySelector('[data-character-modal="roster"] .character-modal-close')?.click();
+        recruitMenu.click();
+        document.querySelector('#tavernOffer .recruitment-list-item')?.click();
+        document.querySelector('[data-tavern-action="recruit"]')?.click();
+        const afterRehire = readSave();
+        const result = {
           status: 'tested', beforeModal, smallClassId, largeClassId,
           smallBackground, smallBackgroundSize, largeBackground, largeBackgroundSize,
           largeWidth, largeHeight,
           hasLegacyOnclick, recruitEnabled, modalAfterRecruit,
-          rosterCountBefore, rosterCountAfter, goldBefore, goldAfter
-        });
+          rosterCountBefore, rosterCountAfter, goldBefore, goldAfter, cancelledDismiss, lastProtected, dismissCount,
+          savedDismiss: afterDismiss?.characters?.length === 1,
+          noRefund: beforeDismiss?.gold === afterDismiss?.gold,
+          inventoryPreserved: JSON.stringify(beforeDismiss?.weaponInventory) === JSON.stringify(afterDismiss?.weaponInventory),
+          rehirePrice: afterDismiss?.gold - afterRehire?.gold,
+          idsNeverReused: afterRehire?.characters?.length === 2 &&
+            !afterRehire.characters.some(character => character.id === beforeDismiss?.characters?.[0]?.id),
+          savedRosterIds: afterRehire?.characters?.map(character => character.id) || []
+        };
+        sessionStorage.setItem('tavernDismissReload', JSON.stringify(result));
+        window.location.reload();
       }, 100);
     }, 50);
   }, 50);
@@ -163,6 +209,15 @@ try {
   assert.equal(result.modalAfterRecruit, false, 'Das Rekrutierungsmodal bleibt nach erfolgreichem Anwerben offen.');
   assert.equal(result.rosterCountAfter, result.rosterCountBefore + 1, 'Erfolgreiches Anwerben aktualisiert den Kader nicht.');
   assert.notEqual(result.goldAfter, result.goldBefore, 'Erfolgreiches Anwerben aktualisiert die Geldanzeige nicht.');
+  assert.equal(result.cancelledDismiss, true);
+  assert.equal(result.dismissCount, 1);
+  assert.equal(result.lastProtected, true);
+  assert.equal(result.savedDismiss, true);
+  assert.equal(result.noRefund, true);
+  assert.equal(result.inventoryPreserved, true);
+  assert.equal(result.rehirePrice, 2000);
+  assert.equal(result.idsNeverReused, true);
+  assert.equal(result.reloadPreservedRoster, true);
   console.log('Rekrutierungs-Browserregression: Listenansicht und separates Detailmodal verwenden vollständige Klassenassets; Anwerben läuft direkt über Angular und aktualisiert Kader sowie Geld.');
 } finally {
   if (child) await stopBrowser(child);

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { MAX_ARMOR_PERCENT, resolveArmor } from '../src/app/game/armor-core.ts';
-import { applyAttackDamage, buildWeightedTargets, enforceGlobalActionCooldown, resolveAttack, targetWeight } from '../src/app/game/combat-core.ts';
+import { applyAttackDamage, applyWoodElfTargetReduction, buildWeightedTargets, enforceGlobalActionCooldown, resolveAttack, targetWeight } from '../src/app/game/combat-core.ts';
 
 const assertClose = (actual, expected, epsilon = 1e-9) => {
   assert.ok(Math.abs(actual - expected) <= epsilon, `Expected ${actual} to be within ${epsilon} of ${expected}`);
@@ -29,6 +29,13 @@ assert.deepEqual(weighted.map(entry => [entry.target.id, entry.weight]), [
 
 const fallbackWeighted = buildWeightedTargets([{ id: 'unknown', hp: 1, alive: true }], () => 33);
 assert.equal(fallbackWeighted[0].weight, 33);
+const elf = { ...targets[0], raceId: 'wood-elf' };
+const otherElf = { ...targets[1], raceId: 'wood-elf' };
+const companion = { ...targets[2], raceId: 'human' };
+const adjusted = applyWoodElfTargetReduction(buildWeightedTargets([elf, otherElf, companion]));
+assert.deepEqual(adjusted, [98.25, 48.25, 28.5]);
+assert.deepEqual(applyWoodElfTargetReduction(buildWeightedTargets([elf, otherElf])), [100, 50]);
+assert.deepEqual(applyWoodElfTargetReduction(buildWeightedTargets([elf])), [100]);
 
 const armored = { hp: 30, alive: true, armor: 10 };
 assert.equal(applyAttackDamage(armored, 20, 0), 18);

@@ -10,8 +10,10 @@ import {
   type UpgradeKind
 } from '../game/progression-core';
 import { GameStateService, type MutableGameState } from './game-state.service';
+import { characterTeamReservation, type TeamWorldState } from '../game/team-core.ts';
+import { isProductionWorkerReserved } from '../game/production-worker-core.ts';
 
-type RuntimeProgressionState = MutableGameState & ProgressionStateLike & TavernOfferWorldState & {
+type RuntimeProgressionState = MutableGameState & Omit<ProgressionStateLike, 'characters'> & TavernOfferWorldState & TeamWorldState & {
   characters: CharacterState[];
   nextCharacterId: number;
 };
@@ -78,6 +80,28 @@ export class GameProgressionService {
     state.characters.push(character);
     if (!consumeTavernApplicant(state, applicantId)) throw new Error('Bewerber konnte nach dem Anwerben nicht entfernt werden.');
     return { ...result, character };
+  }
+
+  dismissalBlockReason(characterId: number): string | null {
+    const state = this.state();
+    if (!state.characters.some(character => character.id === characterId)) return 'Dieser Charakter ist nicht mehr im Kader.';
+    if (state.characters.length <= 1) return 'Der letzte Charakter bleibt im Kader.';
+    if (characterTeamReservation(state, characterId) !== null) return 'Beende zuerst den laufenden Teameinsatz.';
+    if (isProductionWorkerReserved(state, characterId)) return 'Hebe zuerst die Arbeitszuweisung in Schmiede oder Markt auf.';
+    return null;
+  }
+
+  dismissCharacter(characterId: number): boolean {
+    if (this.dismissalBlockReason(characterId)) return false;
+    const state = this.state();
+    for (const team of Object.values(state.teams ?? {})) {
+      team.dungeonTeamSlots = team.dungeonTeamSlots.map(id => id === characterId ? null : id);
+      team.dungeonCycleOriginalIds = team.dungeonCycleOriginalIds.filter(id => id !== characterId);
+      team.dungeonCycleActiveIds = team.dungeonCycleActiveIds.filter(id => id !== characterId);
+    }
+    // Equipped weapons already live in the inventory. Removing the holder releases them.
+    state.characters.splice(state.characters.findIndex(character => character.id === characterId), 1);
+    return true;
   }
 
   buyUpgrade(kind: UpgradeKind) {

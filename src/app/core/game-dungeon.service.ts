@@ -2,14 +2,14 @@ import { rollMaterialQuality, resolveMaterialQuality, type MaterialQuality } fro
 import { teamIds, getTeamSession, migrateTeams, characterTeamReservation, type TeamSessionState } from '../game/team-core.ts';
 import { isProductionWorkerReserved } from '../game/production-worker-core.ts';
 import { type CityLayoutWorldState } from '../game/city-layout-core.ts';
-import { rollRuneDefinition, RUNE_DEFINITIONS, type RuneDefinitionId } from '../game/rune-core.ts';
+import { rollRuneDefinition, RUNE_DEFINITIONS, RUNE_DROP_DUNGEON_ID, type RuneDefinitionId } from '../game/rune-core.ts';
 import { grantDroppedRune, type RuneWorldState } from '../game/rune-inventory-core.ts';
 import { getDungeonDefinition } from '../game/dungeon-definitions.ts';
 import { applyHighElfHealing, highElfDodgeHealReady, highElfHealingAttackSource } from '../game/high-elf-healing-core.ts';
 import { dungeonUnlocked, initializeReleaseProgress, recordSuccessfulWave, startProgressSession, type MissionState } from '../game/mission-core.ts';
 import { Injectable } from '@angular/core';
 import { getCharacterWeaponDamageFactor } from '../game/equipment-rules-core.ts';
-import { buildWeightedTargets, resolveAttack, type CombatTargetLike } from '../game/combat-core';
+import { applyWoodElfTargetReduction, buildWeightedTargets, resolveAttack, type CombatTargetLike } from '../game/combat-core';
 import {
   checkDungeonStart,
   createDungeonAttackPoints,
@@ -634,7 +634,8 @@ export class GameDungeonService {
       run.participantIds
         .map(id => this.getCharacterById(state, id))
         .filter((character): character is RuntimeDungeonCharacter => !!character),
-      character => this.getCharacterStats(state, character).threat
+      character => this.getCharacterStats(state, character).threat,
+      true
     );
     if (!target) return;
 
@@ -734,21 +735,25 @@ export class GameDungeonService {
     );
   }
 
-  private weightedTarget<TTarget extends CombatTargetLike & { classId?: string | null }>(
+  private weightedTarget<TTarget extends CombatTargetLike & { classId?: string | null; raceId?: string | null }>(
     targets: readonly TTarget[],
-    getFallbackThreat: (target: TTarget) => number = target => CHARACTER_CLASSES[this.resolveClassId(target.classId)]?.threat ?? 50
+    getFallbackThreat: (target: TTarget) => number = target => CHARACTER_CLASSES[this.resolveClassId(target.classId)]?.threat ?? 50,
+    applyRaceReduction = false
   ): TTarget | null {
     const weighted = buildWeightedTargets(targets, getFallbackThreat);
     if (!weighted.length) return null;
-    return weighted[rollWeightedIndex(weighted.map(entry => entry.weight), Math.random())]?.target ?? null;
+    const weights = applyRaceReduction ? applyWoodElfTargetReduction(weighted) : weighted.map(entry => entry.weight);
+    return weighted[rollWeightedIndex(weights, Math.random())]?.target ?? null;
   }
 
   private rollDrops(enemies: readonly DungeonEnemy[], dungeonId: number): RuntimeDungeonDrop[] {
     const result: RuntimeDungeonDrop[] = [];
     for (const enemy of enemies) {
-      const rune=rollRuneDefinition(Math.random(),Math.random(),Math.random(),dungeonId);
-      if(rune)result.push({runeDefinitionId:rune});
-      // Kein Materialwurf verändert den Gegnerpool; der separate Runendrop (S23) bleibt unabhängig.
+      if (dungeonId === RUNE_DROP_DUNGEON_ID && enemy.boss) {
+        const rune = rollRuneDefinition(Math.random(), Math.random(), Math.random(), dungeonId, enemy.boss);
+        if (rune) result.push({ runeDefinitionId: rune });
+      }
+      // Materialwürfe bleiben unabhängig vom Runenwurf.
       if (!materialDropSucceeds(Math.random())) continue;
       if (enemy.boss) {
         const ids = [...new Set(Object.values(CHARACTER_CLASSES).flatMap(cls => getDungeonEnemyDefinition(dungeonId, cls.id)?.lootMaterialIds ?? []))];

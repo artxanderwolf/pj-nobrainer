@@ -21,6 +21,7 @@ export const RUNE_DEFINITIONS: Readonly<Record<RuneDefinitionId,RuneDefinition>>
 };
 export const RUNE_IDS = Object.freeze(Object.keys(RUNE_DEFINITIONS) as RuneDefinitionId[]);
 export const RUNE_DROP_CHANCE = .001;
+export const RUNE_DROP_DUNGEON_ID = 2;
 
 export function runeDefinitionFromLegacy(effect: {stat:string;amount:number}|null|undefined): RuneDefinitionId|null {
   if(!effect)return null;
@@ -60,8 +61,8 @@ export function applyRuneBonuses(stats:WeaponStats,ids:readonly string[]):Weapon
     attackSpeed,hitChance,penetration,
     expectedRaw:stats.damagePerHit*attackSpeed*hitChance};
 }
-export function rollRuneDefinition(rollChance:number,rollKind:number,rollTier:number,dungeonId:number):RuneDefinitionId|null {
-  if(dungeonId!==1||!Number.isFinite(rollChance)||rollChance<0||rollChance>=RUNE_DROP_CHANCE)return null;
+export function rollRuneDefinition(rollChance:number,rollKind:number,rollTier:number,dungeonId:number,isBoss:boolean):RuneDefinitionId|null {
+  if(dungeonId!==RUNE_DROP_DUNGEON_ID||!isBoss||!Number.isFinite(rollChance)||rollChance<0||rollChance>=RUNE_DROP_CHANCE)return null;
   const kind= Math.min(2,Math.max(0,Math.floor(3*Math.max(0,Math.min(.999999999999,rollKind))))) as 0|1|2;
   const tier: RuneTier=rollTier<.8?1:2;
   const label=(['p','ds','ges'] as const)[kind];

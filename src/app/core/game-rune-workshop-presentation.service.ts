@@ -114,7 +114,7 @@ export class GameRuneWorkshopPresentationService {
     const message=this.notice?`<p role="status">${this.escape(this.notice)}</p>`:'';
     this.overlay.innerHTML=`<section role="dialog" aria-modal="true" aria-label="Runenwerkstatt" class="card" style="max-width:680px;width:100%;max-height:90vh;overflow:auto;padding:20px">
       <header style="display:flex;justify-content:space-between;align-items:center"><h2>✧ Runenwerkstatt</h2><button type="button" class="btn" data-rune-close>Schließen</button></header>
-      <p>Runen werden im Trainingslager gefunden und sind einzelne Gegenstände mit stabiler Rune-ID. Ausbau und Tausch sind kostenlos.</p>
+      <p>Neue Runen können bei Bossen in der Waffenkammer gefunden werden. Jede Rune ist ein eigener Gegenstand. Ausbau und Tausch sind kostenlos.</p>
       <p>Im Runenlager: ${available.length} freie Runen · insgesamt ${state.runeInventory?.length??0}</p>
       ${current?`<label>Waffe wählen <select data-rune-weapon>${weaponChoices}</select></label>
       <p>Waffenrang S${current.raritySnapshot??1} · ${current.runeSockets?.length??0} reguläre Sockel</p>

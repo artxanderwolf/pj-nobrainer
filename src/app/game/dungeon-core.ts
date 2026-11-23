@@ -93,6 +93,7 @@ export function rollWeightedIndex(weights: readonly number[], roll: number): num
   if (total <= 0) return Math.max(0, normalized.length - 1);
   let cursor = Math.max(0, Math.min(0.999999999999, Number(roll) || 0)) * total;
   for (let index = 0; index < normalized.length; index += 1) {
+    if (normalized[index] === 0) continue;
     cursor -= normalized[index];
     if (cursor <= 0) return index;
   }
