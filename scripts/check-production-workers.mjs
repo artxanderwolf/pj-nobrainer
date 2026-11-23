@@ -78,6 +78,20 @@ try{
  assert.equal(decoded.forgeJobs[0].finishesAt,t+10_000+Math.ceil(50_000/1.2));
 
  const exclusive=make();
+ const specialized=make();
+ specialized.characters[0].raceId='dwarf';
+ specialized.characters[1].raceId='halfling';
+ const specializedForge=operatingBuildings(specialized,'forge')[0];
+ const specializedMarket=operatingBuildings(specialized,'market')[0];
+ const dwarfJob={jobId:'dwarf-forge',status:'queued',totalSeconds:60};
+ const halflingJob={jobId:'halfling-market',status:'queued',seconds:60};
+ assert.equal(assignProductionHelper(specialized,specializedForge.buildingInstanceId,1,t),'assigned');
+ assert.equal(assignProductionHelper(specialized,specializedMarket.buildingInstanceId,2,t),'assigned');
+ dispatchProductionQueue(specialized,'forge',specialized.forgeJobs,[dwarfJob],t);
+ dispatchProductionQueue(specialized,'market',specialized.marketJobs,[halflingJob],t);
+ assert.equal(dwarfJob.finishesAt,t+45_000);
+ assert.equal(halflingJob.finishesAt,t+45_000);
+ assert.equal(migrateProductionWorkers(structuredClone(specialized)),false);
  exclusive.teams={1:{expeditionActive:true,dungeonTeamSlots:[2]}};
  assert.equal(mayWorkInBuilding(exclusive,forge.buildingInstanceId,2),false,'Kein Dungeoncharakter als Helfer.');
  exclusive.cityLayout.buildings.find(b=>b.buildingInstanceId===forge.buildingInstanceId).workerCharacterId=1;

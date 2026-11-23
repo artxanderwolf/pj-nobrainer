@@ -19,6 +19,7 @@ import {
   type CharacterStatPresentation
 } from '../game/character-presentation-core';
 import { GameEquipmentService } from './game-equipment.service';
+import { GameProgressionService } from './game-progression.service';
 import { GameStateService, type MutableGameState } from './game-state.service';
 import {
   GameWeaponPresentationService,
@@ -42,15 +43,18 @@ export class GameCharacterPresentationService {
   private statPageIndex = 0;
   private boundRoot: HTMLElement | null = null;
   private equipmentChanged: (() => void) | null = null;
+  private rosterChanged: (() => void) | null = null;
 
   constructor(
     private readonly gameState: GameStateService,
     private readonly gameEquipment: GameEquipmentService,
-    private readonly weaponPresentation: GameWeaponPresentationService
+    private readonly weaponPresentation: GameWeaponPresentationService,
+    private readonly progression: GameProgressionService
   ) {}
 
-  bindActions(equipmentChanged: () => void): void {
+  bindActions(equipmentChanged: () => void, rosterChanged: () => void): void {
     this.equipmentChanged = equipmentChanged;
+    this.rosterChanged = rosterChanged;
     this.ensureActionBinding();
   }
 
@@ -142,6 +146,7 @@ export class GameCharacterPresentationService {
       this.statPageIndex * STATS_PER_PAGE + STATS_PER_PAGE
     );
     const picker = presentation.hands.find(hand => hand.pickerOpen);
+    const dismissalBlock = this.progression.dismissalBlockReason(character.id);
 
     return `<article class="roster-detail-card" data-character-id="${character.id}">
       ${this.renderCharacterHeader(character, `${characterClass.name} · ${characterRaceName(character.raceId)}`, levelStat?.value ?? `${character.level ?? 1}`)}
@@ -154,6 +159,10 @@ export class GameCharacterPresentationService {
       </div>
       ${picker ? this.renderWeaponPicker(character, picker) : ''}
       ${this.renderStatPage(pageStats, this.statPageIndex, pageCount)}
+      <div class="actions">
+        <button class="btn" type="button" data-roster-action="dismiss-character" data-character-id="${character.id}" ${dismissalBlock ? 'disabled' : ''}>Freistellen</button>
+        ${dismissalBlock ? `<span class="sell-meta">${this.escapeHtml(dismissalBlock)}</span>` : ''}
+      </div>
     </article>`;
   }
 
@@ -363,6 +372,19 @@ export class GameCharacterPresentationService {
     const characterId = Number(button.dataset['characterId']);
     const hand = button.dataset['hand'] ?? '';
     if (!Number.isFinite(characterId)) return;
+
+    if (action === 'dismiss-character') {
+      const character = this.state().characters.find(entry => entry.id === characterId);
+      if (!character || !window.confirm(`${character.name} dauerhaft freistellen? Du erhältst kein Nickel zurück. Getragene Waffen bleiben im Lager.`)) return;
+      if (!this.progression.dismissCharacter(characterId)) {
+        this.render();
+        return;
+      }
+      this.closeDetailState();
+      this.render();
+      this.rosterChanged?.();
+      return;
+    }
 
     if (action === 'select-character') {
       this.selectedCharacterId = characterId;

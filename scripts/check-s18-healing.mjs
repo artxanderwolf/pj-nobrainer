@@ -29,6 +29,8 @@ const injured=actor(8,'fighter',3,30);
 assert.deepEqual(applyHighElfHealing(scholar,[scholar,dead,injured],'periodic'),{target:injured,healed:10});
 assert.equal(dead.hp,0,'Must never revive fallen targets');
 assert.equal(applyHighElfHealing(scholar,[scholar,dead],'periodic'),null,'No valid injured ally');
+scholar.hp=1;
+assert.deepEqual(applyHighElfHealing(scholar,[scholar,dead],'periodic'),{target:scholar,healed:9},'A High Elf scholar can heal themself');
 assert.equal(applyHighElfHealing({...recruit,raceId:'human'},[recruit],'dodge'),null,'Only High Elves can heal');
 assert.deepEqual(highElfHealingAttackSource(actor(9,'fighter')),[]);
 assert.equal(highElfDodgeHealReady(undefined,1,1000),true);

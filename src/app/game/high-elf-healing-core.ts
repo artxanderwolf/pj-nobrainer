@@ -20,11 +20,11 @@ export function highElfHealingAttackSource(character: Pick<HighElfHealingCharact
 }
 
 export function chooseHighElfHealingAlly<T extends HighElfHealingCharacter>(
-  source: T, party: readonly T[]
+  source: T, party: readonly T[], includeSource = false
 ): T | null {
   let best: T | null = null;
   for (const target of party) {
-    if (target.id === source.id || !target.alive || target.hp <= 0 || target.maxHp <= 0 || target.hp >= target.maxHp) continue;
+    if ((!includeSource && target.id === source.id) || !target.alive || target.hp <= 0 || target.maxHp <= 0 || target.hp >= target.maxHp) continue;
     // Compare missing HP fractions without rounding; a lower HP ratio has greater need.
     if (!best || target.hp * best.maxHp < best.hp * target.maxHp ||
         (target.hp * best.maxHp === best.hp * target.maxHp && target.id < best.id)) best = target;
@@ -40,7 +40,7 @@ export function applyHighElfHealing<T extends HighElfHealingCharacter>(
     : source.classId === 'archer' || source.classId === 'scholar';
   if (!eligible) return null;
   const target = source.classId === 'recruit' || source.classId === 'archer'
-    ? source : chooseHighElfHealingAlly(source, party);
+    ? source : chooseHighElfHealingAlly(source, party, source.classId === 'scholar');
   if (!target || !target.alive || target.hp <= 0 || target.maxHp <= 0 || target.hp >= target.maxHp) return null;
   const before = target.hp;
   target.hp = Math.min(target.maxHp, before + HIGH_ELF_HEAL_HP);

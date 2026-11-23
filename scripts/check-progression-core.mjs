@@ -56,6 +56,18 @@ try {
   }
 
   {
+    const s = { ...state(), nextCharacterId: 1001 };
+    s.upgrades.innCapacity = 4;
+    s.characters.push({ classId: 'fighter' }, { classId: 'scholar' });
+    assert.equal(getRecruitOffer(s, 'archer').costNickel, 6125);
+    s.characters.pop();
+    assert.equal(getRecruitOffer(s, 'archer').costNickel, 3500);
+    s.characters.pop();
+    assert.equal(getRecruitOffer(s, 'archer').costNickel, 2000);
+    assert.equal(s.nextCharacterId, 1001);
+  }
+
+  {
     const s = state();
     s.gold = 1999;
     const offer = getRecruitOffer(s, 'recruit');

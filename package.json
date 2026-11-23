@@ -1,6 +1,6 @@
 {
   "name": "pj-nobrainer",
-  "version": "0.27.0.3",
+  "version": "0.28.0",
   "private": true,
   "scripts": {
     "start": "npm run prepare:legacy-runtime && ng serve",
@@ -49,7 +49,7 @@
     "check:mobile-table-presentation": "node --no-warnings --experimental-strip-types scripts/check-mobile-table-presentation-core.mjs",
     "check:mobile-table-presentation-adapter": "node scripts/check-mobile-table-presentation-adapter.mjs",
     "check:progression": "node --no-warnings --experimental-strip-types scripts/check-progression-core.mjs",
-    "check:progression-ownership": "node scripts/check-progression-ownership.mjs",
+    "check:progression-ownership": "node --no-warnings --experimental-strip-types scripts/check-progression-ownership.mjs",
     "check:progression-presentation": "node --no-warnings --experimental-strip-types scripts/check-progression-presentation-core.mjs",
     "check:progression-presentation-adapter": "node scripts/check-progression-presentation-adapter.mjs",
     "check:progression-presentation-ownership": "node scripts/check-progression-presentation-ownership.mjs",

@@ -35,6 +35,7 @@ for (const version of [17, 16, 15, 14, 13, 12, 11, 10, 9, 8]) {
 }
 
 const currentImport = validateImportedSave(encoded);
+assert.equal(validateImportedSave(encodeSave({ ...state, tavernOffers: { byBuildingId: null } }, savedAt)).ok, false);
 assert.equal(currentImport.ok, true, 'Aktuelles Save v28 muss als JSON-Datei importierbar sein.');
 if (currentImport.ok) {
   assert.equal(currentImport.saveVersion, 28);

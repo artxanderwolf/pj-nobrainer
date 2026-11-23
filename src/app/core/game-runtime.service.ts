@@ -170,6 +170,10 @@ export class GameRuntimeService {
       this.dungeonEquipmentSync.refresh();
       this.weaponInventoryPresentation.render();
       runtime.renderMarketWeapons();
+    }, () => {
+      runtime.save(false);
+      this.renderInitial();
+      this.tavernPresentation.render();
     });
     this.weaponInventoryPresentation.bindActions(() => {
       this.dungeonEquipmentSync.refresh();

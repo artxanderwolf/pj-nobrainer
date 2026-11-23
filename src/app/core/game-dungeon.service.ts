@@ -9,7 +9,7 @@ import { applyHighElfHealing, highElfDodgeHealReady, highElfHealingAttackSource 
 import { dungeonUnlocked, initializeReleaseProgress, recordSuccessfulWave, startProgressSession, type MissionState } from '../game/mission-core.ts';
 import { Injectable } from '@angular/core';
 import { getCharacterWeaponDamageFactor } from '../game/equipment-rules-core.ts';
-import { buildWeightedTargets, resolveAttack, type CombatTargetLike } from '../game/combat-core';
+import { applyWoodElfTargetReduction, buildWeightedTargets, resolveAttack, type CombatTargetLike } from '../game/combat-core';
 import {
   checkDungeonStart,
   createDungeonAttackPoints,
@@ -634,7 +634,8 @@ export class GameDungeonService {
       run.participantIds
         .map(id => this.getCharacterById(state, id))
         .filter((character): character is RuntimeDungeonCharacter => !!character),
-      character => this.getCharacterStats(state, character).threat
+      character => this.getCharacterStats(state, character).threat,
+      true
     );
     if (!target) return;
 
@@ -734,13 +735,15 @@ export class GameDungeonService {
     );
   }
 
-  private weightedTarget<TTarget extends CombatTargetLike & { classId?: string | null }>(
+  private weightedTarget<TTarget extends CombatTargetLike & { classId?: string | null; raceId?: string | null }>(
     targets: readonly TTarget[],
-    getFallbackThreat: (target: TTarget) => number = target => CHARACTER_CLASSES[this.resolveClassId(target.classId)]?.threat ?? 50
+    getFallbackThreat: (target: TTarget) => number = target => CHARACTER_CLASSES[this.resolveClassId(target.classId)]?.threat ?? 50,
+    applyRaceReduction = false
   ): TTarget | null {
     const weighted = buildWeightedTargets(targets, getFallbackThreat);
     if (!weighted.length) return null;
-    return weighted[rollWeightedIndex(weighted.map(entry => entry.weight), Math.random())]?.target ?? null;
+    const weights = applyRaceReduction ? applyWoodElfTargetReduction(weighted) : weighted.map(entry => entry.weight);
+    return weighted[rollWeightedIndex(weights, Math.random())]?.target ?? null;
   }
 
   private rollDrops(enemies: readonly DungeonEnemy[], dungeonId: number): RuntimeDungeonDrop[] {
