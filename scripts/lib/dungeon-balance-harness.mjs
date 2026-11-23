@@ -55,8 +55,8 @@ export function nextEvent(team) {
   return team.dungeonRun ? Math.min(...team.dungeonRun.attackPoints.map(p => p.nextAt))
     : team.dungeonLootCollect?.readyAt ?? team.dungeonSearch?.nextCheckAt ?? Infinity;
 }
-export function freshWave(profile, dungeonId) {
-  const world = makeWorld(profile, dungeonId), service = new GameDungeonService({ getState: () => world });
+export function freshWave(profile, dungeonId, createWorld = makeWorld) {
+  const world = createWorld(profile, dungeonId), service = new GameDungeonService({ getState: () => world });
   service.toggleAuto(0);
   service.startRun(service.getState(), 0, { events: [], saveRequested: false });
   const team = world.teams[1];
