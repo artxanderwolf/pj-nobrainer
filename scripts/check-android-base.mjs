@@ -20,7 +20,7 @@ assert.match(bootstrap, /const ANDROID_VERSION_CODE = 20;/);
 assert.match(bootstrap, /const ANDROID_VERSION_NAME = '0\.28\.1';/, 'Android-Vorbereitung muss die aktuelle native Version 0.28.1 erhalten.');
 assert.match(bootstrap, /const ANDROID_VERSION_CODE = 20;/, 'Android-Vorbereitung muss den Installationscode 20 erhalten.');
 
-assert.match(packageJson.version, /^\d+\.\d+\.\d+\.\d+$/, 'Die gemeinsame Web-App-Version muss dem vierteiligen Projektschema entsprechen.');
+assert.equal(packageJson.version, ANDROID_VERSION_NAME, 'Web und Android müssen für diesen gemeinsamen Release dieselbe App-Version verwenden.');
 assert.equal(packageJson.dependencies?.['@capacitor/core'], CAPACITOR_VERSION, 'Capacitor Core muss exakt gepinnt sein.');
 assert.equal(packageJson.dependencies?.['@capacitor/android'], CAPACITOR_VERSION, 'Capacitor Android muss exakt gepinnt sein.');
 assert.equal(packageJson.devDependencies?.['@capacitor/cli'], CAPACITOR_VERSION, 'Capacitor CLI muss exakt gepinnt sein.');
@@ -69,4 +69,4 @@ if (existsSync('android/app/build.gradle')) {
   assert.ok(existsSync('android/gradlew'), 'Gradle Wrapper fehlt im versionierten Android-Projekt.');
 }
 
-console.log(`Android Gate C: native Android-Version ${ANDROID_VERSION_NAME}/18 ist vorbereitet; gemeinsame Angular-Web-Version ${packageJson.version}, Save-Version 28 und schlüsselfreie Release-Signing-Konfiguration sind konsistent.`);
+console.log(`Android Gate C: native Android-Version ${ANDROID_VERSION_NAME}/20 ist vorbereitet; gemeinsame Angular-Web-Version ${packageJson.version}, Save-Version 28 und schlüsselfreie Release-Signing-Konfiguration sind konsistent.`);
