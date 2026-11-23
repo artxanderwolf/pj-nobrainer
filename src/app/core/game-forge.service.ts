@@ -5,7 +5,6 @@ import { initializeForgeClaims, identifyNewForgeJob, advanceForgeJobsToReady, ta
 import { productionActiveSlots } from '../game/city-production-capacity-core.ts';
 import { type CityLayoutWorldState } from '../game/city-layout-core.ts';
 import { Injectable } from '@angular/core';
-import { calculateWeaponEconomy } from '../game/economy-core';
 import {
   CONFIG,
   canonicalWeaponSlots,
@@ -315,8 +314,8 @@ export class GameForgeService {
       weapon.valueNickel = snapshot.valueNickel;
     }
 
-    for (const job of state.forgeJobs) refreshForgeJobBalance(job, true);
-    for (const job of state.forgeQueue) refreshForgeJobBalance(job, false);
+    for (const job of state.forgeJobs) refreshForgeJobBalance(job);
+    for (const job of state.forgeQueue) refreshForgeJobBalance(job);
   }
 
   private getState(): RuntimeForgeState {
@@ -332,14 +331,13 @@ export class GameForgeService {
   private completeJob(state: RuntimeForgeState, job: ForgeJob): string {
     const form = getWeaponForm(job.weaponForm);
     const name = job.weaponName || form.name;
-    const economy = calculateWeaponEconomy(job.stats);
     const completedWeapon: RuntimeWeaponInventoryEntry = {
       id: state.nextWeaponId++,
       name,
       weaponForm: job.weaponForm,
       slots: canonicalWeaponSlots(job.slots),
       stats: job.stats,
-      valueNickel: job.preservedMaterialSnapshot ? job.valueNickel : economy.valueNickel,
+      valueNickel: job.valueNickel,
       craftedSeconds: job.totalSeconds
     };
     state.weaponInventory.unshift(completedWeapon);

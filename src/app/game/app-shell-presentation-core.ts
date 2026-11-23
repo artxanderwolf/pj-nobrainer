@@ -1,4 +1,4 @@
-export const APP_UI_VERSION = '0.27.0.1';
+export const APP_UI_VERSION = '0.27.0.2';
 
 export const APP_SHELL_PAGE_IDS = [
   'base',

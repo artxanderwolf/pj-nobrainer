@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-const ANDROID_VERSION_NAME = '0.27.0.1';
+const ANDROID_VERSION_NAME = '0.27.0.2';
 const APP_ID = 'com.smithsofeldravar.game';
 const APP_NAME = 'Smiths of Eldravar';
 const CAPACITOR_VERSION = '8.5.3';
@@ -16,9 +16,9 @@ const appComponent = read('src/app/app.component.ts');
 const saveCodec = read('src/app/game/save-codec.ts');
 const gitignore = read('.gitignore');
 const bootstrap = read('scripts/bootstrap-android.mjs');
-assert.match(bootstrap, /const ANDROID_VERSION_CODE = 16;/);
-assert.match(bootstrap, /const ANDROID_VERSION_NAME = '0\.27\.0\.1';/, 'Android-Vorbereitung muss die aktuelle native Version 0.27.0.1 erhalten.');
-assert.match(bootstrap, /const ANDROID_VERSION_CODE = 16;/, 'Android-Vorbereitung muss den Installationscode 16 erhalten.');
+assert.match(bootstrap, /const ANDROID_VERSION_CODE = 17;/);
+assert.match(bootstrap, /const ANDROID_VERSION_NAME = '0\.27\.0\.2';/, 'Android-Vorbereitung muss die aktuelle native Version 0.27.0.2 erhalten.');
+assert.match(bootstrap, /const ANDROID_VERSION_CODE = 17;/, 'Android-Vorbereitung muss den Installationscode 17 erhalten.');
 
 assert.match(packageJson.version, /^\d+\.\d+\.\d+\.\d+$/, 'Die gemeinsame Web-App-Version muss dem vierteiligen Projektschema entsprechen.');
 assert.equal(packageJson.dependencies?.['@capacitor/core'], CAPACITOR_VERSION, 'Capacitor Core muss exakt gepinnt sein.');
@@ -61,7 +61,7 @@ assert.deepEqual(forbiddenKeyFiles, [], `Signierschlüssel dürfen nicht im Repo
 if (existsSync('android/app/build.gradle')) {
   const gradle = read('android/app/build.gradle');
   assert.match(gradle, new RegExp(`applicationId\\s+['\"]${APP_ID.replaceAll('.', '\\.') }['\"]`), 'Native applicationId stimmt nicht.');
-  assert.match(gradle, /versionCode\s+16\b/, 'Android versionCode muss für das nächste Update 16 sein.');
+  assert.match(gradle, /versionCode\s+17\b/, 'Android versionCode muss für das nächste Update 17 sein.');
   assert.match(gradle, new RegExp(`versionName\\s+"${ANDROID_VERSION_NAME.replaceAll('.', '\\.')}"`), `Android versionName muss ${ANDROID_VERSION_NAME} bleiben.`);
   for (const env of ['SOE_RELEASE_STORE_FILE', 'SOE_RELEASE_STORE_PASSWORD', 'SOE_RELEASE_KEY_ALIAS', 'SOE_RELEASE_KEY_PASSWORD']) {
     assert.ok(gradle.includes(env), `Release-Signing muss ${env} ausschließlich aus der Umgebung lesen.`);
@@ -69,4 +69,4 @@ if (existsSync('android/app/build.gradle')) {
   assert.ok(existsSync('android/gradlew'), 'Gradle Wrapper fehlt im versionierten Android-Projekt.');
 }
 
-console.log(`Android Gate C: native Android-Version ${ANDROID_VERSION_NAME}/16 ist vorbereitet; gemeinsame Angular-Web-Version ${packageJson.version}, Save-Version 28 und schlüsselfreie Release-Signing-Konfiguration sind konsistent.`);
+console.log(`Android Gate C: native Android-Version ${ANDROID_VERSION_NAME}/17 ist vorbereitet; gemeinsame Angular-Web-Version ${packageJson.version}, Save-Version 28 und schlüsselfreie Release-Signing-Konfiguration sind konsistent.`);

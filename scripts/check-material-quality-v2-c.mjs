@@ -85,7 +85,7 @@ assert.deepEqual(oldState.inventory,{'3:2':{materialId:3,quality:2,category:'Hol
 assert.deepEqual(oldState.weaponInventory[0].stats,oldSnapshot.weaponInventory[0].stats);
 assert.deepEqual(recomputeRunedWeapon(oldState,oldState.weaponInventory[0]),oldSnapshot.weaponInventory[0].stats);
 assert.equal(oldState.weaponInventory[0].valueNickel,123);
-for(const jobs of [oldState.forgeJobs,oldState.forgeQueue,oldState.forgeReadyJobs]){assert.equal(refreshForgeJobBalance(jobs[0],false),false);assert.equal(jobs[0].totalSeconds,97);assert.equal(jobs[0].valueNickel,123);assert.deepEqual(jobs[0].stats,oldBase);}
+for(const jobs of [oldState.forgeJobs,oldState.forgeQueue,oldState.forgeReadyJobs]){assert.equal(refreshForgeJobBalance(jobs[0]),false);assert.equal(jobs[0].totalSeconds,97);assert.equal(jobs[0].valueNickel,123);assert.deepEqual(jobs[0].stats,oldBase);}
 assert.equal(oldState.marketQueue[0].quality,2);assert.equal(oldState.marketQueue[0].valueNickel,40);
 assert.equal(oldState.teams[1].dungeonLootCollect.drops[0].quality,2);
 const once=JSON.stringify(oldState);assert.equal(migrateMaterialQualityWorld(oldState),false);assert.equal(JSON.stringify(oldState),once);

@@ -97,7 +97,7 @@ assert.match(indexMarkup, /Tavernenangebote \(S19\)/);
 assert.match(indexMarkup, /Anwerbeaktion/);
 assert.match(indexMarkup, /Rüstung = additive Prozentpunkte, begrenzt auf maximal 80 %/);
 assert.match(indexMarkup, /Materialwert = auf volle Nickel runden\(10 Nickel × Stufenfaktor × Qualitätsfaktor\)/);
-assert.match(indexMarkup, /40 Nickel \+ 6 × Leistungswert/);
+assert.match(indexMarkup, /1,5 × Materialsumme \+ 20 Nickel/);
 
 const composed = composePageMarkup(APP_SHELL_PAGE_IDS);
 for (const pageId of APP_SHELL_PAGE_IDS) {

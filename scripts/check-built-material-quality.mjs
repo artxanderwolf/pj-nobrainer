@@ -53,7 +53,7 @@ const probe = String.raw`<script>
     click('[data-forge-material-slot="workingPart"]');check(document.querySelector('[data-forge-material-id="4"][data-quality="1"]')&&document.querySelector('[data-forge-material-id="4"][data-quality="6"]'),'Distinct quality choices');click('[data-forge-material-id="4"][data-quality="6"]');
     select('slotBack','4:1');select('slotGripCore','2:4');select('slotGripWrap','9:5');click('#forgePreviewNextBtn');check(!document.getElementById('forgeStartBtn').disabled,'Cannot craft');click('#forgeStartBtn');
     let data=save(),s=data.state,job=s.forgeJobs[0];check(job&&JSON.stringify(job.slots.map(x=>x.quality))==='[6,1,4,5]','Craft quality lost');check(s.inventory['4:1'].qty===4&&s.inventory['4:6'].qty===2,'Craft mixed stock');
-    proof.newStats=job.stats;proof.newSlots=job.slots;
+    proof.newStats=job.stats;proof.newSlots=job.slots;proof.newValue=job.valueNickel;check(job.valueNickel>=425,'Material component missing from mixed-quality forge job');
     window.go('market-materials');const input=document.querySelector('input[data-material-id="4"][data-quality="6"]');check(input,'No S6 sale');
     const row=input.closest('.sell-row');
     const otherQuality=document.querySelector('input[data-material-id="4"][data-quality="1"]');
@@ -70,6 +70,13 @@ const probe = String.raw`<script>
     const before=save().state.weaponInventory.length;click('[data-forge-claim-id]');const data=save(),weapon=data.state.weaponInventory[0];
     check(data.state.weaponInventory.length===before+1&&weapon.raritySnapshot===1,'Claim rarity');check(JSON.stringify(weapon.slots)===JSON.stringify(proof.newSlots),'Claim material qualities');check(JSON.stringify(weapon.stats)===JSON.stringify(proof.newStats),'Claim stats');check(weapon.runeSockets.length===0,'Runes changed');
     check(document.querySelector('#weaponInventory').textContent.includes('S6'),'Weapon parts lack quality');
+    check(weapon.valueNickel===proof.newValue,'Claim repriced the forge snapshot');
+    window.go('market-weapons');
+    const weaponSale=document.querySelector('[data-market-weapon-id="'+weapon.id+'"]');
+    check(weaponSale?.title.includes(proof.newValue+' Nickel'),'Market preview disagrees with forge price');
+    weaponSale.querySelector('button').click();
+    const sale=save().state.marketJobs.find(order=>order.weaponId===weapon.id);
+    check(sale?.valueNickel===proof.newValue,'Market order repriced the weapon');
     finish({status:'passed',oldMigration:proof.migrated,oldClaim:proof.oldClaim,craftQualities:weapon.slots.map(x=>x.quality),marketCancel:proof.marketCancel,indexCombinations:462,reloadedClaim:true});
    }
   }catch(error){finish({status:'failed',message:String(error.stack||error),phase:localStorage.getItem(phaseKey),inventory:read()?.state?.inventory,marker:read()?.state?.materialQualitySchema});}
