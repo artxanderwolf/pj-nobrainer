@@ -17,6 +17,13 @@ const fixture=JSON.stringify({
   saveVersion:21,savedAt:now,
   state:{
     gold:500,
+    runeInventory:[
+      {runeItemId:'rune-item-1',runeDefinitionId:'rune-p-1'},
+      {runeItemId:'rune-item-2',runeDefinitionId:'rune-ges-2'},
+      {runeItemId:'rune-item-3',runeDefinitionId:'rune-ds-1'}
+    ],
+    weaponInventory:[{id:913,name:'Sockelklinge',weaponForm:'sword',slots:[],
+      raritySnapshot:2,runeMigrationVersion:1,runeSockets:['rune-item-3']}],
     marketJobs:[
       {type:'material',materialId:1,quantity:1,valueNickel:123,seconds:1,
         startedAt:now-3000,finishesAt:now-2000}
@@ -30,7 +37,15 @@ const seed=`<script>
 window.__claimErrors=[];
 window.addEventListener('error',e=>window.__claimErrors.push(String(e.error?.stack||e.message||e.error)));
 window.addEventListener('unhandledrejection',e=>window.__claimErrors.push(String(e.reason?.stack||e.reason)));
-localStorage.setItem(${JSON.stringify(saveKey)},${JSON.stringify(fixture)});
+const runeReload = sessionStorage.getItem('marketRuneReload');
+if (!runeReload) localStorage.setItem(${JSON.stringify(saveKey)},${JSON.stringify(fixture)});
+else {
+  const save=JSON.parse(localStorage.getItem(${JSON.stringify(saveKey)}));
+  const active=save.state.marketJobs[0];
+  active.finishesAt=Date.now()-(save.state.marketQueue[0].seconds+2)*1000;
+  active.startedAt=active.finishesAt-active.seconds*1000;
+  localStorage.setItem(${JSON.stringify(saveKey)},JSON.stringify(save));
+}
 </script>`;
 const probe=`<script>
 (() => {
@@ -45,10 +60,30 @@ const probe=`<script>
    document.body.appendChild(node);
  };
  const read=()=>{try{return JSON.parse(localStorage.getItem(${JSON.stringify(saveKey)}))?.state||{}}catch{return {}}};
+ const rows=()=>Array.from(document.querySelectorAll('[data-market-rune-id]')).map(row=>row.dataset.marketRuneId);
+ const sell=id=>document.querySelector('[data-market-rune-id="' + id + '"] button')?.click();
  const start=Date.now();
  const timer=setInterval(()=>{
    const ready=document.getElementById('marketReadyCard');
    const singles=ready?.querySelectorAll('button[data-market-claim-id]');
+   if (runeReload && singles?.length===2) {
+     clearInterval(timer);
+     const before=read();
+     const hiddenUntilClaim=rows().length===0;
+     const all=ready.querySelector('button[data-market-claim-all]');
+     all?.click();
+     all?.click();
+     const after=read();
+     finish({...JSON.parse(runeReload).proof, hiddenUntilClaim, goldBeforeRunes:before.gold,
+       goldAfterRunes:after.gold, runeIdsAfter:after.runeInventory?.map(rune=>rune.runeItemId),
+       socketAfter:after.weaponInventory?.find(weapon=>weapon.id===913)?.runeSockets?.[0],
+       readyAfter:after.marketReadyJobs?.length});
+     return;
+   }
+   if (runeReload) {
+     if(Date.now()-start>4500){clearInterval(timer);finish({status:'missing-rune-ready',snapshot:read()});}
+     return;
+   }
    if(singles?.length===2){
      clearInterval(timer);
      const before=read();
@@ -61,11 +96,27 @@ const probe=`<script>
      const all=ready.querySelector('button[data-market-claim-all]');
      all?.click();
      const afterAll=read();
-     finish({status:'tested',id,remaining,hasAll:!!all,
+     const proof={status:'tested',id,remaining,hasAll:!!all,
        before:{gold:before.gold,ready:before.marketReadyJobs?.length||0,active:before.marketJobs?.length||0},
        afterSingle:{gold:afterSingle.gold,ready:afterSingle.marketReadyJobs?.length||0},
        afterAll:{gold:afterAll.gold,ready:afterAll.marketReadyJobs?.length||0},
-       stillOnScreen:document.querySelectorAll('#marketReadyCard button[data-market-claim-id]').length});
+       stillOnScreen:document.querySelectorAll('#marketReadyCard button[data-market-claim-id]').length};
+     window.go('market-weapons');
+     proof.initialRuneRows=rows();
+     proof.runePriceText=document.getElementById('marketRunes')?.textContent||'';
+     sell('rune-item-1');
+     sell('rune-item-2');
+     proof.placed=read().marketJobs?.[0]?.runeItemId;
+     proof.queued=read().marketQueue?.[0]?.runeItemId;
+     proof.hiddenWhileReserved=rows().length===0;
+     document.querySelector('button[data-market-cancel="queue"]')?.click();
+     proof.queueCancelled=rows();
+     document.querySelector('button[data-market-cancel="active"]')?.click();
+     proof.activeCancelled=rows();
+     sell('rune-item-1');
+     sell('rune-item-2');
+     sessionStorage.setItem('marketRuneReload',JSON.stringify({proof}));
+     window.location.reload();
      return;
    }
    if(Date.now()-start>4500){
@@ -115,7 +166,21 @@ try{
  assert.deepEqual(result.afterAll,{gold:854,ready:0});
  assert.equal(result.remaining.includes(result.id),false);
  assert.equal(result.stillOnScreen,0);
- console.log('S15 Markt-Browserclaim: Save21-Altjobs, Ready-Anzeige, einmalige Einzel- und Sammelauszahlung als Save22 geprüft.');
+ assert.deepEqual(result.initialRuneRows,['rune-item-1','rune-item-2']);
+ assert.match(result.runePriceText,/Präzision I.*Geschwindigkeit II/);
+ assert.match(result.runePriceText,/ohne Helfer/);
+ assert.equal(result.placed,'rune-item-1');
+ assert.equal(result.queued,'rune-item-2');
+ assert.equal(result.hiddenWhileReserved,true);
+ assert.deepEqual(result.queueCancelled,['rune-item-2']);
+ assert.deepEqual(result.activeCancelled,['rune-item-1','rune-item-2']);
+ assert.equal(result.hiddenUntilClaim,true);
+ assert.equal(result.goldBeforeRunes,854);
+ assert.equal(result.goldAfterRunes,20854);
+ assert.deepEqual(result.runeIdsAfter,['rune-item-3']);
+ assert.equal(result.socketAfter,'rune-item-3');
+ assert.equal(result.readyAfter,0);
+ console.log('Markt-Browserprüfung: Save21-Altjobs, freie und gesockelte Runen, Storno, Offlineabschluss und einmalige Auszahlung mit Save 29 geprüft.');
 }finally{
  if(child&&child.exitCode===null){child.kill('SIGTERM');await Promise.race([
    new Promise(resolve=>child.once('close',resolve)),

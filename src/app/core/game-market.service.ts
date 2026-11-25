@@ -23,6 +23,8 @@ import {
   type MarketStateLike
 } from '../game/market-core';
 import { GameStateService, type MutableGameState } from './game-state.service';
+import { availableRuneItems, validateRuneMarketReservations, type RuneWorldState } from '../game/rune-inventory-core.ts';
+import { RUNE_DEFINITIONS, RUNE_SALE_TERMS } from '../game/rune-core.ts';
 
 export type MarketMaterialStartResult =
   | { status: 'no-stock' }
@@ -37,7 +39,12 @@ export type MarketWeaponStartResult =
   | { status: 'full' }
   | { status: 'started' | 'queued'; name: string; valueNickel: number };
 
-export interface MarketCancelResult { name: string; }
+export type MarketRuneStartResult =
+  | { status: 'not-available' }
+  | { status: 'full' }
+  | { status: 'started' | 'queued'; runeItemId: string; name: string; valueNickel: number };
+
+export interface MarketCancelResult { name: string; type: MarketJob['type']; }
 export interface MarketCompletedSale { name: string; valueNickel: number; }
 export interface MarketUpdateResult { completedCount: number; completedSales: MarketCompletedSale[]; }
 
@@ -137,11 +144,28 @@ export class GameMarketService {
     return { status, name: weapon.name, valueNickel: job.valueNickel };
   }
 
+  startRune(runeItemId: string, at = Date.now()): MarketRuneStartResult {
+    const state = this.getState() as RuntimeMarketState & RuneWorldState;
+    const rune = availableRuneItems(state).find(item => item.runeItemId === runeItemId);
+    if (!rune) return { status: 'not-available' };
+    if (!this.hasCapacity()) return { status: 'full' };
+    const definition = RUNE_DEFINITIONS[rune.runeDefinitionId];
+    const job = identifyNewMarketJob(state, {
+      type: 'rune', runeItemId, runeDefinitionId: rune.runeDefinitionId, ...RUNE_SALE_TERMS[definition.tier]
+    });
+    const status = enqueueMarketJob(state, job, productionActiveSlots(state, 'market'), Number(state.upgrades.marketQueue) || 0, at);
+    if (status === 'full') return { status };
+    if (status === 'started') job.status = 'active';
+    migrateProductionWorkers(state as unknown as ProductionWorkerWorld);
+    return { status, runeItemId, name: definition.label, valueNickel: job.valueNickel };
+  }
+
   displayName(job: MarketJob): string {
     if (job.type === 'material') {
       const displayName = getMaterialDisplayNameById(job.materialId);
       return `${displayName ?? `Material #${Number(job.materialId) || '?'}`} S${job.quality}`;
     }
+    if (job.type === 'rune') return job.runeDefinitionId ? RUNE_DEFINITIONS[job.runeDefinitionId]?.label ?? 'Rune' : 'Rune';
     return job.name || 'Waffe';
   }
 
@@ -154,7 +178,7 @@ export class GameMarketService {
     normalizeMarketMaterialJob(job);
     const name = this.displayName(job);
     this.returnJob(state, job);
-    return { name };
+    return { name, type: job.type };
   }
 
   /** Migriert laufende/wartende Altaufträge auf stabile Material-IDs und entfernt persistierte Anzeigenamen. */
@@ -180,23 +204,29 @@ export class GameMarketService {
   initializeClaims(): boolean { return initializeMarketClaims(this.getState()); }
 
   claim(jobId: string): MarketCompletedSale | null {
-    const state = this.getState();
+    const state = this.getState() as RuntimeMarketState & RuneWorldState;
     initializeMarketClaims(state);
     const job = state.marketReadyJobs?.find(item => item.jobId === jobId && item.status === 'ready');
     if (!job) return null;
+    validateRuneMarketReservations(state);
     if (!Number.isSafeInteger(job.valueNickel) || job.valueNickel < 0 ||
         !Number.isSafeInteger(state.gold) || !Number.isSafeInteger(state.gold + job.valueNickel)) {
       throw new Error('S15: Markt-Auszahlung überschreitet den sicheren Nickelbereich.');
     }
     const claimed = takeReadyMarketJob(state, jobId);
     if (!claimed) return null;
+    if (claimed.type === 'rune') {
+      const items = state.runeInventory!;
+      items.splice(items.findIndex(item => item.runeItemId === claimed.runeItemId), 1);
+    }
     state.gold += claimed.valueNickel;
     return { name: this.displayName(claimed), valueNickel: claimed.valueNickel };
   }
 
   claimAll(): MarketCompletedSale[] {
-    const state = this.getState();
+    const state = this.getState() as RuntimeMarketState & RuneWorldState;
     initializeMarketClaims(state);
+    validateRuneMarketReservations(state);
     const ready = state.marketReadyJobs ?? [];
     // Validate the complete payout before changing any order or Nickel balance.
     let total = state.gold;
@@ -244,6 +274,6 @@ export class GameMarketService {
       if (!returned) throw new Error(`Material-ID ${materialId} konnte nicht ins Inventar zurückgegeben werden.`);
       return;
     }
-    if (job.weaponSnapshot) state.weaponInventory.unshift(job.weaponSnapshot as RuntimeMarketWeapon);
+    if (job.type === 'weapon' && job.weaponSnapshot) state.weaponInventory.unshift(job.weaponSnapshot as RuntimeMarketWeapon);
   }
 }

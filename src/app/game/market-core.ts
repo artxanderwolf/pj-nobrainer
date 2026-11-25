@@ -1,8 +1,9 @@
 import { resolveMaterialQuality, type MaterialQuality } from './material-quality-core.ts';
 import { getMaterialIdByName, getMaterialReferenceById } from './game-core.ts';
+import type { RuneDefinitionId } from './rune-core.ts';
 
 export interface MarketJob {
-  type: 'material' | 'weapon';
+  type: 'material' | 'weapon' | 'rune';
   /** Waffenname oder Legacy-Migrationsquelle alter Materialaufträge; Materialaufträge persistieren den Namen nicht. */
   name?: string;
   /** Kanonische Referenz für Materialverkäufe; bei Waffen nicht gesetzt. */
@@ -18,6 +19,8 @@ export interface MarketJob {
   unitSeconds?: number;
   weaponId?: number;
   weaponSnapshot?: unknown;
+  runeItemId?: string;
+  runeDefinitionId?: RuneDefinitionId;
   startedAt?: number;
   finishesAt?: number;
 }

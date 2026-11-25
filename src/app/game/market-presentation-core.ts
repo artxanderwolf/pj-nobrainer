@@ -1,5 +1,5 @@
 export interface MarketPresentationJobLike {
-  type: 'material' | 'weapon';
+  type: 'material' | 'weapon' | 'rune';
   name: string;
   valueNickel: number;
   seconds: number;

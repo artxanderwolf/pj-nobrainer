@@ -37,7 +37,7 @@ const SCREEN_PRESENTATIONS: Record<string, NavigationPresentation> = {
 
   market: { pageId: 'market', title: 'Verkaufen', parentPageId: 'storage', sectionId: 'storage' },
   'market-materials': { pageId: 'market-materials', title: 'Materialien verkaufen', parentPageId: 'market', sectionId: 'storage' },
-  'market-weapons': { pageId: 'market-weapons', title: 'Waffen verkaufen', parentPageId: 'market', sectionId: 'storage' },
+  'market-weapons': { pageId: 'market-weapons', title: 'Waffen und Runen verkaufen', parentPageId: 'market', sectionId: 'storage' },
   'market-jobs': { pageId: 'market-jobs', title: 'Aktive Verkäufe', parentPageId: 'market', sectionId: 'storage' },
   'market-upgrade': { pageId: 'market-upgrade', title: 'Verkaufsausbau', parentPageId: 'market', sectionId: 'storage' },
 

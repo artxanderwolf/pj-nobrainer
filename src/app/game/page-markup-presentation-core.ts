@@ -246,8 +246,8 @@ const MARKET_PAGE_MARKUP = `<section class="page screen-page" id="market">
       <span class="menu-card-copy">Materialbestand verkaufen</span>
     </button>
     <button class="menu-card" type="button" onclick="go('market-weapons')">
-      <span class="menu-card-title">Waffen</span>
-      <span class="menu-card-copy">Nicht ausgerüstete Waffen verkaufen</span>
+      <span class="menu-card-title">Waffen und Runen</span>
+      <span class="menu-card-copy">Waffen und freie Runen verkaufen</span>
     </button>
     <button class="menu-card" type="button" onclick="go('market-jobs')">
       <span class="menu-card-title">Aktive Verkäufe</span>
@@ -270,8 +270,14 @@ const MARKET_MATERIALS_PAGE_MARKUP = `<section class="page screen-page" id="mark
 
 const MARKET_WEAPONS_PAGE_MARKUP = `<section class="page screen-page" id="market-weapons">
   <div class="screen-card screen-card-fill">
-    <div id="marketWeapons" class="scroll-region"></div>
-    <div id="marketWeaponsEmpty" class="empty">Keine verkaufbaren Waffen im Lager.</div>
+    <div class="scroll-region">
+      <h3>Runen</h3>
+      <div id="marketRunes"></div>
+      <div id="marketRunesEmpty" class="empty">Keine freien Runen zum Verkauf.</div>
+      <h3>Waffen</h3>
+      <div id="marketWeapons"></div>
+      <div id="marketWeaponsEmpty" class="empty">Keine verkaufbaren Waffen im Lager.</div>
+    </div>
   </div>
 </section>`;
 

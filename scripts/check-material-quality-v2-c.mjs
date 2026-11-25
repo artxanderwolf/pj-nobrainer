@@ -10,7 +10,7 @@ import {recomputeRunedWeapon, removeRune, equipRune} from '../src/app/game/rune-
 import {encodeSave, decodeSave, SAVE_VERSION} from '../src/app/game/save-codec.ts';
 import {validateImportedSave} from '../src/app/game/save-transfer-core.ts';
 
-assert.equal(SAVE_VERSION,28);
+assert.equal(SAVE_VERSION,29);
 assert.deepEqual(MATERIAL_REFERENCES.map(r=>r.materialId),Array.from({length:77},(_,i)=>i+1));
 let combinations=0;
 for(const reference of MATERIAL_REFERENCES) for(const quality of MATERIAL_QUALITIES){

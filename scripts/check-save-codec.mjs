@@ -20,15 +20,15 @@ const savedAt = 1_760_000_000_000;
 const encoded = encodeSave(state, savedAt);
 const parsed = JSON.parse(encoded);
 
-assert.equal(parsed.saveVersion, 28, 'Save-Version muss für die S19-Materialqualitätsmigration 28 sein.');
-assert.equal(SAVE_VERSION, 28, 'TypeScript-Save-Version muss 28 sein.');
+assert.equal(parsed.saveVersion, 29, 'Marktreservierungen für Runen werden mit Save 29 gespeichert.');
+assert.equal(SAVE_VERSION, 29, 'TypeScript-Save-Version muss 29 sein.');
 assert.equal(parsed.savedAt, savedAt, 'savedAt muss unverändert gespeichert werden.');
 assert.equal(parsed.state.dungeonSessionEndsAt, state.dungeonSessionEndsAt, 'Die absolute Dungeon-Endzeit muss im Save erhalten bleiben.');
 assert.deepEqual(parsed.state, state, 'State muss unverändert im Save-Envelope liegen.');
-assert.deepEqual(decodeSave(encoded), { state, savedAt, saveVersion: 28 }, 'Aktuelles Save-Envelope muss verlustfrei decodiert werden.');
+assert.deepEqual(decodeSave(encoded), { state, savedAt, saveVersion: 29 }, 'Aktuelles Save-Envelope muss verlustfrei decodiert werden.');
 assert.deepEqual(decodeSave(JSON.stringify(state)), { state, savedAt: null, saveVersion: null }, 'Legacy-Rohzustand muss weiterhin geladen werden.');
 
-for (const version of [17, 16, 15, 14, 13, 12, 11, 10, 9, 8]) {
+for (const version of [28, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8]) {
   const legacy = JSON.stringify({ saveVersion: version, savedAt, state });
   assert.deepEqual(decodeSave(legacy), { state, savedAt, saveVersion: version }, `v${version}-Saves müssen weiterhin verlustfrei decodiert werden.`);
   assert.equal(validateImportedSave(legacy).ok, true, `v${version}-Save-Dateien müssen für den JSON-Import akzeptiert werden.`);
@@ -36,9 +36,9 @@ for (const version of [17, 16, 15, 14, 13, 12, 11, 10, 9, 8]) {
 
 const currentImport = validateImportedSave(encoded);
 assert.equal(validateImportedSave(encodeSave({ ...state, tavernOffers: { byBuildingId: null } }, savedAt)).ok, false);
-assert.equal(currentImport.ok, true, 'Aktuelles Save v28 muss als JSON-Datei importierbar sein.');
+assert.equal(currentImport.ok, true, 'Aktuelles Save v29 muss als JSON-Datei importierbar sein.');
 if (currentImport.ok) {
-  assert.equal(currentImport.saveVersion, 28);
+  assert.equal(currentImport.saveVersion, 29);
   assert.equal(currentImport.savedAt, savedAt);
   assert.deepEqual(currentImport.state, state);
 }
@@ -78,4 +78,4 @@ assert.equal(
   'Der Exportdateiname muss App-Version und lokalen Speicherzeitpunkt enthalten.'
 );
 
-console.log('Save-Codec v28 für ID-basiertes Stadtmodell; JSON-Export/Import akzeptiert v8 bis v28 und blockiert ungültige oder zukünftige Saves.');
+console.log('Save-Codec v29 für ID-basiertes Stadtmodell; JSON-Export/Import akzeptiert v8 bis v29 und blockiert ungültige oder zukünftige Saves.');
