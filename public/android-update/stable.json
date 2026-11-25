@@ -1,17 +1,16 @@
 {
   "schemaVersion": 1,
   "available": true,
-  "versionName": "0.28.1",
-  "versionCode": 20,
-  "apkUrl": "https://github.com/artxanderwolf/pj-nobrainer/releases/download/android-v0.28.1-code20/Smiths-of-Eldravar-v0.28.1-code20-release.apk",
+  "versionName": "0.28.3",
+  "versionCode": 22,
+  "apkUrl": "https://github.com/artxanderwolf/pj-nobrainer/releases/download/android-v0.28.3-code22/Smiths-of-Eldravar-v0.28.3-code22-release.apk",
   "apkSize": 3722208,
-  "sha256": "3630437ebf56f4351968abfd05d763a824c1a1cf2923f54a6813570533e9fb77",
-  "publishedAt": "2026-11-23T23:36:18.913Z",
+  "sha256": "533207b1254e67e50c7220ae48fb5dbb53ed102001bae7210be2d0ba571f5eed",
+  "publishedAt": "2026-11-25T16:43:07.840Z",
   "mandatory": false,
   "releaseNotes": [
-    "Du kannst Charaktere freistellen. Der letzte Charakter bleibt im Kader. Getragene Waffen bleiben im Lager, und der nächste Anwerbepreis richtet sich nach der aktuellen Kadergröße.",
-    "Zwerge verkürzen als Schmiedehelfer die Auftragsdauer um 10 %, Halblinge als Markthelfer ebenfalls. Waldelfen werden in gemischten Gruppen seltener angegriffen. Hochelf-Magier können sich selbst oder ein verletztes Gruppenmitglied heilen.",
-    "Neue Zugangssuchen erfordern zehn qualifizierte Läufe. Neue Runen können mit 0,1 % Chance je besiegtem Boss in der Waffenkammer fallen.",
-    "Save 28 bleibt gültig. Freischaltungen und bereits erzeugte Runenbeute bleiben erhalten. Zum Aktualisieren die APK speichern und über Downloads oder Eigene Dateien öffnen."
+    "Im Markt unter „Waffen und Runen“ kannst du freie Runen verkaufen. Stufe I bringt 5.000 Nickel, Stufe II 15.000 Nickel.",
+    "Runen bleiben im Verkauf reserviert. Ein Storno gibt dieselbe Rune frei. Fertige Verkäufe kannst du auch nach einer Offline-Pause einmalig auszahlen lassen.",
+    "Save 29 übernimmt bestehende Spielstände und Marktaufträge. Zum Aktualisieren die APK speichern und über Downloads oder Eigene Dateien öffnen."
   ]
 }
