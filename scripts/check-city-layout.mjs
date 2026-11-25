@@ -74,8 +74,8 @@ assert.equal(JSON.stringify(unchangedFields), untouchedSnapshot,
   'Charaktere, Heiler, Teams, Jobs, Waffen, Materialien und gekaufte Alt-Slots müssen identisch bleiben.');
 assert.equal(loaded.state.cityLayout.buildings.length, 6);
 const serialized = encodeSave(loaded.state, loaded.savedAt);
-assert.equal(SAVE_VERSION, 28, 'Etappe E ergänzt persistente Runeninventare zu Save27.');
-assert.equal(JSON.parse(serialized).saveVersion, 28);
+assert.equal(SAVE_VERSION, 29, 'Etappe E ergänzt persistente Runeninventare zu Save27.');
+assert.equal(JSON.parse(serialized).saveVersion, 29);
 assert.equal(validateImportedSave(serialized).ok, true);
 const restored = decodeSave(serialized);
 const restoredCity = structuredClone(restored.state.cityLayout);

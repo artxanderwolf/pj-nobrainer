@@ -1,5 +1,5 @@
 import { migrateMaterialQualityWorld } from '../game/material-quality-migration-core.ts';
-import { migrateRuneWorld } from '../game/rune-inventory-core.ts';
+import { migrateRuneWorld, validateRuneMarketReservations } from '../game/rune-inventory-core.ts';
 import { migrateLegacyHealers } from '../game/healer-migration-core.ts';
 import { synchronizeTavernOffers } from '../game/tavern-offers-core.ts';
 import { migrateCharacterRaces } from '../game/character-race-core.ts';
@@ -128,6 +128,7 @@ export class GameStateService {
     // Fehlerhafte vorhandene Stadt-Saves vor dem Ersetzen prüfen. So kann ein
     // ungültiger Import den bereits geladenen Zustand nicht teilweise löschen.
     nextState = structuredClone(nextState);
+    validateRuneMarketReservations(nextState);
     const materialChanged = migrateMaterialQualityWorld(nextState);
     const cityMigrationChanged = migrateCityLayout(nextState);
     const raceMigrationChanged = migrateCharacterRaces(nextState);

@@ -17,7 +17,7 @@ const scripts=pkg.scripts.check || '';
 assert.equal(APP_UI_VERSION,pkg.version,'Angezeigte Version und package.json müssen identisch sein');
 assert.equal(lock.version,pkg.version,'Lockfile-Version darf nicht abweichen');
 assert.equal(lock.packages[''].version,pkg.version,'Lockfile-Rootversion muss synchron sein');
-assert.equal(SAVE_VERSION,28,'S24 verändert ohne Schemaänderung die Save-Version nicht');
+assert.equal(SAVE_VERSION,29,'S24 verändert ohne Schemaänderung die Save-Version nicht');
 assert.match(help,/data-rune-system-help/,'Der Runen-Hilfeabschnitt muss vorhanden sein');
 assert.match(help,/Runenwerkstatt/,'Die kostenlose Runenwerkstatt muss erklärt sein');
 assert.match(help,/0,1\s*%/,'Die Runendrop-Chance muss erklärt sein');

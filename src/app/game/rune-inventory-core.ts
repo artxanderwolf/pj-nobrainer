@@ -3,6 +3,7 @@ import {
   type WeaponSlot, type WeaponStats
 } from './game-core.ts';
 import type { ForgeJob } from './forge-core.ts';
+import type { MarketJob } from './market-core.ts';
 import { placeCityBuilding } from './city-placement-core.ts';
 import type { CityLayoutWorldState } from './city-layout-core.ts';
 import {
@@ -51,6 +52,9 @@ export interface RuneWorldState extends CityLayoutWorldState {
   forgeJobs?: RunedForgeJob[];
   forgeQueue?: RunedForgeJob[];
   forgeReadyJobs?: RunedForgeJob[];
+  marketJobs?: MarketJob[];
+  marketQueue?: MarketJob[];
+  marketReadyJobs?: MarketJob[];
 }
 const ID_PATTERN=/^rune-item-([1-9][0-9]*)$/;
 
@@ -173,8 +177,42 @@ export function migrateClaimedLegacyWeapon(state:RuneWorldState,weapon:RunedWeap
   }
   validateRuneReferences(state);
 }
+function marketOrders(state: RuneWorldState): MarketJob[] {
+  return [state.marketQueue, state.marketJobs, state.marketReadyJobs].flatMap(jobs => Array.isArray(jobs) ? jobs : []);
+}
+
+function boundRuneIds(state: RuneWorldState, orders: readonly MarketJob[]): Set<string> {
+  const listedWeapons = orders.filter(job => job?.type === 'weapon').map(job => job.weaponSnapshot as RunedWeapon | undefined);
+  return new Set([...state.weaponInventory ?? [], ...listedWeapons].flatMap(weapon =>
+    [...(weapon?.runeSockets ?? []), weapon?.legacyRuneItemId].filter((id): id is string => typeof id === 'string')));
+}
+
+/** Reserve by identity across queued, active and ready sales, including after reload. */
+export function validateRuneMarketReservations(state: RuneWorldState): void {
+  const orders = marketOrders(state);
+  const runeOrders = orders.filter(job => job?.type === 'rune');
+  if (!runeOrders.length) return;
+  const bound = boundRuneIds(state, orders);
+  const items = Array.isArray(state.runeInventory) ? state.runeInventory : [];
+  const reserved = new Set<string>();
+  for (const job of runeOrders) {
+    const id = job.runeItemId;
+    const matches = items.filter(item => item?.runeItemId === id);
+    if (typeof id !== 'string' || !ID_PATTERN.test(id) || bound.has(id) || reserved.has(id) ||
+        matches.length !== 1 || !job.runeDefinitionId || !Object.hasOwn(RUNE_DEFINITIONS, job.runeDefinitionId) ||
+        matches[0].runeDefinitionId !== job.runeDefinitionId ||
+        !Number.isSafeInteger(job.valueNickel) || job.valueNickel <= 0 ||
+        !Number.isSafeInteger(job.seconds) || job.seconds <= 0) {
+      throw new Error('Ungültige Runenreservierung im Markt.');
+    }
+    reserved.add(id);
+  }
+}
+
 export function availableRuneItems(state:RuneWorldState):RuneItem[]{
-  const used=new Set((state.weaponInventory??[]).flatMap(w=>[...(w.runeSockets??[]),w.legacyRuneItemId??null]).filter(Boolean));
+  const orders = marketOrders(state);
+  const used = boundRuneIds(state, orders);
+  for (const job of orders) if (job?.type === 'rune' && job.runeItemId) used.add(job.runeItemId);
   return (state.runeInventory??[]).filter(item=>!used.has(item.runeItemId));
 }
 export function equipRune(state:RuneWorldState,weaponId:number,index:number,runeItemId:string):boolean {

@@ -1,4 +1,8 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import ts from 'typescript';
+import { createInitialCityLayout } from '../src/app/game/city-layout-core.ts';
+import { availableRuneItems } from '../src/app/game/rune-inventory-core.ts';
 import {
   initializeMarketClaims, identifyNewMarketJob, advanceMarketJobsToReady, takeReadyMarketJob
 } from '../src/app/game/market-claim-core.ts';
@@ -33,8 +37,11 @@ assert.equal(s.gold,250,'Fertigstellung schreibt keinen Nickel gut.');
 assert.equal(hasMarketCapacity(s,2,5),false,'Ready blockiert nur das Gesamtkontingent.');
 assert.equal(s.marketReadyJobs[0].status,'ready');
 const serialized=encodeSave(s,now+10_000);
-assert.equal(SAVE_VERSION,28);
-assert.equal(validateImportedSave(serialized).ok,true,'Save23-Export kann wieder importiert werden.');
+assert.equal(SAVE_VERSION,29);
+assert.equal(validateImportedSave(serialized).ok,true,'Save-29-Export kann wieder importiert werden.');
+const previousSave = validateImportedSave(JSON.stringify({saveVersion:28,savedAt:now+10_000,state:s}));
+assert.equal(previousSave.ok,true);
+assert.deepEqual(previousSave.state,s,'Save-28-Aufträge behalten ihren gespeicherten Zustand.');
 const restored=decodeSave(serialized).state;
 assert.deepEqual(restored,s);
 assert.equal(initializeMarketClaims(restored),false,'Neustart darf keine Aufträge duplizieren.');
@@ -85,3 +92,60 @@ assert.equal(paid.valueNickel,20);
 assert.equal(takeReadyMarketJob(legacy,paid.jobId),null);
 assert.equal(legacy.marketReadyJobs.length,0);
 console.log('S15: 2+5-Grenze, Material-/Waffenverkäufe, Offline, Storno, Save21→22 und genau einmalige Auszahlung geprüft.');
+
+const serviceUrl = new URL('../src/app/core/game-market.service.ts', import.meta.url);
+const marketSource = readFileSync(serviceUrl, 'utf8')
+  .replace("import { Injectable } from '@angular/core';", '')
+  .replace("@Injectable({ providedIn: 'root' })", '')
+  .replace(/from '(\.\.?\/[^']+)';/g, (_, path) =>
+    `from '${new URL(path.endsWith('.ts') ? path : path + '.ts', serviceUrl).href}';`);
+const compiled = ts.transpileModule(marketSource, {
+  compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext }
+}).outputText;
+const { GameMarketService } = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString('base64')}`);
+
+const runeWorld = {
+  ...state(), gold: 0, cityLayout: createInitialCityLayout(), upgrades: {marketQueue:2},
+  forgeJobs:[], forgeQueue:[], forgeReadyJobs:[],
+  runeInventory:[
+    {runeItemId:'rune-item-1',runeDefinitionId:'rune-p-1'},
+    {runeItemId:'rune-item-2',runeDefinitionId:'rune-p-2'},
+    {runeItemId:'rune-item-3',runeDefinitionId:'rune-p-1'}
+  ],
+  weaponInventory:[{id:8,runeSockets:['rune-item-3']}]
+};
+let current = runeWorld;
+const service = new GameMarketService({ getState: () => current });
+assert.equal(service.startRune('rune-item-3', now).status,'not-available');
+assert.equal(service.startRune('missing', now).status,'not-available');
+assert.equal(service.startRune('rune-item-1', now).status,'started');
+assert.equal(service.startRune('rune-item-1', now).status,'not-available');
+assert.equal(service.startRune('rune-item-2', now).status,'queued');
+assert.deepEqual(availableRuneItems(current),[]);
+assert.equal(current.marketJobs[0].finishesAt,now+2_515_000);
+assert.equal(current.marketQueue[0].seconds,7515);
+
+const savedRunes = encodeSave(current, now);
+assert.equal(validateImportedSave(savedRunes).ok,true);
+current = decodeSave(savedRunes).state;
+assert.deepEqual(availableRuneItems(current),[]);
+const invalidRunes = structuredClone(current);
+invalidRunes.marketQueue[0] = { ...invalidRunes.marketJobs[0], jobId: 'market-job-2' };
+assert.equal(validateImportedSave(encodeSave(invalidRunes, now)).reason,'invalid-state');
+assert.equal(service.cancel('queue',0,now).name,'Präzision II (+10 %)');
+assert.deepEqual(availableRuneItems(current),[runeWorld.runeInventory[1]]);
+assert.equal(service.startRune('rune-item-2',now).status,'queued');
+assert.equal(service.cancel('active',0,now).name,'Präzision I (+5 %)');
+assert.deepEqual(availableRuneItems(current),[runeWorld.runeInventory[0]]);
+assert.equal(current.marketJobs[0].finishesAt,now+7_515_000);
+assert.equal(service.update(now+7_515_000).completedCount,1);
+assert.equal(current.gold,0);
+assert.equal(service.startRune('rune-item-2',now+7_515_000).status,'not-available');
+current = decodeSave(encodeSave(current,now+7_515_000)).state;
+const readyId = current.marketReadyJobs[0].jobId;
+assert.equal(service.claim(readyId).valueNickel,15000);
+assert.equal(service.claim(readyId),null);
+assert.equal(current.gold,15000);
+assert.deepEqual(current.runeInventory,[runeWorld.runeInventory[0],runeWorld.runeInventory[2]]);
+assert.equal(service.claimAll().length,0);
+console.log('S11: identische Rune reserviert und storniert, Save 29, Warteschlange, Offlineabschluss und einmalige Auszahlung geprüft.');

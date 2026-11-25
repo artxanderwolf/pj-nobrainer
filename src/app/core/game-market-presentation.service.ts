@@ -289,6 +289,7 @@ export class GameMarketPresentationService {
   }
 
   private presentationJob(job: MarketJob): MarketPresentationJobLike {
+    if (job.type === 'rune') return { ...job, name: this.gameMarket.displayName(job) };
     const name = job.type === 'material'
       ? `${getMaterialDisplayNameById(job.materialId) ?? `Material #${Number(job.materialId) || '?'}`} S${job.quality}`
       : job.name || 'Waffe';

@@ -41,7 +41,7 @@ const probe = String.raw`<script>
    const proof=JSON.parse(localStorage.getItem(proofKey));
    if(phase==='migrated'){
     const data=save(),s=data.state;
-    check(data.saveVersion===28&&s.materialQualitySchema===1,'Save28 marker');check(s.inventory['3:2'].qty===9,'Old quantity/quality');
+    check(data.saveVersion===29&&s.materialQualitySchema===1,'Save28 marker');check(s.inventory['3:2'].qty===9,'Old quantity/quality');
     const old=s.weaponInventory.find(w=>w.id===7);check(JSON.stringify(old.stats)===JSON.stringify(proof.oldStats)&&old.valueNickel===123,'Old weapon changed');
     const job=s.forgeReadyJobs[0];check(job.totalSeconds===97&&job.valueNickel===127&&JSON.stringify(job.stats)===JSON.stringify(proof.oldStats),'Old reservation changed');
     click('[data-forge-claim-id="forge-job-1"]');const claimed=save().state.weaponInventory.find(w=>w.name==='Alter Auftrag');check(JSON.stringify(claimed.stats)===JSON.stringify(proof.oldStats)&&claimed.valueNickel===127,'Old claim changed');

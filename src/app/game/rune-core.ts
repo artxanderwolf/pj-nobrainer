@@ -23,6 +23,11 @@ export const RUNE_IDS = Object.freeze(Object.keys(RUNE_DEFINITIONS) as RuneDefin
 export const RUNE_DROP_CHANCE = .001;
 export const RUNE_DROP_DUNGEON_ID = 2;
 
+export const RUNE_SALE_TERMS = {
+  1: { valueNickel: 5000, seconds: 2515 },
+  2: { valueNickel: 15000, seconds: 7515 }
+} as const;
+
 export function runeDefinitionFromLegacy(effect: {stat:string;amount:number}|null|undefined): RuneDefinitionId|null {
   if(!effect)return null;
   const found=RUNE_IDS.find(id=>RUNE_DEFINITIONS[id].kind===effect.stat&&Math.abs(RUNE_DEFINITIONS[id].amount-effect.amount)<1e-9);
