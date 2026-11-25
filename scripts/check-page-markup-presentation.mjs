@@ -21,7 +21,7 @@ const requiredPageAnchors = {
   'forge-upgrade': ['forgeUpgradeCard'],
   market: ['marketUpgradeCardInline'],
   'market-materials': ['marketMaterials', 'marketMaterialsEmpty'],
-  'market-weapons': ['marketWeapons', 'marketWeaponsEmpty'],
+  'market-weapons': ['marketWeapons', 'marketWeaponsEmpty', 'marketRunes', 'marketRunesEmpty'],
   'market-jobs': ['marketJobCard', 'marketQueueCard'],
   'market-upgrade': ['marketUpgradeCard'],
   dungeon: ['dungeonOverviewOpenBtn', 'dungeonOverviewAction'],

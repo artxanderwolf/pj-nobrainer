@@ -20,6 +20,8 @@ import { GameMarketService } from './game-market.service';
 import { GameProgressionPresentationService } from './game-progression-presentation.service';
 import { GameStateService, type MutableGameState } from './game-state.service';
 import { GameWeaponPresentationService } from './game-weapon-presentation.service';
+import { RUNE_DEFINITIONS, RUNE_SALE_TERMS } from '../game/rune-core.ts';
+import { availableRuneItems, type RuneWorldState } from '../game/rune-inventory-core.ts';
 
 interface RuntimeMarketWeapon {
   id: number;
@@ -177,6 +179,7 @@ export class GameMarketPresentationService {
   }
 
   renderWeapons(): void {
+    this.renderRunes();
     const box = document.getElementById('marketWeapons');
     const empty = document.getElementById('marketWeaponsEmpty');
     if (!box || !empty) return;
@@ -196,6 +199,34 @@ export class GameMarketPresentationService {
       row.title = presentation.tooltip;
       row.innerHTML = `<div class="market-weapon-sale-main">${imageHtml}<div><strong>${presentation.title}</strong></div></div><button class="btn smallbtn" ${presentation.sellDisabled ? 'disabled' : ''}>Verkaufen</button>`;
       row.querySelector('button')?.addEventListener('click', () => this.startWeapon(weapon.id));
+      box.appendChild(row);
+    }
+  }
+
+  private renderRunes(): void {
+    const box = document.getElementById('marketRunes');
+    const empty = document.getElementById('marketRunesEmpty');
+    if (!box || !empty) return;
+    const runes = availableRuneItems(this.state() as RuntimeMarketPresentationState & RuneWorldState);
+    const capacity = this.gameMarket.hasCapacity();
+    box.replaceChildren();
+    empty.hidden = runes.length > 0;
+    for (const rune of runes) {
+      const definition = RUNE_DEFINITIONS[rune.runeDefinitionId];
+      const terms = RUNE_SALE_TERMS[definition.tier];
+      const itemNumber = rune.runeItemId.split('-').at(-1);
+      const row = document.createElement('div');
+      row.className = 'sell-row';
+      row.dataset['marketRuneId'] = rune.runeItemId;
+      row.innerHTML = `<div><strong>${this.escape(definition.label)} · #${this.escape(itemNumber ?? '')}</strong><p class="muted">${formatCurrencyNickel(terms.valueNickel)} · ${formatDuration(terms.seconds)} ohne Helfer</p></div>`;
+      const button = document.createElement('button');
+      button.className = 'btn smallbtn';
+      button.type = 'button';
+      button.textContent = 'Verkaufen';
+      button.disabled = !capacity;
+      button.setAttribute('aria-label', `${definition.label} #${itemNumber} verkaufen`);
+      button.addEventListener('click', () => this.startRune(rune.runeItemId));
+      row.appendChild(button);
       box.appendChild(row);
     }
   }
@@ -278,11 +309,21 @@ export class GameMarketPresentationService {
     this.renderAll();
   }
 
+  private startRune(runeItemId: string): void {
+    const result = this.gameMarket.startRune(runeItemId);
+    if (result.status === 'full') { alert('Alle Verkaufs- und Warteschlangenplätze sind belegt.'); return; }
+    if (result.status === 'not-available') { this.renderRunes(); return; }
+    this.combatLog.add(`Verkauf eingestellt: ${result.name} für ${formatCurrencyNickel(result.valueNickel)}.`, 'good');
+    document.dispatchEvent(new Event('market-rune-order-changed'));
+    this.renderAll();
+  }
+
   private bindCancelActions(container: HTMLElement): void {
     container.querySelectorAll<HTMLButtonElement>('[data-market-cancel]').forEach(button => button.addEventListener('click', () => {
       const kind = button.dataset['marketCancel'] === 'queue' ? 'queue' : 'active';
       const result = this.gameMarket.cancel(kind, Number(button.dataset['marketIndex']) || 0, Date.now());
       if (!result) return;
+      if (result.type === 'rune') document.dispatchEvent(new Event('market-rune-order-changed'));
       this.combatLog.add(`Verkauf abgebrochen: ${result.name} wurde zurückgegeben.`, 'muted');
       this.renderAll();
     }));

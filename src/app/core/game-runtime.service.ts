@@ -159,6 +159,9 @@ export class GameRuntimeService {
       runtime.renderMarketWeapons();
       this.resourcePresentation.render();
     });
+    document.addEventListener('market-rune-order-changed', () => runtime.save(false));
+    document.addEventListener('rune-workshop-updated', () => runtime.renderMarketWeapons());
+    document.addEventListener('rune-equipment-changed', () => runtime.renderMarketWeapons());
     this.forgeJobPresentation.bindActions(() => {
       runtime.save(false);
       this.forgeJobPresentation.render();

@@ -40,10 +40,11 @@ export type MarketWeaponStartResult =
   | { status: 'started' | 'queued'; name: string; valueNickel: number };
 
 export type MarketRuneStartResult =
-  | { status: 'not-available' | 'full' }
+  | { status: 'not-available' }
+  | { status: 'full' }
   | { status: 'started' | 'queued'; runeItemId: string; name: string; valueNickel: number };
 
-export interface MarketCancelResult { name: string; }
+export interface MarketCancelResult { name: string; type: MarketJob['type']; }
 export interface MarketCompletedSale { name: string; valueNickel: number; }
 export interface MarketUpdateResult { completedCount: number; completedSales: MarketCompletedSale[]; }
 
@@ -177,7 +178,7 @@ export class GameMarketService {
     normalizeMarketMaterialJob(job);
     const name = this.displayName(job);
     this.returnJob(state, job);
-    return { name };
+    return { name, type: job.type };
   }
 
   /** Migriert laufende/wartende Altaufträge auf stabile Material-IDs und entfernt persistierte Anzeigenamen. */

@@ -81,6 +81,7 @@ export class GameRuneWorkshopPresentationService {
         this.injector.get(GameDungeonEquipmentSyncService).refresh(Date.now());
         if(this.injector.get(GameRuntimeService).save(false)){
           this.notice='Runenwechsel gespeichert.';
+          document.dispatchEvent(new Event('rune-equipment-changed'));
         }else{
           state.weaponInventory=JSON.parse(before) as typeof state.weaponInventory;
           this.notice='Speichern fehlgeschlagen. Runenwechsel rückgängig gemacht.';
